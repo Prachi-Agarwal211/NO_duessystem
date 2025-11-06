@@ -1,27 +1,71 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0a0a0a;
+  --red: #dc2626;
+  --red-700: #b91c1c;
+  --white: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body, #__next { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(180deg, #0b0b0b, #0a0a0a);
+  color: var(--white);
 }
+
+/***** Glass card *****/
+.glass {
+  @apply bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+.input {
+  @apply w-full rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-white placeholder-zinc-400 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 px-4 py-2 font-semibold text-white shadow-lg shadow-red-900/30 transition;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 px-4 py-2 font-semibold text-white transition;
+}
+
+/***** Gradient animation keyframes (red/white theme) *****/
+@keyframes moveOne {
+  0% { transform: translate(-10%, -10%) rotate(0deg) scale(1); }
+  50% { transform: translate(10%, 10%) rotate(120deg) scale(1.05); }
+  100% { transform: translate(-10%, -10%) rotate(360deg) scale(1); }
+}
+
+@keyframes moveTwo {
+  0% { transform: translate(10%, -15%) rotate(0deg) scale(1); }
+  50% { transform: translate(-5%, 10%) rotate(-120deg) scale(1.07); }
+  100% { transform: translate(10%, -15%) rotate(360deg) scale(1); }
+}
+
+@keyframes moveThree {
+  0% { transform: translate(-15%, 5%) rotate(0deg) scale(1); }
+  50% { transform: translate(5%, -10%) rotate(120deg) scale(1.04); }
+  100% { transform: translate(-15%, 5%) rotate(360deg) scale(1); }
+}
+
+@keyframes moveFour {
+  0% { transform: translate(5%, 15%) rotate(0deg) scale(1); }
+  50% { transform: translate(-10%, -5%) rotate(-120deg) scale(1.06); }
+  100% { transform: translate(5%, 15%) rotate(360deg) scale(1); }
+}
+
+@keyframes moveFive {
+  0% { transform: translate(-5%, -5%) rotate(0deg) scale(1); }
+  50% { transform: translate(8%, 12%) rotate(120deg) scale(1.03); }
+  100% { transform: translate(-5%, -5%) rotate(360deg) scale(1); }
+}
+
+.animate-first { animation: moveOne 28s ease-in-out infinite; }
+.animate-second { animation: moveTwo 32s ease-in-out infinite; }
+.animate-third { animation: moveThree 36s ease-in-out infinite; }
+.animate-fourth { animation: moveFour 40s ease-in-out infinite; }
+.animate-fifth { animation: moveFive 44s ease-in-out infinite; }
