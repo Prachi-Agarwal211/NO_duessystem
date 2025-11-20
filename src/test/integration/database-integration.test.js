@@ -1,3 +1,13 @@
+/**
+ * Database Integration Tests - Phase 1 Design
+ *
+ * Phase 1: Simplified database schema
+ * - NO audit_log table (removed per YAGNI)
+ * - NO notifications table (not in Phase 1)
+ * - Only 2 roles: department and admin
+ * - Students submit without auth (user_id nullable)
+ */
+
 describe('Database Schema Integration', () => {
   describe('Table Creation and Constraints', () => {
     it('should create all required tables', async () => {
@@ -6,8 +16,6 @@ describe('Database Schema Integration', () => {
         'departments',
         'no_dues_forms',
         'no_dues_status',
-        'audit_log',
-        'notifications',
       ];
 
       for (const table of tables) {
@@ -120,7 +128,7 @@ describe('Database Schema Integration', () => {
       const formId = 'form-uuid-1';
 
       // Update all status records to approved
-      for (const dept of ['LIBRARY', 'IT_DEPARTMENT', 'HOSTEL', 'REGISTRAR']) {
+      for (const dept of ['LIBRARY', 'IT_DEPARTMENT', 'HOSTEL', 'ACCOUNTS']) {
         await fetch(`https://test.supabase.co/rest/v1/no_dues_status?form_id=eq.${formId}&department_name=eq.${dept}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

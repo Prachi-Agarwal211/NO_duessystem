@@ -5,7 +5,7 @@
 CREATE TABLE public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL PRIMARY KEY,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'student', -- 'student', 'department', 'registrar', 'admin'
+    role TEXT NOT NULL DEFAULT 'department', -- 'department', 'admin'
     department_name TEXT, -- For department staff: 'LIBRARY', 'HOSTEL', 'ALUMNI', etc.
     registration_no TEXT UNIQUE, -- For students only
     email TEXT UNIQUE, -- For staff members
@@ -13,7 +13,7 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMPTZ DEFAULT now(),
     
     -- Add constraint for valid roles
-    CONSTRAINT check_role CHECK (role IN ('student', 'department', 'registrar', 'admin'))
+    CONSTRAINT check_role CHECK (role IN ('department', 'admin'))
 );
 
 -- Enable RLS for profiles table
@@ -84,9 +84,9 @@ INSERT INTO public.departments (name, display_name, display_order) VALUES
 -- Create no_dues_forms table (created before no_dues_status since no_dues_status references it)
 CREATE TABLE public.no_dues_forms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     student_name TEXT NOT NULL,
-    registration_no TEXT NOT NULL,
+    registration_no TEXT NOT NULL UNIQUE,
     session_from TEXT,
     session_to TEXT,
     parent_name TEXT,
@@ -120,8 +120,11 @@ ALTER TABLE public.no_dues_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_status ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for no_dues_forms (created after both tables exist to avoid dependency issues)
-CREATE POLICY "Students can view own forms" ON public.no_dues_forms
-    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can insert forms" ON public.no_dues_forms
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can view forms" ON public.no_dues_forms
+    FOR SELECT USING (true);
 
 CREATE POLICY "Staff can view forms in their department" ON public.no_dues_forms
     FOR SELECT TO authenticated
@@ -130,7 +133,7 @@ CREATE POLICY "Staff can view forms in their department" ON public.no_dues_forms
             SELECT 1 FROM public.profiles p
             WHERE p.id = auth.uid()
             AND (
-                p.role = 'registrar' OR
+                p.role = 'admin' OR
                 EXISTS (
                     SELECT 1 FROM public.no_dues_status n
                     WHERE n.form_id = public.no_dues_forms.id
@@ -139,9 +142,6 @@ CREATE POLICY "Staff can view forms in their department" ON public.no_dues_forms
             )
         )
     );
-
-CREATE POLICY "Students can update own forms" ON public.no_dues_forms
-    FOR UPDATE USING (auth.uid() = user_id);
 
 -- Add admin policies for forms
 CREATE POLICY "Admin can view all forms" ON public.no_dues_forms
@@ -192,6 +192,7 @@ CREATE POLICY "Staff can update status for their department" ON public.no_dues_s
         )
     );
 
+/* Registrar role removed
 CREATE POLICY "Registrar can update all status" ON public.no_dues_status
     FOR UPDATE TO authenticated
     USING (
@@ -201,6 +202,7 @@ CREATE POLICY "Registrar can update all status" ON public.no_dues_status
             AND p.role = 'registrar'
         )
     );
+*/
 
 -- Add admin policies for status
 CREATE POLICY "Admin can view all status" ON public.no_dues_status

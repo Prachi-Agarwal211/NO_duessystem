@@ -30,16 +30,16 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Verify user has staff or registrar role
-    if (profile.role !== 'department' && profile.role !== 'registrar') {
+    // Verify user has department or admin role (Phase 1: only 2 roles)
+    if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let dashboardData = {};
 
-    if (profile.role === 'registrar') {
-      // Registrar gets all completed applications awaiting final approval
-      const { data: completedApplications, error: completedError } = await supabase
+    if (profile.role === 'admin') {
+      // Admin gets all applications across all departments
+      const { data: allApplications, error: allError } = await supabase
         .from('no_dues_forms')
         .select(`
           id,
@@ -48,40 +48,34 @@ export async function GET(request) {
           course,
           branch,
           contact_no,
+          status,
           created_at,
-          updated_at,
-          no_dues_status (
-            id,
-            department_name,
-            status,
-            action_at,
-            action_by_user_id,
-            profiles (
-              full_name
-            )
-          )
+          updated_at
         `)
-        .eq('status', 'completed')
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (completedError) {
-        return NextResponse.json({ error: completedError.message }, { status: 500 });
+      if (allError) {
+        return NextResponse.json({ error: allError.message }, { status: 500 });
       }
 
       // Get total count for pagination
       const { count: totalCount, error: countError } = await supabase
         .from('no_dues_forms')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+        .select('*', { count: 'exact', head: true });
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });
       }
 
+      // Transform for dashboard display
+      const applicationsWithForms = allApplications.map(app => ({
+        no_dues_forms: app
+      }));
+
       dashboardData = {
-        role: 'registrar',
-        applications: completedApplications || [],
+        role: 'admin',
+        applications: applicationsWithForms || [],
         pagination: {
           page,
           limit,

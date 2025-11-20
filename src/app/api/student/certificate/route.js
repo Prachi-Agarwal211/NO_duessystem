@@ -53,7 +53,7 @@ export async function GET(request) {
     let canAccess = false;
     if (profile.role === 'student' && formData.user_id === session.user.id) {
       canAccess = true;
-    } else if (profile.role === 'registrar') {
+    } else if (profile.role === 'admin') {
       canAccess = true;
     } else if (profile.role === 'department') {
       // Staff can access if form is completed (all approvals done)

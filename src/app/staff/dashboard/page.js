@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
 import GlassCard from '@/components/ui/GlassCard';
 import DataTable from '@/components/ui/DataTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -19,7 +18,7 @@ export default function StaffDashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !session) {
         router.push('/login');
         return;
@@ -31,7 +30,7 @@ export default function StaffDashboard() {
         .eq('id', session.user.id)
         .single();
 
-      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'registrar')) {
+      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
         router.push('/unauthorized');
         return;
       }
@@ -44,14 +43,9 @@ export default function StaffDashboard() {
         const result = await response.json();
 
         if (result.success) {
-          if (userData.role === 'registrar') {
-            // For registrar, use the completed applications
-            setRequests(result.data.applications || []);
-          } else {
-            // For department staff, extract form data from status records
-            const applications = result.data.applications || [];
-            setRequests(applications.map(item => item.no_dues_forms));
-          }
+          // For department staff, extract form data from status records
+          const applications = result.data.applications || [];
+          setRequests(applications.map(item => item.no_dues_forms));
         } else {
           console.error('API Error:', result.error);
         }
@@ -69,7 +63,7 @@ export default function StaffDashboard() {
     router.push(`/staff/student/${row.id}`);
   };
 
-  const filteredRequests = requests.filter(request => 
+  const filteredRequests = requests.filter(request =>
     request.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     request.registration_no.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -85,23 +79,21 @@ export default function StaffDashboard() {
 
   if (loading) {
     return (
-      <BackgroundGradientAnimation>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </BackgroundGradientAnimation>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   return (
-    <BackgroundGradientAnimation>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       <div className="min-h-screen py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <GlassCard>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
               <h1 className="text-2xl font-bold">
-                {user?.role === 'registrar' 
-                  ? 'Registrar Dashboard' 
+                {user?.role === 'admin'
+                  ? 'Admin Dashboard'
                   : `${user?.department_name || 'Department'} Dashboard`}
               </h1>
               <div className="text-sm text-gray-300">
@@ -110,22 +102,22 @@ export default function StaffDashboard() {
             </div>
 
             <div className="mb-6">
-              <SearchBar 
-                value={searchTerm} 
-                onChange={setSearchTerm} 
-                placeholder="Search by name or registration number..." 
+              <SearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Search by name or registration number..."
               />
             </div>
 
             <div className="mb-4">
               <h2 className="text-xl font-semibold mb-4">
-                {user?.role === 'registrar' 
-                  ? 'All Pending Requests' 
+                {user?.role === 'admin'
+                  ? 'All Pending Requests'
                   : 'Pending Requests for Your Department'}
               </h2>
-              
+
               {filteredRequests.length > 0 ? (
-                <DataTable 
+                <DataTable
                   headers={tableHeaders}
                   data={tableData}
                   onRowClick={handleRowClick}
@@ -139,6 +131,6 @@ export default function StaffDashboard() {
           </GlassCard>
         </div>
       </div>
-    </BackgroundGradientAnimation>
+    </div>
   );
 }

@@ -1,6 +1,15 @@
 import { customRender, expectElementWithText, clickButton, fillFormField } from '../utils/testUtils';
 import { mockForms, mockDepartments, mockStatusRecords } from '../__mocks__/mockData';
 
+/**
+ * Staff Component Tests - Phase 1 Design
+ * 
+ * Phase 1: Only department and admin roles exist
+ * - Department staff can view/action requests for their department
+ * - Admin can view all requests across all departments
+ * - No audit_log table (removed per YAGNI)
+ */
+
 describe('Staff Components', () => {
   describe('Staff Dashboard', () => {
     it('should display pending requests for department staff', async () => {
@@ -13,13 +22,14 @@ describe('Staff Components', () => {
       expect(Array.isArray(result.data.applications)).toBe(true);
     });
 
-    it('should display all completed requests for registrar', async () => {
-      const response = await fetch('/api/staff/dashboard?userId=registrar-uuid-1');
+    it('should display all requests for admin', async () => {
+      const response = await fetch('/api/staff/dashboard?userId=admin-uuid-1');
 
       expect(response.ok).toBe(true);
       const result = await response.json();
 
       expect(result.data).toHaveProperty('applications');
+      expect(result.data.applications.length).toBeGreaterThan(0);
     });
 
     it('should handle search functionality', async () => {
@@ -212,53 +222,6 @@ describe('Staff Components', () => {
       const result = await response.json();
 
       expect(result.data.applications).toHaveLength(0);
-    });
-  });
-
-  describe('Audit Trail', () => {
-    it('should log all staff actions', async () => {
-      const actionData = {
-        formId: 'form-uuid-1',
-        departmentName: 'LIBRARY',
-        action: 'approve',
-        userId: 'department-uuid-1',
-      };
-
-      const response = await fetch('/api/staff/action', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(actionData),
-      });
-
-      expect(response.ok).toBe(true);
-
-      // Verify audit log entry was created
-      const auditResponse = await fetch('https://test.supabase.co/rest/v1/audit_log');
-      const auditLog = await auditResponse.json();
-
-      const relevantEntry = auditLog.find(log =>
-        log.action_details.form_id === 'form-uuid-1' &&
-        log.action_details.action === 'approved'
-      );
-
-      expect(relevantEntry).toBeDefined();
-      expect(relevantEntry).toHaveProperty('user_id', 'department-uuid-1');
-      expect(relevantEntry).toHaveProperty('action_type', 'status_update');
-    });
-
-    it('should track approval patterns', async () => {
-      const auditResponse = await fetch('https://test.supabase.co/rest/v1/audit_log');
-      const auditLog = await auditResponse.json();
-
-      const approvalActions = auditLog.filter(log => log.action_details.action === 'approved');
-
-      expect(Array.isArray(approvalActions)).toBe(true);
-
-      approvalActions.forEach(action => {
-        expect(action).toHaveProperty('user_id');
-        expect(action).toHaveProperty('action_details');
-        expect(action).toHaveProperty('created_at');
-      });
     });
   });
 

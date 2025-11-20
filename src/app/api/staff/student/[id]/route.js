@@ -28,8 +28,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Verify user has staff or registrar role
-    if (profile.role !== 'department' && profile.role !== 'registrar') {
+    // Verify user has department or admin role (Phase 1: only 2 roles)
+    if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

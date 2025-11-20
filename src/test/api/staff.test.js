@@ -2,6 +2,16 @@ import { rest } from 'msw';
 import { server } from '../mocks/server';
 import { mockForms, mockStatusRecords, mockDepartments } from '../__mocks__/mockData';
 
+/**
+ * Staff API Tests - Phase 1 Design
+ * 
+ * Phase 1: Only department and admin roles
+ * - Department staff: View/action their department's requests
+ * - Admin: View all requests across all departments
+ * - NO registrar role
+ * - NO audit_log table
+ */
+
 describe('Staff APIs', () => {
   describe('GET /api/staff/dashboard', () => {
     it('should return pending requests for department staff', async () => {
@@ -16,8 +26,8 @@ describe('Staff APIs', () => {
       expect(Array.isArray(result.data.applications)).toBe(true);
     });
 
-    it('should return completed requests for registrar', async () => {
-      const response = await fetch('/api/staff/dashboard?userId=registrar-uuid-1');
+    it('should return all requests for admin', async () => {
+      const response = await fetch('/api/staff/dashboard?userId=admin-uuid-1');
 
       expect(response.ok).toBe(true);
       const result = await response.json();
@@ -233,7 +243,7 @@ describe('Staff APIs', () => {
       const result = await response.json();
 
       const departments = result.data.departmentStatuses;
-      const expectedDepartments = ['LIBRARY', 'IT_DEPARTMENT', 'HOSTEL', 'REGISTRAR'];
+      const expectedDepartments = ['LIBRARY', 'IT_DEPARTMENT', 'HOSTEL', 'ACCOUNTS'];
 
       expectedDepartments.forEach(deptName => {
         const deptStatus = departments.find(d => d.department_name === deptName);

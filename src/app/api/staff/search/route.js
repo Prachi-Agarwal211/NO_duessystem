@@ -15,19 +15,19 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Verify user is staff or registrar
+    // Verify user has department or admin role (Phase 1: only 2 roles)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'registrar')) {
+    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Search for students based on query
-    // If user is registrar, search all students
+    // If user is admin, search all students
     // If user is department staff, search students in their department
     let formsQuery = supabase
       .from('no_dues_forms')

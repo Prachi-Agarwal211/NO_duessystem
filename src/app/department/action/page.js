@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
+// import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -21,7 +21,7 @@ export default function DepartmentActionPage() {
     const token = searchParams.get('token');
     const actionParam = searchParams.get('action');
     const formIdParam = searchParams.get('formId');
-    
+
     if (!token || !actionParam || !formIdParam) {
       setError('Invalid or missing parameters');
       setLoading(false);
@@ -36,10 +36,10 @@ export default function DepartmentActionPage() {
 
     setAction(actionParam);
     setFormId(formIdParam);
-    
+
     // In a real implementation, you would validate the token here
     // For this example, we'll proceed with the action directly
-    
+
     handleAction(token, actionParam, formIdParam);
   }, [searchParams, router]);
 
@@ -81,7 +81,7 @@ export default function DepartmentActionPage() {
       // Verify that the user's department matches the action required
       // In a real implementation, you would check if this is the department that needs to act
       // For now, we'll assume the user can act if they're in the right department
-      
+
       // Update the status
       const { error: statusError } = await supabase
         .from('no_dues_status')
@@ -109,8 +109,8 @@ export default function DepartmentActionPage() {
         .eq('id', formId);
 
       setStatus('success');
-      setMessage(action === 'approve' 
-        ? 'Request approved successfully' 
+      setMessage(action === 'approve'
+        ? 'Request approved successfully'
         : 'Request rejected successfully');
     } catch (err) {
       console.error('Action error:', err);
@@ -123,16 +123,14 @@ export default function DepartmentActionPage() {
 
   if (loading) {
     return (
-      <BackgroundGradientAnimation>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </BackgroundGradientAnimation>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   return (
-    <BackgroundGradientAnimation>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full p-8 text-center">
           {status === 'success' ? (
@@ -162,6 +160,6 @@ export default function DepartmentActionPage() {
           ) : null}
         </GlassCard>
       </div>
-    </BackgroundGradientAnimation>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
+// import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -37,7 +37,7 @@ export default function StudentDetailView() {
           .eq('id', session.user.id)
           .single();
 
-        if (userError || !userData || (userData.role !== 'department' && userData.role !== 'registrar')) {
+        if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
           router.push('/unauthorized');
           return;
         }
@@ -72,7 +72,7 @@ export default function StudentDetailView() {
       setError('User information not loaded. Please refresh the page.');
       return;
     }
-    
+
     setApproving(true);
     setError('');
 
@@ -100,7 +100,7 @@ export default function StudentDetailView() {
         if (statusResult.success) {
           setStudentData(statusResult.data.form);
           setStatusData(statusResult.data.departmentStatuses);
-          
+
           // Navigate back to dashboard
           router.push('/staff/dashboard');
         }
@@ -120,12 +120,12 @@ export default function StudentDetailView() {
       setError('User information not loaded. Please refresh the page.');
       return;
     }
-    
+
     if (!rejectionReason.trim()) {
       setError('Rejection reason is required.');
       return;
     }
-    
+
     setRejecting(true);
     setError('');
 
@@ -154,7 +154,7 @@ export default function StudentDetailView() {
         if (statusResult.success) {
           setStudentData(statusResult.data.form);
           setStatusData(statusResult.data.departmentStatuses);
-          
+
           // Navigate back to dashboard
           router.push('/staff/dashboard');
         }
@@ -173,48 +173,42 @@ export default function StudentDetailView() {
 
   if (loading) {
     return (
-      <BackgroundGradientAnimation>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </BackgroundGradientAnimation>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <BackgroundGradientAnimation>
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <GlassCard className="max-w-2xl w-full p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Error Loading Student Data</h2>
-            <p className="text-red-400 mb-6">{error}</p>
-            <button 
-              onClick={() => router.back()} 
-              className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go Back
-            </button>
-          </GlassCard>
-        </div>
-      </BackgroundGradientAnimation>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center p-4">
+        <GlassCard className="max-w-2xl w-full p-8 text-center">
+          <h2 className="text-xl font-bold mb-4">Error Loading Student Data</h2>
+          <p className="text-red-400 mb-6">{error}</p>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </GlassCard>
+      </div>
     );
   }
 
   if (!studentData) {
     return (
-      <BackgroundGradientAnimation>
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <GlassCard className="max-w-2xl w-full p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Student Not Found</h2>
-            <button 
-              onClick={() => router.back()} 
-              className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go Back
-            </button>
-          </GlassCard>
-        </div>
-      </BackgroundGradientAnimation>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center p-4">
+        <GlassCard className="max-w-2xl w-full p-8 text-center">
+          <h2 className="text-xl font-bold mb-4">Student Not Found</h2>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back
+          </button>
+        </GlassCard>
+      </div>
     );
   }
 
@@ -222,7 +216,7 @@ export default function StudentDetailView() {
   const canApproveOrReject = user?.role === 'department' && userDepartmentStatus?.status === 'pending';
 
   return (
-    <BackgroundGradientAnimation>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
       <div className="min-h-screen py-12 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <GlassCard>
@@ -233,7 +227,7 @@ export default function StudentDetailView() {
                   <StatusBadge status={studentData.status} />
                 </div>
               </div>
-              
+
               <div className="text-sm text-gray-300">
                 {user?.full_name} ({user?.role})
               </div>
@@ -281,9 +275,9 @@ export default function StudentDetailView() {
                 {studentData.alumni_screenshot_url ? (
                   <div>
                     <div className="text-gray-400 mb-2">Alumni Verification Screenshot:</div>
-                    <img 
-                      src={studentData.alumni_screenshot_url} 
-                      alt="Alumni verification" 
+                    <img
+                      src={studentData.alumni_screenshot_url}
+                      alt="Alumni verification"
                       className="max-w-xs h-auto rounded-lg border border-white/20"
                     />
                   </div>
@@ -338,7 +332,7 @@ export default function StudentDetailView() {
                 >
                   {approving ? 'Approving...' : 'Approve Request'}
                 </button>
-                
+
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={rejecting}
@@ -354,7 +348,7 @@ export default function StudentDetailView() {
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
                 <GlassCard className="w-full max-w-md p-6">
                   <h3 className="text-lg font-semibold mb-4">Reject Request</h3>
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Rejection Reason</label>
                     <textarea
@@ -366,7 +360,7 @@ export default function StudentDetailView() {
                       required
                     />
                   </div>
-                  
+
                   <div className="flex justify-end gap-3">
                     <button
                       onClick={() => {
@@ -391,6 +385,6 @@ export default function StudentDetailView() {
           </GlassCard>
         </div>
       </div>
-    </BackgroundGradientAnimation>
+    </div>
   );
 }

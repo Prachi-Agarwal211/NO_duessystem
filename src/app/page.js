@@ -1,9 +1,96 @@
-"use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { FileCheck, Search, GraduationCap } from 'lucide-react';
+import PageWrapper from '@/components/landing/PageWrapper';
+import ActionCard from '@/components/landing/ActionCard';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Home() {
   const router = useRouter();
-  useEffect(() => { router.replace("/login"); }, [router]);
-  return null;
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  return (
+    <PageWrapper>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        
+        {/* Centered Header / Branding */}
+        <header className="flex flex-col items-center mb-16 text-center px-4 mt-10">
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`flex items-center justify-center gap-4 mb-8 px-6 py-2 border rounded-full backdrop-blur-md transition-colors duration-700 ease-smooth
+              ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/80 border-black/5 shadow-sm'}`}
+          >
+            <GraduationCap size={20} className="text-jecrc-red" />
+            <div className="flex items-baseline gap-2">
+              <span className={`font-serif text-lg tracking-wide transition-colors duration-700 ease-smooth ${isDark ? 'text-white' : 'text-black'}`}>
+                JECRC
+              </span>
+              <span className="font-sans text-[10px] font-bold text-gray-500 tracking-[0.2em] uppercase">
+                University
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Refined Title */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col items-center gap-3"
+          >
+            <span className="font-sans text-[11px] md:text-xs text-jecrc-red font-bold tracking-[0.6em] uppercase opacity-80">
+              Student Services
+            </span>
+            <h1 className={`font-serif text-5xl md:text-6xl lg:text-7xl tracking-tight transition-colors duration-700 ease-smooth 
+              ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70' : 'text-ink-black'}`}>
+              NO DUES
+            </h1>
+            
+            {/* Decorative Line */}
+            <div className="relative h-[1px] w-24 mt-6 overflow-hidden">
+              <div className={`absolute inset-0 transition-colors duration-700 ease-smooth ${isDark ? 'bg-white/20' : 'bg-black/10'}`}></div>
+              <motion.div 
+                initial={{ x: '-100%' }}
+                animate={{ x: '100%' }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-jecrc-red to-transparent"
+              />
+            </div>
+          </motion.div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="w-full max-w-5xl px-6 md:px-12 pb-12">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+            <ActionCard 
+              index={0}
+              title="Check Status"
+              subtitle="Track the status of your no dues application using your registration number."
+              icon={Search}
+              onClick={() => router.push('/student/check-status')}
+            />
+            <ActionCard 
+              index={1}
+              title="Submit Form"
+              subtitle="Submit a new no-dues application for semester end or degree completion."
+              icon={FileCheck}
+              onClick={() => router.push('/student/submit-form')}
+            />
+          </div>
+        </main>
+
+        {/* Minimal Footer */}
+        <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-60 hover:opacity-100 transition-opacity duration-500">
+          <div className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+            Jaipur Engineering College and Research Centre
+          </div>
+        </footer>
+      </div>
+    </PageWrapper>
+  );
 }

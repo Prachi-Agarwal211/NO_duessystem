@@ -17,14 +17,14 @@ export async function GET(request) {
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'registrar')) {
+    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     let stats = {};
 
-    if (profile.role === 'registrar') {
-      // Registrar gets stats for all departments
+    if (profile.role === 'admin') {
+      // Admin gets stats for all departments
       const { count: totalForms, error: totalError } = await supabase
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true });

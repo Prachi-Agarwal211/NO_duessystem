@@ -306,23 +306,5 @@ export const adminService = {
 
     if (error) throw error;
     return data;
-  },
-
-  // Get audit logs
-  async getAuditLogs(limit = 100) {
-    const { data, error } = await supabaseAdmin
-      .from('audit_log')
-      .select(`
-        *,
-        profiles (
-          full_name,
-          email
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data;
   }
 };

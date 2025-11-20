@@ -46,11 +46,11 @@ export async function PUT(request) {
       }, { status: 404 });
     }
 
-    // Verify user has staff or registrar role
-    if (profile.role !== 'department' && profile.role !== 'registrar') {
-      return NextResponse.json({ 
+    // Verify user has department or admin role (Phase 1: only 2 roles)
+    if (profile.role !== 'department' && profile.role !== 'admin') {
+      return NextResponse.json({
         success: false,
-        error: 'Unauthorized' 
+        error: 'Unauthorized'
       }, { status: 401 });
     }
 
@@ -192,30 +192,7 @@ export async function PUT(request) {
       }
     }
 
-    // Log the action in audit_log
-    const { error: auditError } = await supabase
-      .from('audit_log')
-      .insert({
-        user_id: userId,
-        action_type: 'status_update',
-        action_details: {
-          form_id: formId,
-          department_name: departmentName,
-          action: statusValue,
-          reason: reason || null,
-          student_name: form.student_name,
-          registration_no: form.registration_no
-        },
-        table_name: 'no_dues_status',
-        record_id: updatedStatus.id
-      });
-
-    if (auditError) {
-      console.error('Failed to log action:', auditError);
-      // Don't fail the request if logging fails
-    }
-
-    // Send email notification to student
+    // Send email notification to student (via contact number or profile email)
     const { data: studentProfile, error: studentError } = await supabase
       .from('no_dues_forms')
       .select('profiles!no_dues_forms_user_id_fkey(email)')

@@ -6,8 +6,7 @@ import {
   mockStatusRecords,
   mockStats,
   mockAuthResponse,
-  mockAuditLog,
-} from './mockData';
+} from '../__mocks__/mockData';
 
 // Helper function to check authentication
 const requireAuth = (req) => {
@@ -53,8 +52,6 @@ export const handlers = [
       return res(ctx.json(mockUsers.student));
     } else if (userId.includes('department')) {
       return res(ctx.json(mockUsers.department));
-    } else if (userId.includes('registrar')) {
-      return res(ctx.json(mockUsers.registrar));
     } else {
       return res(ctx.json(mockUsers.admin));
     }
@@ -146,7 +143,7 @@ export const handlers = [
     const url = new URL(req.url);
     const userId = url.searchParams.get('userId');
 
-    if (userId.includes('registrar')) {
+    if (userId.includes('admin')) {
       return res(ctx.json({
         success: true,
         data: {
@@ -249,11 +246,6 @@ export const handlers = [
     }
 
     return res(ctx.status(400), ctx.json({ error: 'Invalid report type' }));
-  }),
-
-  // Audit Log API
-  rest.get('https://test.supabase.co/rest/v1/audit_log*', (req, res, ctx) => {
-    return res(ctx.json(mockAuditLog));
   }),
 
   // Storage API (for file uploads)

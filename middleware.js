@@ -20,13 +20,13 @@ export async function middleware(request) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value, options);
           });
-          
+
           response = NextResponse.next({
             request: {
               headers: request.headers,
             },
           });
-          
+
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -40,14 +40,13 @@ export async function middleware(request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Define protected routes and their required roles
+  // Define protected routes and their required roles (Phase 1: ONLY department/admin)
   const protectedRoutes = {
     '/admin': ['admin'],
     '/admin/dashboard': ['admin'],
     '/admin/request': ['admin'],
-    '/staff/dashboard': ['department', 'registrar', 'admin'],
-    '/staff/student': ['department', 'registrar', 'admin'],
-    // Add more protected routes as needed
+    '/staff/dashboard': ['department', 'admin'],
+    '/staff/student': ['department', 'admin'],
   };
 
   // Check if the current path is protected
@@ -64,11 +63,9 @@ export async function middleware(request) {
   }
 
   if (isProtected) {
-    // If not authenticated, redirect to login
+    // If not authenticated, redirect to home (Phase 1: no login page for students)
     if (!user) {
-      const redirectUrl = new URL('/login', request.url);
-      redirectUrl.searchParams.set('redirect', currentPath);
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(new URL('/', request.url));
     }
 
     // Check user role
@@ -79,33 +76,9 @@ export async function middleware(request) {
       .single();
 
     if (error || !profile || !requiredRoles.includes(profile.role)) {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      // Unauthorized: redirect to home (Phase 1: no unauthorized page)
+      return NextResponse.redirect(new URL('/', request.url));
     }
-  }
-
-  // Redirect authenticated users away from auth pages
-  const authPages = ['/login', '/signup', '/forgot-password', '/reset-password'];
-  if (authPages.some(page => currentPath.startsWith(page)) && user) {
-    // Get user role to redirect appropriately
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    
-    let redirectPath = '/';
-    
-    if (!error && profile) {
-      if (profile.role === 'student') {
-        redirectPath = '/no-dues-form';
-      } else if (profile.role === 'department' || profile.role === 'registrar') {
-        redirectPath = '/staff/dashboard';
-      } else if (profile.role === 'admin') {
-        redirectPath = '/admin';
-      }
-    }
-    
-    return NextResponse.redirect(new URL(redirectPath, request.url));
   }
 
   return response;

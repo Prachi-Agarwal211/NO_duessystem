@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Manrope:wght@300;400;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,13 +9,37 @@
   --red: #dc2626;
   --red-700: #b91c1c;
   --white: #ffffff;
+  --jecrc-red: #C41E3A;
+  --deep-black: #050505;
+  --ink-black: #111111;
 }
 
 html, body, #__next { height: 100%; }
 
 body {
+  margin: 0;
+  overflow-x: hidden;
+  cursor: none; /* Custom cursor will be used */
   background: linear-gradient(180deg, #0b0b0b, #0a0a0a);
   color: var(--white);
+}
+
+/* Hide default scrollbar */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Smooth transitions */
+.smooth-transition {
+  transition-property: all;
+  transition-duration: 700ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Interactive elements (for custom cursor) */
+.interactive {
+  cursor: none;
 }
 
 /***** Glass card *****/

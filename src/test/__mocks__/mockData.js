@@ -20,16 +20,6 @@ export const mockUsers = {
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
   },
-  registrar: {
-    id: 'registrar-uuid-1',
-    email: 'registrar@test.com',
-    full_name: 'Test Registrar',
-    role: 'registrar',
-    registration_no: null,
-    department_name: null,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-  },
   admin: {
     id: 'admin-uuid-1',
     email: 'admin@test.com',
@@ -46,7 +36,7 @@ export const mockDepartments = [
   { name: 'LIBRARY', display_name: 'Library', display_order: 1 },
   { name: 'IT_DEPARTMENT', display_name: 'IT Department', display_order: 2 },
   { name: 'HOSTEL', display_name: 'Hostel', display_order: 3 },
-  { name: 'REGISTRAR', display_name: 'Registrar', display_order: 4 },
+  { name: 'ACCOUNTS', display_name: 'Accounts Department', display_order: 4 },
 ];
 
 export const mockForms = {
@@ -170,22 +160,7 @@ export const mockAuthResponse = {
   },
 };
 
-export const mockAuditLog = [
-  {
-    id: 'audit-uuid-1',
-    user_id: 'department-uuid-1',
-    action_type: 'status_update',
-    action_details: {
-      form_id: 'form-uuid-1',
-      department_name: 'LIBRARY',
-      action: 'approved',
-      student_name: 'Test Student',
-    },
-    table_name: 'no_dues_status',
-    record_id: 'status-uuid-1',
-    created_at: '2024-01-02T00:00:00Z',
-  },
-];
+// Removed mockAuditLog - audit_log table doesn't exist in Phase 1
 
 // Helper functions for tests
 export const createMockResponse = (data, ok = true, status = 200) => ({

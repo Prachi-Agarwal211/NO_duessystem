@@ -1,5 +1,5 @@
 // This is a server-side utility for generating certificates as PDFs
-// Using jsPDF for PDF generation
+// Using jsPDF for PDF generation with JECRC branding
 
 import { jsPDF } from 'jspdf';
 import { createClient } from '@supabase/supabase-js';
@@ -9,6 +9,9 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// JECRC Red color in RGB
+const JECRC_RED = [196, 30, 58]; // #C41E3A
 
 export const generateCertificate = async (certificateData) => {
   try {
@@ -23,78 +26,139 @@ export const generateCertificate = async (certificateData) => {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     
-    // Add certificate border
-    pdf.setDrawColor(139, 69, 19); // Brown color
-    pdf.setLineWidth(2);
-    pdf.rect(20, 20, pageWidth - 40, pageHeight - 40);
+    // Add decorative border with JECRC red
+    pdf.setDrawColor(...JECRC_RED);
+    pdf.setLineWidth(3);
+    pdf.rect(15, 15, pageWidth - 30, pageHeight - 30);
     
     // Add inner border
     pdf.setLineWidth(1);
-    pdf.rect(25, 25, pageWidth - 50, pageHeight - 50);
+    pdf.rect(20, 20, pageWidth - 40, pageHeight - 40);
     
-    // Add title
-    pdf.setFontSize(32);
+    // Add decorative corner accents
+    pdf.setFillColor(...JECRC_RED);
+    const cornerSize = 8;
+    // Top-left corner
+    pdf.rect(20, 20, cornerSize, cornerSize, 'F');
+    // Top-right corner
+    pdf.rect(pageWidth - 20 - cornerSize, 20, cornerSize, cornerSize, 'F');
+    // Bottom-left corner
+    pdf.rect(20, pageHeight - 20 - cornerSize, cornerSize, cornerSize, 'F');
+    // Bottom-right corner
+    pdf.rect(pageWidth - 20 - cornerSize, pageHeight - 20 - cornerSize, cornerSize, cornerSize, 'F');
+    
+    // Add JECRC header
+    pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(139, 69, 19);
-    pdf.text('NO DUES CERTIFICATE', pageWidth / 2, 60, { align: 'center' });
+    pdf.setTextColor(...JECRC_RED);
+    pdf.text('JECRC UNIVERSITY', pageWidth / 2, 40, { align: 'center' });
+    
+    // Add subtitle
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 48, { align: 'center' });
+    
+    // Add certificate title with background
+    pdf.setFillColor(...JECRC_RED);
+    pdf.rect(pageWidth / 2 - 80, 58, 160, 16, 'F');
+    pdf.setFontSize(28);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('NO DUES CERTIFICATE', pageWidth / 2, 69, { align: 'center' });
     
     // Add certificate content
     pdf.setFontSize(16);
-    pdf.setFont('times', 'normal');
+    pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(0, 0, 0);
-    pdf.text('This is to certify that', pageWidth / 2, 90, { align: 'center' });
+    pdf.text('This is to certify that', pageWidth / 2, 85, { align: 'center' });
     
-    // Add student name
-    pdf.setFontSize(24);
+    // Add student name with underline
+    pdf.setFontSize(22);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(certificateData.studentName, pageWidth / 2, 110, { align: 'center' });
+    pdf.setTextColor(...JECRC_RED);
+    pdf.text(certificateData.studentName, pageWidth / 2, 100, { align: 'center' });
+    pdf.setLineWidth(0.5);
+    pdf.setDrawColor(...JECRC_RED);
+    pdf.line(pageWidth / 2 - 70, 102, pageWidth / 2 + 70, 102);
     
     // Add registration number
-    pdf.setFontSize(16);
-    pdf.setFont('times', 'normal');
-    const regText = `bearing Registration No. ${certificateData.registrationNo}`;
-    pdf.text(regText, pageWidth / 2, 130, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(0, 0, 0);
+    const regText = `Registration No.: ${certificateData.registrationNo}`;
+    pdf.text(regText, pageWidth / 2, 112, { align: 'center' });
     
     // Add main certificate text
-    pdf.text('has cleared all dues from all departments of JECRC College.', pageWidth / 2, 150, { align: 'center' });
+    pdf.setFontSize(15);
+    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 125, { align: 'center' });
+    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 135, { align: 'center' });
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 145, { align: 'center' });
     
-    // Add details
-    pdf.setFontSize(14);
+    // Add details box
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.5);
+    pdf.rect(pageWidth / 2 - 80, 155, 160, 30);
+    
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(12);
     const details = [
       `Course: ${certificateData.course || 'N/A'}`,
       `Branch: ${certificateData.branch || 'N/A'}`,
       `Session: ${certificateData.sessionFrom || 'N/A'} - ${certificateData.sessionTo || 'N/A'}`
     ];
     
-    let yPos = 175;
+    let yPos = 163;
     details.forEach(detail => {
       pdf.text(detail, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 10;
+      yPos += 8;
     });
     
     // Add declaration
-    pdf.text('The student is hereby relieved of all financial obligations to the institution.', pageWidth / 2, yPos + 10, { align: 'center' });
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'italic');
+    pdf.text('The student is hereby confirmed to have no outstanding financial or material', pageWidth / 2, 195, { align: 'center' });
+    pdf.text('obligations to any department of the university.', pageWidth / 2, 202, { align: 'center' });
     
-    // Add date
-    const issueDate = new Date().toLocaleDateString('en-US', {
+    // Add date with icon
+    const issueDate = new Date().toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
-    pdf.setFontSize(12);
-    pdf.text(`Date of Issue: ${issueDate}`, pageWidth / 2, pageHeight - 70, { align: 'center' });
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Date of Issue: ${issueDate}`, pageWidth / 2, pageHeight - 60, { align: 'center' });
     
-    // Add signature lines
+    // Add signature section with better styling
+    pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 4 - 50, pageHeight - 40, pageWidth / 4 + 50, pageHeight - 40);
-    pdf.line(3 * pageWidth / 4 - 50, pageHeight - 40, 3 * pageWidth / 4 + 50, pageHeight - 40);
     
-    // Add signature labels
-    pdf.setFontSize(12);
-    pdf.text('Registrar', pageWidth / 4, pageHeight - 30, { align: 'center' });
-    pdf.text('JECRC College', pageWidth / 4, pageHeight - 20, { align: 'center' });
-    pdf.text('Controller of Examinations', 3 * pageWidth / 4, pageHeight - 30, { align: 'center' });
-    pdf.text('JECRC College', 3 * pageWidth / 4, pageHeight - 20, { align: 'center' });
+    // Left signature
+    pdf.line(40, pageHeight - 40, 100, pageHeight - 40);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Registrar', 70, pageHeight - 33, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.text('JECRC University', 70, pageHeight - 27, { align: 'center' });
+    
+    // Right signature
+    pdf.setDrawColor(...JECRC_RED);
+    pdf.line(pageWidth - 100, pageHeight - 40, pageWidth - 40, pageHeight - 40);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Controller of Examinations', pageWidth - 70, pageHeight - 33, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.text('JECRC University', pageWidth - 70, pageHeight - 27, { align: 'center' });
+    
+    // Add certificate ID at bottom
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 100, 100);
+    const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
+    pdf.text(certId, pageWidth / 2, pageHeight - 10, { align: 'center' });
     
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
