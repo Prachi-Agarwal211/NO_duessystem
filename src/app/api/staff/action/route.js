@@ -152,7 +152,7 @@ export async function PUT(request) {
     if (allApproved) {
       const { data: updatedForm, error: formUpdateError } = await supabase
         .from('no_dues_forms')
-        .update({ 
+        .update({
           status: 'completed',
           updated_at: new Date().toISOString()
         })
@@ -161,13 +161,48 @@ export async function PUT(request) {
         .single();
 
       if (formUpdateError) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: false,
-          error: formUpdateError.message 
+          error: formUpdateError.message
         }, { status: 500 });
       }
 
       formStatusUpdate = updatedForm;
+
+      // ==================== AUTO-GENERATE CERTIFICATE ====================
+      // When all departments approve, automatically generate the certificate
+      try {
+        console.log(`🎓 All departments approved - generating certificate for form ${formId}`);
+        
+        const certificateResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ formId })
+          }
+        );
+
+        const certificateResult = await certificateResponse.json();
+        
+        if (certificateResult.success) {
+          console.log(`✅ Certificate generated successfully: ${certificateResult.certificateUrl}`);
+          
+          // Update form status update to include certificate info
+          formStatusUpdate = {
+            ...formStatusUpdate,
+            certificate_url: certificateResult.certificateUrl,
+            final_certificate_generated: true
+          };
+        } else {
+          console.error('❌ Certificate generation failed:', certificateResult.error);
+          // Don't fail the approval if certificate generation fails
+          // The certificate can be generated manually later
+        }
+      } catch (certError) {
+        console.error('❌ Certificate generation error:', certError);
+        // Don't fail the approval if certificate generation fails
+      }
     } else {
       // Update form status to in_progress if it was pending
       if (form.status === 'pending') {
@@ -192,25 +227,38 @@ export async function PUT(request) {
       }
     }
 
-    // Send email notification to student (via contact number or profile email)
-    const { data: studentProfile, error: studentError } = await supabase
-      .from('no_dues_forms')
-      .select('profiles!no_dues_forms_user_id_fkey(email)')
-      .eq('id', formId)
-      .single();
-
-    if (!studentError && studentProfile?.profiles?.email) {
+    // Send email notification to student
+    // Phase 1: Students have no authentication/profiles, so we can't send email notifications
+    // In future phases, add email field to no_dues_forms table or create student profiles
+    
+    // Note: Email notification currently disabled for Phase 1
+    // To enable: Add student_email field to no_dues_forms table
+    // Then uncomment and update the code below:
+    
+    /*
+    if (form.student_email) {
       try {
-        await sendStatusUpdateNotification({
-          email: studentProfile.profiles.email,
+        const { sendStatusUpdateToStudent } = await import('@/lib/emailService');
+        await sendStatusUpdateToStudent({
+          studentEmail: form.student_email,
           studentName: form.student_name,
-          action: statusValue
+          registrationNo: form.registration_no,
+          departmentName: departmentName,
+          action: statusValue,
+          rejectionReason: action === 'reject' ? reason : null,
+          statusUrl: `${process.env.NEXT_PUBLIC_APP_URL}/student/check-status?reg=${form.registration_no}`
         });
+        console.log(`📧 Status update email sent to student: ${form.student_email}`);
       } catch (emailError) {
-        console.error('Failed to send email notification:', emailError);
+        console.error('Failed to send email notification to student:', emailError);
         // Don't fail the request if email fails
       }
+    } else {
+      console.log('ℹ️ Student email not available - skipping email notification');
     }
+    */
+    
+    console.log('ℹ️ Phase 1: Student email notifications disabled (no student_email field)');
 
     return NextResponse.json({ 
       success: true,

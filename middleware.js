@@ -63,9 +63,12 @@ export async function middleware(request) {
   }
 
   if (isProtected) {
-    // If not authenticated, redirect to home (Phase 1: no login page for students)
+    // If not authenticated, redirect to staff login page
     if (!user) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const loginUrl = new URL('/staff/login', request.url);
+      // Preserve the original URL as return path
+      loginUrl.searchParams.set('returnUrl', currentPath);
+      return NextResponse.redirect(loginUrl);
     }
 
     // Check user role
@@ -76,8 +79,8 @@ export async function middleware(request) {
       .single();
 
     if (error || !profile || !requiredRoles.includes(profile.role)) {
-      // Unauthorized: redirect to home (Phase 1: no unauthorized page)
-      return NextResponse.redirect(new URL('/', request.url));
+      // Unauthorized: redirect to unauthorized page
+      return NextResponse.redirect(new URL('/unauthorized', request.url));
     }
   }
 

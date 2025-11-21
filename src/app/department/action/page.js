@@ -48,7 +48,7 @@ export default function DepartmentActionPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         // If not logged in, redirect to login with return URL
-        router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+        router.push(`/staff/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         return;
       }
 

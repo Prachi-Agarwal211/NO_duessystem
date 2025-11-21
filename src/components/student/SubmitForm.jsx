@@ -79,21 +79,29 @@ export default function SubmitForm() {
   const uploadFile = async (file) => {
     if (!file) return null;
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${formData.registration_no}-${Date.now()}.${fileExt}`;
-    const filePath = `alumni-screenshots/${fileName}`;
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${formData.registration_no}-${Date.now()}.${fileExt}`;
+      const filePath = `alumni-screenshots/${fileName}`;
 
-    const { data, error } = await supabase.storage
-      .from('alumni-screenshots')
-      .upload(filePath, file);
+      const { data, error } = await supabase.storage
+        .from('alumni-screenshots')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('alumni-screenshots')
-      .getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage
+        .from('alumni-screenshots')
+        .getPublicUrl(filePath);
 
-    return publicUrl;
+      return publicUrl;
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw new Error('Failed to upload file. Please try again.');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -195,31 +203,38 @@ export default function SubmitForm() {
         course: formData.course?.trim() || null,
         branch: formData.branch?.trim() || null,
         contact_no: formData.contact_no.trim(),
-        alumni_screenshot_url: fileUrl,
-        status: 'pending'
+        alumni_screenshot_url: fileUrl
       };
 
-      // Insert form with error handling
-      const { data, error: insertError } = await supabase
-        .from('no_dues_forms')
-        .insert([sanitizedData])
-        .select()
-        .single();
+      // ==================== SUBMIT VIA API ROUTE ====================
+      // This ensures server-side validation and email notifications
+      
+      const response = await fetch('/api/student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sanitizedData),
+      });
 
-      if (insertError) {
-        // Handle specific database errors
-        if (insertError.code === '23505') {
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        // Handle API errors
+        if (response.status === 409 || result.duplicate) {
           throw new Error('A form with this registration number already exists. Redirecting to status page...');
         }
-        throw new Error(insertError.message || 'Database error occurred');
+        throw new Error(result.error || 'Failed to submit form');
       }
 
-      if (!data) {
+      if (!result.data) {
         throw new Error('Failed to create form record');
       }
 
-      setFormId(data.id);
+      setFormId(result.data.id);
       setSuccess(true);
+
+      console.log('✅ Form submitted successfully:', result.data.id);
 
       // Redirect to status page after 3 seconds
       setTimeout(() => {
@@ -308,15 +323,15 @@ export default function SubmitForm() {
           onClick={checkExistingForm}
           disabled={checking || !formData.registration_no}
           className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2
-            ${isDark 
-              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20' 
+            ${isDark
+              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
               : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {checking ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Checking
+              Checking...
             </>
           ) : (
             'Check'

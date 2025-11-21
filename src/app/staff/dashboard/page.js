@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { useTheme } from '@/contexts/ThemeContext';
+import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import DataTable from '@/components/ui/DataTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -14,13 +16,15 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        router.push('/login');
+        router.push('/staff/login');
         return;
       }
 
@@ -74,29 +78,36 @@ export default function StaffDashboard() {
     'student_name': request.student_name,
     'registration_no': request.registration_no,
     'status': request.status,
-    'date': new Date(request.created_at).toLocaleDateString()
+    'date': new Date(request.created_at).toLocaleDateString(),
+    'id': request.id
   }));
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
-      <div className="min-h-screen py-12 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto">
+    <PageWrapper>
+      <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
           <GlassCard>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-              <h1 className="text-2xl font-bold">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+              <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
                 {user?.role === 'admin'
                   ? 'Admin Dashboard'
                   : `${user?.department_name || 'Department'} Dashboard`}
               </h1>
-              <div className="text-sm text-gray-300">
+              <div className={`text-sm transition-colors duration-700 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 Welcome, {user?.full_name}
               </div>
             </div>
@@ -110,7 +121,9 @@ export default function StaffDashboard() {
             </div>
 
             <div className="mb-4">
-              <h2 className="text-xl font-semibold mb-4">
+              <h2 className={`text-lg sm:text-xl font-semibold mb-4 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
                 {user?.role === 'admin'
                   ? 'All Pending Requests'
                   : 'Pending Requests for Your Department'}
@@ -123,7 +136,9 @@ export default function StaffDashboard() {
                   onRowClick={handleRowClick}
                 />
               ) : (
-                <div className="text-center py-8 text-gray-400">
+                <div className={`text-center py-8 transition-colors duration-700 ${
+                  isDark ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   {searchTerm ? 'No matching requests found' : 'No pending requests'}
                 </div>
               )}
@@ -131,6 +146,6 @@ export default function StaffDashboard() {
           </GlassCard>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

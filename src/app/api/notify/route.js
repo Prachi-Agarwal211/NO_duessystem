@@ -1,82 +1,131 @@
 import { NextResponse } from "next/server";
 import { sendDepartmentNotification } from '@/lib/emailService';
 
+/**
+ * POST /api/notify
+ * Send email notification to a specific department about a new form submission
+ * 
+ * This route is called per-department to send individual notifications
+ * For bulk notifications, use the emailService directly
+ */
+
+// Department email mapping
+const DEPARTMENT_EMAILS = {
+  'Library': process.env.LIBRARY_EMAIL || 'library@jecrc.ac.in',
+  'Hostel': process.env.HOSTEL_EMAIL || 'hostel@jecrc.ac.in',
+  'Academics': process.env.ACADEMICS_EMAIL || 'academics@jecrc.ac.in',
+  'Finance': process.env.FINANCE_EMAIL || 'finance@jecrc.ac.in',
+  'Sports': process.env.SPORTS_EMAIL || 'sports@jecrc.ac.in',
+  'Training & Placement': process.env.TNP_EMAIL || 'placement@jecrc.ac.in',
+  'Student Activities': process.env.ACTIVITIES_EMAIL || 'activities@jecrc.ac.in',
+  'Transport': process.env.TRANSPORT_EMAIL || 'transport@jecrc.ac.in',
+  'Medical': process.env.MEDICAL_EMAIL || 'medical@jecrc.ac.in',
+  'Security': process.env.SECURITY_EMAIL || 'security@jecrc.ac.in',
+  'IT & Infrastructure': process.env.IT_EMAIL || 'it@jecrc.ac.in',
+  'Other Departments': process.env.OTHER_DEPT_EMAIL || 'admin@jecrc.ac.in'
+};
+
+/**
+ * Create error response helper
+ */
+function createErrorResponse(message, status = 500, type = 'general') {
+  return NextResponse.json({
+    success: false,
+    error: message,
+    type,
+    timestamp: new Date().toISOString()
+  }, { status });
+}
+
+/**
+ * Escape HTML to prevent XSS in emails
+ */
+function escapeHtml(str) {
+  return String(str || "")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """)
+    .replace(/'/g, "&#039;");
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
     const {
       student_name = "",
       registration_no = "",
-      contact_no = "",
-      department = "Library",
-      user_id,
+      department = "",
       form_id,
     } = body || {};
 
-    // Validation
-    if (!user_id || !form_id) {
-      return createErrorResponse("User ID and Form ID are required.", 400, 'validation');
+    // ==================== VALIDATION ====================
+    
+    if (!form_id) {
+      return createErrorResponse("Form ID is required", 400, 'validation');
+    }
+
+    if (!student_name || !registration_no) {
+      return createErrorResponse("Student name and registration number are required", 400, 'validation');
+    }
+
+    if (!department) {
+      return createErrorResponse("Department is required", 400, 'validation');
     }
 
     // Get the target email for the department
-    const toEmail = departmentEmails[department];
+    const toEmail = DEPARTMENT_EMAILS[department];
     if (!toEmail) {
-      return createErrorResponse(`No email configured for ${department}`, 400, 'email-config');
+      return createErrorResponse(
+        `No email configured for department: ${department}`,
+        400,
+        'email-config'
+      );
     }
 
-    // Generate action URL using centralized JWT service
-    const actionUrl = await createActionUrl({ user_id, form_id, department });
+    // ==================== SEND EMAIL ====================
+    
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
 
-    const fromEmail = process.env.RESEND_FROM || "JECRC No Dues <noreply@jecrc.edu.in>";
-    const subject = `No Dues Request: ${student_name || "Unknown Student"}`;
+    try {
+      const result = await sendDepartmentNotification({
+        departmentEmail: toEmail,
+        studentName: escapeHtml(student_name),
+        registrationNo: escapeHtml(registration_no),
+        formId: form_id,
+        dashboardUrl
+      });
 
-    const text = `A student has requested No Dues clearance.\n\nStudent: ${student_name}\nRegistration No: ${registration_no}\nContact No: ${contact_no}\nDepartment: ${department}\n\nPlease review and take action: ${actionUrl.toString()}`;
+      if (!result.success) {
+        return createErrorResponse(
+          "Failed to send notification email",
+          500,
+          'email-send'
+        );
+      }
 
-    const html = `
-      <div style="font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height:1.6; background-color: #1a1a1a; color: #f0f0f0; padding: 20px; border-radius: 12px; max-width: 600px; margin: auto; border: 1px solid #333;">
-        <h2 style="margin:0 0 12px; color: #fff;">No Dues Request Submitted</h2>
-        <p style="margin:0 0 16px; color: #ccc;">A student has requested No Dues clearance. Please review and take action using the button below.</p>
-        <table style="border-collapse:collapse; width: 100%; border: 1px solid #444; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
-          <tbody>
-            <tr><td style="padding:8px 12px;color:#aaa; border-bottom: 1px solid #444;">Student</td><td style="padding:8px 12px;font-weight:600; color: #fff; border-bottom: 1px solid #444;">${escapeHtml(student_name)}</td></tr>
-            <tr><td style="padding:8px 12px;color:#aaa; border-bottom: 1px solid #444;">Registration No</td><td style="padding:8px 12px; color: #fff; border-bottom: 1px solid #444;">${escapeHtml(registration_no)}</td></tr>
-            <tr><td style="padding:8px 12px;color:#aaa; border-bottom: 1px solid #444;">Contact No</td><td style="padding:8px 12px; color: #fff; border-bottom: 1px solid #444;">${escapeHtml(contact_no)}</td></tr>
-            <tr><td style="padding:8px 12px;color:#aaa;">Department</td><td style="padding:8px 12px;font-weight:600; color: #fff;">${escapeHtml(department)}</td></tr>
-          </tbody>
-        </table>
-        <a href="${actionUrl.toString()}" style="display: inline-block; background: #b22222; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 16px;">Review Request</a>
-        <p style="margin-top: 16px; font-size: 12px; color: #888;">If the button doesn't work, copy and paste this URL into your browser:<br>${actionUrl.toString()}</p>
-      </div>
-    `;
+      return NextResponse.json({
+        success: true,
+        message: "Notification sent successfully",
+        department,
+        timestamp: new Date().toISOString()
+      });
 
-    const result = await resend.emails.send({
-      from: fromEmail,
-      to: [toEmail],
-      subject,
-      text,
-      html,
-    });
-
-    if (result?.error) {
-      return createErrorResponse("Failed to send notification email", 500, 'email-send');
+    } catch (emailError) {
+      console.error('Email send error:', emailError);
+      return createErrorResponse(
+        "Failed to send email notification",
+        500,
+        'email-send'
+      );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Notification sent successfully",
-      timestamp: new Date().toISOString()
-    });
   } catch (error) {
-    return createErrorResponse("Internal server error", 500, 'general');
+    console.error('Notify API Error:', error);
+    return createErrorResponse(
+      "Internal server error",
+      500,
+      'general'
+    );
   }
-}
-
-// Small helper to avoid HTML injection in the email body
-function escapeHtml(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }

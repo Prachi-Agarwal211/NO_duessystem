@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useTheme } from '@/contexts/ThemeContext';
+import PageWrapper from '@/components/landing/PageWrapper';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import DataTable from '@/components/ui/DataTable';
@@ -11,6 +13,9 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 
 export default function AdminDashboard() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
@@ -162,7 +167,7 @@ export default function AdminDashboard() {
     'actions': (
       <button
         onClick={() => window.location.href = `/admin/request/${app.id}`}
-        className="text-blue-500 hover:underline"
+        className="text-jecrc-red hover:underline font-medium"
       >
         View Details
       </button>
@@ -171,182 +176,246 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-red-900/20 border border-red-500/50 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-bold text-red-300 mb-4">Error Loading Dashboard</h2>
-          <p className="text-red-400 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg"
-          >
-            Retry
-          </button>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className={`max-w-md w-full rounded-lg p-6 text-center backdrop-blur-md transition-all duration-700 ${
+            isDark 
+              ? 'bg-red-900/20 border border-red-500/50' 
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${
+              isDark ? 'text-red-300' : 'text-red-700'
+            }`}>
+              Error Loading Dashboard
+            </h2>
+            <p className={`mb-6 transition-colors duration-700 ${
+              isDark ? 'text-red-400' : 'text-red-600'
+            }`}>
+              {error}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-300"
+            >
+              Retry
+            </button>
+          </div>
         </div>
-      </div>
+      </PageWrapper>
     );
   }
 
   const statusCounts = getStatusCounts();
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-gray-400 mt-2">Monitor and manage all no-dues requests</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400">
-              Welcome, {user?.full_name}
+    <PageWrapper>
+      <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className={`text-3xl sm:text-4xl font-bold transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
+                Admin Dashboard
+              </h1>
+              <p className={`mt-2 transition-colors duration-700 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Monitor and manage all no-dues requests
+              </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm"
+            <div className="flex items-center gap-4">
+              <div className={`text-sm transition-colors duration-700 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Welcome, {user?.full_name}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg text-sm text-white font-medium transition-all duration-300"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <StatsCard
+              title="Total Requests"
+              value={statusCounts?.total_requests || 0}
+              change={statusCounts ? `+${(statusCounts.total_requests - (statusCounts.total_requests || 0) + 100)}%` : '0%'}
+              trend="up"
+              color="bg-blue-500"
+            />
+            <StatsCard
+              title="Completed"
+              value={statusCounts?.completed_requests || 0}
+              change={statusCounts ? `+${(statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1) * 100).toFixed(1)}%` : '0%'}
+              trend="up"
+              color="bg-green-500"
+            />
+            <StatsCard
+              title="Pending"
+              value={statusCounts?.pending_requests || 0}
+              change={statusCounts ? `-${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1) * 100)).toFixed(1)}%` : '0%'}
+              trend="down"
+              color="bg-yellow-500"
+            />
+            <StatsCard
+              title="Rejected"
+              value={statusCounts?.rejected_requests || 0}
+              change={statusCounts ? `-${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1) * 100)).toFixed(1)}%` : '0%'}
+              trend="down"
+              color="bg-red-500"
+            />
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+            {stats?.departmentStats && (
+              <DepartmentPerformanceChart data={stats.departmentStats} />
+            )}
+            <RequestTrendChart />
+          </div>
+
+          {/* Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <SearchBar
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search by student name or registration..."
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={`px-4 py-2 min-h-[44px] rounded-lg focus:ring-2 focus:ring-jecrc-red focus:outline-none transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gray-800 border border-gray-700 text-white' 
+                  : 'bg-white border border-gray-300 text-ink-black'
+              }`}
             >
-              Logout
-            </button>
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className={`px-4 py-2 min-h-[44px] rounded-lg focus:ring-2 focus:ring-jecrc-red focus:outline-none transition-all duration-300 ${
+                isDark 
+                  ? 'bg-gray-800 border border-gray-700 text-white' 
+                  : 'bg-white border border-gray-300 text-ink-black'
+              }`}
+            >
+              <option value="">All Departments</option>
+              <option value="LIBRARY">Library</option>
+              <option value="HOSTEL">Hostel</option>
+              <option value="IT_DEPARTMENT">IT Department</option>
+            </select>
+            <div className={`text-sm flex items-center transition-colors duration-700 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Showing {filteredApplications.length} of {totalItems} requests
+            </div>
           </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            title="Total Requests"
-            value={statusCounts?.total_requests || 0}
-            change={statusCounts ? `+${(statusCounts.total_requests - (statusCounts.total_requests || 0) + 100)}%` : '0%'}
-            trend="up"
-            color="bg-blue-500"
-          />
-          <StatsCard
-            title="Completed"
-            value={statusCounts?.completed_requests || 0}
-            change={statusCounts ? `+${(statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1) * 100).toFixed(1)}%` : '0%'}
-            trend="up"
-            color="bg-green-500"
-          />
-          <StatsCard
-            title="Pending"
-            value={statusCounts?.pending_requests || 0}
-            change={statusCounts ? `-${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1) * 100)).toFixed(1)}%` : '0%'}
-            trend="down"
-            color="bg-yellow-500"
-          />
-          <StatsCard
-            title="Rejected"
-            value={statusCounts?.rejected_requests || 0}
-            change={statusCounts ? `-${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1) * 100)).toFixed(1)}%` : '0%'}
-            trend="down"
-            color="bg-red-500"
-          />
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {stats?.departmentStats && (
-            <DepartmentPerformanceChart data={stats.departmentStats} />
-          )}
-          <RequestTrendChart />
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <SearchBar
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder="Search by student name or registration..."
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">All Departments</option>
-            <option value="LIBRARY">Library</option>
-            <option value="HOSTEL">Hostel</option>
-            <option value="IT_DEPARTMENT">IT Department</option>
-            <option value="REGISTRAR">Registrar</option>
-            {/* Add more departments as needed */}
-          </select>
-          <div className="text-sm text-gray-400 flex items-center">
-            Showing {filteredApplications.length} of {totalItems} requests
-          </div>
-        </div>
-
-        {/* Applications Table */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Applications Table */}
+          <div className={`rounded-xl border overflow-hidden backdrop-blur-sm transition-all duration-700 ${
+            isDark 
+              ? 'bg-gray-800/50 border-gray-700' 
+              : 'bg-white border-gray-200 shadow-sm'
+          }`}>
             <DataTable
               headers={tableHeaders}
               data={tableData}
               className="w-full min-w-full"
             />
-          </div>
-          
-          {/* Pagination */}
-          <div className="flex items-center justify-between p-4 border-t border-gray-700">
-            <div className="text-sm text-gray-400">
-              Page {currentPage} of {totalPages}
+            
+            {/* Pagination */}
+            <div className={`flex flex-col sm:flex-row items-center justify-between p-4 border-t gap-3 transition-colors duration-700 ${
+              isDark ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className={`text-sm transition-colors duration-700 ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 min-h-[44px] rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                  }`}
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 min-h-[44px] rounded-lg font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isDark 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
           </div>
-        </div>
 
-        {/* Recent Activity */}
-        {stats?.recentActivity && stats.recentActivity.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-              <ul className="space-y-3">
-                {stats.recentActivity.slice(0, 5).map((activity, index) => (
-                  <li key={index} className="flex justify-between items-center py-2 border-b border-gray-700 last:border-b-0">
-                    <div>
-                      <span className="font-medium">{activity.student_name}</span> - {activity.department_name}
-                    </div>
-                    <div className="text-sm text-gray-400">
-                      {new Date(activity.action_at).toLocaleDateString()}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          {/* Recent Activity */}
+          {stats?.recentActivity && stats.recentActivity.length > 0 && (
+            <div className="mt-6 sm:mt-8">
+              <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
+                Recent Activity
+              </h2>
+              <div className={`rounded-xl border p-6 backdrop-blur-sm transition-all duration-700 ${
+                isDark 
+                  ? 'bg-gray-800/50 border-gray-700' 
+                  : 'bg-white border-gray-200 shadow-sm'
+              }`}>
+                <ul className="space-y-3">
+                  {stats.recentActivity.slice(0, 5).map((activity, index) => (
+                    <li key={index} className={`flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 border-b last:border-b-0 gap-2 transition-colors duration-700 ${
+                      isDark ? 'border-gray-700' : 'border-gray-200'
+                    }`}>
+                      <div className={`transition-colors duration-700 ${
+                        isDark ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        <span className="font-medium">{activity.student_name}</span> - {activity.department_name}
+                      </div>
+                      <div className={`text-sm transition-colors duration-700 ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        {new Date(activity.action_at).toLocaleDateString()}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

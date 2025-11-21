@@ -103,7 +103,8 @@ export default function StatusTracker({ registrationNo }) {
     if (registrationNo) {
       fetchData();
     }
-  }, [registrationNo]); // Only depend on registrationNo to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registrationNo]); // fetchData is stable, only re-run when registrationNo changes
 
   // Separate effect for real-time subscriptions after form data is loaded
   useEffect(() => {
@@ -151,7 +152,8 @@ export default function StatusTracker({ registrationNo }) {
         console.error('Error during cleanup:', error);
       }
     };
-  }, [formData?.id]); // Separate effect for subscriptions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData?.id, registrationNo]); // Dependencies: formData.id and registrationNo for channel name
 
   if (loading) {
     return (
@@ -306,7 +308,7 @@ export default function StatusTracker({ registrationNo }) {
       {/* Auto-refresh Notice */}
       <p className={`text-xs text-center transition-colors duration-700 ease-smooth
         ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-        Status updates automatically every 30 seconds
+        Status updates automatically every 60 seconds
       </p>
     </motion.div>
   );

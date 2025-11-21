@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-// import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
+import { useTheme } from '@/contexts/ThemeContext';
+import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -11,6 +12,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 export default function StudentDetailView() {
   const { id } = useParams();
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   const [studentData, setStudentData] = useState(null);
   const [statusData, setStatusData] = useState([]);
   const [user, setUser] = useState(null);
@@ -19,6 +23,7 @@ export default function StudentDetailView() {
   const [rejecting, setRejecting] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -27,7 +32,7 @@ export default function StudentDetailView() {
         // Get user info
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          router.push('/login');
+          router.push('/staff/login');
           return;
         }
 
@@ -67,6 +72,10 @@ export default function StudentDetailView() {
     }
   }, [id, router]);
 
+  const handleApproveClick = () => {
+    setShowApproveModal(true);
+  };
+
   const handleApprove = async () => {
     if (!user || !user.id || !user.department_name) {
       setError('User information not loaded. Please refresh the page.');
@@ -75,6 +84,7 @@ export default function StudentDetailView() {
 
     setApproving(true);
     setError('');
+    setShowApproveModal(false);
 
     try {
       const response = await fetch('/api/staff/action', {
@@ -173,42 +183,56 @@ export default function StudentDetailView() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center p-4">
-        <GlassCard className="max-w-2xl w-full p-8 text-center">
-          <h2 className="text-xl font-bold mb-4">Error Loading Student Data</h2>
-          <p className="text-red-400 mb-6">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </GlassCard>
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <GlassCard className="max-w-2xl w-full text-center">
+            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${
+              isDark ? 'text-white' : 'text-ink-black'
+            }`}>
+              Error Loading Student Data
+            </h2>
+            <p className="text-red-400 mb-6">{error}</p>
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-300 min-h-[44px]"
+            >
+              Go Back
+            </button>
+          </GlassCard>
+        </div>
+      </PageWrapper>
     );
   }
 
   if (!studentData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center p-4">
-        <GlassCard className="max-w-2xl w-full p-8 text-center">
-          <h2 className="text-xl font-bold mb-4">Student Not Found</h2>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Go Back
-          </button>
-        </GlassCard>
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <GlassCard className="max-w-2xl w-full text-center">
+            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${
+              isDark ? 'text-white' : 'text-ink-black'
+            }`}>
+              Student Not Found
+            </h2>
+            <button
+              onClick={() => router.back()}
+              className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-300 min-h-[44px]"
+            >
+              Go Back
+            </button>
+          </GlassCard>
+        </div>
+      </PageWrapper>
     );
   }
 
@@ -216,19 +240,25 @@ export default function StudentDetailView() {
   const canApproveOrReject = user?.role === 'department' && userDepartmentStatus?.status === 'pending';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
-      <div className="min-h-screen py-12 px-4 sm:px-6">
+    <PageWrapper>
+      <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <GlassCard>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div>
-                <h1 className="text-2xl font-bold">Student Details</h1>
+                <h1 className={`text-2xl sm:text-3xl font-bold mb-2 transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Student Details
+                </h1>
                 <div className="mt-2">
                   <StatusBadge status={studentData.status} />
                 </div>
               </div>
 
-              <div className="text-sm text-gray-300">
+              <div className={`text-sm transition-colors duration-700 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 {user?.full_name} ({user?.role})
               </div>
             </div>
@@ -239,81 +269,129 @@ export default function StudentDetailView() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <div>
-                <h2 className="text-lg font-semibold mb-4">Student Information</h2>
+                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Student Information
+                </h2>
                 <div className="space-y-3">
-                  <div>
-                    <span className="text-gray-400">Name:</span> {studentData.student_name}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Name:</span> {studentData.student_name}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Registration No:</span> {studentData.registration_no}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Registration No:</span> {studentData.registration_no}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Session:</span> {studentData.session_from} - {studentData.session_to}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Session:</span> {studentData.session_from} - {studentData.session_to}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Parent Name:</span> {studentData.parent_name}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Parent Name:</span> {studentData.parent_name}
                   </div>
-                  <div>
-                    <span className="text-gray-400">School:</span> {studentData.school}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>School:</span> {studentData.school}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Course:</span> {studentData.course}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Course:</span> {studentData.course}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Branch:</span> {studentData.branch}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Branch:</span> {studentData.branch}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Contact:</span> {studentData.contact_no}
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Contact:</span> {studentData.contact_no}
                   </div>
                 </div>
               </div>
 
               <div>
-                <h2 className="text-lg font-semibold mb-4">Verification</h2>
+                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Verification
+                </h2>
                 {studentData.alumni_screenshot_url ? (
                   <div>
-                    <div className="text-gray-400 mb-2">Alumni Verification Screenshot:</div>
+                    <div className={`mb-2 transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      Alumni Verification Screenshot:
+                    </div>
                     <img
                       src={studentData.alumni_screenshot_url}
                       alt="Alumni verification"
-                      className="max-w-xs h-auto rounded-lg border border-white/20"
+                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${
+                        isDark ? 'border-white/20' : 'border-black/10'
+                      }`}
                     />
                   </div>
                 ) : (
-                  <div className="text-gray-400">No alumni verification screenshot provided</div>
+                  <div className={`transition-colors duration-700 ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    No alumni verification screenshot provided
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4">Department Status</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-700">
+            <div className="mb-6 sm:mb-8">
+              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
+                Department Status
+              </h2>
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="min-w-full">
                   <thead>
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider bg-gray-800 text-gray-300">Department</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider bg-gray-800 text-gray-300">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider bg-gray-800 text-gray-300">Updated</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider bg-gray-800 text-gray-300">Action By</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider bg-gray-800 text-gray-300">Notes</th>
+                    <tr className={`transition-colors duration-700 ${
+                      isDark ? 'border-b border-gray-700' : 'border-b border-gray-200'
+                    }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        Department
+                      </th>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        Status
+                      </th>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        Updated
+                      </th>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        Action By
+                      </th>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        Notes
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-700">
+                  <tbody className={`transition-colors duration-700 ${
+                    isDark ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'
+                  }`}>
                     {statusData.map((status, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{status.display_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <tr key={index} className={`transition-colors duration-700 ${
+                        isDark ? 'text-gray-300' : 'text-gray-900'
+                      }`}>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">{status.display_name}</td>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={status.status} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
                           {status.action_at ? new Date(status.action_at).toLocaleDateString() : '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
                           {status.action_by ? status.action_by : '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-300">
+                        <td className="px-4 sm:px-6 py-4 text-sm">
                           {status.status === 'rejected' && status.rejection_reason ? status.rejection_reason : '-'}
                         </td>
                       </tr>
@@ -324,11 +402,11 @@ export default function StudentDetailView() {
             </div>
 
             {canApproveOrReject && (
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
-                  onClick={handleApprove}
+                  onClick={handleApproveClick}
                   disabled={approving}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {approving ? 'Approving...' : 'Approve Request'}
                 </button>
@@ -336,55 +414,115 @@ export default function StudentDetailView() {
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={rejecting}
-                  className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                  className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {rejecting ? 'Rejecting...' : 'Reject Request'}
                 </button>
               </div>
             )}
 
+            {/* Approve Confirmation Modal */}
+            {showApproveModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="w-full max-w-md">
+                  <GlassCard>
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-ink-black'
+                    }`}>
+                      Confirm Approval
+                    </h3>
+
+                    <p className={`mb-6 transition-colors duration-700 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Are you sure you want to approve this no dues request for <span className="font-bold">{studentData?.student_name}</span>?
+                    </p>
+
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+                      <button
+                        onClick={() => setShowApproveModal(false)}
+                        disabled={approving}
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${
+                          isDark
+                            ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                            : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleApprove}
+                        disabled={approving}
+                        className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {approving ? 'Approving...' : 'Confirm Approve'}
+                      </button>
+                    </div>
+                  </GlassCard>
+                </div>
+              </div>
+            )}
+
             {/* Reject Modal */}
             {showRejectModal && (
-              <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-                <GlassCard className="w-full max-w-md p-6">
-                  <h3 className="text-lg font-semibold mb-4">Reject Request</h3>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+                <div className="w-full max-w-md">
+                  <GlassCard>
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-ink-black'
+                    }`}>
+                      Reject Request
+                    </h3>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Rejection Reason</label>
-                    <textarea
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
-                      rows="4"
-                      placeholder="Enter reason for rejection..."
-                      required
-                    />
-                  </div>
+                    <div className="mb-4">
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${
+                        isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Rejection Reason
+                      </label>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${
+                          isDark 
+                            ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500' 
+                            : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
+                        }`}
+                        rows="4"
+                        placeholder="Enter reason for rejection..."
+                        required
+                      />
+                    </div>
 
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => {
-                        setShowRejectModal(false);
-                        setRejectionReason('');
-                      }}
-                      className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleReject}
-                      disabled={!rejectionReason.trim() || rejecting}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-50"
-                    >
-                      {rejecting ? 'Rejecting...' : 'Confirm Reject'}
-                    </button>
-                  </div>
-                </GlassCard>
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setShowRejectModal(false);
+                          setRejectionReason('');
+                        }}
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${
+                          isDark 
+                            ? 'bg-gray-700 hover:bg-gray-600 text-white' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={!rejectionReason.trim() || rejecting}
+                        className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {rejecting ? 'Rejecting...' : 'Confirm Reject'}
+                      </button>
+                    </div>
+                  </GlassCard>
+                </div>
               </div>
             )}
           </GlassCard>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

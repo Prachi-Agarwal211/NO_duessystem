@@ -4,15 +4,18 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, AlertCircle, FileText } from 'lucide-react';
+import { Search, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
 import { supabase } from '@/lib/supabaseClient';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function CheckStatusPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -116,8 +119,24 @@ export default function CheckStatusPage() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen pt-12 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            onClick={() => router.push('/')}
+            className={`interactive mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md
+              ${isDark
+                ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
+              }`}
+          >
+            <ArrowLeft size={20} />
+            <span className="font-medium">Back to Home</span>
+          </motion.button>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
