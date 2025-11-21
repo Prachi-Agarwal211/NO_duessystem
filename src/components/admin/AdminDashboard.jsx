@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const isDark = theme === 'dark';
   
   const [user, setUser] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState(null);
@@ -30,8 +31,13 @@ export default function AdminDashboard() {
   const [activeReport, setActiveReport] = useState('');
   const [reportData, setReportData] = useState(null);
 
+  // Fetch user data only on mount
   useEffect(() => {
     fetchUserData();
+  }, []);
+
+  // Fetch dashboard data and stats when filters change
+  useEffect(() => {
     fetchDashboardData();
     fetchStats();
   }, [currentPage, statusFilter, departmentFilter, searchTerm]);
@@ -56,6 +62,7 @@ export default function AdminDashboard() {
       }
 
       setUser(userData);
+      setUserId(session.user.id);
     } catch (error) {
       console.error('Error fetching user data:', error);
       setError(error.message);
@@ -145,19 +152,10 @@ export default function AdminDashboard() {
     return stats.overallStats[0];
   };
 
-  const filteredApplications = applications.filter(app => {
-    const matchesSearch = !searchTerm || 
-      app.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.registration_no.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = !statusFilter || app.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
+  // Remove redundant client-side filtering - API already filters
   const tableHeaders = ['Student Name', 'Registration No', 'Course', 'Status', 'Submitted', 'Response Time', 'Actions'];
 
-  const tableData = filteredApplications.map(app => ({
+  const tableData = applications.map(app => ({
     'student_name': app.student_name,
     'registration_no': app.registration_no,
     'course': app.course || 'N/A',
@@ -286,7 +284,7 @@ export default function AdminDashboard() {
             {stats?.departmentStats && (
               <DepartmentPerformanceChart data={stats.departmentStats} />
             )}
-            <RequestTrendChart />
+            <RequestTrendChart userId={userId} />
           </div>
 
           {/* Filters */}
@@ -328,7 +326,7 @@ export default function AdminDashboard() {
             <div className={`text-sm flex items-center transition-colors duration-700 ${
               isDark ? 'text-gray-400' : 'text-gray-600'
             }`}>
-              Showing {filteredApplications.length} of {totalItems} requests
+              Showing {applications.length} of {totalItems} requests
             </div>
           </div>
 

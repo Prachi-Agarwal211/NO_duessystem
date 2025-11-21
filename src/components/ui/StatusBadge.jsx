@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatusBadge({ status, className = "" }) {
+function StatusBadge({ status, className = "" }) {
   const statusColors = {
     pending: 'bg-yellow-600/70',
     approved: 'bg-green-600/70',
@@ -16,3 +16,6 @@ export default function StatusBadge({ status, className = "" }) {
     </span>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default React.memo(StatusBadge);

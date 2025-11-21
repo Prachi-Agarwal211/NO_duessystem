@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-
 // This is the server-side admin client for bypassing RLS
 import { createClient } from '@supabase/supabase-js';
 

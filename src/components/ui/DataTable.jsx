@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function DataTable({ headers, data, className = '', onRowClick }) {
+function DataTable({ headers, data, className = '', onRowClick }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -46,10 +46,11 @@ export default function DataTable({ headers, data, className = '', onRowClick })
                     isDark ? 'text-gray-300' : 'text-gray-900'
                   }`}
                 >
-                  {typeof row[header.toLowerCase().replace(' ', '_')] === 'object'
-                    ? row[header.toLowerCase().replace(' ', '_')]
-                    : row[header.toLowerCase().replace(' ', '_')]
-                  }
+                  {(() => {
+                    // Fix: Replace ALL spaces with underscores, not just the first one
+                    const key = header.toLowerCase().replace(/\s+/g, '_');
+                    return typeof row[key] === 'object' ? row[key] : row[key];
+                  })()}
                 </td>
               ))}
             </tr>
@@ -59,3 +60,13 @@ export default function DataTable({ headers, data, className = '', onRowClick })
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default React.memo(DataTable, (prevProps, nextProps) => {
+  return (
+    prevProps.headers === nextProps.headers &&
+    prevProps.data === nextProps.data &&
+    prevProps.className === nextProps.className &&
+    prevProps.onRowClick === nextProps.onRowClick
+  );
+});

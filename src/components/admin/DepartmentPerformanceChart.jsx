@@ -12,7 +12,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-export default function DepartmentPerformanceChart({ data }) {
+function DepartmentPerformanceChart({ data }) {
   const chartData = {
     labels: data ? data.map(item => item.department_name) : [],
     datasets: [
@@ -74,4 +74,7 @@ export default function DepartmentPerformanceChart({ data }) {
       <Bar data={chartData} options={options} />
     </div>
   );
-};
+}
+
+// Memoize to prevent unnecessary re-renders when data doesn't change
+export default React.memo(DepartmentPerformanceChart);

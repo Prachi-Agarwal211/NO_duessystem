@@ -13,33 +13,13 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-export default function RequestTrendChart() {
+export default function RequestTrendChart({ userId }) {
   const [data, setData] = useState({
     labels: [],
-    datasets: [
-      {
-        label: 'Pending',
-        data: [],
-        borderColor: 'rgba(245, 158, 11, 0.8)',
-        backgroundColor: 'rgba(245, 158, 11, 0.2)',
-        tension: 0.4,
-      },
-      {
-        label: 'Completed',
-        data: [],
-        borderColor: 'rgba(72, 187, 120, 0.8)',
-        backgroundColor: 'rgba(72, 187, 120, 0.2)',
-        tension: 0.4,
-      },
-      {
-        label: 'Rejected',
-        data: [],
-        borderColor: 'rgba(239, 68, 68, 0.8)',
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        tension: 0.4,
-      },
-    ],
+    datasets: []
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const options = {
     responsive: true,
@@ -76,37 +56,67 @@ export default function RequestTrendChart() {
     },
   };
 
-  // Simulated data - in production, fetch from API
+  // Fetch REAL trend data from API
   useEffect(() => {
-    const mockLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const mockData = {
-      labels: mockLabels,
-      datasets: [
-        {
-          label: 'Pending',
-          data: [12, 19, 3, 5, 2, 3, 8, 6, 4, 7, 10, 15],
-          borderColor: 'rgba(245, 158, 11, 0.8)',
-          backgroundColor: 'rgba(245, 158, 11, 0.2)',
-          tension: 0.4,
-        },
-        {
-          label: 'Completed',
-          data: [2, 3, 20, 12, 17, 19, 10, 15, 18, 14, 12, 10],
-          borderColor: 'rgba(72, 187, 120, 0.8)',
-          backgroundColor: 'rgba(72, 187, 120, 0.2)',
-          tension: 0.4,
-        },
-        {
-          label: 'Rejected',
-          data: [1, 2, 1, 3, 1, 2, 1, 2, 1, 1, 2, 1],
-          borderColor: 'rgba(239, 68, 68, 0.8)',
-          backgroundColor: 'rgba(239, 68, 68, 0.2)',
-          tension: 0.4,
-        },
-      ],
+    const fetchTrendData = async () => {
+      if (!userId) {
+        setError('User ID is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(`/api/admin/trends?userId=${userId}&months=12`);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to fetch trend data');
+        }
+
+        setData(result.data);
+      } catch (err) {
+        console.error('Error fetching trend data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
-    setData(mockData);
-  }, []);
+
+    fetchTrendData();
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
+        <div className="flex items-center gap-3 text-gray-400">
+          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading trend data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <p className="text-red-400 mb-2">Failed to load trend data</p>
+          <p className="text-sm text-gray-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data.labels || data.labels.length === 0) {
+    return (
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
+        <p className="text-gray-400">No trend data available yet</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">

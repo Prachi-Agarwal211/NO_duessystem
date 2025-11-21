@@ -15,9 +15,19 @@ export default function StaffDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -40,10 +50,34 @@ export default function StaffDashboard() {
       }
 
       setUser(userData);
+      setLoading(false);
+    };
 
-      // Fetch dashboard data using the API
+    fetchUserData();
+  }, [router]);
+
+  // Separate effect to fetch dashboard data when search term changes
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchDashboardData = async () => {
       try {
-        const response = await fetch(`/api/staff/dashboard?userId=${session.user.id}`);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // Build query params with search term
+        const params = new URLSearchParams({
+          userId: session.user.id,
+          page: 1,
+          limit: 50
+        });
+
+        // Add search term if present
+        if (debouncedSearchTerm.trim()) {
+          params.append('search', debouncedSearchTerm.trim());
+        }
+
+        const response = await fetch(`/api/staff/dashboard?${params}`);
         const result = await response.json();
 
         if (result.success) {
@@ -56,25 +90,19 @@ export default function StaffDashboard() {
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
-
-      setLoading(false);
     };
 
-    fetchUserData();
-  }, [router]);
+    fetchDashboardData();
+  }, [user, debouncedSearchTerm]);
 
   const handleRowClick = (row) => {
     router.push(`/staff/student/${row.id}`);
   };
 
-  const filteredRequests = requests.filter(request =>
-    request.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    request.registration_no.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  // Remove client-side filtering - API now handles search
   const tableHeaders = ['Student Name', 'Registration No', 'Status', 'Date'];
 
-  const tableData = filteredRequests.map(request => ({
+  const tableData = requests.map(request => ({
     'student_name': request.student_name,
     'registration_no': request.registration_no,
     'status': request.status,
@@ -129,7 +157,7 @@ export default function StaffDashboard() {
                   : 'Pending Requests for Your Department'}
               </h2>
 
-              {filteredRequests.length > 0 ? (
+              {requests.length > 0 ? (
                 <DataTable
                   headers={tableHeaders}
                   data={tableData}
@@ -139,7 +167,7 @@ export default function StaffDashboard() {
                 <div className={`text-center py-8 transition-colors duration-700 ${
                   isDark ? 'text-gray-400' : 'text-gray-500'
                 }`}>
-                  {searchTerm ? 'No matching requests found' : 'No pending requests'}
+                  {debouncedSearchTerm ? 'No matching requests found' : 'No pending requests'}
                 </div>
               )}
             </div>

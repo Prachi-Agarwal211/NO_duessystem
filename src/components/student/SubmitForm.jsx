@@ -209,13 +209,22 @@ export default function SubmitForm() {
       // ==================== SUBMIT VIA API ROUTE ====================
       // This ensures server-side validation and email notifications
       
-      const response = await fetch('/api/student', {
+      // Create timeout promise (30 seconds)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout. Please try again.')), 30000)
+      );
+
+      // Create fetch promise
+      const fetchPromise = fetch('/api/student', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(sanitizedData),
       });
+
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
 
       const result = await response.json();
 

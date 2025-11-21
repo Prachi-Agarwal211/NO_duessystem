@@ -110,6 +110,9 @@ export default function StatusTracker({ registrationNo }) {
   useEffect(() => {
     if (!formData?.id) return;
 
+    let isSubscribed = false;
+    let intervalId = null;
+
     // Set up real-time subscription with proper filtering
     const channel = supabase
       .channel(`form-${registrationNo}-${formData.id}`)
@@ -132,22 +135,45 @@ export default function StatusTracker({ registrationNo }) {
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to status updates');
+          isSubscribed = true;
+          // Clear interval once subscription is active
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('Subscription error');
+          console.error('Subscription error - falling back to polling');
+          isSubscribed = false;
+          // Restart polling if subscription fails
+          if (!intervalId) {
+            intervalId = setInterval(() => {
+              if (!refreshing) {
+                fetchData(true);
+              }
+            }, 60000);
+          }
         }
       });
 
-    // Auto-refresh every 60 seconds (less aggressive)
-    const interval = setInterval(() => {
-      if (!refreshing) {
-        fetchData(true);
+    // Fallback polling - only if subscription not active after 5 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (!isSubscribed && !intervalId) {
+        console.log('Subscription not active, starting fallback polling');
+        intervalId = setInterval(() => {
+          if (!refreshing) {
+            fetchData(true);
+          }
+        }, 60000);
       }
-    }, 60000);
+    }, 5000);
 
     return () => {
       try {
+        clearTimeout(fallbackTimeout);
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
         supabase.removeChannel(channel);
-        clearInterval(interval);
       } catch (error) {
         console.error('Error during cleanup:', error);
       }
@@ -308,7 +334,7 @@ export default function StatusTracker({ registrationNo }) {
       {/* Auto-refresh Notice */}
       <p className={`text-xs text-center transition-colors duration-700 ease-smooth
         ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
-        Status updates automatically every 60 seconds
+        Real-time updates enabled • Auto-refresh fallback every 60 seconds
       </p>
     </motion.div>
   );

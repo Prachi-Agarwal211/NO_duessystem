@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatsCard({ title, value, change, trend, color }) {
+function StatsCard({ title, value, change, trend, color }) {
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
       <div className="flex items-center justify-between">
@@ -25,4 +25,7 @@ export default function StatsCard({ title, value, change, trend, color }) {
       </p>
     </div>
   );
-};
+}
+
+// Memoize to prevent unnecessary re-renders when props don't change
+export default React.memo(StatsCard);

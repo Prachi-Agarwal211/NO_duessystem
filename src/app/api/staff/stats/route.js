@@ -50,33 +50,42 @@ export async function GET(request) {
         departmentStats: []
       };
 
-      // Get department-specific stats
+      // Get department-specific stats - OPTIMIZED: Single query with aggregation
       const { data: departments, error: deptError } = await supabase
         .from('departments')
-        .select('name, display_name');
+        .select('name, display_name')
+        .order('display_order');
 
       if (!deptError && departments) {
-        const deptStats = [];
-        for (const dept of departments) {
-          const { count: pendingCount, error: pendingCountError } = await supabase
-            .from('no_dues_status')
-            .select('*', { count: 'exact', head: true })
-            .eq('department_name', dept.name)
-            .eq('status', 'pending');
+        // Single aggregated query instead of N+1 queries
+        const { data: statusCounts, error: statusError } = await supabase
+          .from('no_dues_status')
+          .select('department_name, status');
 
-          const { count: approvedCount, error: approvedCountError } = await supabase
-            .from('no_dues_status')
-            .select('*', { count: 'exact', head: true })
-            .eq('department_name', dept.name)
-            .eq('status', 'approved');
-
-          deptStats.push({
-            department: dept.display_name,
-            pending: pendingCount || 0,
-            approved: approvedCount || 0
+        if (!statusError && statusCounts) {
+          // Aggregate counts in memory (much faster than N queries)
+          const statsMap = {};
+          
+          statusCounts.forEach(record => {
+            if (!statsMap[record.department_name]) {
+              statsMap[record.department_name] = { pending: 0, approved: 0 };
+            }
+            if (record.status === 'pending') {
+              statsMap[record.department_name].pending++;
+            } else if (record.status === 'approved') {
+              statsMap[record.department_name].approved++;
+            }
           });
+
+          // Map back to departments with display names
+          stats.departmentStats = departments.map(dept => ({
+            department: dept.display_name,
+            pending: statsMap[dept.name]?.pending || 0,
+            approved: statsMap[dept.name]?.approved || 0
+          }));
+        } else {
+          stats.departmentStats = [];
         }
-        stats.departmentStats = deptStats;
       }
     } else if (profile.role === 'department') {
       // Department staff gets stats for their department only

@@ -7,6 +7,7 @@ export async function GET(request) {
     const userId = searchParams.get('userId');
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
+    const searchQuery = searchParams.get('search');
     const offset = (page - 1) * limit;
 
     if (!userId) {
@@ -85,7 +86,7 @@ export async function GET(request) {
       };
     } else if (profile.role === 'department') {
       // Department staff gets applications pending for their department
-      const { data: pendingApplications, error: pendingError } = await supabase
+      let query = supabase
         .from('no_dues_status')
         .select(`
           id,
@@ -108,12 +109,34 @@ export async function GET(request) {
           )
         `)
         .eq('department_name', profile.department_name)
-        .eq('status', 'pending')
+        .eq('status', 'pending');
+
+      // Apply search filter if provided
+      // Note: Search on related table requires filtering after fetch in this case
+      // or we need to restructure the query
+      
+      query = query
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
+      const { data: pendingApplications, error: pendingError } = await query;
+
       if (pendingError) {
         return NextResponse.json({ error: pendingError.message }, { status: 500 });
+      }
+
+      // Filter by search term if provided (client-side filtering for related table)
+      let filteredApplications = pendingApplications || [];
+      if (searchQuery && filteredApplications.length > 0) {
+        const searchLower = searchQuery.toLowerCase();
+        filteredApplications = filteredApplications.filter(app => {
+          const form = app.no_dues_forms;
+          if (!form) return false;
+          return (
+            form.student_name?.toLowerCase().includes(searchLower) ||
+            form.registration_no?.toLowerCase().includes(searchLower)
+          );
+        });
       }
 
       // Get total count for pagination
@@ -130,12 +153,12 @@ export async function GET(request) {
       dashboardData = {
         role: 'department',
         department: profile.department_name,
-        applications: pendingApplications || [],
+        applications: filteredApplications,
         pagination: {
           page,
           limit,
-          total: totalCount || 0,
-          totalPages: Math.ceil((totalCount || 0) / limit)
+          total: searchQuery ? filteredApplications.length : (totalCount || 0),
+          totalPages: Math.ceil((searchQuery ? filteredApplications.length : (totalCount || 0)) / limit)
         }
       };
     }
