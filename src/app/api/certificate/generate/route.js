@@ -67,7 +67,7 @@ export async function POST(request) {
     // Check if certificate already exists
     const { data: form, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
-      .select('final_certificate_generated, certificate_url')
+      .select('certificate_url')
       .eq('id', formId)
       .single();
 
@@ -79,7 +79,7 @@ export async function POST(request) {
       );
     }
 
-    if (form.final_certificate_generated && form.certificate_url) {
+    if (form.certificate_url) {
       return NextResponse.json(
         {
           success: true,
@@ -134,7 +134,6 @@ export async function GET(request) {
       .from('no_dues_forms')
       .select(`
         id,
-        final_certificate_generated,
         certificate_url
       `)
       .eq('id', formId)
@@ -169,7 +168,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       canGenerate,
-      alreadyGenerated: form.final_certificate_generated,
+      alreadyGenerated: !!form.certificate_url,
       certificateUrl: form.certificate_url,
       stats: {
         total: totalDepartments,

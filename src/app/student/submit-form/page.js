@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PageWrapper from '@/components/landing/PageWrapper';
 import SubmitForm from '@/components/student/SubmitForm';
+import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function SubmitFormPage() {
@@ -22,8 +23,8 @@ export default function SubmitFormPage() {
           transition={{ duration: 0.5 }}
           onClick={() => router.push('/')}
           className={`interactive mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md
-            ${isDark 
-              ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10' 
+            ${isDark
+              ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
               : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
             }`}
         >
@@ -38,8 +39,8 @@ export default function SubmitFormPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className={`p-8 md:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
-              ${isDark 
-                ? 'bg-white/[0.02] border border-white/10 shadow-2xl shadow-black/50' 
+              ${isDark
+                ? 'bg-white/[0.02] border border-white/10 shadow-2xl shadow-black/50'
                 : 'bg-white border border-black/5 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
               }`}
           >
@@ -49,7 +50,11 @@ export default function SubmitFormPage() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
+                className="flex flex-col items-center"
               >
+                <div className="mb-4">
+                  <Logo size="medium" showText={true} />
+                </div>
                 <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-3">
                   Student Services
                 </span>
@@ -88,8 +93,8 @@ export default function SubmitFormPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
             className={`mt-6 p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
-              ${isDark 
-                ? 'bg-white/[0.02] border border-white/10' 
+              ${isDark
+                ? 'bg-white/[0.02] border border-white/10'
                 : 'bg-white border border-black/5 shadow-sm'
               }`}
           >

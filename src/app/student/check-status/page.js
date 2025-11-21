@@ -8,6 +8,7 @@ import { Search, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
+import Logo from '@/components/ui/Logo';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -79,17 +80,17 @@ export default function CheckStatusPage() {
           setNotFound(true);
           return;
         }
-        
+
         setFormData(data);
         // Update URL with registration number for persistence on refresh
         router.replace(`/student/check-status?reg=${searchRegNo.toUpperCase()}`, { scroll: false });
       }
     } catch (err) {
       console.error('Error fetching form:', err);
-      
+
       // User-friendly error messages
       let errorMessage = 'Failed to fetch status. Please try again.';
-      
+
       if (err.message?.includes('timeout')) {
         errorMessage = 'Request timed out. Please check your internet connection and try again.';
       } else if (err.message?.includes('network')) {
@@ -97,7 +98,7 @@ export default function CheckStatusPage() {
       } else if (err.code === 'PGRST301') {
         errorMessage = 'Database connection error. Please try again later.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -144,12 +145,10 @@ export default function CheckStatusPage() {
             transition={{ duration: 0.7 }}
             className="text-center mb-12"
           >
-            <div className="inline-block mb-4">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-jecrc-red/20 to-jecrc-red/10 backdrop-blur-sm border border-jecrc-red/20 flex items-center justify-center mx-auto">
-                <Search className="w-10 h-10 text-jecrc-red" />
-              </div>
+            <div className="flex flex-col items-center mb-6">
+              <Logo size="medium" showText={true} />
             </div>
-            <h1 className="font-cinzel text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Check Your Status
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">

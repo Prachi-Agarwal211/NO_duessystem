@@ -14,7 +14,7 @@ export default function StudentDetailView() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   const [studentData, setStudentData] = useState(null);
   const [statusData, setStatusData] = useState([]);
   const [user, setUser] = useState(null);
@@ -38,7 +38,7 @@ export default function StudentDetailView() {
 
         const { data: userData, error: userError } = await supabase
           .from('profiles')
-          .select('full_name, role, department_name')
+          .select('id, full_name, role, department_name')
           .eq('id', session.user.id)
           .single();
 
@@ -74,6 +74,13 @@ export default function StudentDetailView() {
 
   const handleApproveClick = () => {
     setShowApproveModal(true);
+    // Scroll to action buttons smoothly
+    setTimeout(() => {
+      document.getElementById('action-buttons')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }, 100);
   };
 
   const handleApprove = async () => {
@@ -196,9 +203,8 @@ export default function StudentDetailView() {
       <PageWrapper>
         <div className="min-h-screen flex items-center justify-center p-4">
           <GlassCard className="max-w-2xl w-full text-center">
-            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${
-              isDark ? 'text-white' : 'text-ink-black'
-            }`}>
+            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              }`}>
               Error Loading Student Data
             </h2>
             <p className="text-red-400 mb-6">{error}</p>
@@ -219,9 +225,8 @@ export default function StudentDetailView() {
       <PageWrapper>
         <div className="min-h-screen flex items-center justify-center p-4">
           <GlassCard className="max-w-2xl w-full text-center">
-            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${
-              isDark ? 'text-white' : 'text-ink-black'
-            }`}>
+            <h2 className={`text-xl font-bold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              }`}>
               Student Not Found
             </h2>
             <button
@@ -246,9 +251,8 @@ export default function StudentDetailView() {
           <GlassCard>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div>
-                <h1 className={`text-2xl sm:text-3xl font-bold mb-2 transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h1 className={`text-2xl sm:text-3xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>
                   Student Details
                 </h1>
                 <div className="mt-2">
@@ -256,9 +260,8 @@ export default function StudentDetailView() {
                 </div>
               </div>
 
-              <div className={`text-sm transition-colors duration-700 ${
-                isDark ? 'text-gray-300' : 'text-gray-600'
-              }`}>
+              <div className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                 {user?.full_name} ({user?.role})
               </div>
             </div>
@@ -271,9 +274,8 @@ export default function StudentDetailView() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               <div>
-                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>
                   Student Information
                 </h2>
                 <div className="space-y-3">
@@ -305,30 +307,26 @@ export default function StudentDetailView() {
               </div>
 
               <div>
-                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>
                   Verification
                 </h2>
                 {studentData.alumni_screenshot_url ? (
                   <div>
-                    <div className={`mb-2 transition-colors duration-700 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
+                    <div className={`mb-2 transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                       Alumni Verification Screenshot:
                     </div>
                     <img
                       src={studentData.alumni_screenshot_url}
                       alt="Alumni verification"
-                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${
-                        isDark ? 'border-white/20' : 'border-black/10'
-                      }`}
+                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${isDark ? 'border-white/20' : 'border-black/10'
+                        }`}
                     />
                   </div>
                 ) : (
-                  <div className={`transition-colors duration-700 ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
+                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
                     No alumni verification screenshot provided
                   </div>
                 )}
@@ -336,51 +334,42 @@ export default function StudentDetailView() {
             </div>
 
             <div className="mb-6 sm:mb-8">
-              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
+              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                }`}>
                 Department Status
               </h2>
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="min-w-full">
                   <thead>
-                    <tr className={`transition-colors duration-700 ${
-                      isDark ? 'border-b border-gray-700' : 'border-b border-gray-200'
-                    }`}>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                    <tr className={`transition-colors duration-700 ${isDark ? 'border-b border-gray-700' : 'border-b border-gray-200'
                       }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                        }`}>
                         Department
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
-                      }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                        }`}>
                         Status
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
-                      }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                        }`}>
                         Updated
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
-                      }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                        }`}>
                         Action By
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                        isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
-                      }`}>
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                        }`}>
                         Notes
                       </th>
                     </tr>
                   </thead>
-                  <tbody className={`transition-colors duration-700 ${
-                    isDark ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'
-                  }`}>
+                  <tbody className={`transition-colors duration-700 ${isDark ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'
+                    }`}>
                     {statusData.map((status, index) => (
-                      <tr key={index} className={`transition-colors duration-700 ${
-                        isDark ? 'text-gray-300' : 'text-gray-900'
-                      }`}>
+                      <tr key={index} className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-900'
+                        }`}>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">{status.display_name}</td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={status.status} />
@@ -402,7 +391,7 @@ export default function StudentDetailView() {
             </div>
 
             {canApproveOrReject && (
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div id="action-buttons" className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   onClick={handleApproveClick}
                   disabled={approving}
@@ -412,7 +401,16 @@ export default function StudentDetailView() {
                 </button>
 
                 <button
-                  onClick={() => setShowRejectModal(true)}
+                  onClick={() => {
+                    setShowRejectModal(true);
+                    // Scroll to action buttons smoothly
+                    setTimeout(() => {
+                      document.getElementById('action-buttons')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                      });
+                    }, 100);
+                  }}
                   disabled={rejecting}
                   className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -426,15 +424,13 @@ export default function StudentDetailView() {
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                 <div className="w-full max-w-md">
                   <GlassCard>
-                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
-                      isDark ? 'text-white' : 'text-ink-black'
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                      }`}>
                       Confirm Approval
                     </h3>
 
-                    <p className={`mb-6 transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <p className={`mb-6 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       Are you sure you want to approve this no dues request for <span className="font-bold">{studentData?.student_name}</span>?
                     </p>
 
@@ -442,11 +438,10 @@ export default function StudentDetailView() {
                       <button
                         onClick={() => setShowApproveModal(false)}
                         disabled={approving}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${
-                          isDark
-                            ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${isDark
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         Cancel
                       </button>
@@ -468,26 +463,23 @@ export default function StudentDetailView() {
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
                 <div className="w-full max-w-md">
                   <GlassCard>
-                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${
-                      isDark ? 'text-white' : 'text-ink-black'
-                    }`}>
+                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                      }`}>
                       Reject Request
                     </h3>
 
                     <div className="mb-4">
-                      <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${
-                        isDark ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                         Rejection Reason
                       </label>
                       <textarea
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
-                        className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${
-                          isDark 
-                            ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500' 
-                            : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
-                        }`}
+                        className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${isDark
+                          ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
+                          : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
+                          }`}
                         rows="4"
                         placeholder="Enter reason for rejection..."
                         required
@@ -500,11 +492,10 @@ export default function StudentDetailView() {
                           setShowRejectModal(false);
                           setRejectionReason('');
                         }}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${
-                          isDark 
-                            ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                            : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
-                        }`}
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${isDark
+                          ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
+                          }`}
                       >
                         Cancel
                       </button>

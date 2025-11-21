@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
   try {
@@ -14,14 +19,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Get session and verify user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile to check role and department
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile to check role and department using admin client
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
@@ -40,7 +39,7 @@ export async function GET(request) {
 
     if (profile.role === 'admin') {
       // Admin gets all applications across all departments
-      const { data: allApplications, error: allError } = await supabase
+      const { data: allApplications, error: allError } = await supabaseAdmin
         .from('no_dues_forms')
         .select(`
           id,
@@ -61,7 +60,7 @@ export async function GET(request) {
       }
 
       // Get total count for pagination
-      const { count: totalCount, error: countError } = await supabase
+      const { count: totalCount, error: countError } = await supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true });
 
@@ -86,7 +85,7 @@ export async function GET(request) {
       };
     } else if (profile.role === 'department') {
       // Department staff gets applications pending for their department
-      let query = supabase
+      let query = supabaseAdmin
         .from('no_dues_status')
         .select(`
           id,
@@ -96,7 +95,7 @@ export async function GET(request) {
           rejection_reason,
           action_at,
           action_by_user_id,
-          no_dues_forms (
+          no_dues_forms!inner (
             id,
             student_name,
             registration_no,
@@ -114,7 +113,7 @@ export async function GET(request) {
       // Apply search filter if provided
       // Note: Search on related table requires filtering after fetch in this case
       // or we need to restructure the query
-      
+
       query = query
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -122,7 +121,20 @@ export async function GET(request) {
       const { data: pendingApplications, error: pendingError } = await query;
 
       if (pendingError) {
+        console.error('❌ Error fetching pending applications:', pendingError);
         return NextResponse.json({ error: pendingError.message }, { status: 500 });
+      }
+
+      // DEBUG: Log what we got from database
+      console.log('📊 Dashboard API - Pending applications:', pendingApplications?.length || 0);
+      if (pendingApplications && pendingApplications.length > 0) {
+        console.log('📋 First application:', {
+          status_id: pendingApplications[0].id,
+          form_id: pendingApplications[0].form_id,
+          department: pendingApplications[0].department_name,
+          has_form: !!pendingApplications[0].no_dues_forms,
+          form_id_in_form: pendingApplications[0].no_dues_forms?.id
+        });
       }
 
       // Filter by search term if provided (client-side filtering for related table)
@@ -140,7 +152,7 @@ export async function GET(request) {
       }
 
       // Get total count for pagination
-      const { count: totalCount, error: countError } = await supabase
+      const { count: totalCount, error: countError } = await supabaseAdmin
         .from('no_dues_status')
         .select('*', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
@@ -163,15 +175,15 @@ export async function GET(request) {
       };
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       data: dashboardData
     });
   } catch (error) {
     console.error('Staff Dashboard API Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Internal server error' 
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

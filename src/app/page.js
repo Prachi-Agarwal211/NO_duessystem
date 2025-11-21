@@ -2,9 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FileCheck, Search, GraduationCap } from 'lucide-react';
+import { FileCheck, Search } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import ActionCard from '@/components/landing/ActionCard';
+import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function Home() {
@@ -15,25 +16,16 @@ export default function Home() {
   return (
     <PageWrapper>
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        
+
         {/* Centered Header / Branding */}
         <header className="flex flex-col items-center mb-16 text-center px-4 mt-10">
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className={`flex items-center justify-center gap-4 mb-8 px-6 py-2 border rounded-full backdrop-blur-md transition-colors duration-700 ease-smooth
-              ${isDark ? 'bg-white/5 border-white/10' : 'bg-white/80 border-black/5 shadow-sm'}`}
+            className="mb-8"
           >
-            <GraduationCap size={20} className="text-jecrc-red" />
-            <div className="flex items-baseline gap-2">
-              <span className={`font-serif text-lg tracking-wide transition-colors duration-700 ease-smooth ${isDark ? 'text-white' : 'text-black'}`}>
-                JECRC
-              </span>
-              <span className="font-sans text-[10px] font-bold text-gray-500 tracking-[0.2em] uppercase">
-                University
-              </span>
-            </div>
+            <Logo size="large" showText={true} priority={true} />
           </motion.div>
 
           {/* Refined Title */}
@@ -50,11 +42,11 @@ export default function Home() {
               ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70' : 'text-ink-black'}`}>
               NO DUES
             </h1>
-            
+
             {/* Decorative Line */}
             <div className="relative h-[1px] w-24 mt-6 overflow-hidden">
               <div className={`absolute inset-0 transition-colors duration-700 ease-smooth ${isDark ? 'bg-white/20' : 'bg-black/10'}`}></div>
-              <motion.div 
+              <motion.div
                 initial={{ x: '-100%' }}
                 animate={{ x: '100%' }}
                 transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
@@ -67,14 +59,14 @@ export default function Home() {
         {/* Main Content Area */}
         <main className="w-full max-w-5xl px-6 md:px-12 pb-12">
           <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-            <ActionCard 
+            <ActionCard
               index={0}
               title="Check Status"
               subtitle="Track the status of your no dues application using your registration number."
               icon={Search}
               onClick={() => router.push('/student/check-status')}
             />
-            <ActionCard 
+            <ActionCard
               index={1}
               title="Submit Form"
               subtitle="Submit a new no-dues application for semester end or degree completion."

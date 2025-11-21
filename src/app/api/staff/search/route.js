@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
   try {
@@ -16,7 +21,7 @@ export async function GET(request) {
     }
 
     // Verify user has department or admin role (Phase 1: only 2 roles)
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
@@ -29,7 +34,7 @@ export async function GET(request) {
     // Search for students based on query
     // If user is admin, search all students
     // If user is department staff, search students in their department
-    let formsQuery = supabase
+    let formsQuery = supabaseAdmin
       .from('no_dues_forms')
       .select(`
         id,
@@ -46,7 +51,7 @@ export async function GET(request) {
 
     if (profile.role === 'department') {
       // Department staff can only see forms related to their department
-      formsQuery = formsQuery.in('id', supabase
+      formsQuery = formsQuery.in('id', supabaseAdmin
         .from('no_dues_status')
         .select('form_id', { head: true })
         .eq('department_name', profile.department_name)

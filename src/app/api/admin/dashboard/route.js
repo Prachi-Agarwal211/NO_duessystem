@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-// This is the server-side admin client for bypassing RLS
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -20,7 +19,7 @@ export async function GET(request) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     // Verify user is admin
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', userId)
@@ -45,10 +44,6 @@ export async function GET(request) {
           profiles!no_dues_status_action_by_user_id_fkey (
             full_name
           )
-        ),
-        profiles!no_dues_forms_user_id_fkey (
-          email,
-          registration_no
         )
       `)
       .order(sortField, { ascending: sortOrder === 'asc' });
@@ -91,9 +86,9 @@ export async function GET(request) {
         ...status,
         response_time: calculateResponseTime(app.created_at, status.created_at, status.action_at)
       }));
-      
+
       const totalResponseTime = calculateTotalResponseTime(statusWithMetrics);
-      
+
       return {
         ...app,
         no_dues_status: statusWithMetrics,
@@ -132,14 +127,14 @@ export async function GET(request) {
 // Helper function for response time calculation
 function calculateResponseTime(created_at, updated_at, action_at) {
   if (!action_at) return 'Pending';
-  
+
   const created = new Date(created_at);
   const action = new Date(action_at);
   const diff = action - created;
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
+
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
@@ -148,7 +143,7 @@ function calculateResponseTime(created_at, updated_at, action_at) {
 function calculateTotalResponseTime(statuses) {
   const completed = statuses.filter(s => s.status === 'approved' && s.action_at);
   if (completed.length === 0) return 'N/A';
-  
+
   const totalTime = completed.reduce((sum, status) => {
     if (status.action_at) {
       const created = new Date(status.created_at);
@@ -157,11 +152,11 @@ function calculateTotalResponseTime(statuses) {
     }
     return sum;
   }, 0);
-  
+
   const avgTime = totalTime / completed.length;
   const hours = Math.floor(avgTime / (1000 * 60 * 60));
   const minutes = Math.floor((avgTime % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
 }

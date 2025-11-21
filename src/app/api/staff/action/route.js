@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function PUT(request) {
   try {
@@ -9,40 +14,31 @@ export async function PUT(request) {
 
     // Validate required fields
     if (!formId || !departmentName || !action || !userId) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Missing required fields: formId, departmentName, action, userId' 
+        error: 'Missing required fields: formId, departmentName, action, userId'
       }, { status: 400 });
     }
 
     // Validate action value
     if (!['approve', 'reject'].includes(action)) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Invalid action. Must be "approve" or "reject"' 
+        error: 'Invalid action. Must be "approve" or "reject"'
       }, { status: 400 });
     }
 
-    // Get session and verify user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'Unauthorized' 
-      }, { status: 401 });
-    }
-
-    // Get user profile to check role and department
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile to check role and department using admin client
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name, full_name')
       .eq('id', userId)
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Profile not found' 
+        error: 'Profile not found'
       }, { status: 404 });
     }
 
@@ -56,28 +52,28 @@ export async function PUT(request) {
 
     // For department staff, verify they can only act on their department
     if (profile.role === 'department' && profile.department_name !== departmentName) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'You can only take actions for your own department' 
+        error: 'You can only take actions for your own department'
       }, { status: 403 });
     }
 
     // Check if the form exists
-    const { data: form, error: formError } = await supabase
+    const { data: form, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
       .select('id, status, student_name, registration_no')
       .eq('id', formId)
       .single();
 
     if (formError || !form) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Form not found' 
+        error: 'Form not found'
       }, { status: 404 });
     }
 
     // Check if the status record exists for this department and form
-    const { data: existingStatus, error: statusError } = await supabase
+    const { data: existingStatus, error: statusError } = await supabaseAdmin
       .from('no_dues_status')
       .select('id, status')
       .eq('form_id', formId)
@@ -85,17 +81,17 @@ export async function PUT(request) {
       .single();
 
     if (statusError || !existingStatus) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Department status not found for this form' 
+        error: 'Department status not found for this form'
       }, { status: 404 });
     }
 
     // Check if status is already approved or rejected
     if (existingStatus.status === 'approved' || existingStatus.status === 'rejected') {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: `Status is already ${existingStatus.status}` 
+        error: `Status is already ${existingStatus.status}`
       }, { status: 400 });
     }
 
@@ -104,21 +100,20 @@ export async function PUT(request) {
     const updateData = {
       status: statusValue,
       action_by_user_id: userId,
-      action_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      action_at: new Date().toISOString()
     };
 
     // Add rejection reason if rejecting
     if (action === 'reject' && reason) {
       updateData.rejection_reason = reason;
     } else if (action === 'reject' && !reason) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Rejection reason is required when rejecting' 
+        error: 'Rejection reason is required when rejecting'
       }, { status: 400 });
     }
 
-    const { data: updatedStatus, error: updateError } = await supabase
+    const { data: updatedStatus, error: updateError } = await supabaseAdmin
       .from('no_dues_status')
       .update(updateData)
       .eq('id', existingStatus.id)
@@ -126,22 +121,22 @@ export async function PUT(request) {
       .single();
 
     if (updateError) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: updateError.message 
+        error: updateError.message
       }, { status: 500 });
     }
 
     // Check if all departments have approved
-    const { data: allStatuses, error: allStatusError } = await supabase
+    const { data: allStatuses, error: allStatusError } = await supabaseAdmin
       .from('no_dues_status')
       .select('status')
       .eq('form_id', formId);
 
     if (allStatusError) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: allStatusError.message 
+        error: allStatusError.message
       }, { status: 500 });
     }
 
@@ -150,11 +145,10 @@ export async function PUT(request) {
     let formStatusUpdate = null;
 
     if (allApproved) {
-      const { data: updatedForm, error: formUpdateError } = await supabase
+      const { data: updatedForm, error: formUpdateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
-          status: 'completed',
-          updated_at: new Date().toISOString()
+          status: 'completed'
         })
         .eq('id', formId)
         .select()
@@ -173,7 +167,7 @@ export async function PUT(request) {
       // When all departments approve, automatically generate the certificate
       try {
         console.log(`🎓 All departments approved - generating certificate for form ${formId}`);
-        
+
         const certificateResponse = await fetch(
           `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
           {
@@ -184,15 +178,14 @@ export async function PUT(request) {
         );
 
         const certificateResult = await certificateResponse.json();
-        
+
         if (certificateResult.success) {
           console.log(`✅ Certificate generated successfully: ${certificateResult.certificateUrl}`);
-          
+
           // Update form status update to include certificate info
           formStatusUpdate = {
             ...formStatusUpdate,
-            certificate_url: certificateResult.certificateUrl,
-            final_certificate_generated: true
+            certificate_url: certificateResult.certificateUrl
           };
         } else {
           console.error('❌ Certificate generation failed:', certificateResult.error);
@@ -203,38 +196,18 @@ export async function PUT(request) {
         console.error('❌ Certificate generation error:', certError);
         // Don't fail the approval if certificate generation fails
       }
-    } else {
-      // Update form status to in_progress if it was pending
-      if (form.status === 'pending') {
-        const { data: updatedForm, error: formUpdateError } = await supabase
-          .from('no_dues_forms')
-          .update({ 
-            status: 'in_progress',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', formId)
-          .select()
-          .single();
-
-        if (formUpdateError) {
-          return NextResponse.json({ 
-            success: false,
-            error: formUpdateError.message 
-          }, { status: 500 });
-        }
-
-        formStatusUpdate = updatedForm;
-      }
     }
+    // Note: Form status remains 'pending' until all departments approve
+    // No need to update to intermediate status - this keeps it simple
 
     // Send email notification to student
     // Phase 1: Students have no authentication/profiles, so we can't send email notifications
     // In future phases, add email field to no_dues_forms table or create student profiles
-    
+
     // Note: Email notification currently disabled for Phase 1
     // To enable: Add student_email field to no_dues_forms table
     // Then uncomment and update the code below:
-    
+
     /*
     if (form.student_email) {
       try {
@@ -257,10 +230,10 @@ export async function PUT(request) {
       console.log('ℹ️ Student email not available - skipping email notification');
     }
     */
-    
+
     console.log('ℹ️ Phase 1: Student email notifications disabled (no student_email field)');
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       data: {
         status: updatedStatus,
@@ -270,9 +243,9 @@ export async function PUT(request) {
     });
   } catch (error) {
     console.error('Staff Action API Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Internal server error' 
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

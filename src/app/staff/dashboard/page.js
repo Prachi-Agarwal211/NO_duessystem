@@ -83,7 +83,23 @@ export default function StaffDashboard() {
         if (result.success) {
           // For department staff, extract form data from status records
           const applications = result.data.applications || [];
-          setRequests(applications.map(item => item.no_dues_forms));
+          console.log('📊 Dashboard - Received applications:', applications.length);
+
+          // Filter out applications with null forms (orphaned records)
+          const validApplications = applications.filter(item => {
+            if (!item.no_dues_forms) {
+              console.warn('⚠️ Orphaned status record found, skipping:', item.form_id);
+              return false;
+            }
+            return true;
+          });
+
+          console.log('✅ Valid applications after filtering:', validApplications.length);
+
+          const formattedRequests = validApplications.map(item => item.no_dues_forms);
+          console.log('📋 First request:', formattedRequests[0]);
+
+          setRequests(formattedRequests);
         } else {
           console.error('API Error:', result.error);
         }
@@ -126,16 +142,14 @@ export default function StaffDashboard() {
         <div className="max-w-7xl mx-auto">
           <GlassCard>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-              <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
+              <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                }`}>
                 {user?.role === 'admin'
                   ? 'Admin Dashboard'
                   : `${user?.department_name || 'Department'} Dashboard`}
               </h1>
-              <div className={`text-sm transition-colors duration-700 ${
-                isDark ? 'text-gray-300' : 'text-gray-600'
-              }`}>
+              <div className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                 Welcome, {user?.full_name}
               </div>
             </div>
@@ -149,9 +163,8 @@ export default function StaffDashboard() {
             </div>
 
             <div className="mb-4">
-              <h2 className={`text-lg sm:text-xl font-semibold mb-4 transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
+              <h2 className={`text-lg sm:text-xl font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                }`}>
                 {user?.role === 'admin'
                   ? 'All Pending Requests'
                   : 'Pending Requests for Your Department'}
@@ -164,9 +177,8 @@ export default function StaffDashboard() {
                   onRowClick={handleRowClick}
                 />
               ) : (
-                <div className={`text-center py-8 transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-500'
-                }`}>
+                <div className={`text-center py-8 transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                   {debouncedSearchTerm ? 'No matching requests found' : 'No pending requests'}
                 </div>
               )}

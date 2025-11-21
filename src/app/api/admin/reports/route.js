@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-
-// This is the server-side admin client for bypassing RLS
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -19,7 +16,7 @@ export async function GET(request) {
     const department = searchParams.get('department');
 
     // Verify user is admin
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', userId)
@@ -152,7 +149,7 @@ function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  
+
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
   return `${remainingSeconds}s`;

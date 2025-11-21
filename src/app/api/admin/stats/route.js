@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-
-// This is the server-side admin client for bypassing RLS
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -15,7 +12,7 @@ export async function GET(request) {
     const userId = searchParams.get('userId');
 
     // Verify user is admin
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
       .eq('id', userId)
@@ -25,40 +22,84 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get overall statistics
+    // Get overall statistics using existing database function
     const { data: overallStats, error: overallError } = await supabaseAdmin
-      .rpc('get_overall_stats');
+      .rpc('get_form_statistics');
 
     if (overallError) {
       throw overallError;
     }
 
-    // Get department performance stats
-    const { data: departmentStats, error: deptError } = await supabaseAdmin
-      .from('no_dues_status')
-      .select(`
-        department_name,
-        COUNT(*) as total_requests,
-        COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved_requests,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_requests,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_requests,
-        AVG(EXTRACT(EPOCH FROM (action_at - created_at))) as avg_response_time_seconds
-      `)
-      .not('action_at', 'is', null)
-      .group('department_name')
-      .order('department_name');
+    // Get department workload using existing database function
+    const { data: departmentWorkload, error: deptWorkloadError } = await supabaseAdmin
+      .rpc('get_department_workload');
 
-    if (deptError) {
-      throw deptError;
+    if (deptWorkloadError) {
+      console.error('Department workload error:', deptWorkloadError);
     }
 
-    // Format department stats
-    const formattedDepartmentStats = departmentStats.map(dept => ({
-      ...dept,
-      avg_response_time: formatTime(dept.avg_response_time_seconds),
-      approval_rate: (dept.approved_requests / dept.total_requests * 100).toFixed(2) + '%',
-      rejection_rate: (dept.rejected_requests / dept.total_requests * 100).toFixed(2) + '%'
-    }));
+    // Get all department statuses with timestamps for response time calculation
+    const { data: allStatuses, error: statusesError } = await supabaseAdmin
+      .from('no_dues_status')
+      .select('department_name, status, created_at, action_at')
+      .not('action_at', 'is', null);
+
+    if (statusesError) {
+      console.error('Statuses error:', statusesError);
+    }
+
+    // Calculate department performance stats using JavaScript aggregation
+    const departmentStatsMap = new Map();
+
+    // Initialize with department workload data
+    if (departmentWorkload) {
+      departmentWorkload.forEach(dept => {
+        departmentStatsMap.set(dept.department_name, {
+          department_name: dept.department_name,
+          total_requests: Number(dept.pending_count || 0) + Number(dept.approved_count || 0) + Number(dept.rejected_count || 0),
+          approved_requests: Number(dept.approved_count || 0),
+          rejected_requests: Number(dept.rejected_count || 0),
+          pending_requests: Number(dept.pending_count || 0),
+          response_times: []
+        });
+      });
+    }
+
+    // Calculate response times
+    if (allStatuses) {
+      allStatuses.forEach(status => {
+        if (status.action_at && status.created_at) {
+          const responseTime = (new Date(status.action_at) - new Date(status.created_at)) / 1000;
+          const deptStats = departmentStatsMap.get(status.department_name);
+          if (deptStats) {
+            deptStats.response_times.push(responseTime);
+          }
+        }
+      });
+    }
+
+    // Format department stats with calculated metrics
+    const formattedDepartmentStats = Array.from(departmentStatsMap.values()).map(dept => {
+      const avgResponseTime = dept.response_times.length > 0
+        ? dept.response_times.reduce((sum, time) => sum + time, 0) / dept.response_times.length
+        : 0;
+
+      return {
+        department_name: dept.department_name,
+        total_requests: dept.total_requests,
+        approved_requests: dept.approved_requests,
+        rejected_requests: dept.rejected_requests,
+        pending_requests: dept.pending_requests,
+        avg_response_time: formatTime(avgResponseTime),
+        avg_response_time_seconds: avgResponseTime,
+        approval_rate: dept.total_requests > 0
+          ? ((dept.approved_requests / dept.total_requests) * 100).toFixed(2) + '%'
+          : '0%',
+        rejection_rate: dept.total_requests > 0
+          ? ((dept.rejected_requests / dept.total_requests) * 100).toFixed(2) + '%'
+          : '0%'
+      };
+    }).sort((a, b) => a.department_name.localeCompare(b.department_name));
 
     // Get recent activity (last 30 days)
     const { data: recentActivity, error: activityError } = await supabaseAdmin
@@ -121,7 +162,7 @@ function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  
+
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
   return `${remainingSeconds}s`;

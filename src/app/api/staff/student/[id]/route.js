@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request, { params }) {
   try {
@@ -7,18 +12,14 @@ export async function GET(request, { params }) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
+    console.log('🔍 Student Detail API Called - Form ID:', id, 'User ID:', userId);
+
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Get session and verify user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    if (authError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user profile to check role and department
-    const { data: profile, error: profileError } = await supabase
+    // Get user profile to check role and department using admin client
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
@@ -34,7 +35,7 @@ export async function GET(request, { params }) {
     }
 
     // Get the student's no dues form
-    let formQuery = supabase
+    let formQuery = supabaseAdmin
       .from('no_dues_forms')
       .select(`
         id,
@@ -50,7 +51,6 @@ export async function GET(request, { params }) {
         contact_no,
         alumni_screenshot_url,
         certificate_url,
-        final_certificate_generated,
         status,
         created_at,
         updated_at,
@@ -64,7 +64,7 @@ export async function GET(request, { params }) {
     // If user is department staff, verify they can access this form
     if (profile.role === 'department') {
       // Check if this form has a status entry for the user's department
-      const { data: departmentStatus, error: statusError } = await supabase
+      const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')
         .select('form_id')
         .eq('form_id', id)
@@ -78,12 +78,31 @@ export async function GET(request, { params }) {
 
     const { data: formData, error: formError } = await formQuery.single();
 
-    if (formError || !formData) {
+    console.log('📝 Form Query Result:', {
+      found: !!formData,
+      error: formError?.message || formError?.code,
+      formId: id,
+      department: profile.department_name
+    });
+
+    if (formError) {
+      console.error('❌ Form Error Details:', formError);
+      return NextResponse.json({
+        error: 'Student form not found',
+        details: formError.message,
+        formId: id
+      }, { status: 404 });
+    }
+
+    if (!formData) {
+      console.error('❌ No form data returned for ID:', id);
       return NextResponse.json({ error: 'Student form not found' }, { status: 404 });
     }
 
+    console.log('✅ Form found:', formData.student_name, formData.registration_no);
+
     // Get all department statuses for this form
-    const { data: departmentStatuses, error: statusError } = await supabase
+    const { data: departmentStatuses, error: statusError } = await supabaseAdmin
       .from('no_dues_status')
       .select(`
         id,
@@ -104,7 +123,7 @@ export async function GET(request, { params }) {
     }
 
     // Get department information for all departments
-    const { data: departments, error: deptError } = await supabase
+    const { data: departments, error: deptError } = await supabaseAdmin
       .from('departments')
       .select('name, display_name')
       .order('display_order');
@@ -141,7 +160,6 @@ export async function GET(request, { params }) {
         contact_no: formData.contact_no,
         alumni_screenshot_url: formData.alumni_screenshot_url,
         certificate_url: formData.certificate_url,
-        final_certificate_generated: formData.final_certificate_generated,
         status: formData.status,
         created_at: formData.created_at,
         updated_at: formData.updated_at,
@@ -150,15 +168,15 @@ export async function GET(request, { params }) {
       departmentStatuses: completeStatuses
     };
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       data: studentData
     });
   } catch (error) {
     console.error('Staff Student Detail API Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Internal server error' 
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

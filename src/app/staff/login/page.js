@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Logo from '@/components/ui/Logo';
 
 export default function StaffLogin() {
   const [email, setEmail] = useState('');
@@ -37,9 +38,12 @@ export default function StaffLogin() {
 
       if (authError) throw authError;
 
-      if (!authData.user) {
+      if (!authData.user || !authData.session) {
         throw new Error('Login failed. Please try again.');
       }
+
+      // Wait a moment for session to be established
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify user has staff role (department or admin)
       const { data: profile, error: profileError } = await supabase
@@ -49,7 +53,9 @@ export default function StaffLogin() {
         .single();
 
       if (profileError) {
-        throw new Error('Failed to load user profile');
+        console.error('Profile fetch error:', profileError);
+        console.error('Auth data:', authData);
+        throw new Error(`Failed to load user profile: ${profileError.message || profileError.code || 'Unknown error'}`);
       }
 
       if (!profile || (profile.role !== 'department' && profile.role !== 'admin')) {
@@ -58,8 +64,9 @@ export default function StaffLogin() {
         throw new Error('Access denied. Only department staff and administrators can log in here.');
       }
 
-      // Success! Redirect to dashboard or return URL
-      const redirect = searchParams.get('redirect') || '/staff/dashboard';
+      // Success! Redirect based on role
+      const redirect = searchParams.get('redirect') ||
+        (profile.role === 'admin' ? '/admin' : '/staff/dashboard');
       router.push(redirect);
     } catch (err) {
       console.error('Login error:', err);
@@ -75,14 +82,15 @@ export default function StaffLogin() {
         <div className="w-full max-w-md">
           <GlassCard>
             <div className="text-center mb-8">
-              <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
+              <div className="flex justify-center mb-6">
+                <Logo size="medium" showText={true} />
+              </div>
+              <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                }`}>
                 Staff Login
               </h1>
-              <p className={`text-sm transition-colors duration-700 ${
-                isDark ? 'text-gray-400' : 'text-gray-600'
-              }`}>
+              <p className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                 Department Staff & Administrators Only
               </p>
             </div>
@@ -95,20 +103,18 @@ export default function StaffLogin() {
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                }`}>
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                   Email Address
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${
-                    isDark 
-                      ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500' 
-                      : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${isDark
+                    ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
+                    : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
+                    }`}
                   placeholder="your.email@jecrc.ac.in"
                   required
                   disabled={loading}
@@ -117,20 +123,18 @@ export default function StaffLogin() {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${
-                  isDark ? 'text-gray-300' : 'text-gray-700'
-                }`}>
+                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
                   Password
                 </label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${
-                    isDark 
-                      ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500' 
-                      : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${isDark
+                    ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
+                    : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
+                    }`}
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -157,17 +161,15 @@ export default function StaffLogin() {
             <div className="mt-6 text-center">
               <button
                 onClick={() => router.push('/')}
-                className={`text-sm transition-colors duration-700 hover:underline ${
-                  isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
-                }`}
+                className={`text-sm transition-colors duration-700 hover:underline ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
+                  }`}
               >
                 ← Back to Home
               </button>
             </div>
 
-            <div className={`mt-6 pt-6 border-t text-center text-xs transition-colors duration-700 ${
-              isDark ? 'border-white/10 text-gray-500' : 'border-black/10 text-gray-600'
-            }`}>
+            <div className={`mt-6 pt-6 border-t text-center text-xs transition-colors duration-700 ${isDark ? 'border-white/10 text-gray-500' : 'border-black/10 text-gray-600'
+              }`}>
               <p>Need help? Contact your system administrator</p>
             </div>
           </GlassCard>

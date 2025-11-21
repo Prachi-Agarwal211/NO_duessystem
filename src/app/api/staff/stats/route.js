@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET(request) {
   try {
@@ -11,7 +16,7 @@ export async function GET(request) {
     }
 
     // Get user profile to verify role and department
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
@@ -25,16 +30,16 @@ export async function GET(request) {
 
     if (profile.role === 'admin') {
       // Admin gets stats for all departments
-      const { count: totalForms, error: totalError } = await supabase
+      const { count: totalForms, error: totalError } = await supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true });
 
-      const { count: completedForms, error: completedError } = await supabase
+      const { count: completedForms, error: completedError } = await supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'completed');
 
-      const { count: pendingForms, error: pendingError } = await supabase
+      const { count: pendingForms, error: pendingError } = await supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
@@ -51,21 +56,21 @@ export async function GET(request) {
       };
 
       // Get department-specific stats - OPTIMIZED: Single query with aggregation
-      const { data: departments, error: deptError } = await supabase
+      const { data: departments, error: deptError } = await supabaseAdmin
         .from('departments')
         .select('name, display_name')
         .order('display_order');
 
       if (!deptError && departments) {
         // Single aggregated query instead of N+1 queries
-        const { data: statusCounts, error: statusError } = await supabase
+        const { data: statusCounts, error: statusError } = await supabaseAdmin
           .from('no_dues_status')
           .select('department_name, status');
 
         if (!statusError && statusCounts) {
           // Aggregate counts in memory (much faster than N queries)
           const statsMap = {};
-          
+
           statusCounts.forEach(record => {
             if (!statsMap[record.department_name]) {
               statsMap[record.department_name] = { pending: 0, approved: 0 };
@@ -89,19 +94,19 @@ export async function GET(request) {
       }
     } else if (profile.role === 'department') {
       // Department staff gets stats for their department only
-      const { count: pendingCount, error: pendingError } = await supabase
+      const { count: pendingCount, error: pendingError } = await supabaseAdmin
         .from('no_dues_status')
         .select('*', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
         .eq('status', 'pending');
 
-      const { count: approvedCount, error: approvedError } = await supabase
+      const { count: approvedCount, error: approvedError } = await supabaseAdmin
         .from('no_dues_status')
         .select('*', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
         .eq('status', 'approved');
 
-      const { count: rejectedCount, error: rejectedError } = await supabase
+      const { count: rejectedCount, error: rejectedError } = await supabaseAdmin
         .from('no_dues_status')
         .select('*', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
