@@ -42,10 +42,10 @@ function createErrorResponse(message, status = 500, type = 'general') {
  */
 function escapeHtml(str) {
   return String(str || "")
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """)
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
     .replace(/'/g, "&#039;");
 }
 
@@ -60,7 +60,7 @@ export async function POST(request) {
     } = body || {};
 
     // ==================== VALIDATION ====================
-    
+
     if (!form_id) {
       return createErrorResponse("Form ID is required", 400, 'validation');
     }
@@ -84,7 +84,7 @@ export async function POST(request) {
     }
 
     // ==================== SEND EMAIL ====================
-    
+
     const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
 
     try {
