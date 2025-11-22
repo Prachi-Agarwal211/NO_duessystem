@@ -1,0 +1,6 @@
+id,user_id,registration_no,student_name,session_from,session_to,parent_name,school,course,branch,contact_no,alumni_screenshot_url,certificate_url,status,created_at,updated_at
+4df67219-3a4d-4642-a7fd-0be8267f5ac2,,TEST2022,Test Student,2022,2025,Parent Name,Management,B.Tech,CSE,9876543211,,,pending,2025-11-21 18:28:19.583302+00,2025-11-21 18:28:19.583302+00
+7bd9dc2e-48f4-420b-a56e-bf08365a3dd5,,TEST20221,Test Student,2022,2025,Parent Name,Management,B.Tech,CSE,9876543211,,,pending,2025-11-21 18:31:29.291672+00,2025-11-21 18:31:29.291672+00
+a3cca415-c959-425d-b738-574388260008,,TEST2025,Test Student,2021,2025,Parent Name,Engineering,B.Tech,CSE,9876543210,,,pending,2025-11-21 18:17:36.936429+00,2025-11-21 18:17:36.936429+00
+d573227f-6cf4-45b7-b3b6-c2d118b6f2a0,,202934,habs,2022,2026,pfe,Engineering,btech,cse,9876543210,,,pending,2025-11-21 18:56:31.207542+00,2025-11-21 18:56:31.207542+00
+e01e5247-266c-4c4e-95f9-b0abf3bcb188,,21BCON532,Prachi Agarwal,2021,2025,Sushil Kumar Agarwal,Engineering,B.Tech,B Tech/CSE,9155804490,,,pending,2025-11-21 18:15:05.461262+00,2025-11-21 18:15:05.461262+00

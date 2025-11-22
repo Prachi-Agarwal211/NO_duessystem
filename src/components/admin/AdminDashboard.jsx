@@ -158,8 +158,15 @@ export default function AdminDashboard() {
     // Prepare CSV headers
     const headers = ['Student Name', 'Registration No', 'Course', 'Overall Status', 'Submitted Date'];
 
-    // Add department columns
-    const departments = ['LIBRARY', 'HOSTEL', 'IT_DEPARTMENT'];
+    // Get all unique departments from applications
+    const allDepartments = new Set();
+    applications.forEach(app => {
+      app.no_dues_status?.forEach(status => {
+        allDepartments.add(status.department_name);
+      });
+    });
+    const departments = Array.from(allDepartments).sort();
+
     departments.forEach(dept => {
       headers.push(`${dept} Status`, `${dept} Response Time`, `${dept} Action By`);
     });
@@ -440,7 +447,6 @@ export default function AdminDashboard() {
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="rejected">Rejected</option>
             </select>
@@ -453,9 +459,18 @@ export default function AdminDashboard() {
                 }`}
             >
               <option value="">All Departments</option>
-              <option value="LIBRARY">Library</option>
-              <option value="HOSTEL">Hostel</option>
-              <option value="IT_DEPARTMENT">IT Department</option>
+              <option value="library">Library</option>
+              <option value="accounts">Accounts</option>
+              <option value="hostel">Hostel</option>
+              <option value="lab">Laboratory</option>
+              <option value="department">Department</option>
+              <option value="sports">Sports</option>
+              <option value="transport">Transport</option>
+              <option value="exam">Examination Cell</option>
+              <option value="placement">Training & Placement</option>
+              <option value="scholarship">Scholarship</option>
+              <option value="student_affairs">Student Affairs</option>
+              <option value="administration">Administration</option>
             </select>
             <div className={`text-sm flex items-center transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>

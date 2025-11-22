@@ -26,7 +26,7 @@ DROP FUNCTION IF EXISTS calculate_response_time(UUID, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 DROP FUNCTION IF EXISTS create_department_statuses() CASCADE;
 DROP FUNCTION IF EXISTS initialize_form_status_records() CASCADE;
-DROP FUNCTION IF EXISTS update_form_status_on_department_action() CASCADE;
+-- Note: update_form_status_on_department_action() function removed - logic moved to API
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -174,43 +174,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4.3 Function: Update form status when all departments approve
-CREATE OR REPLACE FUNCTION update_form_status_on_department_action()
-RETURNS TRIGGER AS $$
-DECLARE
-    total_depts INTEGER;
-    approved_depts INTEGER;
-    rejected_depts INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO total_depts
-    FROM public.no_dues_status
-    WHERE form_id = NEW.form_id;
-    
-    SELECT COUNT(*) INTO approved_depts
-    FROM public.no_dues_status
-    WHERE form_id = NEW.form_id AND status = 'approved';
-    
-    SELECT COUNT(*) INTO rejected_depts
-    FROM public.no_dues_status
-    WHERE form_id = NEW.form_id AND status = 'rejected';
-    
-    IF rejected_depts > 0 THEN
-        UPDATE public.no_dues_forms
-        SET status = 'rejected'
-        WHERE id = NEW.form_id;
-    ELSIF approved_depts = total_depts THEN
-        UPDATE public.no_dues_forms
-        SET status = 'completed'
-        WHERE id = NEW.form_id;
-    ELSE
-        UPDATE public.no_dues_forms
-        SET status = 'pending'
-        WHERE id = NEW.form_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- 4.3 REMOVED: update_form_status_on_department_action() function
+-- This logic is now handled in the API code (src/app/api/staff/action/route.js)
+-- for better control and to avoid race conditions during bulk INSERT operations.
+-- The trigger caused auto-approval bugs where forms were marked 'completed'
+-- immediately after submission instead of staying 'pending'.
 
 -- 4.4 Function: Get form statistics (for admin dashboard)
 CREATE OR REPLACE FUNCTION get_form_statistics()
@@ -252,6 +220,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 4.6 Function: Get admin summary statistics
+CREATE OR REPLACE FUNCTION get_admin_summary_stats()
+RETURNS TABLE (
+    total_requests BIGINT,
+    completed_requests BIGINT,
+    pending_requests BIGINT,
+    rejected_requests BIGINT,
+    completion_rate NUMERIC,
+    avg_response_time_hours NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH stats AS (
+        SELECT
+            COUNT(*) as total,
+            COUNT(*) FILTER (WHERE status = 'completed') as completed,
+            COUNT(*) FILTER (WHERE status = 'pending') as pending,
+            COUNT(*) FILTER (WHERE status = 'rejected') as rejected
+        FROM public.no_dues_forms
+    ),
+    response_times AS (
+        SELECT
+            AVG(
+                EXTRACT(EPOCH FROM (action_at - created_at)) / 3600
+            ) as avg_hours
+        FROM public.no_dues_status
+        WHERE action_at IS NOT NULL
+    )
+    SELECT
+        stats.total as total_requests,
+        stats.completed as completed_requests,
+        stats.pending as pending_requests,
+        stats.rejected as rejected_requests,
+        CASE
+            WHEN stats.total > 0
+            THEN ROUND((stats.completed::NUMERIC / stats.total::NUMERIC) * 100, 2)
+            ELSE 0
+        END as completion_rate,
+        COALESCE(response_times.avg_hours, 0) as avg_response_time_hours
+    FROM stats, response_times;
+END;
+$$ LANGUAGE plpgsql;
+
 -- ============================================================================
 -- SECTION 5: CREATE TRIGGERS
 -- ============================================================================
@@ -274,11 +285,13 @@ CREATE TRIGGER trigger_create_department_statuses
     FOR EACH ROW
     EXECUTE FUNCTION create_department_statuses();
 
--- Trigger: Update form status on department status change
-CREATE TRIGGER trigger_update_form_status
-    AFTER INSERT OR UPDATE ON public.no_dues_status
-    FOR EACH ROW
-    EXECUTE FUNCTION update_form_status_on_department_action();
+-- REMOVED: trigger_update_form_status trigger
+-- Form status updates are now handled in API code (src/app/api/staff/action/route.js)
+-- This provides:
+-- - Better control over status update logic
+-- - No race conditions during bulk INSERT operations
+-- - Easier debugging and maintenance
+-- - Simpler, more predictable architecture
 
 -- ============================================================================
 -- SECTION 6: ROW LEVEL SECURITY (RLS) POLICIES

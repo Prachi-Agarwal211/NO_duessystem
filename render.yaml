@@ -1,0 +1,22 @@
+# Render Blueprint for JECRC No Dues System
+services:
+  - type: web
+    name: jecrc-no-dues-system
+    env: node
+    region: singapore # Change to your preferred region
+    plan: free # Change to starter/standard for production
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+    healthCheckPath: /
+    autoDeploy: true

@@ -286,9 +286,11 @@ export default function StatusTracker({ registrationNo }) {
           </h3>
           <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth
             ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            Your certificate is ready for download
+            {formData.certificate_url
+              ? 'Your certificate is ready for download'
+              : 'Your certificate is being generated. Please refresh in a moment.'}
           </p>
-          {formData.certificate_url && (
+          {formData.certificate_url ? (
             <a
               href={formData.certificate_url}
               target="_blank"
@@ -298,6 +300,20 @@ export default function StatusTracker({ registrationNo }) {
               <Download size={20} />
               Download Certificate
             </a>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-3 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+              <p className={`text-xs transition-colors duration-700 ease-smooth
+                ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                Generating certificate...
+              </p>
+              <button
+                onClick={() => fetchData(true)}
+                className="text-sm text-green-600 hover:text-green-500 font-medium underline"
+              >
+                Refresh Status
+              </button>
+            </div>
           )}
         </motion.div>
       )}

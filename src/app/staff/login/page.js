@@ -46,19 +46,26 @@ export default function StaffLogin() {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify user has staff role (department or admin)
+      // Use maybeSingle() instead of single() to handle potential duplicate/missing records gracefully
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, full_name, department_name')
         .eq('id', authData.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Profile fetch error:', profileError);
         console.error('Auth data:', authData);
-        throw new Error(`Failed to load user profile: ${profileError.message || profileError.code || 'Unknown error'}`);
+        await supabase.auth.signOut();
+        throw new Error(`Failed to load user profile: ${profileError.message || 'Unknown error'}`);
       }
 
-      if (!profile || (profile.role !== 'department' && profile.role !== 'admin')) {
+      if (!profile) {
+        await supabase.auth.signOut();
+        throw new Error('User profile not found. Please contact your administrator.');
+      }
+
+      if (profile.role !== 'department' && profile.role !== 'admin') {
         // Sign out the user since they're not authorized
         await supabase.auth.signOut();
         throw new Error('Access denied. Only department staff and administrators can log in here.');
