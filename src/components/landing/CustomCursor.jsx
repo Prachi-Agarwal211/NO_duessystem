@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useDeviceDetection, prefersReducedMotion } from '@/hooks/useDeviceDetection';
 
 export default function CustomCursor({ theme }) {
+  const { isMobile, hasHover } = useDeviceDetection();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+
+  // Don't render custom cursor on mobile/touch devices or if reduced motion is preferred
+  if (isMobile || !hasHover || prefersReducedMotion()) {
+    return null;
+  }
 
   useEffect(() => {
     const updateMousePosition = (e) => {

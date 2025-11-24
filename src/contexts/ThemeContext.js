@@ -14,6 +14,7 @@ export function ThemeProvider({ children }) {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    document.body.classList.toggle('dark', savedTheme === 'dark');
   }, []);
 
   const toggleTheme = () => {
@@ -21,6 +22,7 @@ export function ThemeProvider({ children }) {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    document.body.classList.toggle('dark', newTheme === 'dark');
   };
 
   // Prevent flash of unstyled content but provide context

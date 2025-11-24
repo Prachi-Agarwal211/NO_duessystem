@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,23 +16,26 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 function DepartmentPerformanceChart({ data }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const chartData = {
     labels: data ? data.map(item => item.department_name) : [],
     datasets: [
       {
         label: 'Approved',
         data: data ? data.map(item => item.approved_requests || 0) : [],
-        backgroundColor: 'rgba(72, 187, 120, 0.8)',
+        backgroundColor: isDark ? 'rgba(0, 255, 136, 0.8)' : 'rgba(45, 122, 69, 0.8)',
       },
       {
         label: 'Rejected',
         data: data ? data.map(item => item.rejected_requests || 0) : [],
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+        backgroundColor: isDark ? 'rgba(255, 51, 102, 0.8)' : 'rgba(196, 30, 58, 0.8)',
       },
       {
         label: 'Pending',
         data: data ? data.map(item => item.pending_requests || 0) : [],
-        backgroundColor: 'rgba(245, 158, 11, 0.8)',
+        backgroundColor: isDark ? 'rgba(255, 176, 32, 0.8)' : 'rgba(217, 119, 6, 0.8)',
       },
     ],
   };
@@ -40,41 +46,44 @@ function DepartmentPerformanceChart({ data }) {
       legend: {
         position: 'top',
         labels: {
-          color: '#e5e7eb',
+          color: isDark ? '#FFFFFF' : '#000000',
         },
       },
       title: {
         display: true,
         text: 'Department Performance Overview',
-        color: '#e5e7eb',
+        color: isDark ? '#FFFFFF' : '#000000',
       },
     },
     scales: {
       x: {
         ticks: {
-          color: '#9ca3af',
+          color: isDark ? '#CCCCCC' : '#333333',
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         },
       },
       y: {
         ticks: {
-          color: '#9ca3af',
+          color: isDark ? '#CCCCCC' : '#333333',
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         },
       },
     },
   };
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+    <div className={`backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${
+      isDark
+        ? 'bg-white/5 border-white/10'
+        : 'bg-black/5 border-black/10'
+    }`}>
       <Bar data={chartData} options={options} />
     </div>
   );
 }
 
-// Memoize to prevent unnecessary re-renders when data doesn't change
 export default React.memo(DepartmentPerformanceChart);

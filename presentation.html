@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JECRC No-Dues System - Pitch Presentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            animation: fadeIn 0.6s ease-in-out;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, #fff, #e0e0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            font-size: 3rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            font-weight: 300;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .content-text {
+            text-align: left;
+        }
+
+        .content-text ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .content-text li {
+            font-size: 1.3rem;
+            margin: 20px 0;
+            padding-left: 30px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .content-text li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .screenshot-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .screenshot-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .highlight {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 1rem;
+            margin: 10px 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .full-screenshot {
+            max-width: 900px;
+            margin: 30px auto;
+        }
+
+        .title-slide {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+        }
+
+        .feature-list {
+            text-align: left;
+            max-width: 800px;
+            margin: 30px auto;
+        }
+
+        .feature-list li {
+            font-size: 1.5rem;
+            margin: 25px 0;
+            padding-left: 40px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            h2 {
+                font-size: 2rem;
+            }
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            .slide {
+                padding: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Title -->
+        <div class="slide active title-slide">
+            <div class="slide-content">
+                <h1>JECRC No-Dues System</h1>
+                <p class="subtitle">From Entry to Exit: A Seamless Digital Journey</p>
+                <p style="font-size: 1.2rem; margin-top: 40px; opacity: 0.8;">Transforming University Clearance from Paper Chase to Digital Excellence</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: The Problem -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>The Traditional Problem</h2>
+                <div class="feature-list">
+                    <ul>
+                        <li>Students running between 12+ departments with paper forms</li>
+                        <li>5-7 days average clearance time</li>
+                        <li>No visibility into approval status</li>
+                        <li>Lost forms and miscommunication</li>
+                        <li>Manual tracking causing bottlenecks</li>
+                    </ul>
+                </div>
+                <p style="font-size: 1.5rem; margin-top: 40px; color: #fbbf24;">⏱️ Time wasted: <span class="highlight">Hundreds of hours per semester</span></p>
+            </div>
+        </div>
+
+        <!-- Slide 3: The Solution -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Our Solution: Digital Transformation</h2>
+                <div class="content-grid">
+                    <div class="content-text">
+                        <ul>
+                            <li><span class="highlight">One Form</span> - Student fills once</li>
+                            <li><span class="highlight">Smart Routing</span> - Auto-distributed to all departments</li>
+                            <li><span class="highlight">Real-Time Tracking</span> - Instant status updates</li>
+                            <li><span class="highlight">Mobile First</span> - Works on any device</li>
+                            <li><span class="highlight">Role-Based Access</span> - Secure & focused</li>
+                        </ul>
+                    </div>
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.21.19 AM.jpeg" alt="Landing Page">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Landing Page -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>🚪 The Landing Page - Gateway to the System</h2>
+                <div class="content-grid">
+                    <div class="content-text">
+                        <ul>
+                            <li>The front door to the entire university clearance system</li>
+                            <li>Simple, clean interface for Students, Staff, and Admin</li>
+                            <li>No confusion - everyone starts here</li>
+                            <li>One unified platform for all clearance activities</li>
+                        </ul>
+                        <p style="margin-top: 30px; font-size: 1.2rem; opacity: 0.9;">Three roles, one seamless experience</p>
+                    </div>
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.21.19 AM.jpeg" alt="Landing Page">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Student Form -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>📝 Student Form - One-Time Input</h2>
+                <div class="content-grid">
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.47.03 AM.jpeg" alt="Student Form">
+                    </div>
+                    <div class="content-text">
+                        <ul>
+                            <li><span class="highlight">Single Digital Form</span> replaces 12 paper forms</li>
+                            <li>Smart Routing to Library, Hostel, Sports, Accounts, etc.</li>
+                            <li>Auto-creates requests for every department</li>
+                            <li>Student's work done in <span class="highlight">2 minutes</span></li>
+                        </ul>
+                        <div style="margin-top: 30px;">
+                            <span class="badge">📚 Library</span>
+                            <span class="badge">🏠 Hostel</span>
+                            <span class="badge">⚽ Sports</span>
+                            <span class="badge">💰 Accounts</span>
+                            <span class="badge">📖 Academics</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Student Status Dashboard -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>📊 Student Status - Real-Time Tracking</h2>
+                <div class="content-grid">
+                    <div class="content-text">
+                        <ul>
+                            <li>Check status anytime, anywhere - no college visit needed</li>
+                            <li><span style="color: #4ade80;">🟢 Green</span> - Approved</li>
+                            <li><span style="color: #fbbf24;">🟡 Yellow</span> - Pending</li>
+                            <li><span style="color: #ef4444;">🔴 Red</span> - Rejected with reason</li>
+                            <li>Eliminates "I didn't know I had dues" chaos</li>
+                        </ul>
+                        <p style="margin-top: 30px; font-size: 1.2rem;">Complete transparency at your fingertips</p>
+                    </div>
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.21.18 AM (1).jpeg" alt="Student Status Dashboard">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Staff Login -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>🔐 Staff Login - Secure Access</h2>
+                <div class="content-grid">
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.47.04 AM (1).jpeg" alt="Staff Login">
+                    </div>
+                    <div class="content-text">
+                        <ul>
+                            <li>Dedicated secure login for department staff</li>
+                            <li><span class="highlight">Role-Based Access</span> - See only your department's data</li>
+                            <li>Librarians see Library requests only</li>
+                            <li>Hostel Wardens see Hostel requests only</li>
+                            <li>Focused, secure, and efficient</li>
+                        </ul>
+                        <p style="margin-top: 30px; font-size: 1.2rem; opacity: 0.9;">No clutter. Just what you need.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Department Dashboard -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>⚡ Department Dashboard - Action Center</h2>
+                <div class="content-grid">
+                    <div class="content-text">
+                        <ul>
+                            <li>Live list of students waiting for clearance</li>
+                            <li><span class="highlight">One-Tap Action</span> - Approve or Reject</li>
+                            <li>Instant SMS/Email notification to students</li>
+                            <li>Works on mobile - No desktop needed</li>
+                            <li>Fastest clearance process possible</li>
+                        </ul>
+                        <p style="margin-top: 30px; font-size: 1.2rem; color: #4ade80;">⚡ Click → Approve → Notify → Done</p>
+                    </div>
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.21.18 AM.jpeg" alt="Department Dashboard">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Admin Dashboard -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>📈 Admin Dashboard - The Control Center</h2>
+                <div class="content-grid">
+                    <div class="screenshot-container">
+                        <img src="screenshots/WhatsApp Image 2025-11-24 at 11.47.06 AM.jpeg" alt="Admin Dashboard">
+                    </div>
+                    <div class="content-text">
+                        <ul>
+                            <li><span class="highlight">Bird's-Eye View</span> of entire university</li>
+                            <li>See total students: Pending vs Cleared</li>
+                            <li><span class="highlight">Bottleneck Detection</span> - Identify delayed departments</li>
+                            <li>Override power for emergency clearances</li>
+                            <li>Real-time analytics and insights</li>
+                        </ul>
+                        <p style="margin-top: 30px; font-size: 1.2rem;">The God View for Management</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Success Certificate -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>✅ The Final Output - Success!</h2>
+                <div class="full-screenshot screenshot-container">
+                    <img src="screenshots/WhatsApp Image 2025-11-24 at 11.21.18 AM (2).jpeg" alt="Success Certificate">
+                </div>
+                <div class="feature-list">
+                    <ul>
+                        <li>All departments turn Green → Certificate unlocks</li>
+                        <li>Download button activates automatically</li>
+                        <li><span class="highlight">5-day paper chase → 30-minute digital flow</span></li>
+                        <li>Complete clearance certificate in your pocket</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Key Features -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>🎯 Key Features Summary</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px);">
+                        <h3 style="margin-bottom: 20px; font-size: 1.8rem;">For Students</h3>
+                        <ul style="text-align: left; list-style: none;">
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Fill once, submit to all</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Real-time status tracking</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Clear rejection reasons</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Download certificate</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px);">
+                        <h3 style="margin-bottom: 20px; font-size: 1.8rem;">For Staff & Admin</h3>
+                        <ul style="text-align: left; list-style: none;">
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Role-based dashboards</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ One-click approvals</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Analytics & insights</li>
+                            <li style="margin: 15px 0; font-size: 1.2rem;">✓ Mobile-friendly</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Impact -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>📈 The Impact</h2>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 50px;">
+                    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <h3 style="font-size: 3.5rem; margin-bottom: 10px;">96%</h3>
+                        <p style="font-size: 1.3rem;">Time Saved</p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">From 5 days to 30 minutes</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <h3 style="font-size: 3.5rem; margin-bottom: 10px;">100%</h3>
+                        <p style="font-size: 1.3rem;">Transparency</p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">Know your status anytime</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <h3 style="font-size: 3.5rem; margin-bottom: 10px;">0</h3>
+                        <p style="font-size: 1.3rem;">Paper Forms</p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px;">Completely digital</p>
+                    </div>
+                </div>
+                <p style="margin-top: 50px; font-size: 1.5rem; color: #4ade80;">🌱 Eco-friendly | ⚡ Efficient | 🎯 Effective</p>
+            </div>
+        </div>
+
+        <!-- Slide 13: Technology Stack -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>🛠️ Technology Stack</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; margin-top: 50px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 35px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                        <h3 style="margin-bottom: 25px; font-size: 1.8rem; color: #60a5fa;">Frontend</h3>
+                        <ul style="text-align: left; list-style: none; font-size: 1.2rem;">
+                            <li style="margin: 12px 0;">⚛️ Next.js & React</li>
+                            <li style="margin: 12px 0;">🎨 Modern UI/UX</li>
+                            <li style="margin: 12px 0;">📱 Responsive Design</li>
+                            <li style="margin: 12px 0;">✨ Glassmorphism</li>
+                        </ul>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 35px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+                        <h3 style="margin-bottom: 25px; font-size: 1.8rem; color: #4ade80;">Backend</h3>
+                        <ul style="text-align: left; list-style: none; font-size: 1.2rem;">
+                            <li style="margin: 12px 0;">🟢 Node.js + Express</li>
+                            <li style="margin: 12px 0;">🗄️ MongoDB Database</li>
+                            <li style="margin: 12px 0;">🔐 Secure Authentication</li>
+                            <li style="margin: 12px 0;">📊 Real-time Updates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: Closing -->
+        <div class="slide title-slide">
+            <div class="slide-content">
+                <h1 style="font-size: 3.5rem; margin-bottom: 30px;">Thank You!</h1>
+                <p class="subtitle" style="font-size: 2rem;">JECRC No-Dues System</p>
+                <p style="font-size: 1.5rem; margin-top: 40px; opacity: 0.9;">Transforming University Clearance</p>
+                <p style="font-size: 1.3rem; margin-top: 20px; opacity: 0.8;">From Paper Chase to Digital Excellence</p>
+                <div style="margin-top: 60px;">
+                    <p style="font-size: 1.2rem; opacity: 0.7;">Questions?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-counter">
+        <span id="current-slide">1</span> / <span id="total-slides">14</span>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" onclick="previousSlide()">← Previous</button>
+        <button class="control-btn" onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        document.getElementById('total-slides').textContent = totalSlides;
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+
+        // Touch swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) nextSlide();
+            if (touchEndX > touchStartX + 50) previousSlide();
+        }
+    </script>
+</body>
+</html>
