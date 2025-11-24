@@ -1,4 +1,4 @@
-ht i 'use client';
+'use client';
 
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
