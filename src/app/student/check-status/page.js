@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -14,7 +14,7 @@ import Logo from '@/components/ui/Logo';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function CheckStatusPage() {
+function CheckStatusContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme } = useTheme();
@@ -273,5 +273,19 @@ export default function CheckStatusPage() {
         </div>
       </div>
     </PageWrapper>
+  );
+}
+
+export default function CheckStatusPage() {
+  return (
+    <Suspense fallback={
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
+        </div>
+      </PageWrapper>
+    }>
+      <CheckStatusContent />
+    </Suspense>
   );
 }

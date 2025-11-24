@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -11,7 +11,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Logo from '@/components/ui/Logo';
 
-export default function StaffLogin() {
+function StaffLoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -178,5 +178,19 @@ export default function StaffLogin() {
         </div>
       </div>
     </PageWrapper>
+  );
+}
+
+export default function StaffLogin() {
+  return (
+    <Suspense fallback={
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
+    }>
+      <StaffLoginContent />
+    </Suspense>
   );
 }

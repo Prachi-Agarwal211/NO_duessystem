@@ -184,10 +184,9 @@ export const validateSupabaseConfig = () => {
         issues.push('SUPABASE_SERVICE_ROLE_KEY must be a valid service role key');
     }
 
-    // Check if URLs match (common configuration error)
-    if (url && serviceKey && !serviceKey.includes(new URL(url).hostname)) {
-        issues.push('Service role key does not match the Supabase URL');
-    }
+    // Note: Supabase service role keys are JWTs that don't contain the hostname
+    // Skipping hostname validation as it causes false positives
+    // The key validity will be checked during actual API calls
 
     return {
         isValid: issues.length === 0,

@@ -2,14 +2,14 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 // import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-export default function DepartmentActionPage() {
+function DepartmentActionContent() {
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [formId, setFormId] = useState('');
@@ -163,5 +163,17 @@ export default function DepartmentActionPage() {
         </GlassCard>
       </div>
     </div>
+  );
+}
+
+export default function DepartmentActionPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    }>
+      <DepartmentActionContent />
+    </Suspense>
   );
 }
