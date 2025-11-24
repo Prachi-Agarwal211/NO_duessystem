@@ -241,9 +241,10 @@ export default function Background({ theme }) {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0 transition-colors duration-700 ease-smooth pointer-events-none"
+      className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none"
       style={{
-        background: 'transparent'
+        background: 'transparent',
+        zIndex: 1
       }}
     />
   );
