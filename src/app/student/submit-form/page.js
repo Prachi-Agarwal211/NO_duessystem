@@ -53,7 +53,7 @@ export default function SubmitFormPage() {
                 className="flex flex-col items-center"
               >
                 <div className="mb-4">
-                  <Logo size="medium" showText={true} />
+                  <Logo size="medium" />
                 </div>
                 <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-3">
                   Student Services

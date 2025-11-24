@@ -85,7 +85,7 @@ function StaffLoginContent() {
           <GlassCard>
             <div className="text-center mb-8">
               <div className="flex justify-center mb-6">
-                <Logo size="medium" showText={true} />
+                <Logo size="medium" />
               </div>
               <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                 }`}>

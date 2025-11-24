@@ -13,19 +13,9 @@ export default function Background({ theme }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Skip animation if user prefers reduced motion
+    // Skip animation if user prefers reduced motion (keep canvas transparent)
     if (prefersReducedMotion()) {
-      if (theme === 'dark') {
-        ctx.fillStyle = '#050505';
-      } else {
-        // Light mode gradient background
-        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, '#FFFFFF');
-        gradient.addColorStop(0.5, '#FFF8F8');
-        gradient.addColorStop(1, '#FFE5E9');
-        ctx.fillStyle = gradient;
-      }
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
 

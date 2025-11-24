@@ -25,10 +25,9 @@ export function ThemeProvider({ children }) {
     document.body.classList.toggle('dark', newTheme === 'dark');
   };
 
-  // Prevent flash of unstyled content but provide context
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
+      {children}
     </ThemeContext.Provider>
   );
 }

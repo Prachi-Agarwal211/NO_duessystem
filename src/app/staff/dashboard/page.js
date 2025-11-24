@@ -9,6 +9,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import DataTable from '@/components/ui/DataTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
+import Logo from '@/components/ui/Logo';
 
 export default function StaffDashboard() {
   const [user, setUser] = useState(null);
@@ -141,6 +142,11 @@ export default function StaffDashboard() {
       <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <GlassCard>
+            {/* Centered Logo - University Crest */}
+            <div className="w-full flex justify-center mb-8 animate-fade-in">
+              <Logo size="small" priority={true} />
+            </div>
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                 }`}>

@@ -97,8 +97,10 @@ module.exports = {
         'scale-in': 'scaleIn 0.6s ease-out',
         'glow-pulse': 'glowPulse 3s ease-in-out infinite',
         'glow-pulse-white': 'glowPulseWhite 4s ease-in-out infinite',
+        'pulse-slow': 'pulseSlow 4s ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',
         'shimmer': 'shimmer 2.5s linear infinite',
+        'drop-from-top': 'dropFromTop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
       },
       keyframes: {
         fadeIn: {
@@ -133,6 +135,10 @@ module.exports = {
             boxShadow: '0 0 20px rgba(255, 255, 255, 0.2), 0 0 40px rgba(255, 255, 255, 0.1)'
           },
         },
+        pulseSlow: {
+          '0%, 100%': { opacity: '0.6' },
+          '50%': { opacity: '0.9' },
+        },
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
@@ -140,6 +146,23 @@ module.exports = {
         shimmer: {
           '0%': { backgroundPosition: '-1000px 0' },
           '100%': { backgroundPosition: '1000px 0' },
+        },
+        dropFromTop: {
+          '0%': {
+            transform: 'translateY(-100px) scale(0.8)',
+            opacity: '0',
+          },
+          '60%': {
+            transform: 'translateY(10px) scale(1.05)',
+            opacity: '1',
+          },
+          '80%': {
+            transform: 'translateY(-5px) scale(0.98)',
+          },
+          '100%': {
+            transform: 'translateY(0) scale(1)',
+            opacity: '1',
+          },
         },
       },
     },

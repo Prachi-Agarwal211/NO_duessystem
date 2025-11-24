@@ -148,7 +148,7 @@ function CheckStatusContent() {
             className="text-center mb-12"
           >
             <div className="flex flex-col items-center mb-6">
-              <Logo size="medium" showText={true} />
+              <Logo size="medium" />
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
               Check Your Status

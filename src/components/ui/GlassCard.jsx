@@ -1,4 +1,4 @@
-'use client';
+ht i 'use client';
 
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -50,19 +50,21 @@ export default function GlassCard({
         animate-fade-in
         ${isDark
           ? `
-            bg-white/[0.02]
-            border-white/10
+            bg-black/80
+            border-jecrc-red/20
             ${variantStyles[variant]}
-            hover:border-white/20
-            hover:bg-white/[0.04]
+            hover:border-jecrc-red/40
+            hover:bg-black/90
             text-white
+            shadow-[0_0_40px_rgba(196,30,58,0.15)]
+            hover:shadow-[0_0_60px_rgba(196,30,58,0.25)]
           `
           : `
-            bg-gradient-to-br from-white/90 via-cream/80 to-jecrc-pink/30
+            bg-gradient-to-br from-white/50 via-cream/40 to-jecrc-pink/20
             border-jecrc-red/10
             ${variantStyles[variant]}
             hover:border-jecrc-red/20
-            hover:from-white hover:via-jecrc-pink/20 hover:to-jecrc-rose/30
+            hover:from-white/60 hover:via-jecrc-pink/30 hover:to-jecrc-rose/40
             text-pure-black
           `
         }

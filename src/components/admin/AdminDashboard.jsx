@@ -11,6 +11,7 @@ import StatsCard from '@/components/admin/StatsCard';
 import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformanceChart';
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
+import Logo from '@/components/ui/Logo';
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
@@ -93,6 +94,11 @@ export default function AdminDashboard() {
     <PageWrapper>
       <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
+          {/* Centered Logo - University Crest */}
+          <div className="w-full flex justify-center mb-8 animate-fade-in">
+            <Logo size="small" priority={true} />
+          </div>
+
           {/* Header */}
           <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
