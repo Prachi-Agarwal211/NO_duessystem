@@ -1,56 +1,57 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /**
- * JECRC University Logo Component
- * Reusable logo component with multiple size variants and theme support
+ * JECRC University Logo Component - Clean & Seamless
  */
 export default function Logo({
     size = 'medium',
     className = '',
-    showText = true,
     priority = false
 }) {
     const { theme } = useTheme();
-    const isDark = theme === 'dark';
+    const [mounted, setMounted] = useState(false);
 
-    // Size configurations
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Optimized sizes
     const sizeConfig = {
-        small: { width: 40, height: 40, textClass: 'text-sm' },
-        medium: { width: 60, height: 60, textClass: 'text-base' },
-        large: { width: 80, height: 80, textClass: 'text-lg' },
-        xlarge: { width: 120, height: 120, textClass: 'text-xl' }
+        small:  { width: 200, height: 65 },
+        medium: { width: 280, height: 90 },
+        large:  { width: 360, height: 115 },
     };
 
     const config = sizeConfig[size] || sizeConfig.medium;
 
+    const logoSrc = (mounted && theme === 'dark')
+        ? '/assets/logo.png'
+        : '/assets/logo light.png';
+
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
-            <div className="relative flex-shrink-0">
+        <div className={`flex justify-center items-center mb-8 ${className}`}>
+            <div className={`
+                glass
+                px-4 py-3 rounded-xl
+                transition-all duration-300
+                hover:scale-[1.02]
+                inline-block
+            `}>
                 <Image
-                    src="/assets/jecrc-logo.jpg"
+                    src={logoSrc}
                     alt="JECRC University"
                     width={config.width}
                     height={config.height}
-                    className="rounded-lg shadow-md"
+                    className={`object-contain transition-all duration-300 ${
+                        mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
+                    }`}
                     priority={priority}
                 />
             </div>
-            {showText && (
-                <div className="flex flex-col">
-                    <h1 className={`font-bold ${config.textClass} transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                        }`}>
-                        JECRC University
-                    </h1>
-                    <p className={`text-xs transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                        No Dues System
-                    </p>
-                </div>
-            )}
         </div>
     );
 }
@@ -58,17 +59,32 @@ export default function Logo({
 /**
  * Logo Icon Only - For compact spaces like mobile headers
  */
-export function LogoIcon({ size = 40, className = '' }) {
+export function LogoIcon({ className = '' }) {
+    const { theme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const logoSrc = (mounted && theme === 'dark')
+        ? '/assets/logo.png'
+        : '/assets/logo light.png';
+
     return (
         <div className={`relative flex-shrink-0 ${className}`}>
-            <Image
-                src="/assets/jecrc-logo.jpg"
-                alt="JECRC"
-                width={size}
-                height={size}
-                className="rounded-lg shadow-md"
-                priority
-            />
+            <div className="glass px-3 py-2 rounded-lg transition-all duration-300 inline-block">
+                <Image
+                    src={logoSrc}
+                    alt="JECRC"
+                    width={160}
+                    height={52}
+                    className={`object-contain transition-all duration-300 ${
+                        mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
+                    }`}
+                    priority
+                />
+            </div>
         </div>
     );
 }

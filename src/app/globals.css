@@ -5,13 +5,80 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0a0a0a;
-  --red: #dc2626;
-  --red-700: #b91c1c;
-  --white: #ffffff;
+  /* ========================================
+     JECRC CORE BRAND COLORS (Black/Red/White)
+     ======================================== */
   --jecrc-red: #C41E3A;
+  --jecrc-red-dark: #8B0000;
+  --jecrc-red-light: #E02849;
+  --jecrc-red-bright: #FF3366;
+  --jecrc-pink: #FFE5E9;
+  --jecrc-rose: #FFD1D9;
+  
+  --pure-black: #000000;
   --deep-black: #050505;
-  --ink-black: #111111;
+  --ink-black: #0A0A0A;
+  
+  --pure-white: #FFFFFF;
+  --off-white: #F8F8F8;
+  --soft-white: #F0F0F0;
+  --cream: #FFF8F8;
+  
+  /* ========================================
+     LIGHT MODE - "Classic Elegance"
+     ======================================== */
+  --light-bg-primary: #FFFFFF;
+  --light-bg-secondary: #F8F8F8;
+  --light-bg-tertiary: #F0F0F0;
+  
+  --light-text-primary: #000000;
+  --light-text-secondary: #333333;
+  --light-text-muted: #666666;
+  
+  --light-border: rgba(0, 0, 0, 0.1);
+  --light-border-strong: rgba(0, 0, 0, 0.2);
+  
+  /* Light Mode Shadows (Black-based) */
+  --light-shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --light-shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --light-shadow-dramatic: 0 16px 48px rgba(0, 0, 0, 0.18);
+  --light-depth-raised: 3px 3px 8px rgba(0, 0, 0, 0.12), -2px -2px 8px rgba(255, 255, 255, 0.8);
+  
+  /* ========================================
+     DARK MODE - "Refined Darkness"
+     ======================================== */
+  --dark-bg-primary: #000000;
+  --dark-bg-secondary: #0A0A0A;
+  --dark-bg-tertiary: #141414;
+  
+  --dark-text-primary: #FFFFFF;
+  --dark-text-secondary: #CCCCCC;
+  --dark-text-muted: #888888;
+  
+  --dark-border: rgba(255, 255, 255, 0.1);
+  --dark-border-strong: rgba(255, 255, 255, 0.2);
+  
+  /* Dark Mode Shadows & Glows (Red-based) */
+  --dark-shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.6);
+  --dark-shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.8);
+  --dark-glow-red-soft: 0 0 20px rgba(196, 30, 58, 0.3), 0 0 40px rgba(196, 30, 58, 0.15);
+  --dark-glow-red-strong: 0 0 30px rgba(255, 51, 102, 0.5), 0 0 60px rgba(255, 51, 102, 0.3);
+  --dark-glow-white: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 0.05);
+  
+  /* ========================================
+     COMPLEMENTARY COLORS (Functional Only)
+     ======================================== */
+  --success-light: #2D7A45;
+  --success-dark: #00FF88;
+  
+  --warning-light: #D97706;
+  --warning-dark: #FFB020;
+  
+  --error-light: #C41E3A;
+  --error-dark: #FF3366;
+  
+  --info-light: #1E40C4;
+  --info-dark: #4D9FFF;
 }
 
 html, body, #__next { height: 100%; }
@@ -19,9 +86,97 @@ html, body, #__next { height: 100%; }
 body {
   margin: 0;
   overflow-x: hidden;
-  cursor: none; /* Custom cursor will be used */
-  background: linear-gradient(180deg, #0b0b0b, #0a0a0a);
-  color: var(--white);
+  background: var(--pure-black);
+  color: var(--pure-white);
+  transition: all 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* JECRC Campus Watermark - Visible on ALL pages */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/assets/9-1-1536x720.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0; /* Above body, below content */
+  pointer-events: none;
+  transition: all 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Mode - Gradient overlay on watermark */
+body:not(.dark) {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.75) 0%,
+    rgba(255, 248, 248, 0.70) 25%,
+    rgba(255, 229, 233, 0.65) 50%,
+    rgba(255, 248, 248, 0.70) 75%,
+    rgba(255, 255, 255, 0.75) 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  color: var(--pure-black);
+}
+
+/* Light mode watermark - clearly visible */
+body:not(.dark)::after {
+  opacity: 0.35; /* 35% opacity - more visible */
+  mix-blend-mode: multiply;
+  filter: brightness(0.9) contrast(1.1); /* Enhance visibility */
+}
+
+/* Dark Mode - PURE BLACK with Subtle Red Theme */
+body.dark {
+  background: radial-gradient(ellipse at top,
+    rgba(196, 30, 58, 0.15) 0%,
+    rgba(139, 0, 0, 0.08) 20%,
+    rgba(0, 0, 0, 0.98) 40%,
+    rgba(0, 0, 0, 1) 60%),
+    radial-gradient(ellipse at bottom,
+    rgba(196, 30, 58, 0.12) 0%,
+    rgba(0, 0, 0, 0.98) 30%,
+    rgba(0, 0, 0, 1) 50%),
+    linear-gradient(180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 100%);
+  color: var(--pure-white);
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode watermark - very subtle behind pure black */
+body.dark::after {
+  opacity: 0.08; /* 8% opacity - very subtle behind darker theme */
+  mix-blend-mode: screen;
+  filter: brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px);
+}
+
+/* Dark mode - Remove black background using screen blend mode */
+.logo-dark-mode {
+  mix-blend-mode: screen;
+  /* High contrast to force dark background to true black, lower brightness to suppress artifacts */
+  filter: brightness(0.9) contrast(1.4) saturate(1.1); 
+  transition: all 300ms ease;
+}
+
+/* Light mode - Remove white background using multiply blend mode */
+.logo-light-mode {
+  mix-blend-mode: multiply;
+  /* High brightness to force light background to true white */
+  filter: brightness(1.05) contrast(1.05) saturate(1.05);
+  transition: all 300ms ease;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Custom cursor - only on devices with hover capability and fine pointer */
+@media (hover: hover) and (pointer: fine) {
+  body {
+    cursor: none;
+  }
 }
 
 /* Hide default scrollbar */
@@ -37,26 +192,66 @@ body {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Interactive elements (for custom cursor) */
-.interactive {
-  cursor: none;
+/* Interactive elements responsive cursor */
+@media (hover: hover) and (pointer: fine) {
+  .interactive {
+    cursor: none;
+  }
 }
 
-/***** Glass card *****/
+/***** Glass Morphism with Glow *****/
 .glass {
-  @apply bg-white/10 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply backdrop-blur-xl border transition-all duration-700;
+  @apply dark:bg-white/5 dark:border-white/10 dark:shadow-neon-white;
+  @apply bg-white/60 border-jecrc-red/10 shadow-lg;
 }
 
+/* Form Input with Glow Effects */
 .input {
-  @apply w-full rounded-lg border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-white placeholder-zinc-400 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/40;
+  @apply w-full rounded-lg border px-3 py-2 outline-none transition-all duration-300;
+  @apply dark:border-white/20 dark:bg-black/80 dark:text-white dark:placeholder-white/40;
+  @apply dark:focus:shadow-neon-white dark:focus:border-white/40;
+  @apply bg-white/90 text-black placeholder-black/50 border-jecrc-red/20;
+  @apply focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/40 focus:bg-white;
+  @apply focus:shadow-sharp-black;
 }
 
+/* Primary Button with Glow & Animation */
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-primary-600 hover:bg-primary-500 px-4 py-2 font-semibold text-white shadow-lg shadow-red-900/30 transition;
+  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white;
+  @apply bg-gradient-to-r from-jecrc-red to-jecrc-red-dark;
+  @apply hover:from-jecrc-red-light hover:to-jecrc-red;
+  @apply dark:shadow-neon-red-lg shadow-sharp-black-lg;
+  @apply transition-all duration-300 hover:scale-105 active:scale-95;
+  @apply hover:shadow-neon-red-xl dark:hover:shadow-neon-red-xl;
+  position: relative;
+  overflow: hidden;
 }
 
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Ghost Button - Minimal Outline */
 .btn-ghost {
-  @apply inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 hover:bg-white/15 px-4 py-2 font-semibold text-white transition;
+  @apply inline-flex items-center justify-center rounded-lg border px-4 py-2 font-semibold;
+  @apply dark:border-white/20 dark:text-white dark:hover:bg-white/10 dark:hover:border-jecrc-red-bright;
+  @apply border-black/20 text-black hover:bg-black/5 hover:border-jecrc-red;
+  @apply transition-all duration-300;
 }
 
 /***** Gradient animation keyframes (red/white theme) *****/
@@ -92,6 +287,100 @@ body {
 
 .animate-first { animation: moveOne 28s ease-in-out infinite; }
 .animate-second { animation: moveTwo 32s ease-in-out infinite; }
+
+/* ========================================
+   TEXT GLOW & HEADING STYLES
+   ======================================== */
+
+/* Dark mode text glow */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark .text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.15),
+               0 0 20px rgba(255, 255, 255, 0.08);
+}
+
+/* Enhanced headings with animations */
+h1, h2, h3 {
+  @apply transition-all duration-700;
+}
+
+.dark h1:hover,
+.dark h2:hover,
+.dark h3:hover {
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.25),
+               0 0 30px rgba(255, 255, 255, 0.12);
+}
+
+/* JECRC Red accent text with glow */
+.text-accent {
+  @apply text-jecrc-red;
+}
+
+.dark .text-accent {
+  @apply text-jecrc-red-bright;
+  text-shadow: 0 0 10px rgba(255, 51, 102, 0.4),
+               0 0 20px rgba(255, 51, 102, 0.2);
+}
+
+/* Subtle pulse for important elements */
+.pulse-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(196, 30, 58, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 51, 102, 0.6));
+  }
+}
+
+/* Card hover lift effect */
+.hover-lift {
+  @apply transition-all duration-300;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-1;
+}
+
+.dark .hover-lift:hover {
+  filter: drop-shadow(0 10px 20px rgba(255, 255, 255, 0.1));
+}
+
+/* Shimmer effect for loading states */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Status badge glow */
+.badge-glow {
+  @apply transition-all duration-300;
+}
+
+.dark .badge-glow {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.dark .badge-glow:hover {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2),
+              0 0 30px rgba(255, 255, 255, 0.1);
+}
 .animate-third { animation: moveThree 36s ease-in-out infinite; }
 .animate-fourth { animation: moveFour 40s ease-in-out infinite; }
 .animate-fifth { animation: moveFive 44s ease-in-out infinite; }

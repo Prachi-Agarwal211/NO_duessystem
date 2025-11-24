@@ -18,33 +18,33 @@ export default function Home() {
       <div className="min-h-screen flex flex-col items-center justify-center px-4">
 
         {/* Centered Header / Branding */}
-        <header className="flex flex-col items-center mb-16 text-center px-4 mt-10">
+        <header className="flex flex-col items-center mb-12 text-center px-4">
           <motion.div
-            initial={{ opacity: 0, y: -30 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="mb-8"
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-6"
           >
-            <Logo size="large" showText={true} priority={true} />
+            <Logo size="medium" priority={true} />
           </motion.div>
 
           {/* Refined Title */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center gap-3"
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col items-center gap-2"
           >
-            <span className="font-sans text-[11px] md:text-xs text-jecrc-red font-bold tracking-[0.6em] uppercase opacity-80">
+            <span className="font-sans text-[10px] md:text-xs text-jecrc-red font-bold tracking-[0.5em] uppercase opacity-80">
               Student Services
             </span>
-            <h1 className={`font-serif text-5xl md:text-6xl lg:text-7xl tracking-tight transition-colors duration-700 ease-smooth 
+            <h1 className={`font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight transition-colors duration-700 ease-smooth 
               ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70' : 'text-ink-black'}`}>
               NO DUES
             </h1>
 
             {/* Decorative Line */}
-            <div className="relative h-[1px] w-24 mt-6 overflow-hidden">
+            <div className="relative h-[1px] w-20 mt-4 overflow-hidden">
               <div className={`absolute inset-0 transition-colors duration-700 ease-smooth ${isDark ? 'bg-white/20' : 'bg-black/10'}`}></div>
               <motion.div
                 initial={{ x: '-100%' }}

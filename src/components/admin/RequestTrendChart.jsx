@@ -1,5 +1,8 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +17,9 @@ import {
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function RequestTrendChart({ userId }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   const [data, setData] = useState({
     labels: [],
     datasets: []
@@ -27,30 +33,30 @@ export default function RequestTrendChart({ userId }) {
       legend: {
         position: 'top',
         labels: {
-          color: '#e5e7eb',
+          color: isDark ? '#FFFFFF' : '#000000',
         },
       },
       title: {
         display: true,
         text: 'Request Trends Over Time',
-        color: '#e5e7eb',
+        color: isDark ? '#FFFFFF' : '#000000',
       },
     },
     scales: {
       x: {
         ticks: {
-          color: '#9ca3af',
+          color: isDark ? '#CCCCCC' : '#333333',
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         },
       },
       y: {
         ticks: {
-          color: '#9ca3af',
+          color: isDark ? '#CCCCCC' : '#333333',
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
         },
       },
     },
@@ -88,11 +94,17 @@ export default function RequestTrendChart({ userId }) {
     fetchTrendData();
   }, [userId]);
 
+  const containerClasses = `backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${
+    isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
+  }`;
+
   if (loading) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className={`${containerClasses} flex items-center justify-center min-h-[300px]`}>
+        <div className={`flex items-center gap-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          <div className={`w-5 h-5 border-2 border-t-transparent rounded-full animate-spin ${
+            isDark ? 'border-gray-400' : 'border-gray-600'
+          }`}></div>
           <span>Loading trend data...</span>
         </div>
       </div>
@@ -101,10 +113,10 @@ export default function RequestTrendChart({ userId }) {
 
   if (error) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
+      <div className={`${containerClasses} flex items-center justify-center min-h-[300px]`}>
         <div className="text-center">
-          <p className="text-red-400 mb-2">Failed to load trend data</p>
-          <p className="text-sm text-gray-500">{error}</p>
+          <p className={`mb-2 ${isDark ? 'text-red-400' : 'text-jecrc-red'}`}>Failed to load trend data</p>
+          <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-600'}`}>{error}</p>
         </div>
       </div>
     );
@@ -112,15 +124,15 @@ export default function RequestTrendChart({ userId }) {
 
   if (!data.labels || data.labels.length === 0) {
     return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6 flex items-center justify-center min-h-[300px]">
-        <p className="text-gray-400">No trend data available yet</p>
+      <div className={`${containerClasses} flex items-center justify-center min-h-[300px]`}>
+        <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>No trend data available yet</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+    <div className={containerClasses}>
       <Line data={data} options={options} />
     </div>
   );
-};
+}

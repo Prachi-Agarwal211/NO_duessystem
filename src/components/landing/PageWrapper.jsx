@@ -9,14 +9,14 @@ export default function PageWrapper({ children, showThemeToggle = true }) {
   const { theme } = useTheme();
 
   return (
-    <div className={`relative min-h-screen w-full transition-colors duration-700 ease-smooth overflow-hidden
-      ${theme === 'dark' ? 'bg-deep-black text-white' : 'bg-white text-ink-black'}`}>
+    <div className="relative min-h-screen w-full transition-colors duration-700 ease-smooth overflow-hidden">
       
       <Background theme={theme} />
       <CustomCursor theme={theme} />
       {showThemeToggle && <ThemeToggle />}
       
-      <div className="relative z-10">
+      <div className={`relative z-10 transition-colors duration-700
+        ${theme === 'dark' ? 'text-white' : 'text-ink-black'}`}>
         {children}
       </div>
     </div>
