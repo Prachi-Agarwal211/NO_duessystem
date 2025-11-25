@@ -3,18 +3,41 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
-  if (typeof window === 'undefined') {
-    // Server-side: throw error during build
-    throw new Error('Missing Supabase environment variables: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required')
-  } else {
-    // Client-side: log error
-    console.error('Missing Supabase environment variables. Please check your .env.local file.')
+/**
+ * Creates a safe Supabase client that doesn't crash when environment variables are missing
+ * Returns a mock client with helpful error messages instead of undefined values
+ */
+const createSafeClient = () => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Missing Supabase environment variables');
+    console.error('Please ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in .env.local');
+    
+    // Return mock client to prevent crashes
+    return {
+      auth: {
+        getSession: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        signInWithPassword: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        signOut: () => Promise.resolve({ error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      },
+      from: () => ({
+        select: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        insert: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        update: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        delete: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+        upsert: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+      }),
+      storage: {
+        from: () => ({
+          upload: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+          download: () => Promise.reject(new Error('Supabase not configured. Please check environment variables.')),
+          getPublicUrl: () => ({ data: { publicUrl: '' } }),
+        }),
+      },
+    };
   }
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  
+  return createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -45,4 +68,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       eventsPerSecond: 2, // Reduce realtime events for mobile
     },
   },
-})
+  });
+};
+
+export const supabase = createSafeClient();

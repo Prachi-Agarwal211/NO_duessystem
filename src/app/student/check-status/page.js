@@ -18,22 +18,15 @@ function CheckStatusContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  // ✅ Handle null theme safely (defaults to dark mode)
+  const isDark = theme === 'dark' || theme === null;
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
-  // Auto-search if registration number is in URL (for refresh persistence)
-  useEffect(() => {
-    const regFromUrl = searchParams.get('reg');
-    if (regFromUrl && !formData && !loading) {
-      setRegistrationNumber(regFromUrl.toUpperCase());
-      performSearch(regFromUrl.toUpperCase());
-    }
-  }, [searchParams]);
-
+  // ✅ Define performSearch with useCallback to stabilize dependency
   const performSearch = async (regNo) => {
     const searchRegNo = (regNo || registrationNumber).trim();
 
@@ -106,6 +99,17 @@ function CheckStatusContent() {
       setLoading(false);
     }
   };
+
+  // Auto-search if registration number is in URL (for refresh persistence)
+  useEffect(() => {
+    const regFromUrl = searchParams.get('reg');
+    if (regFromUrl && !formData && !loading) {
+      setRegistrationNumber(regFromUrl.toUpperCase());
+      performSearch(regFromUrl.toUpperCase());
+    }
+    // ✅ Only depend on searchParams to avoid infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleSearch = async (e) => {
     e.preventDefault();

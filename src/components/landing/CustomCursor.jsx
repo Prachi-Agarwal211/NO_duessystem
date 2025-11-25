@@ -8,13 +8,17 @@ export default function CustomCursor({ theme }) {
   const { isMobile, hasHover } = useDeviceDetection();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
 
-  // Don't render custom cursor on mobile/touch devices or if reduced motion is preferred
-  if (isMobile || !hasHover || prefersReducedMotion()) {
-    return null;
-  }
+  // ✅ ALL HOOKS BEFORE ANY CONDITIONAL RETURNS
+  useEffect(() => {
+    // Check if we should render on client side
+    setShouldRender(!isMobile && hasHover && !prefersReducedMotion());
+  }, [isMobile, hasHover]);
 
   useEffect(() => {
+    if (!shouldRender) return;
+    
     const updateMousePosition = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
@@ -40,7 +44,12 @@ export default function CustomCursor({ theme }) {
       window.removeEventListener('mousemove', updateMousePosition);
       window.removeEventListener('mouseover', handleMouseOver);
     };
-  }, []);
+  }, [shouldRender]);
+
+  // ✅ Conditional return AFTER all hooks
+  if (!shouldRender) {
+    return null;
+  }
 
   const mainColor = theme === 'dark' ? '#FFFFFF' : '#000000';
   const accentColor = '#C41E3A'; // JECRC Red

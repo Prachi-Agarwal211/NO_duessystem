@@ -1,11 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'localhost', // For local development
-      'images.unsplash.com', // If using Unsplash images
-      'lh3.googleusercontent.com', // For Google OAuth avatars
-      'imagedelivery.net' // Cloudflare Images (if needed)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'imagedelivery.net',
+      },
     ],
     // Enable image optimization for better mobile performance
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],

@@ -16,17 +16,19 @@ import { useState, useEffect } from 'react';
  * @property {number} height - Current viewport height
  */
 export function useDeviceDetection() {
+  // ✅ Safe defaults without window access - prevents SSR hydration mismatch
   const [deviceState, setDeviceState] = useState({
     isMobile: false,
     isTablet: false,
     isDesktop: true,
     hasTouch: false,
     hasHover: true,
-    width: typeof window !== 'undefined' ? window.innerWidth : 1920,
-    height: typeof window !== 'undefined' ? window.innerHeight : 1080,
+    width: 1920,   // Server-safe default
+    height: 1080,  // Server-safe default
   });
 
   useEffect(() => {
+    // ✅ Now safe to access window on client side
     const detectDevice = () => {
       // Touch capability detection
       const hasTouch = 

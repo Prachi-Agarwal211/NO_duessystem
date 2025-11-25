@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
 export function useAdminDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,8 @@ export function useAdminDashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        window.location.href = '/login';
+        // ✅ Use Next.js router instead of window.location
+        router.push('/login');
         return;
       }
 
@@ -34,7 +37,8 @@ export function useAdminDashboard() {
         .single();
 
       if (userError || !userData || userData.role !== 'admin') {
-        window.location.href = '/unauthorized';
+        // ✅ Use Next.js router instead of window.location
+        router.push('/unauthorized');
         return;
       }
 
@@ -101,7 +105,8 @@ export function useAdminDashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/login';
+    // ✅ Use Next.js router instead of window.location
+    router.push('/login');
   };
 
   return {

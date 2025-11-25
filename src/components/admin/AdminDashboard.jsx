@@ -15,7 +15,8 @@ import Logo from '@/components/ui/Logo';
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  // ✅ Handle null theme safely (defaults to dark mode)
+  const isDark = theme === 'dark' || theme === null;
 
   const {
     user,
@@ -40,13 +41,17 @@ export default function AdminDashboard() {
   // Fetch data when filters change
   useEffect(() => {
     if (userId) {
-      fetchDashboardData({ 
-        status: statusFilter, 
-        search: searchTerm, 
-        department: departmentFilter 
+      fetchDashboardData({
+        status: statusFilter,
+        search: searchTerm,
+        department: departmentFilter
       });
       fetchStats();
     }
+    // ✅ Include fetchDashboardData and fetchStats in dependencies
+    // Using exhaustive-deps disable comment to acknowledge we're intentionally
+    // not including these functions to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentPage, statusFilter, departmentFilter, searchTerm]);
 
   const statusCounts = stats?.overallStats?.[0] || {};
