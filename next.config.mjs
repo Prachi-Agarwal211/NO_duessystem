@@ -4,8 +4,13 @@ const nextConfig = {
     domains: [
       'localhost', // For local development
       'images.unsplash.com', // If using Unsplash images
-      'lh3.googleusercontent.com' // For Google OAuth avatars
+      'lh3.googleusercontent.com', // For Google OAuth avatars
+      'imagedelivery.net' // Cloudflare Images (if needed)
     ],
+    // Enable image optimization for better mobile performance
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp'], // Modern format for better compression
   },
   async headers() {
     return [
