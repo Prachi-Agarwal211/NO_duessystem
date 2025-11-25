@@ -19,8 +19,30 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'jecrc-no-dues-auth',
   },
   global: {
-    headers: { 'X-Client-Info': 'jecrc-no-dues-system' }
-  }
+    headers: { 'X-Client-Info': 'jecrc-no-dues-system' },
+    fetch: (url, options = {}) => {
+      // Add timeout for mobile connections
+      const timeout = 10000; // 10 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      return fetch(url, {
+        ...options,
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeoutId));
+    },
+  },
+  db: {
+    schema: 'public',
+  },
+  // Mobile-optimized settings
+  realtime: {
+    params: {
+      eventsPerSecond: 2, // Reduce realtime events for mobile
+    },
+  },
 })
