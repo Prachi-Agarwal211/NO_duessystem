@@ -6,7 +6,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  
+  // Provide default theme during SSR/initial render
+  const currentTheme = theme || 'dark';
+  const isDark = currentTheme === 'dark';
 
   return (
     <button
@@ -31,7 +34,7 @@ export default function ThemeToggle() {
       {/* Icon with animation */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
-          key={theme}
+          key={currentTheme}
           initial={{ y: -20, opacity: 0, rotate: -90 }}
           animate={{ y: 0, opacity: 1, rotate: 0 }}
           exit={{ y: 20, opacity: 0, rotate: 90 }}

@@ -11,7 +11,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  
+  // Provide default theme during SSR/initial render
+  const currentTheme = theme || 'dark';
+  const isDark = currentTheme === 'dark';
 
   return (
     <PageWrapper>

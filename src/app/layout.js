@@ -19,11 +19,13 @@ if (typeof window === 'undefined') {
 export const metadata = {
   title: "JECRC No Dues System",
   description: "Student no-dues clearance portal for JECRC University",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+// Use Next.js 14's generateViewport function instead of metadata
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }) {

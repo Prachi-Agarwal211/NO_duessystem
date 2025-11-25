@@ -7,16 +7,20 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export default function PageWrapper({ children, showThemeToggle = true }) {
   const { theme } = useTheme();
+  
+  // Provide default theme during SSR/initial render
+  const currentTheme = theme || 'dark';
+  const isDark = currentTheme === 'dark';
 
   return (
     <div className="relative min-h-screen w-full transition-colors duration-700 ease-smooth overflow-hidden">
       
-      <Background theme={theme} />
-      <CustomCursor theme={theme} />
+      <Background theme={currentTheme} />
+      <CustomCursor theme={currentTheme} />
       {showThemeToggle && <ThemeToggle />}
       
       <div className={`relative z-10 transition-colors duration-700
-        ${theme === 'dark' ? 'text-white' : 'text-ink-black'}`}>
+        ${isDark ? 'text-white' : 'text-ink-black'}`}>
         {children}
       </div>
     </div>
