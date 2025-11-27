@@ -11,15 +11,15 @@ import { sendDepartmentNotification } from '@/lib/emailService';
 
 // Department email mapping
 const DEPARTMENT_EMAILS = {
+  'School (HOD/Department)': process.env.SCHOOL_HOD_EMAIL || 'hod@jecrc.ac.in',
   'Library': process.env.LIBRARY_EMAIL || 'library@jecrc.ac.in',
+  'IT Department': process.env.IT_DEPARTMENT_EMAIL || 'it@jecrc.ac.in',
   'Hostel': process.env.HOSTEL_EMAIL || 'hostel@jecrc.ac.in',
-  'Academics': process.env.ACADEMICS_EMAIL || 'academics@jecrc.ac.in',
-  'Finance': process.env.FINANCE_EMAIL || 'finance@jecrc.ac.in',
-  'Sports': process.env.SPORTS_EMAIL || 'sports@jecrc.ac.in',
-  'Training & Placement': process.env.TNP_EMAIL || 'placement@jecrc.ac.in',
-  'Student Activities': process.env.ACTIVITIES_EMAIL || 'activities@jecrc.ac.in',
-  'Transport': process.env.TRANSPORT_EMAIL || 'transport@jecrc.ac.in',
-  'Medical': process.env.MEDICAL_EMAIL || 'medical@jecrc.ac.in',
+  'Mess': process.env.MESS_EMAIL || 'mess@jecrc.ac.in',
+  'Canteen': process.env.CANTEEN_EMAIL || 'canteen@jecrc.ac.in',
+  'TPO': process.env.TPO_EMAIL || 'tpo@jecrc.ac.in',
+  'Alumni Association': process.env.ALUMNI_EMAIL || 'alumni@jecrc.ac.in',
+  'Accounts Department': process.env.ACCOUNTS_EMAIL || 'accounts@jecrc.ac.in',
   'Security': process.env.SECURITY_EMAIL || 'security@jecrc.ac.in',
   'IT & Infrastructure': process.env.IT_EMAIL || 'it@jecrc.ac.in',
   'Other Departments': process.env.OTHER_DEPT_EMAIL || 'admin@jecrc.ac.in'

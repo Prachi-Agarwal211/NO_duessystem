@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -8,11 +8,25 @@ import FormInput from './FormInput';
 import FileUpload from './FileUpload';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
+import { useFormConfig } from '@/hooks/useFormConfig';
 
 export default function SubmitForm() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  
+  // Load dynamic configuration (includes validation rules and country codes)
+  const {
+    schools,
+    courses,
+    branches,
+    collegeDomain,
+    countryCodes,
+    validateField,
+    loading: configLoading,
+    getCoursesForSchool,
+    getBranchesForCourse
+  } = useFormConfig();
 
   const [formData, setFormData] = useState({
     registration_no: '',
@@ -20,11 +34,18 @@ export default function SubmitForm() {
     session_from: '',
     session_to: '',
     parent_name: '',
-    school: 'Engineering',
+    school: '',
     course: '',
     branch: '',
+    country_code: '+91',
     contact_no: '',
+    personal_email: '',
+    college_email: '',
   });
+  
+  // Filtered options based on selections
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [availableBranches, setAvailableBranches] = useState([]);
 
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -33,12 +54,62 @@ export default function SubmitForm() {
   const [success, setSuccess] = useState(false);
   const [formId, setFormId] = useState(null);
 
+  // Update available courses when school changes
+  useEffect(() => {
+    if (formData.school) {
+      const coursesForSchool = getCoursesForSchool(formData.school);
+      setAvailableCourses(coursesForSchool);
+      
+      // Reset course and branch if current selection is not in filtered list
+      if (formData.course && !coursesForSchool.find(c => c.id === formData.course)) {
+        setFormData(prev => ({ ...prev, course: '', branch: '' }));
+        setAvailableBranches([]);
+      }
+    } else {
+      setAvailableCourses([]);
+      setAvailableBranches([]);
+    }
+  }, [formData.school, getCoursesForSchool]);
+
+  // Update available branches when course changes
+  useEffect(() => {
+    if (formData.course) {
+      const branchesForCourse = getBranchesForCourse(formData.course);
+      setAvailableBranches(branchesForCourse);
+      
+      // Reset branch if current selection is not in new course
+      if (formData.branch && !branchesForCourse.find(b => b.id === formData.branch)) {
+        setFormData(prev => ({ ...prev, branch: '' }));
+      }
+    } else {
+      setAvailableBranches([]);
+    }
+  }, [formData.course, getBranchesForCourse]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Special handling for cascading dropdowns
+    if (name === 'school') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        course: '', // Reset dependent fields
+        branch: ''
+      }));
+    } else if (name === 'course') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        branch: '' // Reset dependent field
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
     setError('');
   };
 
@@ -110,7 +181,7 @@ export default function SubmitForm() {
     setError('');
 
     try {
-      // Comprehensive validation
+      // Basic required field validation (keep client-side for immediate feedback)
       if (!formData.registration_no?.trim()) {
         throw new Error('Registration number is required');
       }
@@ -122,59 +193,53 @@ export default function SubmitForm() {
       if (!formData.school) {
         throw new Error('School selection is required');
       }
-
-      // Validate registration number format (flexible for different formats)
-      const regNoPattern = /^[A-Z0-9]{6,15}$/i;
-      if (!regNoPattern.test(formData.registration_no.trim())) {
-        throw new Error('Invalid registration number format. Use alphanumeric characters (6-15 characters)');
+      
+      if (!formData.course) {
+        throw new Error('Course selection is required');
+      }
+      
+      if (!formData.branch) {
+        throw new Error('Branch selection is required');
+      }
+      
+      if (!formData.personal_email?.trim()) {
+        throw new Error('Personal email is required');
+      }
+      
+      if (!formData.college_email?.trim()) {
+        throw new Error('College email is required');
       }
 
-      // Validate contact number
       if (!formData.contact_no?.trim()) {
         throw new Error('Contact number is required');
       }
 
-      if (!/^\d{10}$/.test(formData.contact_no.trim())) {
-        throw new Error('Contact number must be exactly 10 digits');
+      // Basic email format check (detailed validation on server)
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(formData.personal_email.trim())) {
+        throw new Error('Invalid personal email format');
+      }
+      
+      if (!emailPattern.test(formData.college_email.trim())) {
+        throw new Error('Invalid college email format');
+      }
+      
+      // College email domain check
+      if (!formData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
+        throw new Error(`College email must end with ${collegeDomain}`);
       }
 
-      // Validate name format (no numbers or special characters except spaces, dots, hyphens)
-      const namePattern = /^[A-Za-z\s.\-']+$/;
-      if (!namePattern.test(formData.student_name.trim())) {
-        throw new Error('Student name should only contain letters, spaces, dots, and hyphens');
-      }
-
-      if (formData.parent_name && !namePattern.test(formData.parent_name.trim())) {
-        throw new Error('Parent name should only contain letters, spaces, dots, and hyphens');
-      }
-
-      // Validate session years if provided
-      if (formData.session_from) {
-        const yearPattern = /^\d{4}$/;
-        if (!yearPattern.test(formData.session_from)) {
-          throw new Error('Session from year must be in YYYY format');
-        }
+      // Session year range validation (if both provided)
+      if (formData.session_from && formData.session_to) {
         const fromYear = parseInt(formData.session_from);
-        if (fromYear < 1900 || fromYear > new Date().getFullYear() + 10) {
-          throw new Error('Session from year is invalid');
-        }
-      }
-
-      if (formData.session_to) {
-        const yearPattern = /^\d{4}$/;
-        if (!yearPattern.test(formData.session_to)) {
-          throw new Error('Session to year must be in YYYY format');
-        }
         const toYear = parseInt(formData.session_to);
-        if (toYear < 1900 || toYear > new Date().getFullYear() + 10) {
-          throw new Error('Session to year is invalid');
-        }
-        
-        // Validate session range
-        if (formData.session_from && toYear < parseInt(formData.session_from)) {
+        if (toYear < fromYear) {
           throw new Error('Session to year must be greater than or equal to session from year');
         }
       }
+
+      // Note: Detailed format validation (registration number, phone, names)
+      // is handled by server using configurable database rules
 
       // Upload file if provided
       let fileUrl = null;
@@ -192,6 +257,11 @@ export default function SubmitForm() {
         fileUrl = await uploadFile(file);
       }
 
+      // Get selected names for display
+      const selectedSchool = schools.find(s => s.id === formData.school);
+      const selectedCourse = courses.find(c => c.id === formData.course);
+      const selectedBranch = branches.find(b => b.id === formData.branch);
+      
       // Sanitize and prepare data
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
@@ -199,10 +269,13 @@ export default function SubmitForm() {
         session_from: formData.session_from?.trim() || null,
         session_to: formData.session_to?.trim() || null,
         parent_name: formData.parent_name?.trim() || null,
-        school: formData.school,
-        course: formData.course?.trim() || null,
-        branch: formData.branch?.trim() || null,
+        school: selectedSchool?.name || formData.school,
+        course: selectedCourse?.name || formData.course,
+        branch: selectedBranch?.name || formData.branch,
+        country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
+        personal_email: formData.personal_email.trim().toLowerCase(),
+        college_email: formData.college_email.trim().toLowerCase(),
         alumni_screenshot_url: fileUrl
       };
 
@@ -359,6 +432,22 @@ export default function SubmitForm() {
           disabled={loading}
         />
 
+        {/* Country Code */}
+        <FormInput
+          label="Country Code"
+          name="country_code"
+          type="select"
+          value={formData.country_code}
+          onChange={handleInputChange}
+          required
+          disabled={loading || configLoading}
+          options={countryCodes.map(c => ({
+            value: c.dial_code,
+            label: `${c.country_name} (${c.dial_code})`
+          }))}
+        />
+
+        {/* Contact Number */}
         <FormInput
           label="Contact Number"
           name="contact_no"
@@ -366,7 +455,7 @@ export default function SubmitForm() {
           value={formData.contact_no}
           onChange={handleInputChange}
           required
-          placeholder="10-digit mobile number"
+          placeholder="6-15 digits (without country code)"
           disabled={loading}
         />
 
@@ -404,29 +493,51 @@ export default function SubmitForm() {
           value={formData.school}
           onChange={handleInputChange}
           required
-          disabled={loading}
-          options={[
-            { value: 'Engineering', label: 'Engineering' },
-            { value: 'Management', label: 'Management' },
-            { value: 'Law', label: 'Law' }
-          ]}
+          disabled={loading || configLoading}
+          options={schools.map(s => ({ value: s.id, label: s.name }))}
         />
 
         <FormInput
           label="Course"
           name="course"
+          type="select"
           value={formData.course}
           onChange={handleInputChange}
-          placeholder="e.g., B.Tech"
-          disabled={loading}
+          required
+          disabled={loading || configLoading || !formData.school}
+          options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
         />
 
         <FormInput
           label="Branch"
           name="branch"
+          type="select"
           value={formData.branch}
           onChange={handleInputChange}
-          placeholder="e.g., Computer Science"
+          required
+          disabled={loading || configLoading || !formData.course}
+          options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+        />
+        
+        <FormInput
+          label="Personal Email"
+          name="personal_email"
+          type="email"
+          value={formData.personal_email}
+          onChange={handleInputChange}
+          required
+          placeholder="your.email@example.com"
+          disabled={loading}
+        />
+        
+        <FormInput
+          label={`College Email (must end with ${collegeDomain})`}
+          name="college_email"
+          type="email"
+          value={formData.college_email}
+          onChange={handleInputChange}
+          required
+          placeholder={`yourname${collegeDomain}`}
           disabled={loading}
         />
       </div>

@@ -253,19 +253,71 @@ function CheckStatusContent() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
             >
-              <div className="mb-6 flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Registration Number</p>
-                  <p className="font-mono text-xl font-bold text-jecrc-red">{formData.registration_no}</p>
+              {/* Student Info Card */}
+              <div className="glass-card p-6 rounded-2xl border border-white/20 dark:border-gray-700/50 mb-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Registration Number</p>
+                    <p className="font-mono text-2xl font-bold text-jecrc-red">{formData.registration_no}</p>
+                  </div>
+                  <motion.button
+                    onClick={handleReset}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700"
+                  >
+                    Check Another
+                  </motion.button>
                 </div>
-                <motion.button
-                  onClick={handleReset}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700"
-                >
-                  Check Another
-                </motion.button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Student Name</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formData.student_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Contact</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{formData.contact_no}</p>
+                  </div>
+                  {formData.school && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">School</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formData.school}</p>
+                    </div>
+                  )}
+                  {formData.course && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">Course</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formData.course}</p>
+                    </div>
+                  )}
+                  {formData.branch && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">Branch</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formData.branch}</p>
+                    </div>
+                  )}
+                  {formData.personal_email && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">Personal Email</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formData.personal_email}</p>
+                    </div>
+                  )}
+                  {formData.college_email && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">College Email</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{formData.college_email}</p>
+                    </div>
+                  )}
+                  {formData.session_from && formData.session_to && (
+                    <div>
+                      <p className="text-gray-500 dark:text-gray-400">Session</p>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {formData.session_from} - {formData.session_to}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <StatusTracker

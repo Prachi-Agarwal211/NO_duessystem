@@ -29,7 +29,7 @@ function StatsCard({ title, value, change, trend, color }) {
             {title}
           </p>
           <p className={`text-2xl font-bold mt-1 ${
-            isDark ? 'text-white' : 'text-black'
+            isDark ? 'text-white' : 'text-ink-black'
           }`}>
             {value}
           </p>

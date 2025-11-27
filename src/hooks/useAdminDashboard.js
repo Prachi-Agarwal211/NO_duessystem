@@ -62,13 +62,16 @@ export function useAdminDashboard() {
       }
 
       const params = new URLSearchParams({
-        userId: session.user.id,
         page: currentPage,
         limit: 20,
         ...filters
       });
 
-      const response = await fetch(`/api/admin/dashboard?${params}`);
+      const response = await fetch(`/api/admin/dashboard?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       const result = await response.json();
 
       if (!response.ok) {

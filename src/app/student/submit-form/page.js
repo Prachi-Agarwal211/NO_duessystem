@@ -114,7 +114,7 @@ export default function SubmitFormPage() {
               </li>
               <li className="flex gap-2">
                 <span className="text-jecrc-red">•</span>
-                <span>Your form will be sent to all 12 departments for approval</span>
+                <span>Your form will be sent to all 11 departments for approval</span>
               </li>
               <li className="flex gap-2">
                 <span className="text-jecrc-red">•</span>

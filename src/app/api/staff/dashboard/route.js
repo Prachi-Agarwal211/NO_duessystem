@@ -12,11 +12,31 @@ const supabaseAdmin = createClient(
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     const searchQuery = searchParams.get('search');
     const offset = (page - 1) * limit;
+
+    // Get authenticated user from header/cookie via Supabase
+    // Note: Since this is an API route, we need to verify the user's session
+    // Ideally we should use createRouteHandlerClient but for now we'll use the token
+    
+    const authHeader = request.headers.get('Authorization');
+    let userId;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      userId = user.id;
+    } else {
+      // Fallback for server-side calls or where auth might be handled differently
+      // BUT we strictly validate this is not empty
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    }
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -25,7 +45,7 @@ export async function GET(request) {
     // Get user profile to check role and department using admin client
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name')
+      .select('role, department_name, school_id')
       .eq('id', userId)
       .single();
 
@@ -107,11 +127,17 @@ export async function GET(request) {
             contact_no,
             created_at,
             updated_at,
-            status
+            status,
+            school_id
           )
         `)
         .eq('department_name', profile.department_name)
         .eq('status', 'pending');
+
+      // Filter by school_id for school_hod department
+      if (profile.department_name === 'school_hod' && profile.school_id) {
+        query = query.eq('no_dues_forms.school_id', profile.school_id);
+      }
 
       // Apply search filter if provided
       // Note: Search on related table requires filtering after fetch in this case

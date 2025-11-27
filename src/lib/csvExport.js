@@ -1,52 +1,97 @@
 /**
  * CSV Export Utilities
- * Handles data export for admin dashboard
+ * Handles data export for admin dashboard with dynamic department fetching
  */
 
-export function exportApplicationsToCSV(applications) {
+/**
+ * Export applications to CSV with dynamic department columns
+ * Fetches active departments from database to avoid hardcoding
+ */
+export async function exportApplicationsToCSV(applications) {
   if (applications.length === 0) {
     alert('No data to export');
     return;
   }
 
-  const headers = ['Student Name', 'Registration No', 'Course', 'Overall Status', 'Submitted Date'];
-  const departments = ['LIBRARY', 'HOSTEL', 'IT_DEPARTMENT'];
-  
-  departments.forEach(dept => {
-    headers.push(`${dept} Status`, `${dept} Response Time`, `${dept} Action By`);
-  });
+  try {
+    // Fetch active departments dynamically from database
+    const response = await fetch('/api/admin/config/departments');
+    const result = await response.json();
+    
+    let departments = [];
+    if (result.success && result.departments) {
+      // Sort by display_order and get department names
+      departments = result.departments
+        .sort((a, b) => a.display_order - b.display_order)
+        .map(d => d.name);
+    } else {
+      // Fallback to default departments if API fails
+      console.warn('Failed to fetch departments, using fallback list');
+      departments = ['school_hod', 'library', 'it_department', 'hostel', 'mess', 'canteen', 'tpo', 'alumni_association', 'accounts_department'];
+    }
 
-  const rows = applications.map(app => {
-    const row = [
-      app.student_name,
-      app.registration_no,
-      app.course || 'N/A',
-      app.status,
-      new Date(app.created_at).toLocaleDateString()
+    // Build headers with country code
+    const headers = [
+      'Student Name',
+      'Registration No',
+      'School',
+      'Course',
+      'Branch',
+      'Personal Email',
+      'College Email',
+      'Country Code',
+      'Contact',
+      'Overall Status',
+      'Submitted Date'
     ];
 
-    departments.forEach(deptName => {
-      const deptStatus = app.no_dues_status?.find(d => d.department_name === deptName);
-      if (deptStatus) {
-        row.push(
-          deptStatus.status || 'N/A',
-          deptStatus.response_time || 'N/A',
-          deptStatus.profiles?.full_name || 'N/A'
-        );
-      } else {
-        row.push('N/A', 'N/A', 'N/A');
-      }
+    // Add department columns dynamically
+    departments.forEach(dept => {
+      headers.push(`${dept} Status`, `${dept} Response Time`, `${dept} Action By`);
     });
 
-    return row;
-  });
+    const rows = applications.map(app => {
+      const row = [
+        app.student_name,
+        app.registration_no,
+        app.school || 'N/A',
+        app.course || 'N/A',
+        app.branch || 'N/A',
+        app.personal_email || 'N/A',
+        app.college_email || 'N/A',
+        app.country_code || '+91',
+        app.contact_no || 'N/A',
+        app.status,
+        new Date(app.created_at).toLocaleDateString()
+      ];
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-  ].join('\n');
+      // Add department status data dynamically
+      departments.forEach(deptName => {
+        const deptStatus = app.no_dues_status?.find(d => d.department_name === deptName);
+        if (deptStatus) {
+          row.push(
+            deptStatus.status || 'N/A',
+            deptStatus.response_time || 'N/A',
+            deptStatus.profiles?.full_name || 'N/A'
+          );
+        } else {
+          row.push('N/A', 'N/A', 'N/A');
+        }
+      });
 
-  downloadCSV(csvContent, `no_dues_report_${new Date().toISOString().split('T')[0]}.csv`);
+      return row;
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    downloadCSV(csvContent, `no_dues_report_${new Date().toISOString().split('T')[0]}.csv`);
+  } catch (error) {
+    console.error('Error exporting CSV:', error);
+    alert('Failed to export CSV. Please try again.');
+  }
 }
 
 export function exportStatsToCSV(stats) {

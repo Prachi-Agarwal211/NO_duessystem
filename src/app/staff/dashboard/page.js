@@ -78,7 +78,11 @@ export default function StaffDashboard() {
           params.append('search', debouncedSearchTerm.trim());
         }
 
-        const response = await fetch(`/api/staff/dashboard?${params}`);
+        const response = await fetch(`/api/staff/dashboard?${params}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
         const result = await response.json();
 
         if (result.success) {

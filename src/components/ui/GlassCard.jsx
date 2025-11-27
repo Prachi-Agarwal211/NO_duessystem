@@ -42,7 +42,6 @@ export default function GlassCard({
   return (
     <div
       className={`
-        backdrop-blur-xl
         rounded-xl sm:rounded-2xl
         p-4 sm:p-6 lg:p-8
         border
@@ -50,6 +49,7 @@ export default function GlassCard({
         animate-fade-in
         ${isDark
           ? `
+            backdrop-blur-xl
             bg-black/80
             border-jecrc-red/20
             ${variantStyles[variant]}
@@ -60,12 +60,11 @@ export default function GlassCard({
             hover:shadow-[0_0_60px_rgba(196,30,58,0.25)]
           `
           : `
-            bg-gradient-to-br from-white/50 via-cream/40 to-jecrc-pink/20
-            border-jecrc-red/10
+            bg-white
+            border-gray-200
             ${variantStyles[variant]}
-            hover:border-jecrc-red/20
-            hover:from-white/60 hover:via-jecrc-pink/30 hover:to-jecrc-rose/40
-            text-pure-black
+            hover:border-gray-300
+            text-ink-black
           `
         }
         ${hover ? 'hover:scale-[1.01] hover:animate-float active:scale-[0.99]' : ''}

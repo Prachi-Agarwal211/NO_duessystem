@@ -12,6 +12,7 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import Logo from '@/components/ui/Logo';
+import AdminSettings from '@/components/admin/settings/AdminSettings';
 
 export default function AdminDashboard() {
   const { theme } = useTheme();
@@ -34,6 +35,7 @@ export default function AdminDashboard() {
     handleLogout
   } = useAdminDashboard();
 
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
@@ -115,7 +117,7 @@ export default function AdminDashboard() {
               <p className={`mt-2 transition-colors duration-700 ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                Monitor and manage all no-dues requests
+                {activeTab === 'dashboard' ? 'Monitor and manage all no-dues requests' : 'Configure system settings'}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -124,18 +126,22 @@ export default function AdminDashboard() {
               }`}>
                 Welcome, {user?.full_name}
               </div>
-              <button
-                onClick={() => exportStatsToCSV(stats)}
-                className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 rounded-lg text-sm text-white font-medium transition-all duration-300 flex items-center gap-2"
-              >
-                📊 Export Stats
-              </button>
-              <button
-                onClick={() => exportApplicationsToCSV(applications)}
-                className="px-4 py-2 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg text-sm text-white font-medium transition-all duration-300 flex items-center gap-2"
-              >
-                📥 Export Data
-              </button>
+              {activeTab === 'dashboard' && (
+                <>
+                  <button
+                    onClick={() => exportStatsToCSV(stats)}
+                    className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 rounded-lg text-sm text-white font-medium transition-all duration-300 flex items-center gap-2"
+                  >
+                    📊 Export Stats
+                  </button>
+                  <button
+                    onClick={() => exportApplicationsToCSV(applications)}
+                    className="px-4 py-2 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg text-sm text-white font-medium transition-all duration-300 flex items-center gap-2"
+                  >
+                    📥 Export Data
+                  </button>
+                </>
+              )}
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg text-sm text-white font-medium transition-all duration-300"
@@ -145,7 +151,42 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Stats Cards */}
+          {/* Tab Navigation */}
+          <div className={`mb-6 rounded-xl border backdrop-blur-sm transition-all duration-700 ${
+            isDark ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <div className="flex gap-2 p-2">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === 'dashboard'
+                    ? 'bg-jecrc-red text-white shadow-lg'
+                    : isDark
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    : 'text-gray-600 hover:text-ink-black hover:bg-gray-100'
+                }`}
+              >
+                📊 Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                  activeTab === 'settings'
+                    ? 'bg-jecrc-red text-white shadow-lg'
+                    : isDark
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    : 'text-gray-600 hover:text-ink-black hover:bg-gray-100'
+                }`}
+              >
+                ⚙️ Settings
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'dashboard' ? (
+            <>
+              {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <StatsCard
               title="Total Requests"
@@ -265,6 +306,10 @@ export default function AdminDashboard() {
                 </ul>
               </div>
             </div>
+          )}
+            </>
+          ) : (
+            <AdminSettings />
           )}
         </div>
       </div>

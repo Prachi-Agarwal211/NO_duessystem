@@ -5,11 +5,14 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-// import BackgroundGradientAnimation from '@/components/ui/background-gradient-animation';
+import { useTheme } from '@/contexts/ThemeContext';
+import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 function DepartmentActionContent() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState('');
   const [formId, setFormId] = useState('');
@@ -125,24 +128,34 @@ function DepartmentActionContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white">
+    <PageWrapper>
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full p-8 text-center">
           {status === 'success' ? (
             <div>
               <div className="text-green-500 text-5xl mb-4">✓</div>
-              <h2 className="text-xl font-bold mb-2">Action Completed</h2>
-              <p className="text-gray-300 mb-6">{message}</p>
+              <h2 className={`text-xl font-bold mb-2 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
+                Action Completed
+              </h2>
+              <p className={`mb-6 transition-colors duration-700 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                {message}
+              </p>
               <button
                 onClick={() => router.push('/staff/dashboard')}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg"
+                className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300"
               >
                 Go to Dashboard
               </button>
@@ -150,11 +163,19 @@ function DepartmentActionContent() {
           ) : error ? (
             <div>
               <div className="text-red-500 text-5xl mb-4">✗</div>
-              <h2 className="text-xl font-bold mb-2">Error</h2>
-              <p className="text-gray-300 mb-6">{error}</p>
+              <h2 className={`text-xl font-bold mb-2 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
+                Error
+              </h2>
+              <p className={`mb-6 transition-colors duration-700 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                {error}
+              </p>
               <button
                 onClick={() => router.back()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg"
+                className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300"
               >
                 Go Back
               </button>
@@ -162,16 +183,18 @@ function DepartmentActionContent() {
           ) : null}
         </GlassCard>
       </div>
-    </div>
+    </PageWrapper>
   );
 }
 
 export default function DepartmentActionPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </PageWrapper>
     }>
       <DepartmentActionContent />
     </Suspense>

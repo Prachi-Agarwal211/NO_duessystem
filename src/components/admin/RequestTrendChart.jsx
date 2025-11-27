@@ -94,8 +94,8 @@ export default function RequestTrendChart({ userId }) {
     fetchTrendData();
   }, [userId]);
 
-  const containerClasses = `backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${
-    isDark ? 'bg-white/5 border-white/10' : 'bg-black/5 border-black/10'
+  const containerClasses = `rounded-xl border p-6 transition-all duration-700 ${
+    isDark ? 'bg-white/5 border-white/10 backdrop-blur-sm' : 'bg-white border-gray-200 shadow-sm'
   }`;
 
   if (loading) {

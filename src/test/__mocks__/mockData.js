@@ -125,7 +125,7 @@ export const mockStats = {
   ],
   departmentStats: [
     {
-      department_name: 'LIBRARY',
+      department_name: 'school_hod',
       total_requests: 25,
       approved_requests: 20,
       rejected_requests: 3,
@@ -135,7 +135,7 @@ export const mockStats = {
       rejection_rate: '12%',
     },
     {
-      department_name: 'IT_DEPARTMENT',
+      department_name: 'library',
       total_requests: 25,
       approved_requests: 22,
       rejected_requests: 1,

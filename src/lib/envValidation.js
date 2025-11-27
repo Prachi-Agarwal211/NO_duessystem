@@ -92,7 +92,15 @@ export const validateOptionalEnvVars = () => {
  */
 export const validateDepartmentEmails = () => {
     const departmentEmails = {
-        "School (HOD/Dean)": process.env.SCHOOL_HOD_EMAIL || process.env.SCHOOL_EMAIL,
+        "School (HOD/Department)": process.env.SCHOOL_HOD_EMAIL || process.env.SCHOOL_EMAIL,
+        "Library": process.env.LIBRARY_EMAIL,
+        "IT Department": process.env.IT_DEPARTMENT_EMAIL,
+        "Hostel": process.env.HOSTEL_EMAIL,
+        "Mess": process.env.MESS_EMAIL,
+        "Canteen": process.env.CANTEEN_EMAIL,
+        "TPO": process.env.TPO_EMAIL,
+        "Alumni Association": process.env.ALUMNI_EMAIL,
+        "Accounts Department": process.env.ACCOUNTS_EMAIL,
         "Library": process.env.LIBRARY_EMAIL,
         "IT Department": process.env.IT_DEPARTMENT_EMAIL,
         "Hostel": process.env.HOSTEL_EMAIL,

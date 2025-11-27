@@ -12,7 +12,6 @@ const supabaseAdmin = createClient(
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 20;
     const status = searchParams.get('status');
@@ -20,6 +19,26 @@ export async function GET(request) {
     const searchQuery = searchParams.get('search');
     const sortField = searchParams.get('sortField') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+
+    // Get authenticated user from header/cookie via Supabase
+    const authHeader = request.headers.get('Authorization');
+    let userId;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      userId = user.id;
+    } else {
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
 
     // Verify user is admin
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -103,7 +122,7 @@ export async function GET(request) {
 
     // Get summary statistics
     const { data: summaryStats, error: summaryError } = await supabaseAdmin
-      .rpc('get_admin_summary_stats');
+      .rpc('get_form_statistics');
 
     if (summaryError) {
       console.error('Error fetching summary stats:', summaryError);
