@@ -7,6 +7,7 @@ import CoursesManager from './CoursesManager';
 import BranchesManager from './BranchesManager';
 import DepartmentsManager from './DepartmentsManager';
 import EmailsManager from './EmailsManager';
+import DepartmentStaffManager from './DepartmentStaffManager';
 
 /**
  * Main Admin Settings component with tabbed navigation
@@ -22,6 +23,7 @@ export default function AdminSettings() {
     { id: 'courses', label: 'Courses', icon: '📚' },
     { id: 'branches', label: 'Branches', icon: '🎓' },
     { id: 'departments', label: 'Departments', icon: '🏢' },
+    { id: 'staff', label: 'Staff Accounts', icon: '👥' },
     { id: 'emails', label: 'Email Config', icon: '📧' }
   ];
 
@@ -35,6 +37,8 @@ export default function AdminSettings() {
         return <BranchesManager />;
       case 'departments':
         return <DepartmentsManager />;
+      case 'staff':
+        return <DepartmentStaffManager />;
       case 'emails':
         return <EmailsManager />;
       default:
@@ -54,7 +58,7 @@ export default function AdminSettings() {
         <p className={`transition-colors duration-700 ${
           isDark ? 'text-white/60' : 'text-gray-600'
         }`}>
-          Configure schools, courses, branches, departments, and email settings
+          Configure schools, courses, branches, departments, staff accounts, and email settings
         </p>
       </div>
 
