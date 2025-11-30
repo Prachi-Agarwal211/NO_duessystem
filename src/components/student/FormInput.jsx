@@ -27,12 +27,15 @@ export default function FormInput({
     disabled:opacity-50 disabled:cursor-not-allowed
   `;
 
-  const labelClasses = `
-    absolute left-4 top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all duration-300 pointer-events-none
-    peer-placeholder-shown:text-base peer-placeholder-shown:top-3.5
-    peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-jecrc-red peer-focus:bg-white peer-focus:dark:bg-black peer-focus:px-1
-    ${value ? '-top-2.5 text-xs bg-white dark:bg-black px-1' : ''}
-  `;
+  const labelBaseClasses = "absolute left-4 transition-all duration-300 pointer-events-none";
+  const floatingClasses = "-top-2.5 text-xs text-jecrc-red bg-white dark:bg-black px-1";
+  const restingClasses = "top-3.5 text-base text-gray-500 dark:text-gray-400";
+
+  const finalLabelClasses = value
+    ? `${labelBaseClasses} ${floatingClasses}`
+    : `${labelBaseClasses} ${restingClasses} 
+       peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-jecrc-red peer-focus:bg-white peer-focus:dark:bg-black peer-focus:px-1
+       peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500 peer-placeholder-shown:dark:text-gray-400`;
 
   return (
     <div className="w-full group relative mb-4">
@@ -46,14 +49,14 @@ export default function FormInput({
             disabled={disabled}
             className={`${baseInputClasses} appearance-none cursor-pointer pt-3.5 pb-2.5`}
           >
-            <option value="" disabled selected></option>
+            <option value="" disabled></option>
             {options.map((option) => (
               <option key={option.value} value={option.value} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
                 {option.label}
               </option>
             ))}
           </select>
-          <label className={value ? labelClasses : `absolute left-4 top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all duration-300 pointer-events-none ${value ? '-top-2.5 text-xs bg-white dark:bg-black px-1' : ''}`}>
+          <label className={finalLabelClasses}>
             {label} {required && <span className="text-jecrc-red">*</span>}
           </label>
           
@@ -76,7 +79,7 @@ export default function FormInput({
             rows={4}
             className={`${baseInputClasses} resize-none`}
           />
-          <label className={labelClasses}>
+          <label className={finalLabelClasses}>
             {label} {required && <span className="text-jecrc-red">*</span>}
           </label>
         </div>
@@ -92,7 +95,7 @@ export default function FormInput({
             placeholder={placeholder || " "} // Placeholder required for CSS-only floating label
             className={baseInputClasses}
           />
-          <label className={labelClasses}>
+          <label className={finalLabelClasses}>
             {label} {required && <span className="text-jecrc-red">*</span>}
           </label>
         </div>
