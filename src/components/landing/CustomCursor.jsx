@@ -13,8 +13,9 @@ export default function CustomCursor({ theme }) {
   // ✅ ALL HOOKS BEFORE ANY CONDITIONAL RETURNS
   useEffect(() => {
     // Check if we should render on client side
-    setShouldRender(!isMobile && hasHover && !prefersReducedMotion());
-  }, [isMobile, hasHover]);
+    // Allow on hybrid devices (touch + hover) by checking hasHover
+    setShouldRender(hasHover && !prefersReducedMotion());
+  }, [hasHover]);
 
   useEffect(() => {
     if (!shouldRender) return;

@@ -14,31 +14,28 @@ export default function FormInput({
   options = [], // For select inputs
   disabled = false
 }) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  // Modern "Floating Label" effect logic
+  // If there is a value, or if the input is focused (handled by CSS peer-focus), the label floats up.
+  
+  const baseInputClasses = `
+    peer w-full px-4 py-3 rounded-lg outline-none transition-all duration-300
+    bg-white/50 dark:bg-black/40 backdrop-blur-md
+    border border-gray-200 dark:border-white/10
+    text-gray-900 dark:text-white placeholder-transparent
+    focus:border-jecrc-red dark:focus:border-jecrc-red
+    focus:ring-2 focus:ring-jecrc-red/20
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `;
 
-  // Enhanced styling with black shadows and "smart red" usage
-  const inputClasses = `w-full px-4 py-3 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md outline-none
-    ${isDark
-      ? 'bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red focus:bg-black/60 shadow-[0_4px_20px_rgba(0,0,0,0.5)]'
-      : 'bg-gray-50 border border-red-100 text-gray-800 placeholder-gray-400 focus:border-jecrc-red focus:bg-white shadow-[0_4px_20px_rgba(0,0,0,0.1)]'
-    }
-    ${error ? 'border-red-500 focus:border-red-500' : ''}
-    ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-    focus:ring-2 focus:ring-jecrc-red/20`;
-
-  // Option classes for readability in dropdowns
-  const optionClasses = isDark
-    ? "bg-gray-900 text-white py-2"
-    : "bg-white text-gray-900 py-2";
+  const labelClasses = `
+    absolute left-4 top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all duration-300 pointer-events-none
+    peer-placeholder-shown:text-base peer-placeholder-shown:top-3.5
+    peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-jecrc-red peer-focus:bg-white peer-focus:dark:bg-black peer-focus:px-1
+    ${value ? '-top-2.5 text-xs bg-white dark:bg-black px-1' : ''}
+  `;
 
   return (
-    <div className="w-full group">
-      <label className={`block text-sm font-bold mb-2 transition-colors duration-700 ease-smooth tracking-wide
-        ${isDark ? 'text-gray-300 group-focus-within:text-jecrc-red' : 'text-gray-700 group-focus-within:text-jecrc-red'}`}>
-        {label} {required && <span className="text-jecrc-red">*</span>}
-      </label>
-
+    <div className="w-full group relative mb-4">
       {type === 'select' ? (
         <div className="relative">
           <select
@@ -47,49 +44,62 @@ export default function FormInput({
             onChange={onChange}
             required={required}
             disabled={disabled}
-            className={`${inputClasses} appearance-none cursor-pointer`}
+            className={`${baseInputClasses} appearance-none cursor-pointer pt-3.5 pb-2.5`}
           >
-            <option value="" className={optionClasses}>Select {label}</option>
+            <option value="" disabled selected></option>
             {options.map((option) => (
-              <option key={option.value} value={option.value} className={optionClasses}>
+              <option key={option.value} value={option.value} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
                 {option.label}
               </option>
             ))}
           </select>
+          <label className={value ? labelClasses : `absolute left-4 top-3.5 text-gray-500 dark:text-gray-400 text-sm transition-all duration-300 pointer-events-none ${value ? '-top-2.5 text-xs bg-white dark:bg-black px-1' : ''}`}>
+            {label} {required && <span className="text-jecrc-red">*</span>}
+          </label>
+          
           {/* Custom dropdown arrow */}
-          <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none transition-colors duration-300
-            ${isDark ? 'text-gray-400' : 'text-jecrc-red'}`}>
-            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400 peer-focus:text-jecrc-red transition-colors">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 1.5L6 6.5L11 1.5" />
             </svg>
           </div>
         </div>
       ) : type === 'textarea' ? (
-        <textarea
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-          disabled={disabled}
-          placeholder={placeholder}
-          rows={4}
-          className={inputClasses}
-        />
+        <div className="relative">
+          <textarea
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            disabled={disabled}
+            placeholder={placeholder} // For floating label to work with placeholder-shown
+            rows={4}
+            className={`${baseInputClasses} resize-none`}
+          />
+          <label className={labelClasses}>
+            {label} {required && <span className="text-jecrc-red">*</span>}
+          </label>
+        </div>
       ) : (
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-          disabled={disabled}
-          placeholder={placeholder}
-          className={inputClasses}
-        />
+        <div className="relative">
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            disabled={disabled}
+            placeholder={placeholder || " "} // Placeholder required for CSS-only floating label
+            className={baseInputClasses}
+          />
+          <label className={labelClasses}>
+            {label} {required && <span className="text-jecrc-red">*</span>}
+          </label>
+        </div>
       )}
 
       {error && (
-        <p className="mt-1 text-sm text-red-500 font-medium flex items-center gap-1">
+        <p className="mt-1 text-sm text-red-500 font-medium flex items-center gap-1 animate-fade-in">
           <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
           {error}
         </p>

@@ -101,6 +101,8 @@ module.exports = {
         'float': 'float 6s ease-in-out infinite',
         'shimmer': 'shimmer 2.5s linear infinite',
         'drop-from-top': 'dropFromTop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'aurora': 'aurora 20s ease-in-out infinite',
+        'blob-slow': 'blobSlow 25s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -162,6 +164,25 @@ module.exports = {
           '100%': {
             transform: 'translateY(0) scale(1)',
             opacity: '1',
+          },
+        },
+        aurora: {
+          '0%, 100%': {
+            transform: 'translate(0%, 0%) rotate(0deg)',
+          },
+          '33%': {
+            transform: 'translate(5%, -5%) rotate(120deg)',
+          },
+          '66%': {
+            transform: 'translate(-5%, 5%) rotate(240deg)',
+          },
+        },
+        blobSlow: {
+          '0%, 100%': {
+            transform: 'translate(0%, 0%) scale(1)',
+          },
+          '50%': {
+            transform: 'translate(10%, 10%) scale(1.1)',
           },
         },
       },

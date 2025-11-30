@@ -1,6 +1,7 @@
 import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { validateEnvironment } from "@/lib/envValidation";
+import { Toaster } from "react-hot-toast";
 
 // Validate environment on startup (server-side only)
 if (typeof window === 'undefined') {
@@ -33,6 +34,23 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans">
         <ThemeProvider>
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              className: 'dark:bg-black dark:text-white dark:border dark:border-white/20',
+              style: {
+                borderRadius: '10px',
+                background: '#333',
+                color: '#fff',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#00FF88',
+                  secondary: 'black',
+                },
+              },
+            }}
+          />
           {children}
         </ThemeProvider>
       </body>

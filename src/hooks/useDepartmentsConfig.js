@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
+// Environment-based logging utility
+const isDevelopment = process.env.NODE_ENV === 'development';
+const log = (...args) => {
+  if (isDevelopment) {
+    console.log(...args);
+  }
+};
+
 /**
  * Custom hook for managing departments configuration
  * Provides UPDATE operations for departments (no add/delete - system critical)
@@ -14,8 +22,8 @@ export function useDepartmentsConfig() {
    * Fetch all departments from API
    * @param {boolean} includeInactive - Include inactive departments
    */
-  const fetchDepartments = useCallback(async (includeInactive = false) => {
-    console.log('🏢 fetchDepartments called:', { includeInactive });
+  const fetchDepartments = useCallback(async (includeInactive = true) => {
+    log('🏢 fetchDepartments called:', { includeInactive });
     setLoading(true);
     setError(null);
     try {
@@ -35,15 +43,14 @@ export function useDepartmentsConfig() {
       }
 
       const data = await response.json();
-      console.log('🏢 Departments API response:', data);
-      // API returns { success: true, departments: [] } NOT { success: true, data: [] }
+      log('🏢 Departments API response:', data);
       setDepartments(data.departments || []);
-      console.log('🏢 Departments loaded:', data.departments?.length || 0);
+      log('🏢 Departments loaded:', data.departments?.length || 0);
       return data.departments;
     } catch (err) {
       setError(err.message);
       console.error('Error fetching departments:', err);
-      setDepartments([]); // Set empty array on error
+      setDepartments([]);
       return null;
     } finally {
       setLoading(false);
@@ -57,7 +64,7 @@ export function useDepartmentsConfig() {
    * @param {string} departmentId - Department ID to update
    * @param {Object} updates - Fields to update
    */
-  const updateDepartment = useCallback(async (departmentId, updates) => {
+  const updateDepartment = useCallback(async (departmentName, updates) => {
     setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +77,7 @@ export function useDepartmentsConfig() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ id: departmentId, ...updates })
+        body: JSON.stringify({ name: departmentName, ...updates })
       });
 
       if (!response.ok) {
@@ -79,9 +86,17 @@ export function useDepartmentsConfig() {
       }
 
       const data = await response.json();
-      setDepartments(prev => prev.map(dept => 
-        dept.name === departmentId ? data.department : dept
-      ));
+      
+      // Optimized state update with early return
+      setDepartments(prev => {
+        const index = prev.findIndex(dept => dept.name === departmentName);
+        if (index === -1) return prev;
+        
+        const updated = [...prev];
+        updated[index] = data.department;
+        return updated;
+      });
+      
       return data.department;
     } catch (err) {
       setError(err.message);
@@ -89,33 +104,6 @@ export function useDepartmentsConfig() {
       throw err;
     }
   }, []);
-
-  /**
-   * Toggle department active status
-   * @param {string} departmentId - Department ID
-   * @param {boolean} isActive - New active status
-   */
-  const toggleDepartmentStatus = useCallback(async (departmentId, isActive) => {
-    return updateDepartment(departmentId, { is_active: isActive });
-  }, [updateDepartment]);
-
-  /**
-   * Update department email
-   * @param {string} departmentId - Department ID
-   * @param {string} email - New email address
-   */
-  const updateDepartmentEmail = useCallback(async (departmentId, email) => {
-    return updateDepartment(departmentId, { email });
-  }, [updateDepartment]);
-
-  /**
-   * Update department display name
-   * @param {string} departmentId - Department ID
-   * @param {string} displayName - New display name
-   */
-  const updateDepartmentDisplayName = useCallback(async (departmentId, displayName) => {
-    return updateDepartment(departmentId, { display_name: displayName });
-  }, [updateDepartment]);
 
   // Auto-fetch on mount
   useEffect(() => {
@@ -127,9 +115,6 @@ export function useDepartmentsConfig() {
     loading,
     error,
     fetchDepartments,
-    updateDepartment,
-    toggleDepartmentStatus,
-    updateDepartmentEmail,
-    updateDepartmentDisplayName
+    updateDepartment
   };
 }

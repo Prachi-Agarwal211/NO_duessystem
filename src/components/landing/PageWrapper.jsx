@@ -1,6 +1,6 @@
 'use client';
 
-import Background from './Background';
+import AuroraBackground from '@/components/ui/AuroraBackground';
 import CustomCursor from './CustomCursor';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -13,16 +13,14 @@ export default function PageWrapper({ children, showThemeToggle = true }) {
   const isDark = currentTheme === 'dark';
 
   return (
-    <div className="relative min-h-screen w-full transition-colors duration-700 ease-smooth overflow-hidden">
-      
-      <Background theme={currentTheme} />
+    <AuroraBackground>
       <CustomCursor theme={currentTheme} />
       {showThemeToggle && <ThemeToggle />}
       
-      <div className={`relative z-10 transition-colors duration-700
+      <div className={`relative z-10 transition-colors duration-700 min-h-screen
         ${isDark ? 'text-white' : 'text-ink-black'}`}>
         {children}
       </div>
-    </div>
+    </AuroraBackground>
   );
 }
