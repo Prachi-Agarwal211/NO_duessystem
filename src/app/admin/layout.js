@@ -1,4 +1,4 @@
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import PageWrapper from '@/components/landing/PageWrapper';
 
 export const metadata = {
   title: 'Admin Dashboard | JECRC No Dues',
@@ -7,8 +7,8 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <DashboardLayout userType="admin">
+    <PageWrapper showThemeToggle={true}>
       {children}
-    </DashboardLayout>
+    </PageWrapper>
   );
 }

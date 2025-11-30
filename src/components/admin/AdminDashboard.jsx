@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { supabase } from '@/lib/supabaseClient';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
@@ -13,8 +15,10 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
+import { LogOut, Shield } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -37,6 +41,22 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success('Logged out successfully');
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('Failed to log out');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   // Handle global errors with Toast
   useEffect(() => {
@@ -69,8 +89,64 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header with Actions */}
+    <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+      {/* Standalone Header */}
+      <GlassCard className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-jecrc-red to-jecrc-red-dark flex items-center justify-center text-white shadow-lg shadow-jecrc-red/20">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              JECRC Admin
+            </h1>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              No Dues Management System
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Tab Switcher */}
+          <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'settings'
+                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              Settings
+            </button>
+          </div>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            {isLoggingOut ? (
+              <LoadingSpinner size="sm" color="border-red-500" />
+            ) : (
+              <LogOut className="w-4 h-4" />
+            )}
+            Logout
+          </button>
+        </div>
+      </GlassCard>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
@@ -79,30 +155,6 @@ export default function AdminDashboard() {
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-white/10">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'dashboard'
-                ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              activeTab === 'settings'
-                ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-            }`}
-          >
-            Settings
-          </button>
         </div>
       </div>
 
