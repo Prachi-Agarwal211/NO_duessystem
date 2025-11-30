@@ -257,21 +257,17 @@ export default function SubmitForm() {
         fileUrl = await uploadFile(file);
       }
 
-      // Get selected names for display
-      const selectedSchool = schools.find(s => s.id === formData.school);
-      const selectedCourse = courses.find(c => c.id === formData.course);
-      const selectedBranch = branches.find(b => b.id === formData.branch);
-      
       // Sanitize and prepare data
+      // Send UUIDs for school, course, branch - backend will look up names
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
         session_from: formData.session_from?.trim() || null,
         session_to: formData.session_to?.trim() || null,
         parent_name: formData.parent_name?.trim() || null,
-        school: selectedSchool?.name || formData.school,
-        course: selectedCourse?.name || formData.course,
-        branch: selectedBranch?.name || formData.branch,
+        school: formData.school,        // Send UUID from dropdown
+        course: formData.course,        // Send UUID from dropdown
+        branch: formData.branch,        // Send UUID from dropdown
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
