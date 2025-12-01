@@ -11,7 +11,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import Logo from '@/components/ui/Logo';
 import { RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 export default function StaffDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
