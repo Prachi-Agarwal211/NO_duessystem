@@ -135,7 +135,7 @@ export async function GET(request) {
         no_dues_forms!inner (
           student_name,
           registration_no,
-          created_at as form_created_at
+          created_at
         )
       `)
       .eq('status', 'pending')
