@@ -55,7 +55,7 @@ export function useAdminDashboard() {
     }
   };
 
-  const fetchDashboardData = useCallback(async (filters = {}, isRefresh = false) => {
+  const fetchDashboardData = useCallback(async (filters = {}, isRefresh = false, pageOverride = null) => {
     // Store filters for real-time refresh
     currentFiltersRef.current = filters;
     
@@ -74,7 +74,7 @@ export function useAdminDashboard() {
       }
 
       const params = new URLSearchParams({
-        page: currentPage,
+        page: pageOverride !== null ? pageOverride : currentPage,
         limit: 20,
         ...filters
       });
@@ -94,6 +94,8 @@ export function useAdminDashboard() {
       setTotalItems(result.pagination?.total || 0);
       setTotalPages(result.pagination?.totalPages || 1);
       setLastUpdate(new Date());
+      
+      console.log('📊 Admin dashboard data refreshed:', result.applications?.length, 'applications');
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message);
@@ -126,11 +128,16 @@ export function useAdminDashboard() {
     router.push('/login');
   };
 
-  // Manual refresh function
+  // Manual refresh function - use latest currentPage from state
   const refreshData = useCallback(() => {
-    fetchDashboardData(currentFiltersRef.current, true);
+    console.log('🔄 Manual refresh triggered');
+    // Use functional update to get the latest currentPage
+    setCurrentPage(page => {
+      fetchDashboardData(currentFiltersRef.current, true, page);
+      return page;
+    });
     fetchStats();
-  }, [fetchDashboardData]);
+  }, [fetchDashboardData, fetchStats]);
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and updates for instant dashboard updates
@@ -192,20 +199,23 @@ export function useAdminDashboard() {
         }
       )
       .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ Admin dashboard subscribed to real-time updates');
+          console.log('📌 Listening for changes on: no_dues_forms, no_dues_status');
           isSubscribed = true;
           // Clear polling if subscription is active
           if (pollingInterval) {
             clearInterval(pollingInterval);
             pollingInterval = null;
           }
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Real-time subscription error - falling back to polling');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.error('❌ Real-time subscription error:', status, '- falling back to polling');
           isSubscribed = false;
           // Start polling as fallback
           if (!pollingInterval) {
             pollingInterval = setInterval(() => {
+              console.log('🔁 Polling fallback - fetching data...');
               if (!refreshing) {
                 refreshData();
               }

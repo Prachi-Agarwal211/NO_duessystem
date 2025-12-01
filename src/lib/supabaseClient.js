@@ -49,7 +49,7 @@ const createSafeClient = () => {
     headers: { 'X-Client-Info': 'jecrc-no-dues-system' },
     fetch: (url, options = {}) => {
       // Add timeout for mobile connections
-      const timeout = 10000; // 10 seconds
+      const timeout: 15000; // 15 seconds for better stability
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       
@@ -62,10 +62,17 @@ const createSafeClient = () => {
   db: {
     schema: 'public',
   },
-  // Mobile-optimized settings
+  // REALTIME CONFIGURATION - OPTIMIZED FOR PRODUCTION
   realtime: {
     params: {
-      eventsPerSecond: 2, // Reduce realtime events for mobile
+      eventsPerSecond: 10, // ✅ Increased from 2 to 10 for better real-time performance
+    },
+    // Enable heartbeat to maintain connection
+    heartbeatIntervalMs: 30000,
+    // Reconnect settings
+    reconnectAfterMs: (tries) => {
+      // Exponential backoff: 1s, 2s, 4s, 8s, max 10s
+      return Math.min(1000 * Math.pow(2, tries), 10000);
     },
   },
   });
