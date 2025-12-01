@@ -15,7 +15,7 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
-import { LogOut, Shield } from 'lucide-react';
+import { LogOut, Shield, RefreshCw } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
     user,
     userId,
     loading,
+    refreshing,
     applications,
     stats,
     error,
@@ -33,8 +34,10 @@ export default function AdminDashboard() {
     setCurrentPage,
     totalPages,
     totalItems,
+    lastUpdate,
     fetchDashboardData,
     fetchStats,
+    refreshData,
   } = useAdminDashboard();
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -64,6 +67,27 @@ export default function AdminDashboard() {
       toast.error(error);
     }
   }, [error]);
+
+  // Listen for new submission notifications from real-time updates
+  useEffect(() => {
+    const handleNewSubmission = (event) => {
+      const { registrationNo, studentName } = event.detail;
+      toast.success(
+        `New application received!\n${studentName || 'Student'} (${registrationNo})`,
+        { 
+          duration: 5000,
+          icon: '🔔',
+          style: {
+            background: isDark ? '#1f2937' : '#fff',
+            color: isDark ? '#fff' : '#1f2937',
+          }
+        }
+      );
+    };
+
+    window.addEventListener('new-submission', handleNewSubmission);
+    return () => window.removeEventListener('new-submission', handleNewSubmission);
+  }, [isDark]);
 
   // Fetch data when filters change
   useEffect(() => {
@@ -155,6 +179,28 @@ export default function AdminDashboard() {
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
+        </div>
+        
+        {/* Real-time Status & Refresh */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Live • Updated {lastUpdate.toLocaleTimeString()}
+            </span>
+          </div>
+          <button
+            onClick={refreshData}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+              ${isDark 
+                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
+              } disabled:opacity-50`}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
 

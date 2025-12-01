@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -9,12 +9,17 @@ export function useAdminDashboard() {
   const [user, setUser] = useState(null);
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  // Store current filters for refresh
+  const currentFiltersRef = useRef({});
 
   // Fetch user data
   useEffect(() => {
@@ -50,8 +55,15 @@ export function useAdminDashboard() {
     }
   };
 
-  const fetchDashboardData = async (filters = {}) => {
-    setLoading(true);
+  const fetchDashboardData = useCallback(async (filters = {}, isRefresh = false) => {
+    // Store filters for real-time refresh
+    currentFiltersRef.current = filters;
+    
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError('');
 
     try {
@@ -81,13 +93,15 @@ export function useAdminDashboard() {
       setApplications(result.applications || []);
       setTotalItems(result.pagination?.total || 0);
       setTotalPages(result.pagination?.totalPages || 1);
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [currentPage]);
 
   const fetchStats = async () => {
     try {
@@ -112,10 +126,120 @@ export function useAdminDashboard() {
     router.push('/login');
   };
 
+  // Manual refresh function
+  const refreshData = useCallback(() => {
+    fetchDashboardData(currentFiltersRef.current, true);
+    fetchStats();
+  }, [fetchDashboardData]);
+
+  // ==================== REAL-TIME SUBSCRIPTION ====================
+  // Subscribe to new form submissions and updates for instant dashboard updates
+  useEffect(() => {
+    if (!userId) return;
+
+    let isSubscribed = false;
+    let pollingInterval = null;
+
+    // Set up real-time subscription for new form submissions
+    const channel = supabase
+      .channel('admin-dashboard-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'no_dues_forms'
+        },
+        (payload) => {
+          console.log('🔔 New form submission detected:', payload.new?.registration_no);
+          // Show notification for new submission
+          if (typeof window !== 'undefined' && window.dispatchEvent) {
+            window.dispatchEvent(new CustomEvent('new-submission', { 
+              detail: { 
+                registrationNo: payload.new?.registration_no,
+                studentName: payload.new?.student_name 
+              } 
+            }));
+          }
+          // Refresh data when new form is submitted
+          refreshData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'no_dues_forms'
+        },
+        (payload) => {
+          console.log('🔄 Form updated:', payload.new?.registration_no);
+          // Refresh data when form status changes
+          refreshData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'no_dues_status'
+        },
+        (payload) => {
+          console.log('📋 Department status changed');
+          // Refresh when any department status changes
+          refreshData();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Admin dashboard subscribed to real-time updates');
+          isSubscribed = true;
+          // Clear polling if subscription is active
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Real-time subscription error - falling back to polling');
+          isSubscribed = false;
+          // Start polling as fallback
+          if (!pollingInterval) {
+            pollingInterval = setInterval(() => {
+              if (!refreshing) {
+                refreshData();
+              }
+            }, 30000); // Poll every 30 seconds
+          }
+        }
+      });
+
+    // Fallback polling - only if subscription not active after 5 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (!isSubscribed && !pollingInterval) {
+        console.log('⏰ Subscription not active, starting fallback polling');
+        pollingInterval = setInterval(() => {
+          if (!refreshing) {
+            refreshData();
+          }
+        }, 30000); // Poll every 30 seconds
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refreshData, refreshing]);
+
   return {
     user,
     userId,
     loading,
+    refreshing,
     applications,
     stats,
     error,
@@ -123,8 +247,10 @@ export function useAdminDashboard() {
     setCurrentPage,
     totalPages,
     totalItems,
+    lastUpdate,
     fetchDashboardData,
     fetchStats,
+    refreshData,
     handleLogout
   };
 }
