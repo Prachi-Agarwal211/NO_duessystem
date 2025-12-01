@@ -49,7 +49,7 @@ const createSafeClient = () => {
     headers: { 'X-Client-Info': 'jecrc-no-dues-system' },
     fetch: (url, options = {}) => {
       // Add timeout for mobile connections
-      const timeout: 15000; // 15 seconds for better stability
+      const timeout = 15000; // 15 seconds for better stability
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
       
