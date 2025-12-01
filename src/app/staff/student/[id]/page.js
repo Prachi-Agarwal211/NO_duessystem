@@ -26,51 +26,131 @@ export default function StudentDetailView() {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Get user info
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/staff/login');
-          return;
-        }
-
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role, department_name')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
-          router.push('/unauthorized');
-          return;
-        }
-
-        setUser(userData);
-
-        // Get student data using the API
-        const response = await fetch(`/api/staff/student/${id}?userId=${session.user.id}`);
-        const result = await response.json();
-
-        if (result.success) {
-          setStudentData(result.data.form);
-          setStatusData(result.data.departmentStatuses);
-        } else {
-          throw new Error(result.error || 'Failed to fetch student data');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      // Get user info
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.push('/staff/login');
+        return;
       }
-    };
 
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, department_name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
+        router.push('/unauthorized');
+        return;
+      }
+
+      setUser(userData);
+
+      // Get student data using the API
+      const response = await fetch(`/api/staff/student/${id}?userId=${session.user.id}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setStudentData(result.data.form);
+        setStatusData(result.data.departmentStatuses);
+      } else {
+        throw new Error(result.error || 'Failed to fetch student data');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
     if (id) {
       fetchData();
     }
   }, [id, router]);
+
+  // Real-time subscription for status updates
+  useEffect(() => {
+    if (!id || !studentData?.id) return;
+
+    let isSubscribed = false;
+    let pollingInterval = null;
+
+    // Set up real-time subscription for status changes
+    const channel = supabase
+      .channel(`student-detail-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'no_dues_status',
+          filter: `form_id=eq.${studentData.id}`
+        },
+        (payload) => {
+          console.log('🔄 Status updated in real-time:', payload.new?.department_name);
+          // Refresh data when any department status changes
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'no_dues_forms',
+          filter: `id=eq.${studentData.id}`
+        },
+        (payload) => {
+          console.log('📝 Form updated in real-time');
+          // Refresh data when form is updated
+          fetchData();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Student detail subscribed to real-time updates');
+          isSubscribed = true;
+          // Clear polling if subscription is active
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Real-time subscription error - falling back to polling');
+          isSubscribed = false;
+          // Start polling as fallback
+          if (!pollingInterval) {
+            pollingInterval = setInterval(() => {
+              fetchData();
+            }, 30000); // Poll every 30 seconds
+          }
+        }
+      });
+
+    // Fallback polling - only if subscription not active after 5 seconds
+    const fallbackTimeout = setTimeout(() => {
+      if (!isSubscribed && !pollingInterval) {
+        console.log('⏰ Subscription not active, starting fallback polling');
+        pollingInterval = setInterval(() => {
+          fetchData();
+        }, 30000); // Poll every 30 seconds
+      }
+    }, 5000);
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [id, studentData?.id]);
 
   const handleApproveClick = () => {
     setShowApproveModal(true);

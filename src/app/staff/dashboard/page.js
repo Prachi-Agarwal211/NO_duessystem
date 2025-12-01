@@ -2,24 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useStaffDashboard } from '@/hooks/useStaffDashboard';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import DataTable from '@/components/ui/DataTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import Logo from '@/components/ui/Logo';
+import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function StaffDashboard() {
-  const [user, setUser] = useState(null);
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  // Use the new real-time hook
+  const {
+    user,
+    loading,
+    refreshing,
+    requests,
+    error,
+    lastUpdate,
+    fetchDashboardData,
+    refreshData
+  } = useStaffDashboard();
 
   // Debounce search term to avoid too many API calls
   useEffect(() => {
@@ -30,91 +41,26 @@ export default function StaffDashboard() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  // Fetch data when debounced search term changes
   useEffect(() => {
-    const fetchUserData = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (user) {
+      fetchDashboardData(debouncedSearchTerm);
+    }
+  }, [user, debouncedSearchTerm, fetchDashboardData]);
 
-      if (sessionError || !session) {
-        router.push('/staff/login');
-        return;
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('full_name, role, department_name')
-        .eq('id', session.user.id)
-        .single();
-
-      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
-        router.push('/unauthorized');
-        return;
-      }
-
-      setUser(userData);
-      setLoading(false);
+  // Listen for new submission events and show toast
+  useEffect(() => {
+    const handleNewSubmission = (event) => {
+      const { registrationNo, studentName } = event.detail;
+      toast.success('New Application Received!', {
+        description: `${studentName} (${registrationNo})`,
+        duration: 5000,
+      });
     };
 
-    fetchUserData();
-  }, [router]);
-
-  // Separate effect to fetch dashboard data when search term changes
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchDashboardData = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-
-        // Build query params with search term
-        const params = new URLSearchParams({
-          userId: session.user.id,
-          page: 1,
-          limit: 50
-        });
-
-        // Add search term if present
-        if (debouncedSearchTerm.trim()) {
-          params.append('search', debouncedSearchTerm.trim());
-        }
-
-        const response = await fetch(`/api/staff/dashboard?${params}`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
-        const result = await response.json();
-
-        if (result.success) {
-          // For department staff, extract form data from status records
-          const applications = result.data.applications || [];
-          console.log('📊 Dashboard - Received applications:', applications.length);
-
-          // Filter out applications with null forms (orphaned records)
-          const validApplications = applications.filter(item => {
-            if (!item.no_dues_forms) {
-              console.warn('⚠️ Orphaned status record found, skipping:', item.form_id);
-              return false;
-            }
-            return true;
-          });
-
-          console.log('✅ Valid applications after filtering:', validApplications.length);
-
-          const formattedRequests = validApplications.map(item => item.no_dues_forms);
-          console.log('📋 First request:', formattedRequests[0]);
-
-          setRequests(formattedRequests);
-        } else {
-          console.error('API Error:', result.error);
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    };
-
-    fetchDashboardData();
-  }, [user, debouncedSearchTerm]);
+    window.addEventListener('new-staff-submission', handleNewSubmission);
+    return () => window.removeEventListener('new-staff-submission', handleNewSubmission);
+  }, []);
 
   const handleRowClick = (row) => {
     router.push(`/staff/student/${row.id}`);
@@ -152,15 +98,40 @@ export default function StaffDashboard() {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-              <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                }`}>
-                {user?.role === 'admin'
-                  ? 'Admin Dashboard'
-                  : `${user?.department_name || 'Department'} Dashboard`}
-              </h1>
-              <div className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-600'
-                }`}>
-                Welcome, {user?.full_name}
+              <div className="flex-1">
+                <h1 className={`text-2xl sm:text-3xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>
+                  {user?.role === 'admin'
+                    ? 'Admin Dashboard'
+                    : `${user?.department_name || 'Department'} Dashboard`}
+                </h1>
+                <div className={`text-sm mt-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                  Welcome, {user?.full_name}
+                </div>
+              </div>
+
+              {/* Real-time indicator and refresh button */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-xs">
+                  <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-green-400' : 'bg-green-500'} animate-pulse`} />
+                  <span className={`transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Live • Updated {lastUpdate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={refreshData}
+                  disabled={refreshing}
+                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300
+                    ${isDark
+                      ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                      : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                </button>
               </div>
             </div>
 
