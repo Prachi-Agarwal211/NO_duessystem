@@ -56,8 +56,10 @@ export function useAdminDashboard() {
   };
 
   const fetchDashboardData = useCallback(async (filters = {}, isRefresh = false, pageOverride = null) => {
-    // Store filters for real-time refresh
-    currentFiltersRef.current = filters;
+    // Always store the latest filters for real-time refresh
+    if (Object.keys(filters).length > 0) {
+      currentFiltersRef.current = filters;
+    }
     
     if (isRefresh) {
       setRefreshing(true);
@@ -128,14 +130,15 @@ export function useAdminDashboard() {
     router.push('/login');
   };
 
-  // Manual refresh function - use latest currentPage from state
+  // Manual refresh function - properly refresh both dashboard and stats
   const refreshData = useCallback(() => {
-    console.log('🔄 Manual refresh triggered');
-    // Use functional update to get the latest currentPage
+    console.log('🔄 Refresh triggered - updating dashboard and stats');
     setCurrentPage(page => {
+      // Fetch dashboard data with current page
       fetchDashboardData(currentFiltersRef.current, true, page);
       return page;
     });
+    // Always fetch fresh stats
     fetchStats();
   }, [fetchDashboardData, fetchStats]);
 
