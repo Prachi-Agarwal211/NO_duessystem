@@ -212,7 +212,7 @@ Login as Admin → Settings → Staff Accounts
 
 1. **Click "Add Staff"**
 2. **Fill Basic Info:**
-   - Email: staff.email@jecrc.ac.in
+   - Email: Any email (Gmail, Outlook, college email, etc.)
    - Name: Full Name
    - Department: Select role (school_hod, dean, library, etc.)
 
@@ -234,7 +234,7 @@ Login as Admin → Settings → Staff Accounts
 
 ### **Example 1: JECRC Engineering CSE HOD**
 ```
-Email: cse.hod@jecrc.ac.in
+Email: cse.hod@jecrc.ac.in (or john.doe@gmail.com, any email works!)
 Department: school_hod
 School: ✅ Faculty of Engineering & Technology
 Course: ✅ B.Tech
@@ -243,7 +243,7 @@ Branch: ✅ Computer Science Engineering
 
 ### **Example 2: JECRC MBA Program Coordinator**
 ```
-Email: mba.coordinator@jecrc.ac.in
+Email: mba.coordinator@jecrc.ac.in (or priya.sharma@outlook.com)
 Department: school_hod
 School: ✅ Faculty of Management Studies
 Course: ✅ MBA
@@ -252,7 +252,7 @@ Branch: ☐ (all MBA students)
 
 ### **Example 3: JECRC Engineering Dean**
 ```
-Email: dean.engineering@jecrc.ac.in
+Email: dean.engineering@jecrc.ac.in (or any personal/work email)
 Department: dean
 School: ✅ Faculty of Engineering & Technology
 Course: ☐ (all engineering courses)
@@ -261,7 +261,7 @@ Branch: ☐ (all engineering branches)
 
 ### **Example 4: JECRC Central Library**
 ```
-Email: library@jecrc.ac.in
+Email: library@jecrc.ac.in (or librarian123@gmail.com)
 Department: library
 School: ☐ (all schools)
 Course: ☐ (all courses)
@@ -307,6 +307,7 @@ if (staff.branch_ids && staff.branch_ids.length > 0) {
 3. ✅ **Multiple selections supported** - HOD can manage multiple branches
 4. ✅ **Flexible hierarchy** - Configure at school, course, or branch level
 5. ✅ **No code changes needed** - All configuration via Admin UI
+6. ✅ **Any email address works** - Staff can use Gmail, Outlook, college email, or any other email provider
 
 ---
 

@@ -48,9 +48,9 @@ export default function DepartmentStaffManager() {
       label: 'Email Address',
       type: 'email',
       required: true,
-      placeholder: 'staff@jecrc.ac.in',
+      placeholder: 'e.g., john.doe@gmail.com or staff@jecrc.ac.in',
       disabled: !!editingStaff,
-      helpText: editingStaff ? 'Email cannot be changed after creation' : 'Use official college email',
+      helpText: editingStaff ? 'Email cannot be changed after creation' : 'Can use any email address (Gmail, Outlook, college email, etc.)',
       validate: (value) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) return 'Invalid email format';
