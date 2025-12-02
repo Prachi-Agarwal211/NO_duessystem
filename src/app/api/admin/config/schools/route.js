@@ -50,7 +50,7 @@ export async function GET(request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const includeInactive = searchParams.get('includeInactive') === 'true';
+    const includeInactive = searchParams.get('include_inactive') === 'true';
 
     let query = supabaseAdmin
       .from('config_schools')

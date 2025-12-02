@@ -82,8 +82,8 @@ export function useCoursesConfig() {
       }
 
       const data = await response.json();
-      setCourses(prev => [...prev, data.course]);
-      return data.course;
+      setCourses(prev => [...prev, data.data]);
+      return data.data;
     } catch (err) {
       setError(err.message);
       console.error('Error adding course:', err);
@@ -117,10 +117,10 @@ export function useCoursesConfig() {
       }
 
       const data = await response.json();
-      setCourses(prev => prev.map(course => 
-        course.id === courseId ? data.course : course
+      setCourses(prev => prev.map(course =>
+        course.id === courseId ? data.data : course
       ));
-      return data.course;
+      return data.data;
     } catch (err) {
       setError(err.message);
       console.error('Error updating course:', err);
@@ -138,13 +138,11 @@ export function useCoursesConfig() {
       const token = await getAuthToken();
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch('/api/admin/config/courses', {
+      const response = await fetch(`/api/admin/config/courses?id=${courseId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ id: courseId })
+        }
       });
 
       if (!response.ok) {

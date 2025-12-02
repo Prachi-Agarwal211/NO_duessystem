@@ -82,8 +82,8 @@ export function useBranchesConfig() {
       }
 
       const data = await response.json();
-      setBranches(prev => [...prev, data.branch]);
-      return data.branch;
+      setBranches(prev => [...prev, data.data]);
+      return data.data;
     } catch (err) {
       setError(err.message);
       console.error('Error adding branch:', err);
@@ -117,10 +117,10 @@ export function useBranchesConfig() {
       }
 
       const data = await response.json();
-      setBranches(prev => prev.map(branch => 
-        branch.id === branchId ? data.branch : branch
+      setBranches(prev => prev.map(branch =>
+        branch.id === branchId ? data.data : branch
       ));
-      return data.branch;
+      return data.data;
     } catch (err) {
       setError(err.message);
       console.error('Error updating branch:', err);
@@ -138,13 +138,11 @@ export function useBranchesConfig() {
       const token = await getAuthToken();
       if (!token) throw new Error('No authentication token found');
 
-      const response = await fetch('/api/admin/config/branches', {
+      const response = await fetch(`/api/admin/config/branches?id=${branchId}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ id: branchId })
+        }
       });
 
       if (!response.ok) {

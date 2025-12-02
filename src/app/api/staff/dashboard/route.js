@@ -42,10 +42,10 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Get user profile to check role and department using admin client
+    // Get user profile to check role, department, and access scope
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, school_id')
+      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
@@ -128,15 +128,31 @@ export async function GET(request) {
             created_at,
             updated_at,
             status,
-            school_id
+            school_id,
+            course_id,
+            branch_id
           )
         `)
         .eq('department_name', profile.department_name)
         .eq('status', 'pending');
 
-      // Filter by school_id for school_hod department
-      if (profile.department_name === 'school_hod' && profile.school_id) {
+      // Apply scope filtering based on staff's access configuration
+      // Filter by school_ids (if configured)
+      if (profile.school_ids && profile.school_ids.length > 0) {
+        query = query.in('no_dues_forms.school_id', profile.school_ids);
+      } else if (profile.department_name === 'school_hod' && profile.school_id) {
+        // Backward compatibility: old school_id field
         query = query.eq('no_dues_forms.school_id', profile.school_id);
+      }
+
+      // Filter by course_ids (if configured)
+      if (profile.course_ids && profile.course_ids.length > 0) {
+        query = query.in('no_dues_forms.course_id', profile.course_ids);
+      }
+
+      // Filter by branch_ids (if configured)
+      if (profile.branch_ids && profile.branch_ids.length > 0) {
+        query = query.in('no_dues_forms.branch_id', profile.branch_ids);
       }
 
       // Apply search filter if provided

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { useDepartmentsConfig } from '@/hooks/useDepartmentsConfig';
 import { supabase } from '@/lib/supabaseClient';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -39,6 +40,9 @@ export default function AdminDashboard() {
     fetchStats,
     refreshData,
   } = useAdminDashboard();
+
+  // Load departments for filter dropdown
+  const { departments } = useDepartmentsConfig();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -275,9 +279,14 @@ export default function AdminDashboard() {
                 className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none"
               >
                 <option value="">All Departments</option>
-                <option value="LIBRARY">Library</option>
-                <option value="HOSTEL">Hostel</option>
-                <option value="IT_DEPARTMENT">IT Department</option>
+                {departments
+                  .filter(dept => dept.is_active)
+                  .sort((a, b) => a.display_order - b.display_order)
+                  .map(dept => (
+                    <option key={dept.name} value={dept.name}>
+                      {dept.display_name}
+                    </option>
+                  ))}
               </select>
             </div>
             

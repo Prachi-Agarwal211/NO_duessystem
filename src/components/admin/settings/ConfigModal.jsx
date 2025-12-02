@@ -137,8 +137,107 @@ export default function ConfigModal({
             type="checkbox"
             checked={value}
             onChange={(e) => handleChange(field.name, e.target.checked)}
-            className="w-5 h-5 rounded border-white/20 bg-white/5 
+            className="w-5 h-5 rounded border-white/20 bg-white/5
                      text-red-600 focus:ring-red-500/50"
+            disabled={field.disabled || isLoading}
+          />
+        );
+
+      case 'multi-checkbox':
+        return (
+          <div className={`space-y-2 max-h-60 overflow-y-auto p-3 rounded-lg border transition-all duration-700 ${
+            isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'
+          }`}>
+            {field.options && field.options.length > 0 ? (
+              <>
+                {/* Select All / Clear All buttons */}
+                <div className="flex gap-2 pb-2 border-b border-white/10 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allValues = field.options.map(opt => opt.value);
+                      handleChange(field.name, allValues);
+                    }}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      isDark
+                        ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
+                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                    }`}
+                    disabled={field.disabled || isLoading}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChange(field.name, null)}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      isDark
+                        ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
+                        : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    }`}
+                    disabled={field.disabled || isLoading}
+                  >
+                    Clear All
+                  </button>
+                </div>
+                
+                {/* Checkbox options */}
+                {field.options.map(option => {
+                  const isChecked = Array.isArray(value) && value.includes(option.value);
+                  return (
+                    <label
+                      key={option.value}
+                      className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
+                        isDark
+                          ? 'hover:bg-white/5'
+                          : 'hover:bg-gray-100'
+                      } ${field.disabled || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const currentValues = Array.isArray(value) ? value : [];
+                          const newValues = e.target.checked
+                            ? [...currentValues, option.value]
+                            : currentValues.filter(v => v !== option.value);
+                          handleChange(field.name, newValues.length > 0 ? newValues : null);
+                        }}
+                        className="w-4 h-4 rounded border-white/20 bg-white/5
+                                 text-red-600 focus:ring-red-500/50"
+                        disabled={field.disabled || isLoading}
+                      />
+                      <span className={`text-sm transition-colors duration-700 ${
+                        isDark ? 'text-white/80' : 'text-gray-700'
+                      }`}>
+                        {option.label}
+                      </span>
+                    </label>
+                  );
+                })}
+              </>
+            ) : (
+              <p className={`text-sm text-center py-4 transition-colors duration-700 ${
+                isDark ? 'text-white/50' : 'text-gray-500'
+              }`}>
+                {field.placeholder || 'No options available'}
+              </p>
+            )}
+          </div>
+        );
+
+      case 'password':
+        return (
+          <input
+            type="password"
+            value={value}
+            onChange={(e) => handleChange(field.name, e.target.value)}
+            placeholder={field.placeholder}
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
+              isDark
+                ? 'bg-white/5 border-white/10 text-white placeholder-white/50'
+                : 'bg-white border-gray-300 text-ink-black placeholder-gray-500'
+            }`}
             disabled={field.disabled || isLoading}
           />
         );

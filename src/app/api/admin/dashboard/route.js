@@ -75,6 +75,23 @@ export async function GET(request) {
       query = query.eq('status', status);
     }
 
+    // Apply department filter - filter by department status
+    if (department) {
+      // Get forms that have this department in their status
+      const { data: formsWithDept } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('form_id')
+        .eq('department_name', department);
+      
+      if (formsWithDept && formsWithDept.length > 0) {
+        const formIds = formsWithDept.map(f => f.form_id);
+        query = query.in('id', formIds);
+      } else {
+        // No forms found for this department, return empty
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Non-existent UUID
+      }
+    }
+
     // Apply search filter
     if (searchQuery) {
       query = query.or(

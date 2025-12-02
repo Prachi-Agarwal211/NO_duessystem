@@ -26,7 +26,7 @@ export function useSchoolsConfig() {
     
     try {
       const token = await getAuthToken();
-      const url = `/api/admin/config/schools?includeInactive=${includeInactive}`;
+      const url = `/api/admin/config/schools?include_inactive=${includeInactive}`;
       
       console.log('Fetching schools from:', url);
       

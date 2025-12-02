@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDepartmentStaff } from '@/hooks/useDepartmentStaff';
 import { useDepartmentsConfig } from '@/hooks/useDepartmentsConfig';
+import { useSchoolsConfig } from '@/hooks/useSchoolsConfig';
+import { useCoursesConfig } from '@/hooks/useCoursesConfig';
+import { useBranchesConfig } from '@/hooks/useBranchesConfig';
 import ConfigModal from './ConfigModal';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -16,6 +19,9 @@ export default function DepartmentStaffManager() {
   const isDark = theme === 'dark';
   const { staff, loading, error, addStaff, updateStaff, deleteStaff } = useDepartmentStaff();
   const { departments } = useDepartmentsConfig();
+  const { schools } = useSchoolsConfig();
+  const { courses } = useCoursesConfig();
+  const { branches } = useBranchesConfig();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
@@ -73,6 +79,36 @@ export default function DepartmentStaffManager() {
         .filter(d => d.is_active)
         .map(d => ({ value: d.name, label: d.display_name || d.name })),
       helpText: 'Staff member will only see requests for this department'
+    },
+    {
+      name: 'school_ids',
+      label: 'School Access (Optional)',
+      type: 'multi-checkbox',
+      options: schools
+        .filter(s => s.is_active)
+        .map(s => ({ value: s.id, label: s.name })),
+      helpText: 'Leave empty for ALL schools. Select specific schools to restrict access.',
+      placeholder: 'No schools configured yet'
+    },
+    {
+      name: 'course_ids',
+      label: 'Course Access (Optional)',
+      type: 'multi-checkbox',
+      options: courses
+        .filter(c => c.is_active)
+        .map(c => ({ value: c.id, label: c.name })),
+      helpText: 'Leave empty for ALL courses. Select specific courses to restrict access.',
+      placeholder: 'No courses configured yet'
+    },
+    {
+      name: 'branch_ids',
+      label: 'Branch Access (Optional)',
+      type: 'multi-checkbox',
+      options: branches
+        .filter(b => b.is_active)
+        .map(b => ({ value: b.id, label: b.name })),
+      helpText: 'Leave empty for ALL branches. Select specific branches to restrict access.',
+      placeholder: 'No branches configured yet'
     }
   ];
 
@@ -264,6 +300,11 @@ export default function DepartmentStaffManager() {
                   <th className={`text-left py-3 px-4 font-medium transition-colors duration-700 ${
                     isDark ? 'text-white/80' : 'text-gray-700'
                   }`}>
+                    Access Scope
+                  </th>
+                  <th className={`text-left py-3 px-4 font-medium transition-colors duration-700 ${
+                    isDark ? 'text-white/80' : 'text-gray-700'
+                  }`}>
                     Created
                   </th>
                   <th className={`text-right py-3 px-4 font-medium transition-colors duration-700 ${
@@ -303,6 +344,45 @@ export default function DepartmentStaffManager() {
                       }`}>
                         {getDepartmentDisplayName(staffMember.department_name)}
                       </span>
+                    </td>
+                    <td className={`py-4 px-4 transition-colors duration-700 ${
+                      isDark ? 'text-white/70' : 'text-gray-600'
+                    }`}>
+                      <div className="text-xs space-y-1">
+                        {staffMember.school_ids && staffMember.school_ids.length > 0 ? (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-purple-300' : 'text-purple-600'}`}>
+                            <span>🏫</span>
+                            <span>{staffMember.school_ids.length} school(s)</span>
+                          </div>
+                        ) : (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-green-300' : 'text-green-600'}`}>
+                            <span>🌍</span>
+                            <span>All Schools</span>
+                          </div>
+                        )}
+                        {staffMember.course_ids && staffMember.course_ids.length > 0 ? (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
+                            <span>📚</span>
+                            <span>{staffMember.course_ids.length} course(s)</span>
+                          </div>
+                        ) : (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-green-300' : 'text-green-600'}`}>
+                            <span>📖</span>
+                            <span>All Courses</span>
+                          </div>
+                        )}
+                        {staffMember.branch_ids && staffMember.branch_ids.length > 0 ? (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-orange-300' : 'text-orange-600'}`}>
+                            <span>🎓</span>
+                            <span>{staffMember.branch_ids.length} branch(es)</span>
+                          </div>
+                        ) : (
+                          <div className={`flex items-center gap-1 ${isDark ? 'text-green-300' : 'text-green-600'}`}>
+                            <span>🌐</span>
+                            <span>All Branches</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className={`py-4 px-4 transition-colors duration-700 ${
                       isDark ? 'text-white/60' : 'text-gray-500'
@@ -366,11 +446,14 @@ export default function DepartmentStaffManager() {
         <ul className={`text-sm space-y-1 list-disc list-inside transition-colors duration-700 ${
           isDark ? 'text-white/70' : 'text-gray-700'
         }`}>
-          <li>Staff members can only view and act on requests for their assigned department</li>
+          <li><strong>Department:</strong> Staff can only act on requests for their assigned department</li>
+          <li><strong>Access Scope:</strong> Optionally restrict by school, course, or branch. Leave empty for full access</li>
+          <li><strong>Example 1:</strong> Library staff → No scope restrictions → Sees all students</li>
+          <li><strong>Example 2:</strong> CSE HOD → Engineering school + B.Tech course + CSE branch → Sees only Engineering B.Tech CSE students</li>
+          <li><strong>Example 3:</strong> Dean → Engineering school + All courses + All branches → Sees all Engineering students</li>
           <li>Staff login at <code className="px-1 py-0.5 bg-black/20 rounded">/staff/login</code> using their email and password</li>
           <li>Email addresses cannot be changed after account creation</li>
           <li>Deleting a staff account immediately revokes their access</li>
-          <li>Staff members receive email notifications for new requests in their department</li>
         </ul>
       </div>
     </div>

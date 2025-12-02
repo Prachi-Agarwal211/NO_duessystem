@@ -52,7 +52,7 @@ export async function GET(request) {
 
     let query = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, email, department_name, role, created_at')
+      .select('id, full_name, email, department_name, role, school_ids, course_ids, branch_ids, created_at')
       .eq('role', 'department')
       .order('created_at', { ascending: false });
 
@@ -155,7 +155,7 @@ export async function POST(request) {
 
     if (authError) throw authError;
 
-    // Create profile record
+    // Create profile record with scope fields
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert([{
@@ -163,7 +163,10 @@ export async function POST(request) {
         full_name: body.full_name.trim(),
         email: body.email.trim(),
         role: 'department',
-        department_name: body.department_name.trim()
+        department_name: body.department_name.trim(),
+        school_ids: body.school_ids && body.school_ids.length > 0 ? body.school_ids : null,
+        course_ids: body.course_ids && body.course_ids.length > 0 ? body.course_ids : null,
+        branch_ids: body.branch_ids && body.branch_ids.length > 0 ? body.branch_ids : null
       }])
       .select()
       .single();
@@ -231,6 +234,17 @@ export async function PUT(request) {
         );
       }
       updates.department_name = body.department_name.trim();
+    }
+    
+    // Update scope fields (allow empty arrays to be set as null)
+    if (body.school_ids !== undefined) {
+      updates.school_ids = body.school_ids && body.school_ids.length > 0 ? body.school_ids : null;
+    }
+    if (body.course_ids !== undefined) {
+      updates.course_ids = body.course_ids && body.course_ids.length > 0 ? body.course_ids : null;
+    }
+    if (body.branch_ids !== undefined) {
+      updates.branch_ids = body.branch_ids && body.branch_ids.length > 0 ? body.branch_ids : null;
     }
 
     if (Object.keys(updates).length === 0) {
