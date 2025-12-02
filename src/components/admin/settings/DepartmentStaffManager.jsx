@@ -48,7 +48,7 @@ export default function DepartmentStaffManager() {
       label: 'Email Address',
       type: 'email',
       required: true,
-      placeholder: 'e.g., john.doe@gmail.com or staff@jecrc.ac.in',
+      placeholder: 'e.g., john.doe@gmail.com or staff@jecrcu.edu.in',
       disabled: !!editingStaff,
       helpText: editingStaff ? 'Email cannot be changed after creation' : 'Can use any email address (Gmail, Outlook, college email, etc.)',
       validate: (value) => {

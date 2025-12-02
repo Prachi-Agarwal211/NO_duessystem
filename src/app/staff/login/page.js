@@ -117,7 +117,7 @@ function StaffLoginContent() {
                     ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
                     : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
                     }`}
-                  placeholder="your.email@jecrc.ac.in"
+                  placeholder="your.email@jecrcu.edu.in"
                   required
                   disabled={loading}
                   autoComplete="email"

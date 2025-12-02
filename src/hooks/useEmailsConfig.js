@@ -140,15 +140,15 @@ export function useEmailsConfig() {
 
   /**
    * Get college email domain
-   * @returns {string} College email domain (e.g., '@jecrc.ac.in')
+   * @returns {string} College email domain (e.g., '@jecrcu.edu.in')
    */
   const getCollegeDomain = useCallback(() => {
-    return emailConfig.college_email_domain || '@jecrc.ac.in';
+    return emailConfig.college_email_domain || '@jecrcu.edu.in';
   }, [emailConfig]);
 
   /**
    * Update college email domain
-   * @param {string} domain - New domain (e.g., '@jecrc.ac.in')
+   * @param {string} domain - New domain (e.g., '@jecrcu.edu.in')
    */
   const updateCollegeDomain = useCallback(async (domain) => {
     // Validate domain format

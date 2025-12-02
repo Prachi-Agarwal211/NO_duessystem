@@ -79,7 +79,7 @@ export async function GET(request) {
             schools,
             courses,
             branches,
-            collegeDomain: emailConfig?.value || 'jecrc.ac.in',
+            collegeDomain: emailConfig?.value || 'jecrcu.edu.in',
             validationRules: validationRules || [],
             countryCodes: countryCodes || []
           }
@@ -141,7 +141,7 @@ export async function GET(request) {
 
       return NextResponse.json({
         success: true,
-        data: { domain: data?.value || 'jecrc.ac.in' }
+        data: { domain: data?.value || 'jecrcu.edu.in' }
       });
     }
 

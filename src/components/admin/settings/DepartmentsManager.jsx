@@ -83,7 +83,7 @@ export default function DepartmentsManager() {
       label: 'Department Email',
       type: 'email',
       required: true,
-      placeholder: 'e.g., hod@jecrc.ac.in',
+      placeholder: 'e.g., hod@jecrcu.edu.in',
       validate: (value) => {
         if (!value) return 'Email is required';
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

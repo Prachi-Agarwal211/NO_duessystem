@@ -150,7 +150,7 @@ export default function AdminSettings() {
               Email Configuration:
             </h4>
             <ul className="space-y-1 list-disc list-inside">
-              <li>Set the college email domain (e.g., @jecrc.ac.in)</li>
+              <li>Set the college email domain (e.g., @jecrcu.edu.in)</li>
               <li>Students must provide both personal and college emails</li>
               <li>College email must match the configured domain</li>
             </ul>

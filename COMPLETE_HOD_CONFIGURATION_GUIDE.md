@@ -234,7 +234,7 @@ Login as Admin → Settings → Staff Accounts
 
 ### **Example 1: JECRC Engineering CSE HOD**
 ```
-Email: cse.hod@jecrc.ac.in (or john.doe@gmail.com, any email works!)
+Email: cse.hod@jecrcu.edu.in (or john.doe@gmail.com, any email works!)
 Department: school_hod
 School: ✅ Faculty of Engineering & Technology
 Course: ✅ B.Tech
@@ -243,7 +243,7 @@ Branch: ✅ Computer Science Engineering
 
 ### **Example 2: JECRC MBA Program Coordinator**
 ```
-Email: mba.coordinator@jecrc.ac.in (or priya.sharma@outlook.com)
+Email: mba.coordinator@jecrcu.edu.in (or priya.sharma@outlook.com)
 Department: school_hod
 School: ✅ Faculty of Management Studies
 Course: ✅ MBA
@@ -252,7 +252,7 @@ Branch: ☐ (all MBA students)
 
 ### **Example 3: JECRC Engineering Dean**
 ```
-Email: dean.engineering@jecrc.ac.in (or any personal/work email)
+Email: dean.engineering@jecrcu.edu.in (or any personal/work email)
 Department: dean
 School: ✅ Faculty of Engineering & Technology
 Course: ☐ (all engineering courses)
@@ -261,7 +261,7 @@ Branch: ☐ (all engineering branches)
 
 ### **Example 4: JECRC Central Library**
 ```
-Email: library@jecrc.ac.in (or librarian123@gmail.com)
+Email: library@jecrcu.edu.in (or librarian123@gmail.com)
 Department: library
 School: ☐ (all schools)
 Course: ☐ (all courses)

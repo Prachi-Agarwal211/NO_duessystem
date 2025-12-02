@@ -37,7 +37,7 @@ export default function EmailsManager() {
     if (!domain.startsWith('@')) return 'Domain must start with @';
     if (domain.length < 4) return 'Domain is too short';
     if (!/^@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) {
-      return 'Invalid domain format (e.g., @jecrc.ac.in)';
+      return 'Invalid domain format (e.g., @jecrcu.edu.in)';
     }
     return '';
   };
@@ -76,8 +76,8 @@ export default function EmailsManager() {
     {
       key: 'college_email_domain',
       label: 'College Email Domain',
-      description: 'The email domain used to validate college email addresses (e.g., @jecrc.ac.in)',
-      value: emailConfig.college_email_domain || '@jecrc.ac.in',
+      description: 'The email domain used to validate college email addresses (e.g., @jecrcu.edu.in)',
+      value: emailConfig.college_email_domain || '@jecrcu.edu.in',
       type: 'text',
       editable: true,
       critical: true
@@ -244,7 +244,7 @@ export default function EmailsManager() {
           isDark ? 'text-white/70' : 'text-gray-700'
         }`}>
           <li><strong>College Email Domain:</strong> Used to validate student college emails</li>
-          <li>Format must be: @domain.extension (e.g., @jecrc.ac.in)</li>
+          <li>Format must be: @domain.extension (e.g., @jecrcu.edu.in)</li>
           <li>Students must provide emails matching this domain</li>
           <li>Personal emails can be from any domain</li>
           <li>Both email fields are required in student forms</li>
