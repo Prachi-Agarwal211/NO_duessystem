@@ -231,25 +231,25 @@ export default function StaffDashboard() {
                   loading={statsLoading}
                 />
                 <StatsCard
-                  title="Approved"
+                  title="My Approved"
                   value={stats.approved || 0}
-                  subtitle="Successfully approved"
+                  subtitle="Applications you approved"
                   icon={CheckCircle}
                   color="green"
                   loading={statsLoading}
                 />
                 <StatsCard
-                  title="Rejected"
+                  title="My Rejected"
                   value={stats.rejected || 0}
-                  subtitle="Applications rejected"
+                  subtitle="Applications you rejected"
                   icon={XCircle}
                   color="red"
                   loading={statsLoading}
                 />
                 <StatsCard
-                  title="Total Processed"
+                  title="My Total Actions"
                   value={stats.total || 0}
-                  subtitle={stats.approvalRate ? `${stats.approvalRate}% approval rate` : 'All time'}
+                  subtitle={stats.approvalRate ? `${stats.approvalRate}% your approval rate` : 'Your all time actions'}
                   icon={TrendingUp}
                   color="blue"
                   loading={statsLoading}
@@ -265,12 +265,12 @@ export default function StaffDashboard() {
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                   <h3 className={`font-semibold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                    Today's Activity
+                    Your Today's Activity
                   </h3>
                 </div>
                 <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  You have processed <strong>{stats.todayTotal}</strong> applications today
-                  ({stats.todayApproved} approved, {stats.todayRejected} rejected)
+                  <strong>You</strong> have processed <strong>{stats.todayTotal}</strong> application{stats.todayTotal !== 1 ? 's' : ''} today
+                  {' '}(<strong>{stats.todayApproved}</strong> approved, <strong>{stats.todayRejected}</strong> rejected)
                 </div>
               </div>
             )}

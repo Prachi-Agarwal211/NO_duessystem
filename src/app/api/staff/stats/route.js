@@ -118,10 +118,10 @@ export async function GET(request) {
         }
       }
     } else if (profile.role === 'department') {
-      // Department staff gets comprehensive stats for their department
+      // Department staff gets comprehensive stats for their department AND personal actions
       
-      // Build base query for scope filtering
-      let baseQuery = supabaseAdmin
+      // 1. Get PERSONAL action counts (actions taken by THIS staff member)
+      let personalQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
           status,
@@ -131,35 +131,72 @@ export async function GET(request) {
             branch_id
           )
         `)
-        .eq('department_name', profile.department_name);
+        .eq('department_name', profile.department_name)
+        .eq('action_by_user_id', userId); // Filter by THIS user's actions
 
-      // Apply scope filtering
+      // Apply scope filtering for personal actions
       if (profile.school_ids && profile.school_ids.length > 0) {
-        baseQuery = baseQuery.in('no_dues_forms.school_id', profile.school_ids);
+        personalQuery = personalQuery.in('no_dues_forms.school_id', profile.school_ids);
       } else if (profile.department_name === 'school_hod' && profile.school_id) {
-        baseQuery = baseQuery.eq('no_dues_forms.school_id', profile.school_id);
+        personalQuery = personalQuery.eq('no_dues_forms.school_id', profile.school_id);
       }
 
       if (profile.course_ids && profile.course_ids.length > 0) {
-        baseQuery = baseQuery.in('no_dues_forms.course_id', profile.course_ids);
+        personalQuery = personalQuery.in('no_dues_forms.course_id', profile.course_ids);
       }
 
       if (profile.branch_ids && profile.branch_ids.length > 0) {
-        baseQuery = baseQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+        personalQuery = personalQuery.in('no_dues_forms.branch_id', profile.branch_ids);
       }
 
-      const { data: allStatuses, error: statusError } = await baseQuery;
+      const { data: personalActions, error: personalError } = await personalQuery;
 
-      if (statusError) {
-        console.error('Error fetching department stats:', statusError);
+      if (personalError) {
+        console.error('Error fetching personal stats:', personalError);
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
-      // Aggregate counts
-      const pendingCount = allStatuses?.filter(s => s.status === 'pending').length || 0;
-      const approvedCount = allStatuses?.filter(s => s.status === 'approved').length || 0;
-      const rejectedCount = allStatuses?.filter(s => s.status === 'rejected').length || 0;
-      const totalCount = allStatuses?.length || 0;
+      // 2. Get PENDING counts (for the whole department scope - these need action)
+      let pendingQuery = supabaseAdmin
+        .from('no_dues_status')
+        .select(`
+          status,
+          no_dues_forms!inner (
+            school_id,
+            course_id,
+            branch_id
+          )
+        `)
+        .eq('department_name', profile.department_name)
+        .eq('status', 'pending');
+
+      // Apply scope filtering for pending
+      if (profile.school_ids && profile.school_ids.length > 0) {
+        pendingQuery = pendingQuery.in('no_dues_forms.school_id', profile.school_ids);
+      } else if (profile.department_name === 'school_hod' && profile.school_id) {
+        pendingQuery = pendingQuery.eq('no_dues_forms.school_id', profile.school_id);
+      }
+
+      if (profile.course_ids && profile.course_ids.length > 0) {
+        pendingQuery = pendingQuery.in('no_dues_forms.course_id', profile.course_ids);
+      }
+
+      if (profile.branch_ids && profile.branch_ids.length > 0) {
+        pendingQuery = pendingQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+      }
+
+      const { data: pendingActions, error: pendingError } = await pendingQuery;
+
+      if (pendingError) {
+        console.error('Error fetching pending stats:', pendingError);
+        return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
+      }
+
+      // Aggregate personal action counts
+      const myApprovedCount = personalActions?.filter(s => s.status === 'approved').length || 0;
+      const myRejectedCount = personalActions?.filter(s => s.status === 'rejected').length || 0;
+      const myTotalCount = personalActions?.length || 0;
+      const pendingCount = pendingActions?.length || 0;
 
       // Get department display name
       const { data: deptInfo, error: deptError } = await supabaseAdmin
@@ -171,14 +208,14 @@ export async function GET(request) {
       stats = {
         department: deptInfo?.display_name || profile.department_name,
         departmentName: profile.department_name,
-        pending: pendingCount,
-        approved: approvedCount,
-        rejected: rejectedCount,
-        total: totalCount,
-        approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
+        pending: pendingCount, // Department pending (need action)
+        approved: myApprovedCount, // MY approved count
+        rejected: myRejectedCount, // MY rejected count
+        total: myTotalCount, // MY total actions
+        approvalRate: myTotalCount > 0 ? Math.round((myApprovedCount / myTotalCount) * 100) : 0
       };
 
-      // Get today's activity
+      // Get today's activity (MY actions today)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -186,6 +223,7 @@ export async function GET(request) {
         .from('no_dues_status')
         .select('status')
         .eq('department_name', profile.department_name)
+        .eq('action_by_user_id', userId) // Only MY actions
         .gte('action_at', today.toISOString());
 
       if (!todayError && todayActions) {
