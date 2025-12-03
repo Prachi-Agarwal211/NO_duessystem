@@ -11,6 +11,8 @@ export function useStaffDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [requests, setRequests] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
@@ -51,6 +53,47 @@ export function useStaffDashboard() {
       setLoading(false);
     }
   };
+
+  // Fetch statistics
+  const fetchStats = useCallback(async () => {
+    if (!userId) return;
+    
+    setStatsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user?.id) {
+        throw new Error('Session expired. Please login again.');
+      }
+
+      const response = await fetch('/api/staff/stats', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch stats');
+      }
+
+      if (result.success) {
+        setStats(result.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [userId]);
+
+  // Fetch stats when user is available
+  useEffect(() => {
+    if (userId) {
+      fetchStats();
+    }
+  }, [userId, fetchStats]);
 
   const fetchDashboardData = useCallback(async (searchTerm = '', isRefresh = false) => {
     // Store search term for real-time refresh
@@ -119,10 +162,11 @@ export function useStaffDashboard() {
     }
   }, []);
 
-  // Manual refresh function
+  // Manual refresh function - refresh both data and stats
   const refreshData = useCallback(() => {
     fetchDashboardData(currentSearchRef.current, true);
-  }, [fetchDashboardData]);
+    fetchStats();
+  }, [fetchDashboardData, fetchStats]);
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and status updates for instant dashboard updates
@@ -130,9 +174,21 @@ export function useStaffDashboard() {
     if (!userId || !user?.department_name) return;
 
     let isSubscribed = false;
-    let pollingInterval = null;
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
+    let refreshTimeout = null;
+    const DEBOUNCE_DELAY = 2000; // Wait 2 seconds before refreshing to batch updates
+
+    // Debounced refresh to prevent continuous refreshes
+    const debouncedRefresh = () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+      refreshTimeout = setTimeout(() => {
+        if (!refreshing) {
+          console.log('🔄 Debounced refresh triggered');
+          refreshData();
+        }
+      }, DEBOUNCE_DELAY);
+    };
 
     // Set up real-time subscription for new form submissions and status changes
     const channel = supabase
@@ -155,8 +211,8 @@ export function useStaffDashboard() {
               }
             }));
           }
-          // Refresh data when new form is submitted
-          refreshData();
+          // Debounced refresh to avoid continuous updates
+          debouncedRefresh();
         }
       )
       .on(
@@ -168,9 +224,11 @@ export function useStaffDashboard() {
           filter: `department_name=eq.${user.department_name}`
         },
         (payload) => {
-          console.log('🔄 Department status updated:', payload.new?.status);
-          // Refresh data when status changes for this department
-          refreshData();
+          // Only refresh if the status actually changed to avoid loops
+          if (payload.old?.status !== payload.new?.status) {
+            console.log('🔄 Department status updated:', payload.old?.status, '->', payload.new?.status);
+            debouncedRefresh();
+          }
         }
       )
       .on(
@@ -183,36 +241,18 @@ export function useStaffDashboard() {
         },
         (payload) => {
           console.log('📋 New status record for department');
-          // Refresh when new status is created for this department
-          refreshData();
+          // Debounced refresh to avoid continuous updates
+          debouncedRefresh();
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time updates active');
+          console.log('✅ Real-time updates active for', user.department_name);
           isSubscribed = true;
-          retryCount = 0;
-          // Clear any existing polling
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          retryCount++;
-          if (retryCount >= MAX_RETRIES) {
-            console.warn('⚠️ Real-time connection failed. Using manual refresh.');
-            isSubscribed = false;
-            // Only start polling after max retries
-            if (!pollingInterval) {
-              pollingInterval = setInterval(() => {
-                if (!refreshing) {
-                  refreshData();
-                }
-              }, 60000); // Poll every 60 seconds (reduced frequency)
-            }
-          }
+          console.warn('⚠️ Real-time connection issue. Please use manual refresh.');
+          isSubscribed = false;
         } else if (status === 'CLOSED') {
-          // Connection closed - don't spam console
           if (isSubscribed) {
             console.log('🔌 Real-time connection closed');
             isSubscribed = false;
@@ -220,24 +260,12 @@ export function useStaffDashboard() {
         }
       });
 
-    // Fallback polling - only start after 10 seconds if definitely not connected
-    const fallbackTimeout = setTimeout(() => {
-      if (!isSubscribed && !pollingInterval && retryCount >= MAX_RETRIES) {
-        console.log('⏰ Starting fallback polling (real-time unavailable)');
-        pollingInterval = setInterval(() => {
-          if (!refreshing) {
-            refreshData();
-          }
-        }, 60000); // Poll every 60 seconds
-      }
-    }, 10000); // Wait 10 seconds before fallback
-
     return () => {
-      clearTimeout(fallbackTimeout);
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
       }
       supabase.removeChannel(channel);
+      console.log('🧹 Cleaned up real-time subscription');
     };
   }, [userId, user?.department_name, refreshData, refreshing]);
 
@@ -247,9 +275,12 @@ export function useStaffDashboard() {
     loading,
     refreshing,
     requests,
+    stats,
+    statsLoading,
     error,
     lastUpdate,
     fetchDashboardData,
-    refreshData
+    refreshData,
+    fetchStats
   };
 }

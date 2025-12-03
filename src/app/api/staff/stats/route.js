@@ -12,7 +12,22 @@ const supabaseAdmin = createClient(
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    
+    // Get authenticated user from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    let userId;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      userId = user.id;
+    } else {
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    }
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -21,7 +36,7 @@ export async function GET(request) {
     // Get user profile to verify role and department
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name')
+      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
@@ -32,7 +47,7 @@ export async function GET(request) {
     let stats = {};
 
     if (profile.role === 'admin') {
-      // Admin gets stats for all departments
+      // Admin gets comprehensive stats for all departments
       const { count: totalForms, error: totalError } = await supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true });
@@ -76,60 +91,123 @@ export async function GET(request) {
 
           statusCounts.forEach(record => {
             if (!statsMap[record.department_name]) {
-              statsMap[record.department_name] = { pending: 0, approved: 0 };
+              statsMap[record.department_name] = { pending: 0, approved: 0, rejected: 0 };
             }
             if (record.status === 'pending') {
               statsMap[record.department_name].pending++;
             } else if (record.status === 'approved') {
               statsMap[record.department_name].approved++;
+            } else if (record.status === 'rejected') {
+              statsMap[record.department_name].rejected++;
             }
           });
 
           // Map back to departments with display names
           stats.departmentStats = departments.map(dept => ({
             department: dept.display_name,
+            departmentName: dept.name,
             pending: statsMap[dept.name]?.pending || 0,
-            approved: statsMap[dept.name]?.approved || 0
+            approved: statsMap[dept.name]?.approved || 0,
+            rejected: statsMap[dept.name]?.rejected || 0,
+            total: (statsMap[dept.name]?.pending || 0) + 
+                   (statsMap[dept.name]?.approved || 0) + 
+                   (statsMap[dept.name]?.rejected || 0)
           }));
         } else {
           stats.departmentStats = [];
         }
       }
     } else if (profile.role === 'department') {
-      // Department staff gets stats for their department only
-      const { count: pendingCount, error: pendingError } = await supabaseAdmin
+      // Department staff gets comprehensive stats for their department
+      
+      // Build base query for scope filtering
+      let baseQuery = supabaseAdmin
         .from('no_dues_status')
-        .select('*', { count: 'exact', head: true })
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .select(`
+          status,
+          no_dues_forms!inner (
+            school_id,
+            course_id,
+            branch_id
+          )
+        `)
+        .eq('department_name', profile.department_name);
 
-      const { count: approvedCount, error: approvedError } = await supabaseAdmin
-        .from('no_dues_status')
-        .select('*', { count: 'exact', head: true })
-        .eq('department_name', profile.department_name)
-        .eq('status', 'approved');
+      // Apply scope filtering
+      if (profile.school_ids && profile.school_ids.length > 0) {
+        baseQuery = baseQuery.in('no_dues_forms.school_id', profile.school_ids);
+      } else if (profile.department_name === 'school_hod' && profile.school_id) {
+        baseQuery = baseQuery.eq('no_dues_forms.school_id', profile.school_id);
+      }
 
-      const { count: rejectedCount, error: rejectedError } = await supabaseAdmin
-        .from('no_dues_status')
-        .select('*', { count: 'exact', head: true })
-        .eq('department_name', profile.department_name)
-        .eq('status', 'rejected');
+      if (profile.course_ids && profile.course_ids.length > 0) {
+        baseQuery = baseQuery.in('no_dues_forms.course_id', profile.course_ids);
+      }
 
-      if (pendingError || approvedError || rejectedError) {
+      if (profile.branch_ids && profile.branch_ids.length > 0) {
+        baseQuery = baseQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+      }
+
+      const { data: allStatuses, error: statusError } = await baseQuery;
+
+      if (statusError) {
+        console.error('Error fetching department stats:', statusError);
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
+      // Aggregate counts
+      const pendingCount = allStatuses?.filter(s => s.status === 'pending').length || 0;
+      const approvedCount = allStatuses?.filter(s => s.status === 'approved').length || 0;
+      const rejectedCount = allStatuses?.filter(s => s.status === 'rejected').length || 0;
+      const totalCount = allStatuses?.length || 0;
+
+      // Get department display name
+      const { data: deptInfo, error: deptError } = await supabaseAdmin
+        .from('departments')
+        .select('display_name')
+        .eq('name', profile.department_name)
+        .single();
+
       stats = {
-        department: profile.department_name,
-        pending: pendingCount || 0,
-        approved: approvedCount || 0,
-        rejected: rejectedCount || 0
+        department: deptInfo?.display_name || profile.department_name,
+        departmentName: profile.department_name,
+        pending: pendingCount,
+        approved: approvedCount,
+        rejected: rejectedCount,
+        total: totalCount,
+        approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
       };
+
+      // Get today's activity
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: todayActions, error: todayError } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('status')
+        .eq('department_name', profile.department_name)
+        .gte('action_at', today.toISOString());
+
+      if (!todayError && todayActions) {
+        stats.todayApproved = todayActions.filter(a => a.status === 'approved').length;
+        stats.todayRejected = todayActions.filter(a => a.status === 'rejected').length;
+        stats.todayTotal = todayActions.length;
+      } else {
+        stats.todayApproved = 0;
+        stats.todayRejected = 0;
+        stats.todayTotal = 0;
+      }
     }
 
-    return NextResponse.json({ stats });
+    return NextResponse.json({ 
+      success: true,
+      stats 
+    });
   } catch (error) {
     console.error('Error fetching staff stats:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: 'Internal server error' 
+    }, { status: 500 });
   }
 }
