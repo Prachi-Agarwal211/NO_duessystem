@@ -129,7 +129,7 @@ export async function POST(request) {
 
     // Verify department exists
     const { data: department, error: deptError } = await supabaseAdmin
-      .from('config_departments')
+      .from('departments')
       .select('name')
       .eq('name', body.department_name.trim())
       .single();
@@ -222,7 +222,7 @@ export async function PUT(request) {
     if (body.department_name !== undefined) {
       // Verify department exists
       const { data: department, error: deptError } = await supabaseAdmin
-        .from('config_departments')
+        .from('departments')
         .select('name')
         .eq('name', body.department_name.trim())
         .single();

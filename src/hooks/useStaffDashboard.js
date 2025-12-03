@@ -131,6 +131,8 @@ export function useStaffDashboard() {
 
     let isSubscribed = false;
     let pollingInterval = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     // Set up real-time subscription for new form submissions and status changes
     const channel = supabase
@@ -146,11 +148,11 @@ export function useStaffDashboard() {
           console.log('🔔 New form submission detected:', payload.new?.registration_no);
           // Show notification for new submission
           if (typeof window !== 'undefined' && window.dispatchEvent) {
-            window.dispatchEvent(new CustomEvent('new-staff-submission', { 
-              detail: { 
+            window.dispatchEvent(new CustomEvent('new-staff-submission', {
+              detail: {
                 registrationNo: payload.new?.registration_no,
-                studentName: payload.new?.student_name 
-              } 
+                studentName: payload.new?.student_name
+              }
             }));
           }
           // Refresh data when new form is submitted
@@ -187,38 +189,48 @@ export function useStaffDashboard() {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Staff dashboard subscribed to real-time updates');
+          console.log('✅ Real-time updates active');
           isSubscribed = true;
-          // Clear polling if subscription is active
+          retryCount = 0;
+          // Clear any existing polling
           if (pollingInterval) {
             clearInterval(pollingInterval);
             pollingInterval = null;
           }
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Real-time subscription error - falling back to polling');
-          isSubscribed = false;
-          // Start polling as fallback
-          if (!pollingInterval) {
-            pollingInterval = setInterval(() => {
-              if (!refreshing) {
-                refreshData();
-              }
-            }, 30000); // Poll every 30 seconds
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          retryCount++;
+          if (retryCount >= MAX_RETRIES) {
+            console.warn('⚠️ Real-time connection failed. Using manual refresh.');
+            isSubscribed = false;
+            // Only start polling after max retries
+            if (!pollingInterval) {
+              pollingInterval = setInterval(() => {
+                if (!refreshing) {
+                  refreshData();
+                }
+              }, 60000); // Poll every 60 seconds (reduced frequency)
+            }
+          }
+        } else if (status === 'CLOSED') {
+          // Connection closed - don't spam console
+          if (isSubscribed) {
+            console.log('🔌 Real-time connection closed');
+            isSubscribed = false;
           }
         }
       });
 
-    // Fallback polling - only if subscription not active after 5 seconds
+    // Fallback polling - only start after 10 seconds if definitely not connected
     const fallbackTimeout = setTimeout(() => {
-      if (!isSubscribed && !pollingInterval) {
-        console.log('⏰ Subscription not active, starting fallback polling');
+      if (!isSubscribed && !pollingInterval && retryCount >= MAX_RETRIES) {
+        console.log('⏰ Starting fallback polling (real-time unavailable)');
         pollingInterval = setInterval(() => {
           if (!refreshing) {
             refreshData();
           }
-        }, 30000); // Poll every 30 seconds
+        }, 60000); // Poll every 60 seconds
       }
-    }, 5000);
+    }, 10000); // Wait 10 seconds before fallback
 
     return () => {
       clearTimeout(fallbackTimeout);
