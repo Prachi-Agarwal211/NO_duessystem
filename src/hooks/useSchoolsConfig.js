@@ -86,13 +86,14 @@ export function useSchoolsConfig() {
         throw new Error(result.error || 'Failed to add school');
       }
       
-      await fetchSchools();
+      // Optimistic update: Add to state without refetching
+      setSchools(prev => [result.data, ...prev]);
       return result.data;
     } catch (err) {
       console.error('Add school error:', err);
       throw err;
     }
-  }, [getAuthToken, fetchSchools]);
+  }, [getAuthToken]);
 
   // Update school
   const updateSchool = useCallback(async (id, updates) => {
@@ -118,13 +119,16 @@ export function useSchoolsConfig() {
         throw new Error(result.error || 'Failed to update school');
       }
       
-      await fetchSchools();
+      // Optimistic update: Update in state without refetching
+      setSchools(prev => prev.map(school =>
+        school.id === id ? result.data : school
+      ));
       return result.data;
     } catch (err) {
       console.error('Update school error:', err);
       throw err;
     }
-  }, [getAuthToken, fetchSchools]);
+  }, [getAuthToken]);
 
   // Delete school
   const deleteSchool = useCallback(async (id) => {
@@ -148,13 +152,14 @@ export function useSchoolsConfig() {
         throw new Error(result.error || 'Failed to delete school');
       }
       
-      await fetchSchools();
+      // Optimistic update: Remove from state without refetching
+      setSchools(prev => prev.filter(school => school.id !== id));
       return true;
     } catch (err) {
       console.error('Delete school error:', err);
       throw err;
     }
-  }, [getAuthToken, fetchSchools]);
+  }, [getAuthToken]);
 
   // Fetch on mount
   useEffect(() => {

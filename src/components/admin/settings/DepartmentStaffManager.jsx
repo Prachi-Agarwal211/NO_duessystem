@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDepartmentStaff } from '@/hooks/useDepartmentStaff';
 import { useDepartmentsConfig } from '@/hooks/useDepartmentsConfig';
@@ -29,8 +29,8 @@ export default function DepartmentStaffManager() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
 
-  // Fields for add/edit modal
-  const fields = [
+  // Memoize fields to prevent unnecessary re-renders of ConfigModal
+  const fields = useMemo(() => [
     {
       name: 'full_name',
       label: 'Full Name',
@@ -110,7 +110,7 @@ export default function DepartmentStaffManager() {
       helpText: 'Leave empty for ALL branches. Select specific branches to restrict access.',
       placeholder: 'No branches configured yet'
     }
-  ];
+  ], [departments, schools, courses, branches, editingStaff]);
 
   const handleAdd = () => {
     setEditingStaff(null);
