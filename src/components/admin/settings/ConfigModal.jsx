@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * Reusable modal component for add/edit configuration items
  * Follows the glass morphism design of the existing system
+ * Features: Form persistence during page refreshes
  */
 export default function ConfigModal({
   isOpen,
@@ -20,26 +21,77 @@ export default function ConfigModal({
   const isDark = theme === 'dark';
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  
+  // Generate a unique storage key based on title and mode (add/edit)
+  const storageKey = `form_data_${title.replace(/\s+/g, '_')}_${initialData ? 'edit' : 'add'}`;
+
+  // Load persisted form data from sessionStorage
+  const loadPersistedData = useCallback(() => {
+    try {
+      const persisted = sessionStorage.getItem(storageKey);
+      if (persisted) {
+        return JSON.parse(persisted);
+      }
+    } catch (error) {
+      console.error('Error loading persisted form data:', error);
+    }
+    return null;
+  }, [storageKey]);
+
+  // Save form data to sessionStorage
+  const persistFormData = useCallback((data) => {
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error persisting form data:', error);
+    }
+  }, [storageKey]);
+
+  // Clear persisted data
+  const clearPersistedData = useCallback(() => {
+    try {
+      sessionStorage.removeItem(storageKey);
+    } catch (error) {
+      console.error('Error clearing persisted form data:', error);
+    }
+  }, [storageKey]);
 
   // Initialize form data
   useEffect(() => {
+    if (!isOpen) return;
+
     if (initialData) {
+      // Editing existing item - use initialData
       setFormData(initialData);
+      clearPersistedData(); // Clear any persisted data when editing
     } else {
-      // Set default values for all fields
-      const defaults = {};
-      fields.forEach(field => {
-        defaults[field.name] = field.defaultValue || '';
-      });
-      setFormData(defaults);
+      // Adding new item - try to load persisted data first
+      const persisted = loadPersistedData();
+      if (persisted) {
+        setFormData(persisted);
+      } else {
+        // No persisted data - set default values
+        const defaults = {};
+        fields.forEach(field => {
+          defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? null : '');
+        });
+        setFormData(defaults);
+      }
     }
     setErrors({});
-  }, [initialData, fields, isOpen]);
+  }, [initialData, isOpen, fields, loadPersistedData, clearPersistedData]);
 
   if (!isOpen) return null;
 
   const handleChange = (fieldName, value) => {
-    setFormData(prev => ({ ...prev, [fieldName]: value }));
+    const newFormData = { ...formData, [fieldName]: value };
+    setFormData(newFormData);
+    
+    // Persist form data to sessionStorage (only when adding new items)
+    if (!initialData) {
+      persistFormData(newFormData);
+    }
+    
     // Clear error for this field
     if (errors[fieldName]) {
       setErrors(prev => ({ ...prev, [fieldName]: null }));
@@ -67,10 +119,28 @@ export default function ConfigModal({
     
     try {
       await onSave(formData);
+      clearPersistedData(); // Clear persisted data on successful save
       onClose();
     } catch (error) {
       console.error('Error saving:', error);
     }
+  };
+
+  // Handle modal close - optionally clear data
+  const handleClose = () => {
+    // Don't clear data when closing - keep it for next time
+    onClose();
+  };
+
+  // Add explicit clear button functionality
+  const handleClearForm = () => {
+    const defaults = {};
+    fields.forEach(field => {
+      defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? null : '');
+    });
+    setFormData(defaults);
+    clearPersistedData();
+    setErrors({});
   };
 
   const renderField = (field) => {
@@ -322,28 +392,47 @@ export default function ConfigModal({
           ))}
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className={`flex-1 px-4 py-2 border rounded-lg transition-all duration-300 disabled:opacity-50 ${
-                isDark
-                  ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                  : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 
-                       rounded-lg text-white font-medium hover:from-red-700 hover:to-red-800
-                       transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Saving...' : initialData ? 'Update' : 'Add'}
-            </button>
+          <div className="space-y-2 pt-4">
+            {/* Clear Form button (only show when adding new items) */}
+            {!initialData && (
+              <button
+                type="button"
+                onClick={handleClearForm}
+                disabled={isLoading}
+                className={`w-full px-4 py-2 border rounded-lg text-sm transition-all duration-300 disabled:opacity-50 ${
+                  isDark
+                    ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-300 hover:bg-yellow-500/20'
+                    : 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                }`}
+              >
+                🔄 Clear Form
+              </button>
+            )}
+            
+            {/* Cancel and Submit buttons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={isLoading}
+                className={`flex-1 px-4 py-2 border rounded-lg transition-all duration-300 disabled:opacity-50 ${
+                  isDark
+                    ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                    : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700
+                         rounded-lg text-white font-medium hover:from-red-700 hover:to-red-800
+                         transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Saving...' : initialData ? 'Update' : 'Add'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
