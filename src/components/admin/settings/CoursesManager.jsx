@@ -20,11 +20,26 @@ export default function CoursesManager() {
   const [editingCourse, setEditingCourse] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedSchool, setSelectedSchool] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter courses by selected school
-  const filteredCourses = selectedSchool === 'all' 
-    ? courses 
-    : courses.filter(c => c.school_id === selectedSchool);
+  // Filter courses by selected school and search term
+  const filteredCourses = courses.filter(c => {
+    // Filter by school
+    if (selectedSchool !== 'all' && c.school_id !== selectedSchool) return false;
+    
+    // Filter by search term
+    if (searchTerm) {
+      const school = schools.find(s => s.id === c.school_id);
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(searchLower) ||
+        c.level.toLowerCase().includes(searchLower) ||
+        school?.name.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return true;
+  });
 
   const columns = [
     {
@@ -182,29 +197,48 @@ export default function CoursesManager() {
         </button>
       </div>
 
-      {/* School Filter */}
-      <div className="flex items-center gap-4">
-        <label className={`font-medium transition-colors duration-700 ${
-          isDark ? 'text-white/80' : 'text-gray-700'
-        }`}>
-          Filter by School:
-        </label>
-        <select
-          value={selectedSchool}
-          onChange={(e) => setSelectedSchool(e.target.value)}
-          className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
-            isDark
-              ? 'bg-white/5 border-white/10 text-white'
-              : 'bg-white border-gray-300 text-ink-black'
-          }`}
-        >
-          <option value="all">All Schools</option>
-          {schools.map(school => (
-            <option key={school.id} value={school.id}>
-              {school.name}
-            </option>
-          ))}
-        </select>
+      {/* Search and Filters */}
+      <div className={`border rounded-2xl p-4 transition-all duration-700 ${
+        isDark
+          ? 'bg-black/20 backdrop-blur-xl border-white/10'
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search by course name, level, or school..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`w-full px-4 py-2 rounded-lg transition-all duration-700 ${
+                isDark
+                  ? 'bg-white/5 border border-white/10 text-white placeholder-gray-500'
+                  : 'bg-gray-50 border border-gray-200 text-ink-black placeholder-gray-400'
+              }`}
+            />
+          </div>
+          
+          {/* School Filter */}
+          <div className="sm:w-64">
+            <select
+              value={selectedSchool}
+              onChange={(e) => setSelectedSchool(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
+                isDark
+                  ? 'bg-white/5 border-white/10 text-white'
+                  : 'bg-gray-50 border-gray-200 text-ink-black'
+              }`}
+            >
+              <option value="all">All Schools</option>
+              {schools.map(school => (
+                <option key={school.id} value={school.id}>
+                  {school.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Warning if no schools */}

@@ -334,7 +334,7 @@ export default function ConfigModal({
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-colors duration-700 ${
       isDark ? 'bg-black/60' : 'bg-black/40'
     }`}>
-      <div className={`w-full max-w-md border rounded-2xl shadow-2xl overflow-hidden transition-all duration-700 ${
+      <div className={`w-full max-w-md max-h-[90vh] border rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-700 ${
         isDark
           ? 'bg-black/40 backdrop-blur-xl border-white/10'
           : 'bg-white border-gray-300'
@@ -351,7 +351,7 @@ export default function ConfigModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {fields.map(field => (
             <div key={field.name}>
               <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${
