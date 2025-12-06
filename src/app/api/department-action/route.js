@@ -1,12 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, importJWK } from 'jose';
 import { NextResponse } from 'next/server';
-
-// Initialize Supabase Admin Client to bypass RLS for server-side actions
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { updateDepartmentStatus } from '@/lib/departmentActions';
 
 const getJwk = () => {
     const secret = process.env.JWT_SECRET;
@@ -116,39 +111,20 @@ export async function POST(request) {
         const payload = await verifyToken(token);
         const { user_id, form_id, department } = payload;
 
-        // Update the status
-        const { data, error } = await supabaseAdmin
-            .from("no_dues_status")
-            .update({
-                status: status.toLowerCase(),
-                rejection_reason: status === 'Rejected' ? reason : null,
-                action_by_user_id: user_id,
-                action_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            })
-            .eq("form_id", form_id)
-            .eq("department_name", department)
-            .select(); // Include .select() to get updated rows
+        // Convert status format to match shared service expectations
+        const action = status === 'Approved' ? 'approve' : 'reject';
 
-        if (!data || data.length === 0) {
-            // This might happen if the record doesn't exist or the update didn't change anything
-            // We'll still consider it a success if no error was thrown
-        }
+        // Use shared service for consistent logic
+        const result = await updateDepartmentStatus({
+            formId: form_id,
+            departmentName: department,
+            action,
+            userId: user_id,
+            reason
+        });
 
-        if (error) throw error;
-
-        // 🔥 CRITICAL FIX: Update no_dues_forms.updated_at to trigger real-time events
-        // This ensures admin dashboard receives UPDATE events for email-based approvals
-        const { error: formTimestampError } = await supabaseAdmin
-            .from('no_dues_forms')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', form_id);
-
-        if (formTimestampError) {
-            console.error('⚠️ Failed to update form timestamp:', formTimestampError);
-            // Don't fail the request - status was already updated successfully
-        } else {
-            console.log(`✅ Form ${form_id} timestamp updated - admin will receive real-time event`);
+        if (!result.success) {
+            return NextResponse.json({ error: result.error }, { status: 400 });
         }
 
         return NextResponse.json({ ok: true, message: "Status updated successfully." });

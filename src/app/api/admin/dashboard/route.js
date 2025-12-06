@@ -1,13 +1,11 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const revalidate = 0; // Disable all caching
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
+import { addApplicationMetrics } from '@/lib/statsHelpers';
 
 export async function GET(request) {
   try {
@@ -20,35 +18,10 @@ export async function GET(request) {
     const sortField = searchParams.get('sortField') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    // Get authenticated user from header/cookie via Supabase
-    const authHeader = request.headers.get('Authorization');
-    let userId;
-
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      
-      if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      userId = user.id;
-    } else {
-      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    // Verify user is admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Authenticate and verify admin role
+    const auth = await authenticateAndVerify(request, 'admin');
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
     // Build query with filters
@@ -71,25 +44,35 @@ export async function GET(request) {
       .order(sortField, { ascending: sortOrder === 'asc' });
 
     // Apply status filter
-    if (status) {
-      query = query.eq('status', status);
-    }
+    let skipGlobalStatusFilter = false;
 
     // Apply department filter - filter by department status
     if (department) {
       // Get forms that have this department in their status
-      const { data: formsWithDept } = await supabaseAdmin
+      let deptQuery = supabaseAdmin
         .from('no_dues_status')
         .select('form_id')
         .eq('department_name', department);
+      
+      // If status is also provided, filter by that department's status
+      if (status) {
+        deptQuery = deptQuery.eq('status', status);
+        skipGlobalStatusFilter = true; // We are filtering by specific dept status, so skip global status filter
+      }
+
+      const { data: formsWithDept } = await deptQuery;
       
       if (formsWithDept && formsWithDept.length > 0) {
         const formIds = formsWithDept.map(f => f.form_id);
         query = query.in('id', formIds);
       } else {
-        // No forms found for this department, return empty
+        // No forms found for this department (and status if provided), return empty
         query = query.eq('id', '00000000-0000-0000-0000-000000000000'); // Non-existent UUID
       }
+    }
+
+    if (status && !skipGlobalStatusFilter) {
+      query = query.eq('status', status);
     }
 
     // Apply search filter
@@ -105,14 +88,20 @@ export async function GET(request) {
       .select('*', { count: 'exact', head: true });
 
     // Apply same filters to count query
-    if (status) {
-      countQuery = countQuery.eq('status', status);
-    }
+    let skipGlobalStatusCount = false;
+
     if (department) {
-      const { data: formsWithDeptCount } = await supabaseAdmin
+      let deptCountQuery = supabaseAdmin
         .from('no_dues_status')
         .select('form_id')
         .eq('department_name', department);
+      
+      if (status) {
+        deptCountQuery = deptCountQuery.eq('status', status);
+        skipGlobalStatusCount = true;
+      }
+
+      const { data: formsWithDeptCount } = await deptCountQuery;
       
       if (formsWithDeptCount && formsWithDeptCount.length > 0) {
         const formIdsCount = formsWithDeptCount.map(f => f.form_id);
@@ -120,6 +109,10 @@ export async function GET(request) {
       } else {
         countQuery = countQuery.eq('id', '00000000-0000-0000-0000-000000000000');
       }
+    }
+
+    if (status && !skipGlobalStatusCount) {
+      countQuery = countQuery.eq('status', status);
     }
     if (searchQuery) {
       countQuery = countQuery.or(
@@ -144,23 +137,8 @@ export async function GET(request) {
       throw applicationsError;
     }
 
-    // Calculate response times using helper function
-    const applicationsWithMetrics = applications.map(app => {
-      const statusWithMetrics = app.no_dues_status.map(status => ({
-        ...status,
-        response_time: calculateResponseTime(app.created_at, status.created_at, status.action_at)
-      }));
-
-      const totalResponseTime = calculateTotalResponseTime(statusWithMetrics);
-
-      return {
-        ...app,
-        no_dues_status: statusWithMetrics,
-        total_response_time: totalResponseTime,
-        pending_departments: statusWithMetrics.filter(s => s.status === 'pending').length,
-        completed_departments: statusWithMetrics.filter(s => s.status === 'approved').length
-      };
-    });
+    // Calculate response times using shared helper
+    const applicationsWithMetrics = applications.map(addApplicationMetrics);
 
     // Get summary statistics
     const { data: summaryStats, error: summaryError } = await supabaseAdmin
@@ -170,6 +148,17 @@ export async function GET(request) {
       console.error('Error fetching summary stats:', summaryError);
       // Don't fail the request if summary stats fail
     }
+
+    // 🔍 DEBUG: Log what we're returning to frontend
+    console.log(`📊 Admin API returning ${applicationsWithMetrics.length} applications`);
+    if (applicationsWithMetrics.length > 0) {
+      const first = applicationsWithMetrics[0];
+      const approved = first.no_dues_status?.filter(s => s.status === 'approved').length || 0;
+      const pending = first.no_dues_status?.filter(s => s.status === 'pending').length || 0;
+      const rejected = first.no_dues_status?.filter(s => s.status === 'rejected').length || 0;
+      console.log(`📋 First app ${first.registration_no}: ${approved} approved, ${pending} pending, ${rejected} rejected`);
+    }
+    console.log(`📈 Stats: ${JSON.stringify(summaryStats)}`);
 
     return NextResponse.json({
       applications: applicationsWithMetrics,
@@ -186,41 +175,4 @@ export async function GET(request) {
     console.error('Admin dashboard API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-// Helper function for response time calculation
-function calculateResponseTime(created_at, updated_at, action_at) {
-  if (!action_at) return 'Pending';
-
-  const created = new Date(created_at);
-  const action = new Date(action_at);
-  const diff = action - created;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m ${seconds}s`;
-  return `${seconds}s`;
-}
-
-function calculateTotalResponseTime(statuses) {
-  const completed = statuses.filter(s => s.status === 'approved' && s.action_at);
-  if (completed.length === 0) return 'N/A';
-
-  const totalTime = completed.reduce((sum, status) => {
-    if (status.action_at) {
-      const created = new Date(status.created_at);
-      const action = new Date(status.action_at);
-      return sum + (action - created);
-    }
-    return sum;
-  }, 0);
-
-  const avgTime = totalTime / completed.length;
-  const hours = Math.floor(avgTime / (1000 * 60 * 60));
-  const minutes = Math.floor((avgTime % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 }

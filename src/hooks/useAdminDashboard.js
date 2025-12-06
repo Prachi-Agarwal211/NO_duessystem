@@ -83,15 +83,26 @@ export function useAdminDashboard() {
         ...filters
       });
 
-      const response = await fetch(`/api/admin/dashboard?${params}`, {
+      // Explicitly append timestamp to ensure fresh data as requested
+      const response = await fetch(`/api/admin/dashboard?${params}&_t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch dashboard data');
+      }
+
+      // Debug: Log first app's department statuses to verify fresh data
+      if (result.applications?.[0]?.no_dues_status) {
+        const firstApp = result.applications[0];
+        const approved = firstApp.no_dues_status.filter(s => s.status === 'approved').length;
+        const pending = firstApp.no_dues_status.filter(s => s.status === 'pending').length;
+        console.log(`📊 First app (${firstApp.registration_no}): ${approved} approved, ${pending} pending`);
       }
 
       setApplications(result.applications || []);
@@ -115,11 +126,18 @@ export function useAdminDashboard() {
 
       if (!session?.user?.id) return;
 
-      const response = await fetch(`/api/admin/stats?userId=${session.user.id}`);
+      // Add cache-busting timestamp
+      const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const result = await response.json();
 
       if (response.ok) {
         setStats(result);
+        console.log('📈 Stats refreshed:', result.overallStats?.[0]);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);

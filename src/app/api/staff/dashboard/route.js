@@ -1,13 +1,10 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const revalidate = 0; // Disable all caching
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
 
 export async function GET(request) {
   try {
@@ -17,46 +14,13 @@ export async function GET(request) {
     const searchQuery = searchParams.get('search');
     const offset = (page - 1) * limit;
 
-    // Get authenticated user from header/cookie via Supabase
-    // Note: Since this is an API route, we need to verify the user's session
-    // Ideally we should use createRouteHandlerClient but for now we'll use the token
-    
-    const authHeader = request.headers.get('Authorization');
-    let userId;
-
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      
-      if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      userId = user.id;
-    } else {
-      // Fallback for server-side calls or where auth might be handled differently
-      // BUT we strictly validate this is not empty
-      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    // Authenticate and verify role
+    const auth = await authenticateAndVerify(request, ['department', 'admin']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    // Get user profile to check role, department, and access scope
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Verify user has department or admin role (Phase 1: only 2 roles)
-    if (profile.role !== 'department' && profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { profile } = auth;
 
     let dashboardData = {};
 
@@ -157,8 +121,12 @@ export async function GET(request) {
       }
 
       // Apply search filter if provided
-      // Note: Search on related table requires filtering after fetch in this case
-      // or we need to restructure the query
+      if (searchQuery) {
+        query = query.or(
+          `student_name.ilike.%${searchQuery}%,registration_no.ilike.%${searchQuery}%`,
+          { foreignTable: 'no_dues_forms' }
+        );
+      }
 
       query = query
         .order('created_at', { ascending: false })
@@ -184,25 +152,37 @@ export async function GET(request) {
       }
 
       // Filter by search term if provided (client-side filtering for related table)
+      // REMOVED: Now handled in DB query
       let filteredApplications = pendingApplications || [];
-      if (searchQuery && filteredApplications.length > 0) {
-        const searchLower = searchQuery.toLowerCase();
-        filteredApplications = filteredApplications.filter(app => {
-          const form = app.no_dues_forms;
-          if (!form) return false;
-          return (
-            form.student_name?.toLowerCase().includes(searchLower) ||
-            form.registration_no?.toLowerCase().includes(searchLower)
-          );
-        });
-      }
 
       // Get total count for pagination
-      const { count: totalCount, error: countError } = await supabaseAdmin
+      let countQuery = supabaseAdmin
         .from('no_dues_status')
-        .select('*', { count: 'exact', head: true })
+        .select('*, no_dues_forms!inner(*)', { count: 'exact', head: true })
         .eq('department_name', profile.department_name);
-        // ✅ REMOVED: .eq('status', 'pending') - count all statuses
+
+      // Apply scope filtering to count query as well
+      if (profile.school_ids && profile.school_ids.length > 0) {
+        countQuery = countQuery.in('no_dues_forms.school_id', profile.school_ids);
+      } else if (profile.department_name === 'school_hod' && profile.school_id) {
+        countQuery = countQuery.eq('no_dues_forms.school_id', profile.school_id);
+      }
+      if (profile.course_ids && profile.course_ids.length > 0) {
+        countQuery = countQuery.in('no_dues_forms.course_id', profile.course_ids);
+      }
+      if (profile.branch_ids && profile.branch_ids.length > 0) {
+        countQuery = countQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+      }
+
+      // Apply search to count query
+      if (searchQuery) {
+        countQuery = countQuery.or(
+          `student_name.ilike.%${searchQuery}%,registration_no.ilike.%${searchQuery}%`,
+          { foreignTable: 'no_dues_forms' }
+        );
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });
@@ -215,8 +195,8 @@ export async function GET(request) {
         pagination: {
           page,
           limit,
-          total: searchQuery ? filteredApplications.length : (totalCount || 0),
-          totalPages: Math.ceil((searchQuery ? filteredApplications.length : (totalCount || 0)) / limit)
+          total: totalCount || 0,
+          totalPages: Math.ceil((totalCount || 0) / limit)
         }
       };
     }

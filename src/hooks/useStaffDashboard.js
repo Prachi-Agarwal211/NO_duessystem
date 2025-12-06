@@ -69,13 +69,16 @@ export function useStaffDashboard() {
         throw new Error('Session expired. Please login again.');
       }
 
-      const response = await fetch('/api/staff/stats', {
+      const response = await fetch(`/api/staff/stats?_t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       
       const result = await response.json();
+      console.log('📈 Staff stats refreshed');
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch stats');
@@ -120,7 +123,7 @@ export function useStaffDashboard() {
       const params = new URLSearchParams({
         userId: session.user.id,
         page: 1,
-        limit: 50
+        limit: 50,
       });
 
       // Add search term if present
@@ -128,9 +131,12 @@ export function useStaffDashboard() {
         params.append('search', searchTerm.trim());
       }
 
-      const response = await fetch(`/api/staff/dashboard?${params}`, {
+      // Explicitly append timestamp to ensure fresh data as requested
+      const response = await fetch(`/api/staff/dashboard?${params}&_t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       const result = await response.json();
@@ -187,6 +193,19 @@ export function useStaffDashboard() {
   useEffect(() => {
     refreshDataRef.current = refreshData;
   }, [refreshData]);
+
+  // ✅ FIX Problem 9: Optimistic update helper
+  const optimisticUpdateRequest = useCallback((updatedRequest) => {
+    setRequests(prev => {
+      const idx = prev.findIndex(req => req.id === updatedRequest.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], ...updatedRequest };
+        return updated;
+      }
+      return prev;
+    });
+  }, []);
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and status updates for instant dashboard updates
@@ -260,6 +279,19 @@ export function useStaffDashboard() {
           (payload) => {
             // ✅ FIX: Staff sees form updates (e.g., when form status changes to 'completed')
             console.log('🔄 Form updated:', payload.new?.registration_no, '- status:', payload.new?.status);
+            // Optimistic update first
+            if (payload.new) {
+              setRequests(prev => {
+                const idx = prev.findIndex(req => req.id === payload.new.id);
+                if (idx >= 0) {
+                  const updated = [...prev];
+                  updated[idx] = { ...updated[idx], ...payload.new };
+                  console.log('⚡ Optimistic update applied for:', payload.new.registration_no);
+                  return updated;
+                }
+                return prev;
+              });
+            }
             debouncedRefresh();
           }
         )
@@ -346,6 +378,7 @@ export function useStaffDashboard() {
     lastUpdate,
     fetchDashboardData,
     refreshData,
-    fetchStats
+    fetchStats,
+    optimisticUpdateRequest
   };
 }
