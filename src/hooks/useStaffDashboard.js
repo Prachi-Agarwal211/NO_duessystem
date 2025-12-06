@@ -192,7 +192,8 @@ export function useStaffDashboard() {
 
     let isSubscribed = false;
     let refreshTimeout = null;
-    const DEBOUNCE_DELAY = 500; // ✅ FIX: Reduced from 2000ms to 500ms for better responsiveness
+    let channel = null;
+    const DEBOUNCE_DELAY = 500;
 
     // Debounced refresh to prevent continuous refreshes
     const debouncedRefresh = () => {
@@ -200,91 +201,118 @@ export function useStaffDashboard() {
         clearTimeout(refreshTimeout);
       }
       refreshTimeout = setTimeout(() => {
-        if (!refreshing && refreshDataRef.current) {
+        if (refreshDataRef.current) {
           console.log('🔄 Debounced refresh triggered');
           refreshDataRef.current();
         }
       }, DEBOUNCE_DELAY);
     };
 
-    // Set up real-time subscription for new form submissions and status changes
-    const channel = supabase
-      .channel('staff-dashboard-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'no_dues_forms'
-        },
-        (payload) => {
-          console.log('🔔 New form submission detected:', payload.new?.registration_no);
-          // Show notification for new submission
-          if (typeof window !== 'undefined' && window.dispatchEvent) {
-            window.dispatchEvent(new CustomEvent('new-staff-submission', {
-              detail: {
-                registrationNo: payload.new?.registration_no,
-                studentName: payload.new?.student_name
-              }
-            }));
+    // ✅ FIX: Async setup to ensure we have current session
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('❌ No session found for real-time subscription');
+        return null;
+      }
+
+      console.log('🔌 Setting up real-time for department:', user.department_name);
+
+      // Set up real-time subscription with explicit config
+      const ch = supabase
+        .channel('staff-dashboard-realtime', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: userId }
           }
-          // Debounced refresh to avoid continuous updates
-          debouncedRefresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'no_dues_status',
-          filter: `department_name=eq.${user.department_name}`
-        },
-        (payload) => {
-          // Only refresh if the status actually changed to avoid loops
-          if (payload.old?.status !== payload.new?.status) {
-            console.log('🔄 Department status updated:', payload.old?.status, '->', payload.new?.status);
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'no_dues_forms'
+          },
+          (payload) => {
+            console.log('🔔 New form submission detected:', payload.new?.registration_no);
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+              window.dispatchEvent(new CustomEvent('new-staff-submission', {
+                detail: {
+                  registrationNo: payload.new?.registration_no,
+                  studentName: payload.new?.student_name
+                }
+              }));
+            }
             debouncedRefresh();
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'no_dues_status',
-          filter: `department_name=eq.${user.department_name}`
-        },
-        (payload) => {
-          console.log('📋 New status record for department');
-          // Debounced refresh to avoid continuous updates
-          debouncedRefresh();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time updates active for', user.department_name);
-          isSubscribed = true;
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('⚠️ Real-time connection issue. Please use manual refresh.');
-          isSubscribed = false;
-        } else if (status === 'CLOSED') {
-          if (isSubscribed) {
-            console.log('🔌 Real-time connection closed');
-            isSubscribed = false;
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'no_dues_status',
+            filter: `department_name=eq.${user.department_name}`
+          },
+          (payload) => {
+            if (payload.old?.status !== payload.new?.status) {
+              console.log('🔄 Department status updated:', payload.old?.status, '->', payload.new?.status);
+              debouncedRefresh();
+            }
           }
-        }
-      });
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'no_dues_status',
+            filter: `department_name=eq.${user.department_name}`
+          },
+          (payload) => {
+            console.log('📋 New status record for department');
+            debouncedRefresh();
+          }
+        )
+        .subscribe((status, error) => {
+          console.log('📡 Staff subscription status:', status);
+          
+          if (error) {
+            console.error('❌ Subscription error:', error);
+          }
+          
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Real-time updates active for', user.department_name);
+            isSubscribed = true;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error('❌ Real-time connection failed:', status);
+            isSubscribed = false;
+          } else if (status === 'CLOSED') {
+            if (isSubscribed) {
+              console.log('🔌 Real-time connection closed');
+              isSubscribed = false;
+            }
+          }
+        });
+
+      return ch;
+    };
+
+    // Initialize real-time subscription
+    setupRealtime().then(ch => {
+      channel = ch;
+    });
 
     return () => {
       if (refreshTimeout) {
         clearTimeout(refreshTimeout);
       }
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
       console.log('🧹 Cleaned up real-time subscription');
     };
-  // ✅ FIX Problem 21: Only depend on userId and department_name, use ref for refreshData
   }, [userId, user?.department_name]);
 
   return {

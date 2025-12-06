@@ -176,125 +176,150 @@ export function useAdminDashboard() {
     let isSubscribed = false;
     let pollingInterval = null;
     let retryCount = 0;
+    let channel = null;
     const MAX_RETRIES = 3;
 
-    // Set up real-time subscription for new form submissions
-    const channel = supabase
-      .channel('admin-dashboard-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'no_dues_forms'
-        },
-        (payload) => {
-          console.log('🔔 New form submission detected:', payload.new?.registration_no);
-          // Show notification for new submission
-          if (typeof window !== 'undefined' && window.dispatchEvent) {
-            window.dispatchEvent(new CustomEvent('new-submission', {
-              detail: {
-                registrationNo: payload.new?.registration_no,
-                studentName: payload.new?.student_name
-              }
-            }));
+    // ✅ FIX: Async setup to ensure we have current session
+    const setupRealtime = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('❌ No session found for real-time subscription');
+        return null;
+      }
+
+      console.log('🔌 Setting up real-time with authenticated session for user:', userId);
+
+      // Set up real-time subscription with explicit config
+      const ch = supabase
+        .channel('admin-dashboard-realtime', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: userId }
           }
-          // Refresh data when new form is submitted
-          refreshData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'no_dues_forms'
-        },
-        (payload) => {
-          console.log('🔄 Form updated:', payload.new?.registration_no);
-          // ✅ FIX Problem 9: Optimistic update first, then full refresh for stats
-          if (payload.new) {
-            setApplications(prev => {
-              const idx = prev.findIndex(app => app.id === payload.new.id);
-              if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], ...payload.new };
-                console.log('⚡ Optimistic update applied for:', payload.new.registration_no);
-                return updated;
-              }
-              return prev;
-            });
-          }
-          // Refresh stats separately (lighter operation)
-          if (refreshDataRef.current) refreshDataRef.current();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'no_dues_status'
-        },
-        (payload) => {
-          console.log('📋 Department status changed:', payload.eventType);
-          // Use ref to avoid dependency issues
-          if (refreshDataRef.current) refreshDataRef.current();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time updates active');
-          isSubscribed = true;
-          retryCount = 0;
-          // Clear any existing polling
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-          }
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          retryCount++;
-          if (retryCount >= MAX_RETRIES) {
-            console.warn(' Real-time connection failed after', MAX_RETRIES, 'attempts. Using manual refresh.');
-            isSubscribed = false;
-            // Only start polling after max retries
-            if (!pollingInterval) {
-              pollingInterval = setInterval(() => {
-                if (!refreshing) {
-                  refreshData();
+        })
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'no_dues_forms'
+          },
+          (payload) => {
+            console.log('🔔 New form submission detected:', payload.new?.registration_no);
+            // Show notification for new submission
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+              window.dispatchEvent(new CustomEvent('new-submission', {
+                detail: {
+                  registrationNo: payload.new?.registration_no,
+                  studentName: payload.new?.student_name
                 }
-              }, 30000); // FIX: Poll every 30 seconds for better responsiveness
+              }));
+            }
+            // Refresh data when new form is submitted
+            if (refreshDataRef.current) refreshDataRef.current();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'no_dues_forms'
+          },
+          (payload) => {
+            console.log('🔄 Form updated:', payload.new?.registration_no);
+            // Optimistic update first
+            if (payload.new) {
+              setApplications(prev => {
+                const idx = prev.findIndex(app => app.id === payload.new.id);
+                if (idx >= 0) {
+                  const updated = [...prev];
+                  updated[idx] = { ...updated[idx], ...payload.new };
+                  console.log('⚡ Optimistic update applied for:', payload.new.registration_no);
+                  return updated;
+                }
+                return prev;
+              });
+            }
+            // Refresh stats separately
+            if (refreshDataRef.current) refreshDataRef.current();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'no_dues_status'
+          },
+          (payload) => {
+            console.log('📋 Department status changed:', payload.eventType);
+            if (refreshDataRef.current) refreshDataRef.current();
+          }
+        )
+        .subscribe((status, error) => {
+          console.log('📡 Subscription status:', status);
+          
+          if (error) {
+            console.error('❌ Subscription error:', error);
+          }
+          
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Real-time updates active for admin dashboard');
+            isSubscribed = true;
+            retryCount = 0;
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error('❌ Real-time connection failed:', status);
+            retryCount++;
+            if (retryCount >= MAX_RETRIES) {
+              console.warn('⚠️ Starting fallback polling after', MAX_RETRIES, 'failed attempts');
+              isSubscribed = false;
+              if (!pollingInterval) {
+                pollingInterval = setInterval(() => {
+                  if (refreshDataRef.current) refreshDataRef.current();
+                }, 30000);
+              }
+            }
+          } else if (status === 'CLOSED') {
+            if (isSubscribed) {
+              console.log('🔌 Real-time connection closed');
+              isSubscribed = false;
             }
           }
-        } else if (status === 'CLOSED') {
-          // Connection closed - don't spam console or start aggressive polling
-          if (isSubscribed) {
-            console.log(' Real-time connection closed');
-            isSubscribed = false;
-          }
-        }
-      });
+        });
+
+      return ch;
+    };
+
+    // Initialize real-time subscription
+    setupRealtime().then(ch => {
+      channel = ch;
+    });
 
     // Fallback polling - only start after 10 seconds if definitely not connected
     const fallbackTimeout = setTimeout(() => {
       if (!isSubscribed && !pollingInterval && retryCount >= MAX_RETRIES) {
         console.log('⏰ Starting fallback polling (real-time unavailable)');
         pollingInterval = setInterval(() => {
-          if (!refreshing) {
-            refreshData();
-          }
-        }, 60000); // Poll every 60 seconds
+          if (refreshDataRef.current) refreshDataRef.current();
+        }, 60000);
       }
-    }, 10000); // Wait 10 seconds before fallback
+    }, 10000);
 
     return () => {
       clearTimeout(fallbackTimeout);
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  // ✅ FIX Problem 21: Only depend on userId, use ref for refreshData
   }, [userId]);
 
   return {
