@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { realtimeManager } from '@/lib/realtimeManager';
+import { subscribeToRealtime } from '@/lib/supabaseRealtime';
 
 export function useAdminDashboard() {
   const router = useRouter();
@@ -20,7 +22,7 @@ export function useAdminDashboard() {
 
   // Store current filters for refresh
   const currentFiltersRef = useRef({});
-  
+
   // Use refs to store latest functions and avoid stale closures
   const fetchDashboardDataRef = useRef(null);
   const fetchStatsRef = useRef(null);
@@ -64,7 +66,7 @@ export function useAdminDashboard() {
     if (Object.keys(filters).length > 0) {
       currentFiltersRef.current = filters;
     }
-    
+
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -82,7 +84,8 @@ export function useAdminDashboard() {
       const params = new URLSearchParams({
         page: pageOverride !== null ? pageOverride : currentPage,
         limit: 20,
-        ...filters
+        ...filters,
+        _t: Date.now() // Cache buster to ensure fresh data
       });
 
       const response = await fetch(`/api/admin/dashboard?${params}`, {
@@ -100,7 +103,7 @@ export function useAdminDashboard() {
       setTotalItems(result.pagination?.total || 0);
       setTotalPages(result.pagination?.totalPages || 1);
       setLastUpdate(new Date());
-      
+
       console.log('📊 Admin dashboard data refreshed:', result.applications?.length, 'applications');
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -143,193 +146,73 @@ export function useAdminDashboard() {
   // Manual refresh function - stable reference using refs to avoid stale closures
   const refreshData = useCallback(() => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
-    
+
     // Use refs to get latest functions
     if (fetchDashboardDataRef.current) {
-      setCurrentPage(page => {
-        // Fetch dashboard data with current page using ref
-        fetchDashboardDataRef.current(currentFiltersRef.current, true, page);
-        return page;
-      });
+      // Always refresh with current filters and current page
+      fetchDashboardDataRef.current(currentFiltersRef.current, true, currentPage);
     }
-    
+
     // Always fetch fresh stats using ref
     if (fetchStatsRef.current) {
       fetchStatsRef.current();
     }
-  }, []); // Empty deps - stable function using refs
+  }, [currentPage]); // Add currentPage as dependency to ensure latest page is used
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
-  // Subscribe to new form submissions and updates for instant dashboard updates
+  // NEW ARCHITECTURE: Use centralized realtime service + event manager
   useEffect(() => {
     if (!userId) return;
 
-    let isSubscribed = false;
-    let pollingInterval = null;
-    let retryCount = 0;
-    let channel = null;
-    let refreshTimeout = null;
-    const MAX_RETRIES = 3;
-    const DEBOUNCE_DELAY = 1000; // 1 second debounce to batch rapid updates
+    let unsubscribeRealtime;
+    let unsubscribeGlobal;
+    let retryTimeout;
 
-    // Debounced refresh to prevent overwhelming the connection
-    const debouncedRefresh = () => {
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout);
-      }
-      refreshTimeout = setTimeout(() => {
-        if (!refreshing) {
-          console.log('🔄 Debounced refresh triggered');
-          refreshData();
-        }
-      }, DEBOUNCE_DELAY);
-    };
-
-    // Setup realtime subscription with proper async initialization
     const setupRealtime = async () => {
-      try {
-        // Verify we have an active session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.warn('❌ No active session - cannot setup realtime');
-          return;
-        }
+      console.log('🔌 Admin dashboard setting up realtime');
 
-        console.log('🔌 Setting up admin realtime subscription...');
-
-        // Set up real-time subscription for new form submissions
-        channel = supabase
-          .channel('admin-dashboard-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'no_dues_forms'
-        },
-        (payload) => {
-          console.log('🔔 New form submission detected:', payload.new?.registration_no);
-          // Show notification for new submission
-          if (typeof window !== 'undefined' && window.dispatchEvent) {
-            window.dispatchEvent(new CustomEvent('new-submission', {
-              detail: {
-                registrationNo: payload.new?.registration_no,
-                studentName: payload.new?.student_name
-              }
-            }));
-          }
-          // Use debounced refresh to batch rapid updates
-          debouncedRefresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'no_dues_forms'
-        },
-        (payload) => {
-          console.log('🔄 Form updated:', payload.new?.registration_no, 'Status:', payload.new?.status);
-          // Use debounced refresh to batch rapid updates
-          debouncedRefresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'no_dues_status'
-        },
-        (payload) => {
-          console.log('📋 Department status updated:', payload.new?.department_name, 'Status:', payload.new?.status);
-          // Use debounced refresh to batch rapid updates
-          debouncedRefresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'no_dues_status'
-        },
-        (payload) => {
-          console.log('📋 New department status created for:', payload.new?.department_name);
-          // Use debounced refresh to batch 11 rapid INSERT events from new form
-          debouncedRefresh();
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Subscription status:', status);
-        
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Admin realtime updates active');
-          isSubscribed = true;
-          retryCount = 0;
-          // Clear any existing polling
-          if (pollingInterval) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
-          }
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('❌ Realtime subscription error:', status);
-          retryCount++;
-          if (retryCount >= MAX_RETRIES) {
-            console.warn('⚠️ Real-time connection failed after', MAX_RETRIES, 'attempts. Using manual refresh.');
-            isSubscribed = false;
-            // Only start polling after max retries
-            if (!pollingInterval) {
-              pollingInterval = setInterval(() => {
-                if (!refreshing) {
-                  refreshData();
-                }
-              }, 60000); // Poll every 60 seconds (reduced frequency)
-            }
-          }
-        } else if (status === 'CLOSED') {
-          // Connection closed - don't spam console or start aggressive polling
-          if (isSubscribed) {
-            console.log('🔌 Real-time connection closed');
-            isSubscribed = false;
-          }
-        }
-      });
-      } catch (error) {
-        console.error('❌ Error setting up realtime:', error);
+      // ✅ ENSURE SESSION IS READY FIRST
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (!session || error) {
+        console.warn('⚠️ No session yet, will retry in 1 second...');
+        // Retry after 1 second
+        retryTimeout = setTimeout(setupRealtime, 1000);
+        return;
       }
+
+      console.log('✅ Session confirmed, subscribing to realtime');
+
+      // Subscribe to global realtime service
+      unsubscribeRealtime = await subscribeToRealtime();
+
+      // Subscribe to specific events via RealtimeManager
+      unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
+        console.log('📊 Admin dashboard received update:', {
+          affectedForms: analysis.formIds.length,
+          eventTypes: analysis.eventTypes,
+          newSubmission: analysis.hasNewSubmission,
+          completion: analysis.hasCompletion,
+          departmentAction: analysis.hasDepartmentAction
+        });
+
+        // Add a small delay to ensure proper digestion of previous updates
+        setTimeout(() => {
+          // Refresh data - RealtimeManager handles deduplication
+          refreshData();
+        }, 100);
+      });
     };
 
-    // Initialize realtime subscription
     setupRealtime();
 
-    // Fallback polling - only start after 10 seconds if definitely not connected
-    const fallbackTimeout = setTimeout(() => {
-      if (!isSubscribed && !pollingInterval && retryCount >= MAX_RETRIES) {
-        console.log('⏰ Starting fallback polling (real-time unavailable)');
-        pollingInterval = setInterval(() => {
-          if (!refreshing) {
-            refreshData();
-          }
-        }, 60000); // Poll every 60 seconds
-      }
-    }, 10000); // Wait 10 seconds before fallback
-
     return () => {
-      clearTimeout(fallbackTimeout);
-      if (refreshTimeout) {
-        clearTimeout(refreshTimeout);
-      }
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-      console.log('🧹 Cleaned up admin real-time subscription');
+      console.log('🧹 Admin dashboard unsubscribing from realtime');
+      if (retryTimeout) clearTimeout(retryTimeout);
+      if (unsubscribeRealtime) unsubscribeRealtime();
+      if (unsubscribeGlobal) unsubscribeGlobal();
     };
-  }, [userId, refreshData, refreshing]);
+  }, [userId, refreshData]);
 
   return {
     user,
@@ -347,6 +230,8 @@ export function useAdminDashboard() {
     fetchDashboardData,
     fetchStats,
     refreshData,
-    handleLogout
+    handleLogout,
+    // Manual refresh function for UI buttons
+    handleManualRefresh: refreshData
   };
 }
