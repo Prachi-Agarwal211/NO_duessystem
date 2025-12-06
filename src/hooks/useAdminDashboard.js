@@ -20,6 +20,10 @@ export function useAdminDashboard() {
 
   // Store current filters for refresh
   const currentFiltersRef = useRef({});
+  
+  // Use refs to store latest functions and avoid stale closures
+  const fetchDashboardDataRef = useRef(null);
+  const fetchStatsRef = useRef(null);
 
   // Fetch user data
   useEffect(() => {
@@ -107,6 +111,9 @@ export function useAdminDashboard() {
     }
   }, [currentPage]);
 
+  // Store latest function in ref
+  fetchDashboardDataRef.current = fetchDashboardData;
+
   const fetchStats = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -124,23 +131,33 @@ export function useAdminDashboard() {
     }
   };
 
+  // Store latest function in ref
+  fetchStatsRef.current = fetchStats;
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     // ✅ Use Next.js router instead of window.location
     router.push('/login');
   };
 
-  // Manual refresh function - properly refresh both dashboard and stats
+  // Manual refresh function - stable reference using refs to avoid stale closures
   const refreshData = useCallback(() => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
-    setCurrentPage(page => {
-      // Fetch dashboard data with current page
-      fetchDashboardData(currentFiltersRef.current, true, page);
-      return page;
-    });
-    // Always fetch fresh stats
-    fetchStats();
-  }, [fetchDashboardData, fetchStats]);
+    
+    // Use refs to get latest functions
+    if (fetchDashboardDataRef.current) {
+      setCurrentPage(page => {
+        // Fetch dashboard data with current page using ref
+        fetchDashboardDataRef.current(currentFiltersRef.current, true, page);
+        return page;
+      });
+    }
+    
+    // Always fetch fresh stats using ref
+    if (fetchStatsRef.current) {
+      fetchStatsRef.current();
+    }
+  }, []); // Empty deps - stable function using refs
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and updates for instant dashboard updates
@@ -150,11 +167,24 @@ export function useAdminDashboard() {
     let isSubscribed = false;
     let pollingInterval = null;
     let retryCount = 0;
+    let channel = null;
     const MAX_RETRIES = 3;
 
-    // Set up real-time subscription for new form submissions
-    const channel = supabase
-      .channel('admin-dashboard-realtime')
+    // Setup realtime subscription with proper async initialization
+    const setupRealtime = async () => {
+      try {
+        // Verify we have an active session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.warn('❌ No active session - cannot setup realtime');
+          return;
+        }
+
+        console.log('🔌 Setting up admin realtime subscription...');
+
+        // Set up real-time subscription for new form submissions
+        channel = supabase
+          .channel('admin-dashboard-realtime')
       .on(
         'postgres_changes',
         {
@@ -204,8 +234,10 @@ export function useAdminDashboard() {
         }
       )
       .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+        
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time updates active');
+          console.log('✅ Admin realtime updates active');
           isSubscribed = true;
           retryCount = 0;
           // Clear any existing polling
@@ -214,6 +246,7 @@ export function useAdminDashboard() {
             pollingInterval = null;
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('❌ Realtime subscription error:', status);
           retryCount++;
           if (retryCount >= MAX_RETRIES) {
             console.warn('⚠️ Real-time connection failed after', MAX_RETRIES, 'attempts. Using manual refresh.');
@@ -235,6 +268,13 @@ export function useAdminDashboard() {
           }
         }
       });
+      } catch (error) {
+        console.error('❌ Error setting up realtime:', error);
+      }
+    };
+
+    // Initialize realtime subscription
+    setupRealtime();
 
     // Fallback polling - only start after 10 seconds if definitely not connected
     const fallbackTimeout = setTimeout(() => {
@@ -253,7 +293,9 @@ export function useAdminDashboard() {
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [userId, refreshData, refreshing]);
 

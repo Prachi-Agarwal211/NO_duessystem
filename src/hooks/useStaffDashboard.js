@@ -18,6 +18,10 @@ export function useStaffDashboard() {
 
   // Store current search term for refresh
   const currentSearchRef = useRef('');
+  
+  // Use refs to store latest functions and avoid stale closures
+  const fetchDashboardDataRef = useRef(null);
+  const fetchStatsRef = useRef(null);
 
   // Fetch user data
   useEffect(() => {
@@ -162,11 +166,20 @@ export function useStaffDashboard() {
     }
   }, []);
 
-  // Manual refresh function - refresh both data and stats
+  // Store latest function in ref
+  fetchDashboardDataRef.current = fetchDashboardData;
+  fetchStatsRef.current = fetchStats;
+
+  // Manual refresh function - stable reference using refs to avoid stale closures
   const refreshData = useCallback(() => {
-    fetchDashboardData(currentSearchRef.current, true);
-    fetchStats();
-  }, [fetchDashboardData, fetchStats]);
+    // Use refs to get latest functions
+    if (fetchDashboardDataRef.current) {
+      fetchDashboardDataRef.current(currentSearchRef.current, true);
+    }
+    if (fetchStatsRef.current) {
+      fetchStatsRef.current();
+    }
+  }, []); // Empty deps - stable function using refs
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and status updates for instant dashboard updates
@@ -175,6 +188,7 @@ export function useStaffDashboard() {
 
     let isSubscribed = false;
     let refreshTimeout = null;
+    let channel = null;
     const DEBOUNCE_DELAY = 2000; // Wait 2 seconds before refreshing to batch updates
 
     // Debounced refresh to prevent continuous refreshes
@@ -190,9 +204,21 @@ export function useStaffDashboard() {
       }, DEBOUNCE_DELAY);
     };
 
-    // Set up real-time subscription for new form submissions and status changes
-    const channel = supabase
-      .channel('staff-dashboard-realtime')
+    // Setup realtime subscription with proper async initialization
+    const setupRealtime = async () => {
+      try {
+        // Verify we have an active session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.warn('❌ No active session - cannot setup realtime');
+          return;
+        }
+
+        console.log('🔌 Setting up staff realtime subscription for', user.department_name);
+
+        // Set up real-time subscription for new form submissions and status changes
+        channel = supabase
+          .channel('staff-dashboard-realtime')
       .on(
         'postgres_changes',
         {
@@ -246,10 +272,13 @@ export function useStaffDashboard() {
         }
       )
       .subscribe((status) => {
+        console.log('📡 Staff subscription status:', status);
+        
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Real-time updates active for', user.department_name);
+          console.log('✅ Staff realtime updates active for', user.department_name);
           isSubscribed = true;
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('❌ Staff realtime subscription error:', status);
           console.warn('⚠️ Real-time connection issue. Please use manual refresh.');
           isSubscribed = false;
         } else if (status === 'CLOSED') {
@@ -259,13 +288,22 @@ export function useStaffDashboard() {
           }
         }
       });
+      } catch (error) {
+        console.error('❌ Error setting up staff realtime:', error);
+      }
+    };
+
+    // Initialize realtime subscription
+    setupRealtime();
 
     return () => {
       if (refreshTimeout) {
         clearTimeout(refreshTimeout);
       }
-      supabase.removeChannel(channel);
-      console.log('🧹 Cleaned up real-time subscription');
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      console.log('🧹 Cleaned up staff real-time subscription');
     };
   }, [userId, user?.department_name, refreshData, refreshing]);
 
