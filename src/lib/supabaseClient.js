@@ -34,6 +34,12 @@ const createSafeClient = () => {
           getPublicUrl: () => ({ data: { publicUrl: '' } }),
         }),
       },
+      // ✅ FIX: Add channel methods to prevent crashes when real-time is used
+      channel: () => ({
+        on: () => ({ on: function() { return this; }, subscribe: (cb) => { cb('CHANNEL_ERROR'); return { unsubscribe: () => {} }; } }),
+        subscribe: (cb) => { cb('CHANNEL_ERROR'); return { unsubscribe: () => {} }; },
+      }),
+      removeChannel: () => Promise.resolve(),
     };
   }
   

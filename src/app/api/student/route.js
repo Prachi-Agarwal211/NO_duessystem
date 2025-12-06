@@ -327,18 +327,43 @@ export async function POST(request) {
 
     console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
 
-    // ==================== SEND EMAIL NOTIFICATIONS ====================
+    // ==================== CREATE DEPARTMENT STATUS RECORDS ====================
+    // 🔴 CRITICAL: Create no_dues_status records for ALL active departments
+    // This is what allows staff to see and act on the form!
     
-    // Fetch all department emails
+    // Fetch all active departments
     const { data: departments, error: deptError } = await supabaseAdmin
       .from('departments')
-      .select('name, email, display_name')
+      .select('name, email, display_name, is_active')
+      .eq('is_active', true)
       .order('display_order');
 
     if (deptError) {
       console.error('Failed to fetch departments:', deptError);
-      // Continue even if email fails - form is already created
     } else if (departments && departments.length > 0) {
+      // Create status records for each department
+      const statusRecords = departments.map(dept => ({
+        form_id: form.id,
+        department_name: dept.name,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }));
+
+      const { error: statusInsertError } = await supabaseAdmin
+        .from('no_dues_status')
+        .insert(statusRecords);
+
+      if (statusInsertError) {
+        console.error('❌ Failed to create department status records:', statusInsertError);
+        // Don't fail the whole submission, but log the error
+      } else {
+        console.log(`✅ Created ${departments.length} department status records for form ${form.id}`);
+      }
+    }
+
+    // ==================== SEND EMAIL NOTIFICATIONS ====================
+    // Reuse the departments list we already fetched above
+    if (departments && departments.length > 0) {
       try {
         const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
         

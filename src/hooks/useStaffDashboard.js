@@ -99,9 +99,8 @@ export function useStaffDashboard() {
     // Store search term for real-time refresh
     currentSearchRef.current = searchTerm;
     
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
+    // ✅ FIX: Only set loading state, let refreshData handle refreshing state
+    if (!isRefresh) {
       setLoading(true);
     }
     setError('');
@@ -158,7 +157,7 @@ export function useStaffDashboard() {
       setError(error.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      // ✅ FIX: Don't reset refreshing here - let refreshData handle it
     }
   }, []);
 
@@ -277,7 +276,8 @@ export function useStaffDashboard() {
       supabase.removeChannel(channel);
       console.log('🧹 Cleaned up real-time subscription');
     };
-  }, [userId, user?.department_name, refreshData, refreshing]);
+  // ✅ FIX: Removed 'refreshing' from deps to prevent subscription recreation
+  }, [userId, user?.department_name, refreshData]);
 
   return {
     user,

@@ -61,9 +61,8 @@ export function useAdminDashboard() {
       currentFiltersRef.current = filters;
     }
     
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
+    // FIX: Only set loading state, let refreshData handle refreshing state
+    if (!isRefresh) {
       setLoading(true);
     }
     setError('');
@@ -97,13 +96,13 @@ export function useAdminDashboard() {
       setTotalPages(result.pagination?.totalPages || 1);
       setLastUpdate(new Date());
       
-      console.log('📊 Admin dashboard data refreshed:', result.applications?.length, 'applications');
+      console.log(' Admin dashboard data refreshed:', result.applications?.length, 'applications');
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError(error.message);
     } finally {
       setLoading(false);
-      setRefreshing(false);
+      // FIX: Don't reset refreshing here - let refreshData handle it
     }
   }, [currentPage]);
 
@@ -261,7 +260,8 @@ export function useAdminDashboard() {
       }
       supabase.removeChannel(channel);
     };
-  }, [userId, refreshData, refreshing]);
+  // ✅ FIX: Removed 'refreshing' from deps to prevent subscription recreation
+  }, [userId, refreshData]);
 
   return {
     user,
