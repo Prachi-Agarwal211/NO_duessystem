@@ -106,14 +106,8 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentPage, statusFilter, departmentFilter, searchTerm]);
 
-  // ✅ FIX: Auto-refresh stats when data changes (using lastUpdate, not just length)
-  // This ensures charts/stats update even when a status changes but count stays same
-  useEffect(() => {
-    if (lastUpdate && !loading && !refreshing && userId) {
-      fetchStats();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastUpdate]);
+  // Note: Stats are now fetched together with dashboard data via refreshData()
+  // The lastUpdate prop is passed to charts for reactivity - no separate effect needed
 
   const statusCounts = stats?.overallStats?.[0] || {};
 

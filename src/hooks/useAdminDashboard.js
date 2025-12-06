@@ -134,6 +134,7 @@ export function useAdminDashboard() {
 
   // Manual refresh function - properly refresh both dashboard and stats
   // ✅ FIX: Now async with Promise.all to prevent race conditions
+  // ✅ FIX: Removed fetchDashboardData from dependencies to prevent circular dependency
   const refreshData = useCallback(async () => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
     setRefreshing(true);
@@ -148,7 +149,8 @@ export function useAdminDashboard() {
     } finally {
       setRefreshing(false);
     }
-  }, [fetchDashboardData, fetchStats, currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   // ✅ FIX Problem 21: Keep ref updated to avoid subscription recreation
   useEffect(() => {
@@ -177,7 +179,22 @@ export function useAdminDashboard() {
     let pollingInterval = null;
     let retryCount = 0;
     let channel = null;
+    let refreshTimeout = null;
     const MAX_RETRIES = 3;
+    const DEBOUNCE_DELAY = 500;
+
+    // Debounced refresh to prevent excessive API calls
+    const debouncedRefresh = () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+      refreshTimeout = setTimeout(() => {
+        if (refreshDataRef.current) {
+          console.log('🔄 Debounced refresh triggered');
+          refreshDataRef.current();
+        }
+      }, DEBOUNCE_DELAY);
+    };
 
     // ✅ FIX: Async setup to ensure we have current session
     const setupRealtime = async () => {
@@ -217,7 +234,7 @@ export function useAdminDashboard() {
               }));
             }
             // Refresh data when new form is submitted
-            if (refreshDataRef.current) refreshDataRef.current();
+            debouncedRefresh();
           }
         )
         .on(
@@ -242,8 +259,8 @@ export function useAdminDashboard() {
                 return prev;
               });
             }
-            // Refresh stats separately
-            if (refreshDataRef.current) refreshDataRef.current();
+            // Refresh data with debounce
+            debouncedRefresh();
           }
         )
         .on(
@@ -255,11 +272,11 @@ export function useAdminDashboard() {
           },
           (payload) => {
             console.log('📋 Department status changed:', payload.eventType);
-            if (refreshDataRef.current) refreshDataRef.current();
+            debouncedRefresh();
           }
         )
         .subscribe((status, error) => {
-          console.log('📡 Subscription status:', status);
+          console.log(' Subscription status:', status);
           
           if (error) {
             console.error(' Subscription error:', error);
@@ -273,12 +290,9 @@ export function useAdminDashboard() {
               clearInterval(pollingInterval);
               pollingInterval = null;
             }
-            // FIX 1: Refresh data AFTER subscription is active
-            // This catches any events that occurred during page load
-            console.log(' Syncing data after subscription active...');
-            if (refreshDataRef.current) {
-              refreshDataRef.current();
-            }
+            // ✅ FIX: No initial sync needed - page load at line 107 handles first fetch
+            // Real-time will catch any changes that occur after subscription
+            console.log('✅ Real-time subscription ready - monitoring for changes');
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(' Real-time connection failed:', status);
             retryCount++;
@@ -293,7 +307,7 @@ export function useAdminDashboard() {
             }
           } else if (status === 'CLOSED') {
             if (isSubscribed) {
-              console.log('🔌 Real-time connection closed');
+              console.log(' Real-time connection closed');
               isSubscribed = false;
             }
           }
@@ -319,6 +333,9 @@ export function useAdminDashboard() {
 
     return () => {
       clearTimeout(fallbackTimeout);
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }

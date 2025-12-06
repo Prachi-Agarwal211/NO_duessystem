@@ -96,7 +96,8 @@ export function useStaffDashboard() {
     if (userId) {
       fetchStats();
     }
-  }, [userId, fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // Fixed: removed fetchStats to prevent unnecessary recreations
 
   const fetchDashboardData = useCallback(async (searchTerm = '', isRefresh = false) => {
     // Store search term for real-time refresh
@@ -166,6 +167,7 @@ export function useStaffDashboard() {
 
   // Manual refresh function - refresh both data and stats
   // ✅ FIX: Now async with Promise.all to prevent race conditions
+  // ✅ FIX: Removed fetchDashboardData and fetchStats from dependencies to prevent circular dependency
   const refreshData = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -178,7 +180,8 @@ export function useStaffDashboard() {
     } finally {
       setRefreshing(false);
     }
-  }, [fetchDashboardData, fetchStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Fixed: removed fetchDashboardData, fetchStats
 
   // ✅ FIX Problem 21: Keep ref updated to avoid subscription recreation
   useEffect(() => {
@@ -296,14 +299,11 @@ export function useStaffDashboard() {
           }
           
           if (status === 'SUBSCRIBED') {
-            console.log(' Real-time updates active for', user.department_name);
+            console.log('✅ Real-time updates active for', user.department_name);
             isSubscribed = true;
-            // FIX 1: Refresh data AFTER subscription is active
-            // This catches any events that occurred during page load
-            console.log(' Syncing data after subscription active...');
-            if (refreshDataRef.current) {
-              refreshDataRef.current();
-            }
+            // ✅ FIX: No initial sync needed - page load handles first fetch
+            // Real-time will catch any changes that occur after subscription
+            console.log('✅ Real-time subscription ready - monitoring for changes');
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             console.error(' Real-time connection failed:', status);
             isSubscribed = false;

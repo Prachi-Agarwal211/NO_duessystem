@@ -107,7 +107,8 @@ export async function GET(request) {
         }
       };
     } else if (profile.role === 'department') {
-      // Department staff gets applications pending for their department
+      // Department staff gets ALL applications for their department (not just pending)
+      // This allows them to see their approved/rejected history
       let query = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -133,8 +134,8 @@ export async function GET(request) {
             branch_id
           )
         `)
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .eq('department_name', profile.department_name);
+        // ✅ REMOVED: .eq('status', 'pending') - now shows all statuses
 
       // Apply scope filtering based on staff's access configuration
       // Filter by school_ids (if configured)
@@ -200,8 +201,8 @@ export async function GET(request) {
       const { count: totalCount, error: countError } = await supabaseAdmin
         .from('no_dues_status')
         .select('*', { count: 'exact', head: true })
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .eq('department_name', profile.department_name);
+        // ✅ REMOVED: .eq('status', 'pending') - count all statuses
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });
