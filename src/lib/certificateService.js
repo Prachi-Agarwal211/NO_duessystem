@@ -80,7 +80,7 @@ export const generateCertificate = async (certificateData) => {
     drawCorner(18, pageHeight - 18, 270);
 
     // --- 2. Logo & Header ---
-    let yCursor = 30;
+    // Using absolute positioning for better control
     
     try {
         const logoPath = path.join(process.cwd(), 'public', 'assets', 'logo light.png');
@@ -88,147 +88,131 @@ export const generateCertificate = async (certificateData) => {
             const logoBase64 = fs.readFileSync(logoPath).toString('base64');
             const logoData = `data:image/png;base64,${logoBase64}`;
             
-            // Adjust logo size and position - Larger logo centered
-            // Width 90, Height 36 roughly (keeping 2.5:1 ratio approx)
+            // Logo centered at top
+            // Actual dimensions are 1280x310 (Ratio ~4.13)
             const logoWidth = 90;
-            const logoHeight = 36;
-            pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 20, logoWidth, logoHeight); 
-            yCursor = 62; // Move cursor down after logo
+            const logoHeight = 22; // 90 / 4.13 approx
+            pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight); 
         }
     } catch (e) {
         console.error("Error loading logo:", e);
     }
 
     // --- 3. Certificate Title ---
-    yCursor += 10;
+    const titleY = 60; // Adjusted up slightly since logo is shorter
+    
     // Decorative lines around title
     pdf.setDrawColor(...GOLD_ACCENT);
     pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 2 - 60, yCursor - 6, pageWidth / 2 + 60, yCursor - 6);
+    pdf.line(pageWidth / 2 - 65, titleY - 8, pageWidth / 2 + 65, titleY - 8);
     
     pdf.setFontSize(32);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CERTIFICATE', pageWidth / 2, yCursor + 5, { align: 'center' });
+    pdf.text('NO DUES CERTIFICATE', pageWidth / 2, titleY + 2, { align: 'center' });
 
-    pdf.line(pageWidth / 2 - 60, yCursor + 10, pageWidth / 2 + 60, yCursor + 10);
+    pdf.line(pageWidth / 2 - 65, titleY + 6, pageWidth / 2 + 65, titleY + 6);
 
     // --- 4. Main Content ---
-    yCursor += 25;
-    
-    pdf.setFontSize(14);
+    // Intro
+    pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(60, 60, 60);
-    pdf.text('This is to certify that', pageWidth / 2, yCursor, { align: 'center' });
-    
-    yCursor += 15;
+    pdf.setTextColor(80, 80, 80);
+    pdf.text('This is to certify that', pageWidth / 2, 82, { align: 'center' });
     
     // Student Name
-    pdf.setFontSize(26);
-    pdf.setFont('times', 'bolditalic'); // Using Times for name looks fancy
+    pdf.setFontSize(32);
+    pdf.setFont('times', 'bolditalic');
     pdf.setTextColor(0, 0, 0);
-    pdf.text(certificateData.studentName, pageWidth / 2, yCursor, { align: 'center' });
+    pdf.text(certificateData.studentName, pageWidth / 2, 98, { align: 'center' });
     
     // Underline for name
     pdf.setLineWidth(0.5);
     pdf.setDrawColor(0, 0, 0);
-    pdf.line(pageWidth / 2 - 50, yCursor + 2, pageWidth / 2 + 50, yCursor + 2);
-    
-    yCursor += 12;
+    pdf.line(pageWidth / 2 - 55, 100, pageWidth / 2 + 55, 100);
     
     // Registration No
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(40, 40, 40);
-    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, yCursor, { align: 'center' });
-    
-    yCursor += 15;
+    pdf.setTextColor(60, 60, 60);
+    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 112, { align: 'center' });
     
     // Body Text
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(60, 60, 60);
-    const textPart1 = 'has successfully cleared all dues from all departments';
-    const textPart2 = 'of JECRC University and is hereby granted';
+    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 125, { align: 'center' });
+    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 132, { align: 'center' });
     
-    pdf.text(textPart1, pageWidth / 2, yCursor, { align: 'center' });
-    pdf.text(textPart2, pageWidth / 2, yCursor + 8, { align: 'center' });
-    
-    yCursor += 18;
-    
-    // Clearance Status
-    pdf.setFontSize(16);
+    // Clearance Status (Stamp style)
+    pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CLEARANCE', pageWidth / 2, yCursor, { align: 'center' });
+    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 145, { align: 'center' });
     
-    // --- 5. Student Details Table-ish ---
-    yCursor += 10;
+    // --- 5. Academic Details Box ---
+    const boxY = 152;
+    const boxHeight = 24;
+    const boxWidth = 160;
     
     // Background for details
-    pdf.setFillColor(250, 250, 250);
-    pdf.setDrawColor(220, 220, 220);
-    pdf.rect(pageWidth / 2 - 70, yCursor, 140, 25, 'FD');
+    pdf.setFillColor(252, 252, 252); // Very light gray
+    pdf.setDrawColor(230, 230, 230);
+    pdf.rect(pageWidth / 2 - (boxWidth / 2), boxY, boxWidth, boxHeight, 'FD');
     
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
     
-    // Organize details in a grid or lines
-    const rowHeight = 7;
-    let detailY = yCursor + 8;
-    
-    // Course & Branch line
+    // Details Text
     const courseText = `Course: ${certificateData.course || 'N/A'}`;
     const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
-    pdf.text(`${courseText}   |   ${branchText}`, pageWidth / 2, detailY, { align: 'center' });
-    
-    detailY += rowHeight;
     const sessionText = `Session: ${certificateData.sessionFrom || 'N/A'} - ${certificateData.sessionTo || 'N/A'}`;
-    pdf.text(sessionText, pageWidth / 2, detailY, { align: 'center' });
     
-    // --- 6. Declaration & Date ---
-    yCursor = pageHeight - 55;
+    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, boxY + 10, { align: 'center' });
+    pdf.text(sessionText, pageWidth / 2, boxY + 18, { align: 'center' });
     
-    pdf.setFontSize(10);
+    // --- 6. Declaration ---
+    const declY = 185;
+    pdf.setFontSize(9);
     pdf.setFont('helvetica', 'italic');
     pdf.setTextColor(100, 100, 100);
-    pdf.text('The student is hereby confirmed to have no outstanding financial or material', pageWidth / 2, yCursor, { align: 'center' });
-    pdf.text('obligations to any department of the university.', pageWidth / 2, yCursor + 5, { align: 'center' });
+    pdf.text('The student is hereby confirmed to have no outstanding financial or material', pageWidth / 2, declY, { align: 'center' });
+    pdf.text('obligations to any department of the university.', pageWidth / 2, declY + 4, { align: 'center' });
     
-    // Date
+    // --- 7. Date & Signature ---
+    const footerY = 198;
+    
+    // Date (Left)
     const issueDate = new Date().toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
     pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(`Date of Issue: ${issueDate}`, pageWidth / 2, yCursor + 15, { align: 'center' });
+    pdf.text(`Date of Issue: ${issueDate}`, 45, footerY, { align: 'left' });
     
-    // --- 7. Signatures ---
-    const sigY = pageHeight - 35;
-    
-    // Registrar Signature (Right Aligned)
+    // Registrar Signature (Right)
     pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(0.5);
-    pdf.line(pageWidth - 95, sigY, pageWidth - 45, sigY);
+    pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6); // Line above text
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 0, 0);
-    pdf.text('Registrar', pageWidth - 70, sigY + 5, { align: 'center' });
+    pdf.text('Registrar', pageWidth - 60, footerY, { align: 'center' });
     
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(100, 100, 100);
-    pdf.text('JECRC University', pageWidth - 70, sigY + 10, { align: 'center' });
+    pdf.text('JECRC University', pageWidth - 60, footerY + 5, { align: 'center' });
 
     // --- 8. Footer (ID) ---
-    pdf.setFontSize(8);
-    pdf.setTextColor(150, 150, 150);
+    pdf.setFontSize(7);
+    pdf.setTextColor(180, 180, 180);
     const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
-    pdf.text(certId, pageWidth / 2, pageHeight - 8, { align: 'center' });
+    pdf.text(certId, pageWidth / 2, pageHeight - 6, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
