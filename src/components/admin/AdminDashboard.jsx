@@ -93,9 +93,10 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('new-submission', handleNewSubmission);
   }, [isDark]);
 
-  // Fetch data when filters change
+  // Initial data load when userId is available
   useEffect(() => {
     if (userId) {
+      console.log('📥 Initial admin dashboard data load');
       fetchDashboardData({
         status: statusFilter,
         search: searchTerm,
@@ -104,7 +105,20 @@ export default function AdminDashboard() {
       fetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, currentPage, statusFilter, departmentFilter, searchTerm]);
+  }, [userId]);
+
+  // Fetch data when filters or pagination change
+  useEffect(() => {
+    if (userId) {
+      console.log('🔍 Filters changed, fetching data');
+      fetchDashboardData({
+        status: statusFilter,
+        search: searchTerm,
+        department: departmentFilter
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, statusFilter, departmentFilter, searchTerm]);
 
   const statusCounts = stats?.overallStats?.[0] || {};
 

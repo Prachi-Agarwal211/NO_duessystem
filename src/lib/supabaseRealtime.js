@@ -48,6 +48,11 @@ class SupabaseRealtimeService {
 
   /**
    * Initialize the global realtime subscription
+   * PUBLIC MODE: Listens to all events regardless of auth context
+   * This is safe because:
+   * - Dashboards are protected by authentication middleware
+   * - Only authenticated users can access dashboards
+   * - RLS policies still control data access via API calls
    */
   async initialize() {
     if (this.isInitializing || this.channel) {
@@ -57,20 +62,19 @@ class SupabaseRealtimeService {
     this.isInitializing = true;
 
     try {
-      // Verify we have an active session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.warn('❌ No active session - cannot setup realtime');
-        this.isInitializing = false;
-        return;
-      }
+      console.log('🔌 Initializing PUBLIC global realtime subscription...');
+      console.log('📡 This listens to ALL database events for instant updates');
+      console.log('🔓 Public mode: Events from anon AND authenticated users');
 
-      console.log('🔌 Initializing GLOBAL realtime subscription...');
-
-      // Create a single channel for ALL realtime events
+      // Create a single PUBLIC channel for ALL realtime events
+      // This ensures events from students (anon) are visible to staff/admin (authenticated)
       this.channel = supabase
-        .channel('global-no-dues-realtime')
+        .channel('global-no-dues-realtime', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: '' },
+          }
+        })
         
         // ==================== EVENT 1: NEW FORM SUBMISSION ====================
         .on(

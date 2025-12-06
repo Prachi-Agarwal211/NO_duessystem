@@ -147,9 +147,13 @@ export function useAdminDashboard() {
   const refreshData = useCallback(() => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
 
+    // Force refresh by setting refreshing state
+    setRefreshing(true);
+
     // Use refs to get latest functions
     if (fetchDashboardDataRef.current) {
       // Always refresh with current filters and current page
+      // Pass true for isRefresh to show refreshing indicator
       fetchDashboardDataRef.current(currentFiltersRef.current, true, currentPage);
     }
 
@@ -157,6 +161,9 @@ export function useAdminDashboard() {
     if (fetchStatsRef.current) {
       fetchStatsRef.current();
     }
+
+    // Update last update timestamp to trigger re-render
+    setLastUpdate(new Date());
   }, [currentPage]); // Add currentPage as dependency to ensure latest page is used
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
@@ -169,26 +176,17 @@ export function useAdminDashboard() {
     let retryTimeout;
 
     const setupRealtime = async () => {
-      console.log('🔌 Admin dashboard setting up realtime');
+      console.log('🔌 Admin dashboard setting up PUBLIC realtime');
+      console.log('📡 Subscribing to global event stream (no auth required)');
 
-      // ✅ ENSURE SESSION IS READY FIRST
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (!session || error) {
-        console.warn('⚠️ No session yet, will retry in 1 second...');
-        // Retry after 1 second
-        retryTimeout = setTimeout(setupRealtime, 1000);
-        return;
-      }
-
-      console.log('✅ Session confirmed, subscribing to realtime');
-
-      // Subscribe to global realtime service
+      // Subscribe to PUBLIC global realtime service
+      // No session check needed - channel is public
+      // Dashboard access is already protected by middleware
       unsubscribeRealtime = await subscribeToRealtime();
 
       // Subscribe to specific events via RealtimeManager
       unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
-        console.log('📊 Admin dashboard received update:', {
+        console.log('📊 Admin dashboard received real-time update:', {
           affectedForms: analysis.formIds.length,
           eventTypes: analysis.eventTypes,
           newSubmission: analysis.hasNewSubmission,
@@ -196,9 +194,12 @@ export function useAdminDashboard() {
           departmentAction: analysis.hasDepartmentAction
         });
 
+        console.log('🔄 Triggering admin dashboard refresh from real-time event...');
+
         // Add a small delay to ensure proper digestion of previous updates
         setTimeout(() => {
           // Refresh data - RealtimeManager handles deduplication
+          console.log('🚀 Executing refreshData() for admin dashboard');
           refreshData();
         }, 100);
       });

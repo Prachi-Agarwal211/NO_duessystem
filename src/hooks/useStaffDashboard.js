@@ -195,21 +195,12 @@ export function useStaffDashboard() {
     let retryTimeout;
 
     const setupRealtime = async () => {
-      console.log('🔌 Staff dashboard setting up realtime for', user.department_name);
+      console.log('🔌 Staff dashboard setting up PUBLIC realtime for', user.department_name);
+      console.log('📡 Subscribing to global event stream (no auth required)');
 
-      // ✅ ENSURE SESSION IS READY FIRST
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (!session || error) {
-        console.warn('⚠️ No session yet, will retry in 1 second...');
-        // Retry after 1 second
-        retryTimeout = setTimeout(setupRealtime, 1000);
-        return;
-      }
-
-      console.log('✅ Session confirmed, subscribing to realtime');
-
-      // Subscribe to global realtime service
+      // Subscribe to PUBLIC global realtime service
+      // No session check needed - channel is public
+      // Dashboard access is already protected by middleware
       unsubscribeRealtime = await subscribeToRealtime();
 
       // Subscribe to specific events via RealtimeManager
@@ -228,6 +219,7 @@ export function useStaffDashboard() {
         // Add a small delay to ensure proper digestion of previous updates
         setTimeout(() => {
           if (ourDepartmentInvolved || analysis.formIds.length > 0) {
+            console.log('🔄 Triggering staff dashboard refresh from department action...');
             // Refresh data - RealtimeManager handles deduplication
             refreshData();
           }
@@ -244,6 +236,7 @@ export function useStaffDashboard() {
             affectedForms: analysis.formIds.length
           });
 
+          console.log('🚀 Executing refreshData() for staff dashboard');
           refreshData();
         }
       });
