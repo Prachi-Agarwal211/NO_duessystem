@@ -106,14 +106,14 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentPage, statusFilter, departmentFilter, searchTerm]);
 
-  // ✅ FIX: Auto-refresh stats when applications data changes
-  // This ensures charts/stats are always in sync with the applications table
+  // ✅ FIX: Auto-refresh stats when data changes (using lastUpdate, not just length)
+  // This ensures charts/stats update even when a status changes but count stays same
   useEffect(() => {
-    if (applications && applications.length > 0 && !loading && !refreshing) {
+    if (lastUpdate && !loading && !refreshing && userId) {
       fetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applications.length]);
+  }, [lastUpdate]);
 
   const statusCounts = stats?.overallStats?.[0] || {};
 
