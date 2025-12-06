@@ -1,38 +1,27 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const revalidate = 0; // Disable all caching
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
-    const userId = searchParams.get('userId');
 
     if (!query) {
       return NextResponse.json({ error: 'Search query is required' }, { status: 400 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    // Authenticate and verify role
+    const auth = await authenticateAndVerify(request, ['department', 'admin']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    // Verify user has department or admin role (Phase 1: only 2 roles)
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, department_name')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { profile } = auth;
 
     // Search for students based on query
     // If user is admin, search all students

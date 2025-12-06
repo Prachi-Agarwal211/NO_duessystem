@@ -1,38 +1,24 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0; // Disable all caching
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
 
 export async function GET(request, { params }) {
   try {
     const { id } = params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
 
-    console.log('🔍 Student Detail API Called - Form ID:', id, 'User ID:', userId);
+    console.log('🔍 Student Detail API Called - Form ID:', id);
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    // Authenticate and verify role
+    const auth = await authenticateAndVerify(request, ['department', 'admin']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    // Get user profile to check role and department using admin client
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, department_name')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
-    }
-
-    // Verify user has department or admin role (Phase 1: only 2 roles)
-    if (profile.role !== 'department' && profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { profile } = auth;
 
     // Get the student's no dues form
     let formQuery = supabaseAdmin

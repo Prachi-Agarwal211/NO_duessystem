@@ -75,7 +75,21 @@ export default function RequestTrendChart({ userId, lastUpdate }) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/admin/trends?userId=${userId}&months=12`);
+        // ✅ FIX: Import supabase to get session for Authorization header
+        const { supabase } = await import('@/lib/supabaseClient');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+          throw new Error('Not authenticated');
+        }
+
+        const response = await fetch(`/api/admin/trends?userId=${userId}&months=12&_t=${Date.now()}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         const result = await response.json();
 
         if (!response.ok || !result.success) {

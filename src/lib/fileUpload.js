@@ -1,13 +1,10 @@
 // Secure file upload validation and processing service
 // This resolves the security issues identified in the findings
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './supabaseAdmin';
+import { createLogger } from './logger';
 
-// Configure Supabase client for file operations
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('FileUpload');
 
 /**
  * Validates file before upload
@@ -121,7 +118,9 @@ export const uploadToSupabase = async (file, options = {}) => {
         bucket = 'no-dues-files'
     } = options;
 
+    const supabase = getSupabaseAdmin();
     try {
+        logger.info('Uploading file', { userId, formId, bucket });
         // Validate inputs
         if (!file) {
             throw new Error('No file provided for upload');
@@ -168,7 +167,7 @@ export const uploadToSupabase = async (file, options = {}) => {
         };
 
     } catch (error) {
-        console.error('File upload error:', error);
+        logger.error('File upload error', error);
         throw new Error(`File upload failed: ${error.message}`);
     }
 };
@@ -180,7 +179,9 @@ export const uploadToSupabase = async (file, options = {}) => {
  * @returns {Promise<boolean>} - Success status
  */
 export const deleteFromSupabase = async (filePath, bucket = 'no-dues-files') => {
+    const supabase = getSupabaseAdmin();
     try {
+        logger.info('Deleting file', { filePath, bucket });
         const { error } = await supabase.storage
             .from(bucket)
             .remove([filePath]);
@@ -191,7 +192,7 @@ export const deleteFromSupabase = async (filePath, bucket = 'no-dues-files') => 
 
         return true;
     } catch (error) {
-        console.error('File deletion error:', error);
+        logger.error('File deletion error', error);
         throw new Error(`File deletion failed: ${error.message}`);
     }
 };

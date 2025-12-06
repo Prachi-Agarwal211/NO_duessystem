@@ -1,19 +1,15 @@
-import { createServerClient } from "@supabase/ssr"; // <-- USING THE FUNCTION SUGGESTED BY THE ERROR
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { createLogger } from '@/lib/logger';
 
-// This is the server-side admin client for bypassing RLS
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('AdminAPI');
 
 export async function GET() {
+  const supabaseAdmin = getSupabaseAdmin();
   const cookieStore = cookies();
 
-  // This is the correct, verbose way to create a server client with your library version
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -72,7 +68,7 @@ export async function GET() {
     return NextResponse.json({ applications });
 
   } catch (err) {
-    console.error('Error fetching admin data:', err);
+    logger.error('Error fetching admin data', err);
     return NextResponse.json({ error: err.message || "Failed to fetch dashboard data." }, { status: 500 });
   }
 }

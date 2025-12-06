@@ -2,22 +2,21 @@
 // Using jsPDF for PDF generation with JECRC branding
 
 import { jsPDF } from 'jspdf';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './supabaseAdmin';
+import { createLogger } from './logger';
 import fs from 'fs';
 import path from 'path';
 
-// Initialize Supabase Admin Client for file storage
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('CertificateService');
 
 // JECRC Red color in RGB
 const JECRC_RED = [196, 30, 58]; // #C41E3A
 const GOLD_ACCENT = [218, 165, 32]; // #DAA520
 
 export const generateCertificate = async (certificateData) => {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
+    logger.info('Generating certificate', { formId: certificateData.formId });
     // Create a new PDF document
     const pdf = new jsPDF({
       orientation: 'landscape',
@@ -95,7 +94,7 @@ export const generateCertificate = async (certificateData) => {
             pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight); 
         }
     } catch (e) {
-        console.error("Error loading logo:", e);
+        logger.error("Error loading logo", e);
     }
 
     // --- 3. Certificate Title ---
@@ -229,7 +228,7 @@ export const generateCertificate = async (certificateData) => {
       });
     
     if (error) {
-      console.error('Storage upload error:', error);
+      logger.error('Storage upload error', error);
       throw new Error('Failed to save certificate to storage');
     }
     
@@ -245,13 +244,14 @@ export const generateCertificate = async (certificateData) => {
       mimeType: 'application/pdf'
     };
   } catch (error) {
-    console.error('Error generating certificate:', error);
+    logger.error('Error generating certificate', error);
     throw new Error('Failed to generate certificate');
   }
 };
 
 // Function to save certificate to storage
 export const saveCertificate = async (certificateBuffer, fileName, formId) => {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     // Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage
@@ -272,14 +272,16 @@ export const saveCertificate = async (certificateBuffer, fileName, formId) => {
     
     return publicUrl;
   } catch (error) {
-    console.error('Error saving certificate:', error);
+    logger.error('Error saving certificate', error);
     throw new Error('Failed to save certificate');
   }
 };
 
 // Function to finalize certificate generation for a form
 export const finalizeCertificate = async (formId) => {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
+    logger.info('Finalizing certificate', { formId });
     // Get form data
     const { data: formData, error } = await supabaseAdmin
       .from('no_dues_forms')
@@ -323,7 +325,7 @@ export const finalizeCertificate = async (formId) => {
       certificateUrl: certificateResult.certificateUrl
     };
   } catch (error) {
-    console.error('Error finalizing certificate:', error);
+    logger.error('Error finalizing certificate', error);
     throw new Error('Failed to finalize certificate');
   }
 };

@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { createLogger } from '@/lib/logger';
 import { finalizeCertificate } from '@/lib/certificateService';
 
-// Create Supabase admin client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('CertificateGenerateAPI');
 
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { formId } = await request.json();
 
@@ -26,7 +24,7 @@ export async function POST(request) {
       .eq('form_id', formId);
 
     if (statusError) {
-      console.error('Error fetching statuses:', statusError);
+      logger.error('Error fetching statuses', statusError);
       return NextResponse.json(
         { error: 'Failed to fetch approval status' },
         { status: 500 }
@@ -72,7 +70,7 @@ export async function POST(request) {
       .single();
 
     if (formError) {
-      console.error('Error fetching form:', formError);
+      logger.error('Error fetching form', formError);
       return NextResponse.json(
         { error: 'Failed to fetch form data' },
         { status: 500 }
@@ -105,7 +103,7 @@ export async function POST(request) {
     );
 
   } catch (error) {
-    console.error('Certificate generation error:', error);
+    logger.error('Certificate generation error', error);
     return NextResponse.json(
       {
         error: 'Failed to generate certificate',
@@ -118,6 +116,7 @@ export async function POST(request) {
 
 // GET endpoint to check if certificate can be generated
 export async function GET(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { searchParams } = new URL(request.url);
     const formId = searchParams.get('formId');
@@ -179,7 +178,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error checking certificate status:', error);
+    logger.error('Error checking certificate status', error);
     return NextResponse.json(
       { error: 'Failed to check certificate status' },
       { status: 500 }

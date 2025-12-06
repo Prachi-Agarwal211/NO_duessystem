@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { createLogger } from '@/lib/logger';
 import { notifyAllDepartments } from '@/lib/emailService';
 
-// Create Supabase admin client for server-side operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('StudentAPI');
 
 /**
  * POST /api/student
@@ -18,8 +15,10 @@ const supabaseAdmin = createClient(
  * - Email notifications to all departments
  */
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const formData = await request.json();
+    logger.info('Student form submission received', { registration_no: formData.registration_no });
 
     // ==================== FETCH VALIDATION RULES FROM DATABASE ====================
     const { data: validationRules, error: rulesError } = await supabaseAdmin
@@ -28,7 +27,7 @@ export async function POST(request) {
       .eq('is_active', true);
 
     if (rulesError) {
-      console.error('Error fetching validation rules:', rulesError);
+      logger.error('Error fetching validation rules', rulesError);
     }
 
     // Create validation rules map with fallback to hardcoded patterns
@@ -41,7 +40,7 @@ export async function POST(request) {
             error: rule.error_message
           };
         } catch (err) {
-          console.error(`Invalid regex for ${rule.rule_name}:`, err);
+          logger.error(`Invalid regex for ${rule.rule_name}`, err);
         }
       });
     }
@@ -233,7 +232,7 @@ export async function POST(request) {
 
     // Ignore PGRST116 error (no rows found - which is what we want)
     if (duplicateError && duplicateError.code !== 'PGRST116') {
-      console.error('Duplicate check error:', duplicateError);
+      logger.error('Duplicate check error', duplicateError);
       return NextResponse.json(
         { success: false, error: 'Failed to check for duplicate registration' },
         { status: 500 }
@@ -297,7 +296,7 @@ export async function POST(request) {
       .single();
 
     if (insertError) {
-      console.error('Form insertion error:', insertError);
+      logger.error('Form insertion error', insertError);
       
       // Handle specific database errors
       if (insertError.code === '23505') {
@@ -325,7 +324,7 @@ export async function POST(request) {
       );
     }
 
-    console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
+    logger.info('Form created successfully', { formId: form.id, registration_no: form.registration_no });
 
     // ==================== CREATE DEPARTMENT STATUS RECORDS ====================
     // 🔴 CRITICAL: Create no_dues_status records for ALL active departments
@@ -339,7 +338,7 @@ export async function POST(request) {
       .order('display_order');
 
     if (deptError) {
-      console.error('Failed to fetch departments:', deptError);
+      logger.error('Failed to fetch departments', deptError);
     } else if (departments && departments.length > 0) {
       // Create status records for each department
       const statusRecords = departments.map(dept => ({
@@ -354,10 +353,10 @@ export async function POST(request) {
         .insert(statusRecords);
 
       if (statusInsertError) {
-        console.error('❌ Failed to create department status records:', statusInsertError);
+        logger.error('Failed to create department status records', statusInsertError);
         // Don't fail the whole submission, but log the error
       } else {
-        console.log(`✅ Created ${departments.length} department status records for form ${form.id}`);
+        logger.info('Created department status records', { count: departments.length, formId: form.id });
       }
     }
 
@@ -376,9 +375,9 @@ export async function POST(request) {
           dashboardUrl
         });
 
-        console.log(`📧 Email notifications sent to ${departments.length} departments`);
+        logger.info('Email notifications sent', { count: departments.length });
       } catch (emailError) {
-        console.error('Failed to send email notifications:', emailError);
+        logger.error('Failed to send email notifications', emailError);
         // Continue - form submission should not fail if emails fail
       }
     }
@@ -392,7 +391,7 @@ export async function POST(request) {
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Student API Error:', error);
+    logger.error('Student API Error', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -409,6 +408,7 @@ export async function POST(request) {
  * Check if a form exists for a registration number
  */
 export async function GET(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
@@ -447,7 +447,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Student GET API Error:', error);
+    logger.error('Student GET API Error', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

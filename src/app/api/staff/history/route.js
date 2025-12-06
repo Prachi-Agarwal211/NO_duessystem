@@ -1,13 +1,10 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const revalidate = 0; // Disable all caching
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
 
 export async function GET(request) {
   try {
@@ -17,36 +14,13 @@ export async function GET(request) {
     const statusFilter = searchParams.get('status'); // approved, rejected, or all
     const offset = (page - 1) * limit;
 
-    // Get authenticated user from Authorization header
-    const authHeader = request.headers.get('Authorization');
-    let userId;
-
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      
-      if (authError || !user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      userId = user.id;
-    } else {
-      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
+    // Authenticate and verify role
+    const auth = await authenticateAndVerify(request, ['department', 'admin']);
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    // Get user profile to verify role and department
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, department_name, full_name, school_id, school_ids, course_ids, branch_ids')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { profile, userId } = auth;
 
     // Build query for action history
     let query = supabaseAdmin

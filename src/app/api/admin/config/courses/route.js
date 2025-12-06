@@ -2,43 +2,15 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
+import { createLogger } from '@/lib/logger';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// Helper: Verify admin user
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return { error: 'No authorization header', status: 401 };
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !user) {
-    return { error: 'Invalid token', status: 401 };
-  }
-
-  // Use service role to bypass RLS and avoid infinite recursion
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !profile || profile.role !== 'admin') {
-    return { error: 'Unauthorized', status: 403 };
-  }
-
-  return { userId: user.id };
-}
+const logger = createLogger('AdminConfigCoursesAPI');
 
 // GET - Fetch courses (optionally filtered by school)
 export async function GET(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { searchParams } = new URL(request.url);
     const schoolId = searchParams.get('school_id');
@@ -69,7 +41,7 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('GET courses error:', error);
+    logger.error('GET courses error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -79,12 +51,13 @@ export async function GET(request) {
 
 // POST - Add new course (Admin only)
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -167,7 +140,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (error) {
-    console.error('POST courses error:', error);
+    logger.error('POST courses error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -177,12 +150,13 @@ export async function POST(request) {
 
 // PUT - Update course (Admin only)
 export async function PUT(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -225,7 +199,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('PUT courses error:', error);
+    logger.error('PUT courses error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -235,12 +209,13 @@ export async function PUT(request) {
 
 // DELETE - Delete course (Admin only, with safety checks)
 export async function DELETE(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -299,7 +274,7 @@ export async function DELETE(request) {
       message: 'Course deleted successfully' 
     });
   } catch (error) {
-    console.error('DELETE courses error:', error);
+    logger.error('DELETE courses error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

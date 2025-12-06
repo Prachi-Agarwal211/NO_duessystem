@@ -2,16 +2,15 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { createLogger } from '@/lib/logger';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('PublicConfigAPI');
 
 // GET - Fetch active configuration for student form
 // This is a public endpoint (no authentication required)
 export async function GET(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'schools', 'courses', 'branches', 'all'
@@ -56,14 +55,14 @@ export async function GET(request) {
           .eq('key', 'college_domain')
           .single();
 
-        if (emailError) console.error('Email config error:', emailError);
+        if (emailError) logger.error('Email config error', emailError);
 
         const { data: validationRules, error: validationError } = await supabaseAdmin
           .from('config_validation_rules')
           .select('*')
           .eq('is_active', true);
 
-        if (validationError) console.error('Validation rules error:', validationError);
+        if (validationError) logger.error('Validation rules error', validationError);
 
         const { data: countryCodes, error: countryError } = await supabaseAdmin
           .from('config_country_codes')
@@ -71,7 +70,7 @@ export async function GET(request) {
           .eq('is_active', true)
           .order('display_order');
 
-        if (countryError) console.error('Country codes error:', countryError);
+        if (countryError) logger.error('Country codes error', countryError);
 
         return NextResponse.json({
           success: true,
@@ -186,7 +185,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Public config API error:', error);
+    logger.error('Public config API error', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

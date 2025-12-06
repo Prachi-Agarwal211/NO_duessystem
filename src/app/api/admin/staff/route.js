@@ -2,48 +2,21 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { authenticateAndVerify } from '@/lib/authHelpers';
+import { createLogger } from '@/lib/logger';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-// Helper: Verify admin user
-async function verifyAdmin(request) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return { error: 'No authorization header', status: 401 };
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
-
-  if (error || !user) {
-    return { error: 'Invalid token', status: 401 };
-  }
-
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !profile || profile.role !== 'admin') {
-    return { error: 'Unauthorized: Admin access required', status: 403 };
-  }
-
-  return { userId: user.id };
-}
+const logger = createLogger('AdminStaffAPI');
 
 // GET - Fetch all department staff
 export async function GET(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -66,7 +39,7 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, data: data || [] });
   } catch (error) {
-    console.error('GET staff error:', error);
+    logger.error('GET staff error', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch staff', data: [] },
       { status: 500 }
@@ -76,12 +49,13 @@ export async function GET(request) {
 
 // POST - Create new department staff account
 export async function POST(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -189,7 +163,7 @@ export async function POST(request) {
       }
     }, { status: 201 });
   } catch (error) {
-    console.error('POST staff error:', error);
+    logger.error('POST staff error', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to create staff account' },
       { status: 500 }
@@ -199,12 +173,13 @@ export async function POST(request) {
 
 // PUT - Update department staff account
 export async function PUT(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -274,7 +249,7 @@ export async function PUT(request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
-    console.error('PUT staff error:', error);
+    logger.error('PUT staff error', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update staff account' },
       { status: 500 }
@@ -284,12 +259,13 @@ export async function PUT(request) {
 
 // DELETE - Delete department staff account
 export async function DELETE(request) {
+  const supabaseAdmin = getSupabaseAdmin();
   try {
-    const adminCheck = await verifyAdmin(request);
-    if (adminCheck.error) {
+    const adminCheck = await authenticateAndVerify(request, 'admin');
+    if (!adminCheck.success) {
       return NextResponse.json(
         { success: false, error: adminCheck.error },
-        { status: adminCheck.status }
+        { status: adminCheck.statusCode }
       );
     }
 
@@ -332,7 +308,7 @@ export async function DELETE(request) {
       message: 'Staff account deleted successfully'
     });
   } catch (error) {
-    console.error('DELETE staff error:', error);
+    logger.error('DELETE staff error', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to delete staff account' },
       { status: 500 }

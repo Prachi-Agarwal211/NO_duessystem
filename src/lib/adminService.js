@@ -1,12 +1,8 @@
 import { supabase } from './supabaseClient';
+import { getSupabaseAdmin } from './supabaseAdmin';
+import { createLogger } from './logger';
 
-// This is the server-side admin client for bypassing RLS
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const logger = createLogger('AdminService');
 
 // Admin service functions for complex operations
 export const adminService = {
@@ -15,6 +11,7 @@ export const adminService = {
     const { page = 1, limit = 20, status, department, search } = filterOptions;
     const offset = (page - 1) * limit;
 
+    const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -56,6 +53,7 @@ export const adminService = {
   async getDashboardStats() {
     const { data: { session } } = await supabase.auth.getSession();
     
+    const supabaseAdmin = getSupabaseAdmin();
     const [overallStats, departmentStats, recentActivity] = await Promise.all([
       supabaseAdmin
         .from('no_dues_forms')
@@ -108,6 +106,7 @@ export const adminService = {
   async generateReport(reportType, params = {}) {
     const { startDate, endDate, department } = params;
     
+    const supabaseAdmin = getSupabaseAdmin();
     let query = supabaseAdmin
       .from('no_dues_status')
       .select(`
@@ -224,6 +223,7 @@ export const adminService = {
 
   // Get request details by ID
   async getRequestById(requestId) {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -276,6 +276,7 @@ export const adminService = {
 
   // Get departments list
   async getDepartments() {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('departments')
       .select('*')
@@ -287,6 +288,7 @@ export const adminService = {
 
   // Get all users with roles
   async getAllUsers() {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
@@ -298,6 +300,7 @@ export const adminService = {
 
   // Update user role
   async updateUserRole(userId, role) {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .update({ role })
