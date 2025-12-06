@@ -292,18 +292,24 @@ export function useStaffDashboard() {
           console.log('📡 Staff subscription status:', status);
           
           if (error) {
-            console.error('❌ Subscription error:', error);
+            console.error(' Subscription error:', error);
           }
           
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Real-time updates active for', user.department_name);
+            console.log(' Real-time updates active for', user.department_name);
             isSubscribed = true;
+            // FIX 1: Refresh data AFTER subscription is active
+            // This catches any events that occurred during page load
+            console.log(' Syncing data after subscription active...');
+            if (refreshDataRef.current) {
+              refreshDataRef.current();
+            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error('❌ Real-time connection failed:', status);
+            console.error(' Real-time connection failed:', status);
             isSubscribed = false;
           } else if (status === 'CLOSED') {
             if (isSubscribed) {
-              console.log('🔌 Real-time connection closed');
+              console.log(' Real-time connection closed');
               isSubscribed = false;
             }
           }

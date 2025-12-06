@@ -262,22 +262,28 @@ export function useAdminDashboard() {
           console.log('📡 Subscription status:', status);
           
           if (error) {
-            console.error('❌ Subscription error:', error);
+            console.error(' Subscription error:', error);
           }
           
           if (status === 'SUBSCRIBED') {
-            console.log('✅ Real-time updates active for admin dashboard');
+            console.log(' Real-time updates active for admin dashboard');
             isSubscribed = true;
             retryCount = 0;
             if (pollingInterval) {
               clearInterval(pollingInterval);
               pollingInterval = null;
             }
+            // FIX 1: Refresh data AFTER subscription is active
+            // This catches any events that occurred during page load
+            console.log(' Syncing data after subscription active...');
+            if (refreshDataRef.current) {
+              refreshDataRef.current();
+            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.error('❌ Real-time connection failed:', status);
+            console.error(' Real-time connection failed:', status);
             retryCount++;
             if (retryCount >= MAX_RETRIES) {
-              console.warn('⚠️ Starting fallback polling after', MAX_RETRIES, 'failed attempts');
+              console.warn(' Starting fallback polling after', MAX_RETRIES, 'failed attempts');
               isSubscribed = false;
               if (!pollingInterval) {
                 pollingInterval = setInterval(() => {
