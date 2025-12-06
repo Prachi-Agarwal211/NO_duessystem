@@ -131,16 +131,22 @@ export function useAdminDashboard() {
   };
 
   // Manual refresh function - properly refresh both dashboard and stats
-  const refreshData = useCallback(() => {
+  // ✅ FIX: Now async with Promise.all to prevent race conditions
+  const refreshData = useCallback(async () => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
-    setCurrentPage(page => {
-      // Fetch dashboard data with current page
-      fetchDashboardData(currentFiltersRef.current, true, page);
-      return page;
-    });
-    // Always fetch fresh stats
-    fetchStats();
-  }, [fetchDashboardData, fetchStats]);
+    setRefreshing(true);
+    try {
+      // Await both fetches together to ensure UI updates atomically
+      await Promise.all([
+        fetchDashboardData(currentFiltersRef.current, true, currentPage),
+        fetchStats()
+      ]);
+    } catch (error) {
+      console.error('❌ Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchDashboardData, fetchStats, currentPage]);
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and updates for instant dashboard updates
@@ -216,7 +222,7 @@ export function useAdminDashboard() {
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           retryCount++;
           if (retryCount >= MAX_RETRIES) {
-            console.warn('⚠️ Real-time connection failed after', MAX_RETRIES, 'attempts. Using manual refresh.');
+            console.warn(' Real-time connection failed after', MAX_RETRIES, 'attempts. Using manual refresh.');
             isSubscribed = false;
             // Only start polling after max retries
             if (!pollingInterval) {
@@ -224,13 +230,13 @@ export function useAdminDashboard() {
                 if (!refreshing) {
                   refreshData();
                 }
-              }, 60000); // Poll every 60 seconds (reduced frequency)
+              }, 30000); // FIX: Poll every 30 seconds for better responsiveness
             }
           }
         } else if (status === 'CLOSED') {
           // Connection closed - don't spam console or start aggressive polling
           if (isSubscribed) {
-            console.log('🔌 Real-time connection closed');
+            console.log(' Real-time connection closed');
             isSubscribed = false;
           }
         }

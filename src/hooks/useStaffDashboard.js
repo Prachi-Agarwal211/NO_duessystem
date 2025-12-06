@@ -163,9 +163,19 @@ export function useStaffDashboard() {
   }, []);
 
   // Manual refresh function - refresh both data and stats
-  const refreshData = useCallback(() => {
-    fetchDashboardData(currentSearchRef.current, true);
-    fetchStats();
+  // ✅ FIX: Now async with Promise.all to prevent race conditions
+  const refreshData = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchDashboardData(currentSearchRef.current, true),
+        fetchStats()
+      ]);
+    } catch (error) {
+      console.error('❌ Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchDashboardData, fetchStats]);
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
@@ -175,7 +185,7 @@ export function useStaffDashboard() {
 
     let isSubscribed = false;
     let refreshTimeout = null;
-    const DEBOUNCE_DELAY = 2000; // Wait 2 seconds before refreshing to batch updates
+    const DEBOUNCE_DELAY = 500; // ✅ FIX: Reduced from 2000ms to 500ms for better responsiveness
 
     // Debounced refresh to prevent continuous refreshes
     const debouncedRefresh = () => {

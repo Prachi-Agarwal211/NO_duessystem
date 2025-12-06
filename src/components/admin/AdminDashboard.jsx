@@ -106,6 +106,15 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentPage, statusFilter, departmentFilter, searchTerm]);
 
+  // ✅ FIX: Auto-refresh stats when applications data changes
+  // This ensures charts/stats are always in sync with the applications table
+  useEffect(() => {
+    if (applications && applications.length > 0 && !loading && !refreshing) {
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications.length]);
+
   const statusCounts = stats?.overallStats?.[0] || {};
 
   if (loading) {
