@@ -168,7 +168,22 @@ export function useAdminDashboard() {
     let pollingInterval = null;
     let retryCount = 0;
     let channel = null;
+    let refreshTimeout = null;
     const MAX_RETRIES = 3;
+    const DEBOUNCE_DELAY = 1000; // 1 second debounce to batch rapid updates
+
+    // Debounced refresh to prevent overwhelming the connection
+    const debouncedRefresh = () => {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
+      refreshTimeout = setTimeout(() => {
+        if (!refreshing) {
+          console.log('🔄 Debounced refresh triggered');
+          refreshData();
+        }
+      }, DEBOUNCE_DELAY);
+    };
 
     // Setup realtime subscription with proper async initialization
     const setupRealtime = async () => {
@@ -203,8 +218,8 @@ export function useAdminDashboard() {
               }
             }));
           }
-          // Refresh data when new form is submitted
-          refreshData();
+          // Use debounced refresh to batch rapid updates
+          debouncedRefresh();
         }
       )
       .on(
@@ -216,8 +231,8 @@ export function useAdminDashboard() {
         },
         (payload) => {
           console.log('🔄 Form updated:', payload.new?.registration_no, 'Status:', payload.new?.status);
-          // Refresh data when form status changes (e.g., completed when all depts approve)
-          refreshData();
+          // Use debounced refresh to batch rapid updates
+          debouncedRefresh();
         }
       )
       .on(
@@ -229,8 +244,8 @@ export function useAdminDashboard() {
         },
         (payload) => {
           console.log('📋 Department status updated:', payload.new?.department_name, 'Status:', payload.new?.status);
-          // Refresh when any department status changes
-          refreshData();
+          // Use debounced refresh to batch rapid updates
+          debouncedRefresh();
         }
       )
       .on(
@@ -242,8 +257,8 @@ export function useAdminDashboard() {
         },
         (payload) => {
           console.log('📋 New department status created for:', payload.new?.department_name);
-          // Refresh when new department status records are created
-          refreshData();
+          // Use debounced refresh to batch 11 rapid INSERT events from new form
+          debouncedRefresh();
         }
       )
       .subscribe((status) => {
@@ -303,12 +318,16 @@ export function useAdminDashboard() {
 
     return () => {
       clearTimeout(fallbackTimeout);
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+      }
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
       if (channel) {
         supabase.removeChannel(channel);
       }
+      console.log('🧹 Cleaned up admin real-time subscription');
     };
   }, [userId, refreshData, refreshing]);
 
