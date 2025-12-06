@@ -137,6 +137,20 @@ export async function POST(request) {
 
         if (error) throw error;
 
+        // 🔥 CRITICAL FIX: Update no_dues_forms.updated_at to trigger real-time events
+        // This ensures admin dashboard receives UPDATE events for email-based approvals
+        const { error: formTimestampError } = await supabaseAdmin
+            .from('no_dues_forms')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', form_id);
+
+        if (formTimestampError) {
+            console.error('⚠️ Failed to update form timestamp:', formTimestampError);
+            // Don't fail the request - status was already updated successfully
+        } else {
+            console.log(`✅ Form ${form_id} timestamp updated - admin will receive real-time event`);
+        }
+
         return NextResponse.json({ ok: true, message: "Status updated successfully." });
     } catch (err) {
         return NextResponse.json({ error: err.message || "Failed to update status." }, { status: 500 });

@@ -127,6 +127,21 @@ export async function PUT(request) {
       }, { status: 500 });
     }
 
+    // 🔥 CRITICAL FIX: Update no_dues_forms.updated_at to trigger real-time events
+    // This ensures admin dashboard receives UPDATE events and refreshes instantly
+    // Without this, admin only sees changes after manual refresh
+    const { error: formTimestampError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', formId);
+
+    if (formTimestampError) {
+      console.error('⚠️ Failed to update form timestamp:', formTimestampError);
+      // Don't fail the request - status was already updated successfully
+    } else {
+      console.log(`✅ Form ${formId} timestamp updated - admin will receive real-time event`);
+    }
+
     // Check if all departments have approved
     const { data: allStatuses, error: allStatusError } = await supabaseAdmin
       .from('no_dues_status')
