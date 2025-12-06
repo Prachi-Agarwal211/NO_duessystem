@@ -41,11 +41,17 @@ export async function GET(request) {
       console.error('Department workload error:', deptWorkloadError);
     }
 
+    // ✅ FIX Issue #5: Add date filter for better performance
+    // Only fetch last 30 days of data for response time calculation
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
     // Get all department statuses with timestamps for response time calculation
     const { data: allStatuses, error: statusesError } = await supabaseAdmin
       .from('no_dues_status')
       .select('department_name, status, created_at, action_at')
-      .not('action_at', 'is', null);
+      .not('action_at', 'is', null)
+      .gte('created_at', thirtyDaysAgo.toISOString());
 
     if (statusesError) {
       console.error('Statuses error:', statusesError);

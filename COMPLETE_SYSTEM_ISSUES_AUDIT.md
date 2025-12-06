@@ -853,11 +853,11 @@ useEffect(() => {
 - ✅ Issue #1: Department actions trigger real-time events
 - ✅ Issue #2: Email approvals trigger real-time events
 
-### 🟠 HIGH PRIORITY (Must Fix for Complete Real-Time System)
-1. **Issue #3**: Fix stats auto-refresh dependency in AdminDashboard
-2. **Issue #4**: Add form UPDATE subscription for staff dashboard
-3. **Issue #5**: Optimize stats API with date range filter
-4. **Issue #6**: Run database backfill script for missing status records
+### 🟠 HIGH PRIORITY - NOW FIXED ✅
+- ✅ **Issue #3**: Fix stats auto-refresh dependency in AdminDashboard - **FIXED** (uses `lastUpdate`)
+- ✅ **Issue #4**: Add form UPDATE subscription for staff dashboard - **FIXED** (added UPDATE listener)
+- ✅ **Issue #5**: Optimize stats API with date range filter - **FIXED** (30-day limit)
+- ⬜ **Issue #6**: Run database backfill script for missing status records - **USER ACTION REQUIRED**
 
 **Estimated Time:** 2-3 hours  
 **Impact:** Completes real-time system, removes all major UX issues
