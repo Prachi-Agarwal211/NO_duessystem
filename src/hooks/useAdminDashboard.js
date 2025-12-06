@@ -21,6 +21,9 @@ export function useAdminDashboard() {
   // Store current filters for refresh
   const currentFiltersRef = useRef({});
 
+  // ✅ FIX Problem 21: Use ref for refreshData to avoid subscription recreation
+  const refreshDataRef = useRef(null);
+
   // Fetch user data
   useEffect(() => {
     fetchUserData();
@@ -147,6 +150,24 @@ export function useAdminDashboard() {
     }
   }, [fetchDashboardData, fetchStats, currentPage]);
 
+  // ✅ FIX Problem 21: Keep ref updated to avoid subscription recreation
+  useEffect(() => {
+    refreshDataRef.current = refreshData;
+  }, [refreshData]);
+
+  // ✅ FIX Problem 9: Optimistic update helper
+  const optimisticUpdateApplication = useCallback((updatedApp) => {
+    setApplications(prev => {
+      const idx = prev.findIndex(app => app.id === updatedApp.id);
+      if (idx >= 0) {
+        const updated = [...prev];
+        updated[idx] = { ...updated[idx], ...updatedApp };
+        return updated;
+      }
+      return prev;
+    });
+  }, []);
+
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and updates for instant dashboard updates
   useEffect(() => {
@@ -191,8 +212,21 @@ export function useAdminDashboard() {
         },
         (payload) => {
           console.log('🔄 Form updated:', payload.new?.registration_no);
-          // Refresh data when form status changes
-          refreshData();
+          // ✅ FIX Problem 9: Optimistic update first, then full refresh for stats
+          if (payload.new) {
+            setApplications(prev => {
+              const idx = prev.findIndex(app => app.id === payload.new.id);
+              if (idx >= 0) {
+                const updated = [...prev];
+                updated[idx] = { ...updated[idx], ...payload.new };
+                console.log('⚡ Optimistic update applied for:', payload.new.registration_no);
+                return updated;
+              }
+              return prev;
+            });
+          }
+          // Refresh stats separately (lighter operation)
+          if (refreshDataRef.current) refreshDataRef.current();
         }
       )
       .on(
@@ -203,9 +237,9 @@ export function useAdminDashboard() {
           table: 'no_dues_status'
         },
         (payload) => {
-          console.log('📋 Department status changed');
-          // Refresh when any department status changes
-          refreshData();
+          console.log('📋 Department status changed:', payload.eventType);
+          // Use ref to avoid dependency issues
+          if (refreshDataRef.current) refreshDataRef.current();
         }
       )
       .subscribe((status) => {
@@ -260,8 +294,8 @@ export function useAdminDashboard() {
       }
       supabase.removeChannel(channel);
     };
-  // ✅ FIX: Removed 'refreshing' from deps to prevent subscription recreation
-  }, [userId, refreshData]);
+  // ✅ FIX Problem 21: Only depend on userId, use ref for refreshData
+  }, [userId]);
 
   return {
     user,

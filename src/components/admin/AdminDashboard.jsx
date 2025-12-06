@@ -257,7 +257,7 @@ export default function AdminDashboard() {
               {stats?.departmentStats && <DepartmentPerformanceChart data={stats.departmentStats} />}
             </GlassCard>
             <GlassCard className="p-6">
-              <RequestTrendChart userId={userId} />
+              <RequestTrendChart userId={userId} lastUpdate={lastUpdate} />
             </GlassCard>
           </div>
 

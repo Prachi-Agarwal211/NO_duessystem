@@ -19,6 +19,9 @@ export function useStaffDashboard() {
   // Store current search term for refresh
   const currentSearchRef = useRef('');
 
+  // ✅ FIX Problem 21: Use ref for refreshData to avoid subscription recreation
+  const refreshDataRef = useRef(null);
+
   // Fetch user data
   useEffect(() => {
     fetchUserData();
@@ -177,6 +180,11 @@ export function useStaffDashboard() {
     }
   }, [fetchDashboardData, fetchStats]);
 
+  // ✅ FIX Problem 21: Keep ref updated to avoid subscription recreation
+  useEffect(() => {
+    refreshDataRef.current = refreshData;
+  }, [refreshData]);
+
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // Subscribe to new form submissions and status updates for instant dashboard updates
   useEffect(() => {
@@ -192,9 +200,9 @@ export function useStaffDashboard() {
         clearTimeout(refreshTimeout);
       }
       refreshTimeout = setTimeout(() => {
-        if (!refreshing) {
+        if (!refreshing && refreshDataRef.current) {
           console.log('🔄 Debounced refresh triggered');
-          refreshData();
+          refreshDataRef.current();
         }
       }, DEBOUNCE_DELAY);
     };
@@ -276,8 +284,8 @@ export function useStaffDashboard() {
       supabase.removeChannel(channel);
       console.log('🧹 Cleaned up real-time subscription');
     };
-  // ✅ FIX: Removed 'refreshing' from deps to prevent subscription recreation
-  }, [userId, user?.department_name, refreshData]);
+  // ✅ FIX Problem 21: Only depend on userId and department_name, use ref for refreshData
+  }, [userId, user?.department_name]);
 
   return {
     user,

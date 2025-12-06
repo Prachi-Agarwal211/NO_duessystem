@@ -16,7 +16,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-export default function RequestTrendChart({ userId }) {
+export default function RequestTrendChart({ userId, lastUpdate }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -92,7 +92,8 @@ export default function RequestTrendChart({ userId }) {
     };
 
     fetchTrendData();
-  }, [userId]);
+  // ✅ FIX Problem 11: Re-fetch when lastUpdate changes (data was modified)
+  }, [userId, lastUpdate]);
 
   const containerClasses = `rounded-xl border p-6 transition-all duration-700 ${
     isDark ? 'bg-white/5 border-white/10 backdrop-blur-sm' : 'bg-white border-gray-200 shadow-sm'

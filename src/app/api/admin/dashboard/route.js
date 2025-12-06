@@ -99,10 +99,35 @@ export async function GET(request) {
       );
     }
 
-    // Get total count for pagination
-    const { count: totalCount, error: countError } = await supabaseAdmin
+    // Get total count for pagination - 
+    let countQuery = supabaseAdmin
       .from('no_dues_forms')
       .select('*', { count: 'exact', head: true });
+
+    // Apply same filters to count query
+    if (status) {
+      countQuery = countQuery.eq('status', status);
+    }
+    if (department) {
+      const { data: formsWithDeptCount } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('form_id')
+        .eq('department_name', department);
+      
+      if (formsWithDeptCount && formsWithDeptCount.length > 0) {
+        const formIdsCount = formsWithDeptCount.map(f => f.form_id);
+        countQuery = countQuery.in('id', formIdsCount);
+      } else {
+        countQuery = countQuery.eq('id', '00000000-0000-0000-0000-000000000000');
+      }
+    }
+    if (searchQuery) {
+      countQuery = countQuery.or(
+        `student_name.ilike.%${searchQuery}%,registration_no.ilike.%${searchQuery}%,course.ilike.%${searchQuery}%`
+      );
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
 
     if (countError) {
       return NextResponse.json({ error: countError.message }, { status: 500 });
