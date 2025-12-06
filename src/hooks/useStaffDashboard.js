@@ -246,6 +246,19 @@ export function useStaffDashboard() {
         {
           event: 'UPDATE',
           schema: 'public',
+          table: 'no_dues_forms'
+        },
+        (payload) => {
+          console.log('🔄 Form status updated:', payload.new?.registration_no, 'Status:', payload.new?.status);
+          // Refresh when form overall status changes (e.g., to completed)
+          debouncedRefresh();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
           table: 'no_dues_status',
           filter: `department_name=eq.${user.department_name}`
         },

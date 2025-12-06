@@ -215,21 +215,34 @@ export function useAdminDashboard() {
           table: 'no_dues_forms'
         },
         (payload) => {
-          console.log('🔄 Form updated:', payload.new?.registration_no);
-          // Refresh data when form status changes
+          console.log('🔄 Form updated:', payload.new?.registration_no, 'Status:', payload.new?.status);
+          // Refresh data when form status changes (e.g., completed when all depts approve)
           refreshData();
         }
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'no_dues_status'
         },
         (payload) => {
-          console.log('📋 Department status changed');
+          console.log('📋 Department status updated:', payload.new?.department_name, 'Status:', payload.new?.status);
           // Refresh when any department status changes
+          refreshData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'no_dues_status'
+        },
+        (payload) => {
+          console.log('📋 New department status created for:', payload.new?.department_name);
+          // Refresh when new department status records are created
           refreshData();
         }
       )
