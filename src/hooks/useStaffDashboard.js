@@ -136,6 +136,8 @@ export function useStaffDashboard() {
       }
 
       const response = await fetch(`/api/staff/dashboard?${params}`, {
+        method: 'GET',
+        cache: 'no-store', // ✅ FIX: Stronger cache bypass at fetch option level
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -179,14 +181,20 @@ export function useStaffDashboard() {
   fetchStatsRef.current = fetchStats;
 
   // Manual refresh function - stable reference using refs to avoid stale closures
+  // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
   const refreshData = useCallback(() => {
+    const promises = [];
+    
     // Use refs to get latest functions
     if (fetchDashboardDataRef.current) {
-      fetchDashboardDataRef.current(currentSearchRef.current, true);
+      promises.push(fetchDashboardDataRef.current(currentSearchRef.current, true));
     }
     if (fetchStatsRef.current) {
-      fetchStatsRef.current();
+      promises.push(fetchStatsRef.current());
     }
+    
+    // ✅ CRITICAL: Return Promise.all() so manager knows when refresh completes
+    return Promise.all(promises);
   }, []); // Empty deps - stable function using refs
 
   // ==================== REAL-TIME SUBSCRIPTION ====================

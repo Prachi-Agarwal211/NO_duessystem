@@ -22,6 +22,9 @@ export function useAdminDashboard() {
 
   // Store current filters for refresh
   const currentFiltersRef = useRef({});
+  
+  // ✅ FIX: Store current page in ref to avoid stale closures
+  const currentPageRef = useRef(1);
 
   // Use refs to store latest functions and avoid stale closures
   const fetchDashboardDataRef = useRef(null);
@@ -55,6 +58,7 @@ export function useAdminDashboard() {
 
       setUser(userData);
       setUserId(session.user.id);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching user data:', error);
       setError(error.message);
@@ -82,7 +86,7 @@ export function useAdminDashboard() {
       }
 
       const params = new URLSearchParams({
-        page: pageOverride !== null ? pageOverride : currentPage,
+        page: pageOverride !== null ? pageOverride : currentPageRef.current,
         limit: 20,
         ...filters,
         _t: Date.now() // Cache buster to ensure fresh data
@@ -91,6 +95,8 @@ export function useAdminDashboard() {
       console.log('🔍 Fetching admin dashboard with params:', Object.fromEntries(params));
 
       const response = await fetch(`/api/admin/dashboard?${params}`, {
+        method: 'GET',
+        cache: 'no-store', // ✅ FIX: Stronger cache bypass at fetch option level
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -123,7 +129,7 @@ export function useAdminDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [currentPage]);
+  }, []); // ✅ FIX: Empty deps - use ref instead of state
 
   // Store latest function in ref
   fetchDashboardDataRef.current = fetchDashboardData;
@@ -162,28 +168,33 @@ export function useAdminDashboard() {
   };
 
   // Manual refresh function - stable reference using refs to avoid stale closures
-  // ⚠️ CRITICAL: Empty dependency array to prevent stale closures in real-time subscriptions
+  // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
   const refreshData = useCallback(() => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
 
     // Force refresh by setting refreshing state
     setRefreshing(true);
 
+    const promises = [];
+
     // Use refs to get latest functions and state
     if (fetchDashboardDataRef.current) {
-      // IMPORTANT: Use currentPage from state closure, not parameter
-      // This ensures we always refresh the current page the user is viewing
-      fetchDashboardDataRef.current(currentFiltersRef.current, true, currentPage);
+      // ✅ FIX: For new submissions, jump to Page 1 to see them
+      // If you want to stay on current page, change 1 to currentPageRef.current
+      promises.push(fetchDashboardDataRef.current(currentFiltersRef.current, true, 1));
     }
 
     // Always fetch fresh stats using ref
     if (fetchStatsRef.current) {
-      fetchStatsRef.current();
+      promises.push(fetchStatsRef.current());
     }
 
     // Update last update timestamp to trigger re-render
     setLastUpdate(new Date());
-  }, []); // Empty deps - stable reference, uses refs and state closure
+
+    // ✅ CRITICAL: Return Promise.all() so manager knows when refresh completes
+    return Promise.all(promises);
+  }, []); // Empty deps - stable reference, uses refs only
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // NEW ARCHITECTURE: Use centralized realtime service + event manager
@@ -231,6 +242,11 @@ export function useAdminDashboard() {
       if (unsubscribeGlobal) unsubscribeGlobal();
     };
   }, [userId, refreshData]);
+  
+  // ✅ FIX: Sync currentPageRef whenever currentPage state changes
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   return {
     user,

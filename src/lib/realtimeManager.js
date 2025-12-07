@@ -19,7 +19,7 @@ class RealtimeManager {
     // Event aggregation
     this.eventQueue = [];
     this.batchTimeout = null;
-    this.BATCH_WINDOW = 300; // Optimized: 300ms for snappier updates (was 500ms)
+    this.BATCH_WINDOW = 800; // ✅ FIX: 800ms ensures database triggers fully complete (was 300ms → 500ms → 800ms)
 
     // Subscribers for different event types
     this.subscribers = {
