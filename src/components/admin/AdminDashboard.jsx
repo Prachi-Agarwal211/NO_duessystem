@@ -108,9 +108,11 @@ export default function AdminDashboard() {
   }, [userId]);
 
   // Fetch data when filters or pagination change
+  // ⚠️ CRITICAL: Only trigger on manual filter/page changes, NOT on every render
+  // Real-time updates are handled by refreshData() from the hook
   useEffect(() => {
     if (userId) {
-      console.log('🔍 Filters changed, fetching data');
+      console.log('🔍 Filters/pagination changed, fetching data');
       fetchDashboardData({
         status: statusFilter,
         search: searchTerm,
@@ -119,6 +121,7 @@ export default function AdminDashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter, departmentFilter, searchTerm]);
+  // Note: This is correct - we want to refetch when user changes filters
 
   const statusCounts = stats?.overallStats?.[0] || {};
 

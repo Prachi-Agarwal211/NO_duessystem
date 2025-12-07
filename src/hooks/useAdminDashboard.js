@@ -88,6 +88,8 @@ export function useAdminDashboard() {
         _t: Date.now() // Cache buster to ensure fresh data
       });
 
+      console.log('🔍 Fetching admin dashboard with params:', Object.fromEntries(params));
+
       const response = await fetch(`/api/admin/dashboard?${params}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -96,6 +98,13 @@ export function useAdminDashboard() {
         }
       });
       const result = await response.json();
+
+      console.log('📦 API Response:', {
+        ok: response.ok,
+        status: response.status,
+        applicationsCount: result.applications?.length,
+        firstApp: result.applications?.[0]?.registration_no
+      });
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to fetch dashboard data');
@@ -106,9 +115,9 @@ export function useAdminDashboard() {
       setTotalPages(result.pagination?.totalPages || 1);
       setLastUpdate(new Date());
 
-      console.log('📊 Admin dashboard data refreshed:', result.applications?.length, 'applications');
+      console.log('✅ Admin dashboard state updated:', result.applications?.length, 'applications');
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('❌ Error fetching dashboard data:', error);
       setError(error.message);
     } finally {
       setLoading(false);
