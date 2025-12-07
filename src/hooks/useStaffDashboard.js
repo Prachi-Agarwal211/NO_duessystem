@@ -134,7 +134,9 @@ export function useStaffDashboard() {
 
       const response = await fetch(`/api/staff/dashboard?${params}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       const result = await response.json();

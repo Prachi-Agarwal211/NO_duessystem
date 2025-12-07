@@ -155,10 +155,16 @@ export async function GET(request) {
         query = query.in('no_dues_forms.branch_id', profile.branch_ids);
       }
 
-      // Apply search filter if provided
-      // Note: Search on related table requires filtering after fetch in this case
-      // or we need to restructure the query
+      // ✅ CRITICAL FIX: Apply search BEFORE pagination using !inner
+      // This searches inside the database query, not client-side
+      if (searchQuery) {
+        query = query.or(
+          `student_name.ilike.%${searchQuery}%,registration_no.ilike.%${searchQuery}%`,
+          { foreignTable: 'no_dues_forms' }
+        );
+      }
 
+      // Apply pagination AFTER filtering
       query = query
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -182,19 +188,8 @@ export async function GET(request) {
         });
       }
 
-      // Filter by search term if provided (client-side filtering for related table)
-      let filteredApplications = pendingApplications || [];
-      if (searchQuery && filteredApplications.length > 0) {
-        const searchLower = searchQuery.toLowerCase();
-        filteredApplications = filteredApplications.filter(app => {
-          const form = app.no_dues_forms;
-          if (!form) return false;
-          return (
-            form.student_name?.toLowerCase().includes(searchLower) ||
-            form.registration_no?.toLowerCase().includes(searchLower)
-          );
-        });
-      }
+      // ✅ Search already applied at database level - no client-side filtering needed
+      const filteredApplications = pendingApplications || [];
 
       // Get total count for pagination
       const { count: totalCount, error: countError } = await supabaseAdmin
@@ -214,8 +209,8 @@ export async function GET(request) {
         pagination: {
           page,
           limit,
-          total: searchQuery ? filteredApplications.length : (totalCount || 0),
-          totalPages: Math.ceil((searchQuery ? filteredApplications.length : (totalCount || 0)) / limit)
+          total: totalCount || 0,
+          totalPages: Math.ceil((totalCount || 0) / limit)
         }
       };
     }
