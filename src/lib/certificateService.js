@@ -118,41 +118,41 @@ export const generateCertificate = async (certificateData) => {
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(80, 80, 80);
-    pdf.text('This is to certify that', pageWidth / 2, 82, { align: 'center' });
+    pdf.text('This is to certify that', pageWidth / 2, 78, { align: 'center' });
     
     // Student Name
     pdf.setFontSize(32);
     pdf.setFont('times', 'bolditalic');
     pdf.setTextColor(0, 0, 0);
-    pdf.text(certificateData.studentName, pageWidth / 2, 98, { align: 'center' });
+    pdf.text(certificateData.studentName, pageWidth / 2, 92, { align: 'center' });
     
     // Underline for name
     pdf.setLineWidth(0.5);
     pdf.setDrawColor(0, 0, 0);
-    pdf.line(pageWidth / 2 - 55, 100, pageWidth / 2 + 55, 100);
+    pdf.line(pageWidth / 2 - 55, 94, pageWidth / 2 + 55, 94);
     
     // Registration No
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(60, 60, 60);
-    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 112, { align: 'center' });
+    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 104, { align: 'center' });
     
     // Body Text
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(60, 60, 60);
-    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 125, { align: 'center' });
-    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 132, { align: 'center' });
+    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 116, { align: 'center' });
+    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 122, { align: 'center' });
     
     // Clearance Status (Stamp style)
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 145, { align: 'center' });
+    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 132, { align: 'center' });
     
     // --- 5. Academic Details Box ---
-    const boxY = 152;
-    const boxHeight = 24;
+    const boxY = 140;
+    const boxHeight = 22;
     const boxWidth = 160;
     
     // Background for details
@@ -169,19 +169,11 @@ export const generateCertificate = async (certificateData) => {
     const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
     const sessionText = `Session: ${certificateData.sessionFrom || 'N/A'} - ${certificateData.sessionTo || 'N/A'}`;
     
-    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, boxY + 10, { align: 'center' });
-    pdf.text(sessionText, pageWidth / 2, boxY + 18, { align: 'center' });
+    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, boxY + 9, { align: 'center' });
+    pdf.text(sessionText, pageWidth / 2, boxY + 16, { align: 'center' });
     
-    // --- 6. Declaration ---
-    const declY = 185;
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'italic');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('The student is hereby confirmed to have no outstanding financial or material', pageWidth / 2, declY, { align: 'center' });
-    pdf.text('obligations to any department of the university.', pageWidth / 2, declY + 4, { align: 'center' });
-    
-    // --- 7. Date & Signature ---
-    const footerY = 198;
+    // --- 6. Date & Signature ---
+    const footerY = 170;
     
     // Date (Left)
     const issueDate = new Date().toLocaleDateString('en-IN', {

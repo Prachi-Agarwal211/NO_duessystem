@@ -1,0 +1,324 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+/**
+ * PUT /api/student/reapply
+ * Handle student reapplication after rejection
+ * 
+ * Request body:
+ * {
+ *   registration_no: string (required)
+ *   student_reply_message: string (required, min 20 chars)
+ *   updated_form_data: object (optional - only changed fields)
+ * }
+ */
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { registration_no, student_reply_message, updated_form_data } = body;
+
+    // ==================== VALIDATION ====================
+    if (!registration_no?.trim()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Registration number is required'
+      }, { status: 400 });
+    }
+
+    if (!student_reply_message?.trim()) {
+      return NextResponse.json({
+        success: false,
+        error: 'Student reply message is required'
+      }, { status: 400 });
+    }
+
+    if (student_reply_message.trim().length < 20) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reply message must be at least 20 characters'
+      }, { status: 400 });
+    }
+
+    // ==================== GET CURRENT FORM ====================
+    const { data: form, error: formError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select(`
+        *,
+        no_dues_status (
+          department_name,
+          status,
+          rejection_reason,
+          action_at,
+          action_by_user_id
+        )
+      `)
+      .eq('registration_no', registration_no.trim().toUpperCase())
+      .single();
+
+    if (formError) {
+      if (formError.code === 'PGRST116') {
+        return NextResponse.json({
+          success: false,
+          error: 'Form not found'
+        }, { status: 404 });
+      }
+      throw formError;
+    }
+
+    // ==================== CHECK REAPPLICATION ELIGIBILITY ====================
+    const hasRejection = form.no_dues_status.some(s => s.status === 'rejected');
+    
+    if (!hasRejection) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reapplication is only allowed for rejected forms'
+      }, { status: 403 });
+    }
+
+    // Check if form is completed
+    if (form.status === 'completed') {
+      return NextResponse.json({
+        success: false,
+        error: 'Cannot reapply for a completed form'
+      }, { status: 403 });
+    }
+
+    // Optional: Limit number of reapplications
+    const MAX_REAPPLICATIONS = 5;
+    if (form.reapplication_count >= MAX_REAPPLICATIONS) {
+      return NextResponse.json({
+        success: false,
+        error: `Maximum reapplication limit (${MAX_REAPPLICATIONS}) reached. Please contact administration.`
+      }, { status: 403 });
+    }
+
+    // ==================== VALIDATE UPDATED FIELDS ====================
+    if (updated_form_data) {
+      // Validate email formats if updated
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      
+      if (updated_form_data.personal_email && !emailPattern.test(updated_form_data.personal_email)) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid personal email format'
+        }, { status: 400 });
+      }
+
+      if (updated_form_data.college_email && !emailPattern.test(updated_form_data.college_email)) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid college email format'
+        }, { status: 400 });
+      }
+
+      // Validate phone if updated
+      if (updated_form_data.contact_no) {
+        const phonePattern = /^[0-9]{6,15}$/;
+        if (!phonePattern.test(updated_form_data.contact_no)) {
+          return NextResponse.json({
+            success: false,
+            error: 'Phone number must be 6-15 digits'
+          }, { status: 400 });
+        }
+      }
+    }
+
+    // ==================== PREPARE REAPPLICATION DATA ====================
+    const rejectedDepartments = form.no_dues_status
+      .filter(s => s.status === 'rejected')
+      .map(d => ({
+        department_name: d.department_name,
+        rejection_reason: d.rejection_reason,
+        action_at: d.action_at
+      }));
+
+    const previousStatus = form.no_dues_status.map(s => ({
+      department_name: s.department_name,
+      status: s.status,
+      action_at: s.action_at,
+      rejection_reason: s.rejection_reason
+    }));
+
+    const rejectedDeptNames = rejectedDepartments.map(d => d.department_name);
+
+    // ==================== LOG REAPPLICATION HISTORY ====================
+    const { error: historyError } = await supabaseAdmin
+      .from('no_dues_reapplication_history')
+      .insert({
+        form_id: form.id,
+        reapplication_number: form.reapplication_count + 1,
+        student_message: student_reply_message.trim(),
+        edited_fields: updated_form_data || {},
+        rejected_departments: rejectedDepartments,
+        previous_status: previousStatus
+      });
+
+    if (historyError) {
+      console.error('Error logging reapplication history:', historyError);
+      throw new Error('Failed to log reapplication history');
+    }
+
+    // ==================== UPDATE FORM DATA ====================
+    const formUpdateData = {
+      reapplication_count: form.reapplication_count + 1,
+      last_reapplied_at: new Date().toISOString(),
+      student_reply_message: student_reply_message.trim(),
+      is_reapplication: true,
+      status: 'pending', // Reset to pending
+      ...(updated_form_data || {}) // Merge updated fields
+    };
+
+    const { error: formUpdateError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .update(formUpdateData)
+      .eq('id', form.id);
+
+    if (formUpdateError) {
+      console.error('Error updating form:', formUpdateError);
+      throw new Error('Failed to update form');
+    }
+
+    // ==================== RESET REJECTED DEPARTMENT STATUSES ====================
+    const { error: statusResetError } = await supabaseAdmin
+      .from('no_dues_status')
+      .update({
+        status: 'pending',
+        rejection_reason: null,
+        action_at: null,
+        action_by_user_id: null
+      })
+      .eq('form_id', form.id)
+      .in('department_name', rejectedDeptNames);
+
+    if (statusResetError) {
+      console.error('Error resetting department statuses:', statusResetError);
+      throw new Error('Failed to reset department statuses');
+    }
+
+    // ==================== SEND EMAIL NOTIFICATIONS ====================
+    // Get department emails for rejected departments
+    const { data: departments, error: deptError } = await supabaseAdmin
+      .from('departments')
+      .select('name, email, display_name')
+      .in('name', rejectedDeptNames)
+      .eq('is_active', true);
+
+    if (!deptError && departments && departments.length > 0) {
+      try {
+        // Import email service
+        const { sendReapplicationNotifications } = await import('@/lib/emailService');
+        
+        await sendReapplicationNotifications({
+          departments: departments.map(d => ({ 
+            email: d.email, 
+            name: d.display_name 
+          })),
+          studentName: form.student_name,
+          registrationNo: form.registration_no,
+          studentMessage: student_reply_message.trim(),
+          reapplicationNumber: form.reapplication_count + 1,
+          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`,
+          formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/student/${form.id}`
+        });
+
+        console.log(`📧 Reapplication notifications sent to ${departments.length} department(s)`);
+      } catch (emailError) {
+        console.error('Failed to send reapplication notifications:', emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
+    // ==================== SUCCESS RESPONSE ====================
+    console.log(`✅ Reapplication #${form.reapplication_count + 1} processed for ${form.registration_no}`);
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Reapplication submitted successfully',
+      data: {
+        reapplication_number: form.reapplication_count + 1,
+        reset_departments: rejectedDeptNames.length,
+        form_status: 'pending'
+      }
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('Reapplication API Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    }, { status: 500 });
+  }
+}
+
+/**
+ * GET /api/student/reapply?registration_no=XXX
+ * Get reapplication history for a form
+ */
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const registrationNo = searchParams.get('registration_no');
+
+    if (!registrationNo) {
+      return NextResponse.json({
+        success: false,
+        error: 'Registration number is required'
+      }, { status: 400 });
+    }
+
+    // Get form
+    const { data: form, error: formError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select('id, registration_no, reapplication_count, student_reply_message, last_reapplied_at')
+      .eq('registration_no', registrationNo.trim().toUpperCase())
+      .single();
+
+    if (formError) {
+      if (formError.code === 'PGRST116') {
+        return NextResponse.json({
+          success: false,
+          error: 'Form not found'
+        }, { status: 404 });
+      }
+      throw formError;
+    }
+
+    // Get reapplication history
+    const { data: history, error: historyError } = await supabaseAdmin
+      .from('no_dues_reapplication_history')
+      .select('*')
+      .eq('form_id', form.id)
+      .order('reapplication_number', { ascending: false });
+
+    if (historyError) {
+      throw historyError;
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        form: {
+          id: form.id,
+          registration_no: form.registration_no,
+          reapplication_count: form.reapplication_count,
+          current_message: form.student_reply_message,
+          last_reapplied_at: form.last_reapplied_at
+        },
+        history: history || []
+      }
+    });
+
+  } catch (error) {
+    console.error('Get Reapplication History Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
+  }
+}

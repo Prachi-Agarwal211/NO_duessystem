@@ -127,78 +127,50 @@ export async function PUT(request) {
       }, { status: 500 });
     }
 
-    // Check if all departments have approved
-    const { data: allStatuses, error: allStatusError } = await supabaseAdmin
-      .from('no_dues_status')
-      .select('status')
-      .eq('form_id', formId);
+    // ==================== IMPORTANT ====================
+    // Form status update is handled by database trigger: trigger_update_form_status
+    // The trigger automatically sets form status to 'completed' when all departments approve
+    // We don't need to manually check or update it here - this prevents race conditions
+    // ===================================================
 
-    if (allStatusError) {
-      return NextResponse.json({
-        success: false,
-        error: allStatusError.message
-      }, { status: 500 });
+    // Get the updated form status (may have been changed by trigger)
+    const { data: currentForm, error: formFetchError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select('id, status, student_name, registration_no')
+      .eq('id', formId)
+      .single();
+
+    if (formFetchError) {
+      console.error('Error fetching form after status update:', formFetchError);
     }
 
-    // If all departments have approved, update the form status to completed
-    const allApproved = allStatuses.every(status => status.status === 'approved');
-    let formStatusUpdate = null;
-
-    if (allApproved) {
-      const { data: updatedForm, error: formUpdateError } = await supabaseAdmin
-        .from('no_dues_forms')
-        .update({
-          status: 'completed'
-        })
-        .eq('id', formId)
-        .select()
-        .single();
-
-      if (formUpdateError) {
-        return NextResponse.json({
-          success: false,
-          error: formUpdateError.message
-        }, { status: 500 });
-      }
-
-      formStatusUpdate = updatedForm;
-
-      // ==================== AUTO-GENERATE CERTIFICATE ====================
-      // When all departments approve, automatically generate the certificate
-      try {
-        console.log(`🎓 All departments approved - generating certificate for form ${formId}`);
-
-        const certificateResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ formId })
-          }
-        );
-
-        const certificateResult = await certificateResponse.json();
-
-        if (certificateResult.success) {
-          console.log(`✅ Certificate generated successfully: ${certificateResult.certificateUrl}`);
-
-          // Update form status update to include certificate info
-          formStatusUpdate = {
-            ...formStatusUpdate,
-            certificate_url: certificateResult.certificateUrl
-          };
-        } else {
-          console.error('❌ Certificate generation failed:', certificateResult.error);
-          // Don't fail the approval if certificate generation fails
-          // The certificate can be generated manually later
+    // ==================== ASYNC CERTIFICATE GENERATION ====================
+    // If form is now completed (trigger updated it), generate certificate in background
+    // Don't await - let it happen asynchronously to not block the response
+    if (currentForm?.status === 'completed') {
+      console.log(`🎓 Form completed - triggering background certificate generation for ${formId}`);
+      
+      // Fire and forget - certificate generation happens in background
+      fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ formId })
         }
-      } catch (certError) {
-        console.error('❌ Certificate generation error:', certError);
-        // Don't fail the approval if certificate generation fails
-      }
+      )
+        .then(res => res.json())
+        .then(result => {
+          if (result.success) {
+            console.log(`✅ Certificate generated: ${result.certificateUrl}`);
+          } else {
+            console.error('❌ Certificate generation failed:', result.error);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Certificate generation error:', error);
+        });
     }
-    // Note: Form status remains 'pending' until all departments approve
-    // No need to update to intermediate status - this keeps it simple
 
     // Send email notification to student
     // Phase 1: Students have no authentication/profiles, so we can't send email notifications
@@ -237,7 +209,7 @@ export async function PUT(request) {
       success: true,
       data: {
         status: updatedStatus,
-        form: formStatusUpdate,
+        form: currentForm || form,
         message: `Successfully ${action}d the no dues request for ${form.student_name}`
       }
     });

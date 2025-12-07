@@ -19,7 +19,7 @@ class RealtimeManager {
     // Event aggregation
     this.eventQueue = [];
     this.batchTimeout = null;
-    this.BATCH_WINDOW = 500; // Batch events within 500ms
+    this.BATCH_WINDOW = 300; // Optimized: 300ms for snappier updates (was 500ms)
 
     // Subscribers for different event types
     this.subscribers = {
@@ -38,7 +38,7 @@ class RealtimeManager {
     // Deduplication tracking
     this.pendingRefreshes = new Set();
     this.lastRefreshTime = {};
-    this.MIN_REFRESH_INTERVAL = 1000; // Increased from 300ms to 1000ms to prevent skipping legitimate updates
+    this.MIN_REFRESH_INTERVAL = 300; // Optimized: 300ms prevents spam while allowing rapid updates
   }
 
   /**

@@ -389,11 +389,94 @@ export async function sendCertificateReadyNotification({
   });
 }
 
+/**
+ * Send reapplication notification to departments
+ * @param {Object} params - Notification parameters
+ * @param {Array} params.departments - Array of department objects with email and name
+ * @param {string} params.studentName - Student name
+ * @param {string} params.registrationNo - Registration number
+ * @param {string} params.studentMessage - Student's reply message
+ * @param {number} params.reapplicationNumber - Reapplication count
+ * @param {string} params.dashboardUrl - URL to department dashboard
+ * @param {string} params.formUrl - Direct URL to form details
+ * @returns {Promise<Array>} - Array of email send results
+ */
+export async function sendReapplicationNotifications({
+  departments,
+  studentName,
+  registrationNo,
+  studentMessage,
+  reapplicationNumber,
+  dashboardUrl,
+  formUrl
+}) {
+  console.log(`📧 Sending reapplication notifications to ${departments.length} department(s)...`);
+  
+  const content = `
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      A student has <strong>reapplied</strong> to their No Dues application after addressing the rejection reasons.
+    </p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 8px 0; color: #f59e0b; font-size: 16px; font-weight: 600;">
+            🔄 Reapplication #${reapplicationNumber}
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+            <strong>Student:</strong> ${studentName}
+          </p>
+          <p style="margin: 0; color: #1f2937; font-size: 15px;">
+            <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+    
+    <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; color: #3b82f6; font-size: 13px; font-weight: 600; text-transform: uppercase;">
+        Student's Response
+      </p>
+      <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6; font-style: italic;">
+        "${studentMessage}"
+      </p>
+    </div>
+    
+    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
+      The student has made corrections to their application. Please review the updated information and take appropriate action.
+    </p>
+  `;
+
+  const html = generateEmailTemplate({
+    title: 'Student Reapplication - Review Required',
+    content,
+    actionUrl: formUrl || dashboardUrl,
+    actionText: 'Review Reapplication',
+    footerText: 'This is a reapplication. Previous rejection reasons should be addressed.'
+  });
+
+  const results = await Promise.allSettled(
+    departments.map(dept =>
+      sendEmail({
+        to: dept.email,
+        subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
+        html
+      })
+    )
+  );
+
+  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+  console.log(`✅ ${successful}/${departments.length} reapplication notifications sent successfully`);
+
+  return results;
+}
+
 // Export default for compatibility
 export default {
   sendEmail,
   sendDepartmentNotification,
   notifyAllDepartments,
   sendStatusUpdateToStudent,
-  sendCertificateReadyNotification
+  sendCertificateReadyNotification,
+  sendReapplicationNotifications
 };

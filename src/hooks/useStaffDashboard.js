@@ -206,7 +206,7 @@ export function useStaffDashboard() {
       unsubscribeRealtime = await subscribeToRealtime();
 
       // Subscribe to specific events via RealtimeManager
-      // Department staff should respond to department-specific actions
+      // Department staff should respond to ALL department actions (including their own)
       unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
         console.log('📋 Staff dashboard received department action:', {
           affectedForms: analysis.formIds.length,
@@ -215,17 +215,15 @@ export function useStaffDashboard() {
           match: analysis.departmentActions.has(user.department_name)
         });
 
-        // Check if our department is involved
-        const ourDepartmentInvolved = analysis.departmentActions.has(user.department_name);
-
-        // Add a small delay to ensure proper digestion of previous updates
-        setTimeout(() => {
-          if (ourDepartmentInvolved || analysis.formIds.length > 0) {
-            console.log('🔄 Triggering staff dashboard refresh from department action...');
-            // Refresh data - RealtimeManager handles deduplication
+        // ALWAYS refresh when any department action occurs
+        // This includes when staff approve/reject their own pending items
+        if (analysis.formIds.length > 0) {
+          console.log('🔄 Triggering staff dashboard refresh from department action...');
+          // Small delay to ensure database triggers complete
+          setTimeout(() => {
             refreshData();
-          }
-        }, 100);
+          }, 100);
+        }
       });
 
       // Also subscribe to global updates for new submissions and completions

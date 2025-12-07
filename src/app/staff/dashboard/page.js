@@ -18,9 +18,11 @@ import toast from 'react-hot-toast';
 export default function StaffDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('pending'); // pending, history
+  const [activeTab, setActiveTab] = useState('pending'); // pending, rejected, history
   const [actionHistory, setActionHistory] = useState([]);
+  const [rejectedForms, setRejectedForms] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [rejectedLoading, setRejectedLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const { theme } = useTheme();
@@ -49,9 +51,10 @@ export default function StaffDashboard() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch data when debounced search term changes
+  // Fetch data when debounced search term changes OR when returning to pending tab
   useEffect(() => {
     if (user && activeTab === 'pending') {
+      console.log('📋 Fetching pending requests...');
       fetchDashboardData(debouncedSearchTerm);
     }
   }, [user, debouncedSearchTerm, activeTab, fetchDashboardData]);
@@ -60,6 +63,13 @@ export default function StaffDashboard() {
   useEffect(() => {
     if (user && activeTab === 'history') {
       fetchActionHistory();
+    }
+  }, [user, activeTab]);
+
+  // Fetch rejected forms
+  useEffect(() => {
+    if (user && activeTab === 'rejected') {
+      fetchRejectedForms();
     }
   }, [user, activeTab]);
 
@@ -84,6 +94,30 @@ export default function StaffDashboard() {
       toast.error('Failed to load action history');
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const fetchRejectedForms = async () => {
+    setRejectedLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch('/api/staff/history?status=rejected&limit=100', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setRejectedForms(result.data.history || []);
+      }
+    } catch (error) {
+      console.error('Error fetching rejected forms:', error);
+      toast.error('Failed to load rejected forms');
+    } finally {
+      setRejectedLoading(false);
     }
   };
 
@@ -294,6 +328,20 @@ export default function StaffDashboard() {
                 Pending Requests ({stats?.pending || 0})
               </button>
               <button
+                onClick={() => setActiveTab('rejected')}
+                className={`pb-3 px-2 font-medium transition-all duration-300 ${
+                  activeTab === 'rejected'
+                    ? isDark
+                      ? 'border-b-2 border-red-400 text-red-400'
+                      : 'border-b-2 border-red-600 text-red-600'
+                    : isDark
+                      ? 'text-gray-400 hover:text-gray-300'
+                      : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Rejected Forms ({stats?.rejected || 0})
+              </button>
+              <button
                 onClick={() => setActiveTab('history')}
                 className={`pb-3 px-2 font-medium transition-all duration-300 ${
                   activeTab === 'history'
@@ -350,6 +398,61 @@ export default function StaffDashboard() {
                   )}
                 </div>
               </>
+            )}
+
+            {/* Rejected Forms Tab */}
+            {activeTab === 'rejected' && (
+              <div className="mb-4">
+                <h2 className={`text-lg sm:text-xl font-semibold mb-4 transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Forms I Rejected
+                </h2>
+
+                {rejectedLoading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingSpinner />
+                  </div>
+                ) : rejectedForms.length > 0 ? (
+                  <>
+                    <div className={`mb-4 p-4 rounded-lg border transition-colors duration-700 ${
+                      isDark ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <XCircle className={`w-5 h-5 ${isDark ? 'text-red-400' : 'text-red-600'}`} />
+                        <h3 className={`font-semibold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                          Rejected Applications
+                        </h3>
+                      </div>
+                      <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        These forms were rejected by you. Students can view the rejection reason and reapply with corrections.
+                      </div>
+                    </div>
+                    <DataTable
+                      headers={historyHeaders}
+                      data={rejectedForms.map(item => ({
+                        'student_name': item.no_dues_forms?.student_name || 'N/A',
+                        'registration_no': item.no_dues_forms?.registration_no || 'N/A',
+                        'action': '❌ Rejected',
+                        'date': item.action_at ? new Date(item.action_at).toLocaleDateString('en-IN') : 'N/A',
+                        'reason': item.rejection_reason || '-',
+                        'id': item.no_dues_forms?.id
+                      }))}
+                      onRowClick={handleRowClick}
+                    />
+                  </>
+                ) : (
+                  <div className={`text-center py-12 transition-colors duration-700 ${
+                    isDark ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    <CheckCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No rejected applications</p>
+                    <p className="text-sm">
+                      You haven't rejected any applications yet
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Action History Tab */}

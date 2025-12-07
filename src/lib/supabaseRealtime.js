@@ -22,9 +22,11 @@ class SupabaseRealtimeService {
     this.isInitializing = false;
     this.reconnectTimeout = null;
     this.reconnectAttempts = 0;
-    this.MAX_RECONNECT_ATTEMPTS = 5;
+    this.MAX_RECONNECT_ATTEMPTS = Infinity; // Infinite reconnection attempts
+    this.MAX_RECONNECT_DELAY = 30000; // Cap at 30 seconds
     this.connectionStatus = 'disconnected';
     this.lastConnectionTime = null;
+    this.userInitiatedDisconnect = false;
   }
 
   /**
@@ -230,12 +232,12 @@ class SupabaseRealtimeService {
   }
 
   /**
-   * Schedule reconnection with exponential backoff
+   * Schedule reconnection with exponential backoff (infinite attempts)
    */
   scheduleReconnect() {
-    if (this.reconnectAttempts >= this.MAX_RECONNECT_ATTEMPTS) {
-      console.error(`⛔ Max reconnect attempts (${this.MAX_RECONNECT_ATTEMPTS}) reached`);
-      console.warn('💡 Please refresh the page or check your connection');
+    // Don't reconnect if user explicitly disconnected
+    if (this.userInitiatedDisconnect) {
+      console.log('⏸️ Skipping reconnect - user initiated disconnect');
       return;
     }
 
@@ -244,14 +246,29 @@ class SupabaseRealtimeService {
       clearTimeout(this.reconnectTimeout);
     }
 
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 16000);
     this.reconnectAttempts++;
 
-    console.log(`🔄 Scheduling reconnect attempt ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
+    // Exponential backoff with cap: 1s, 2s, 4s, 8s, 16s, 30s (max)
+    const delay = Math.min(
+      1000 * Math.pow(2, Math.min(this.reconnectAttempts - 1, 5)),
+      this.MAX_RECONNECT_DELAY
+    );
+
+    console.log(`🔄 Scheduling reconnect attempt #${this.reconnectAttempts} in ${delay}ms`);
+
+    // Notify subscribers of reconnection attempt
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('realtime-reconnecting', {
+        detail: {
+          attempt: this.reconnectAttempts,
+          delay: delay,
+          nextRetryTime: Date.now() + delay
+        }
+      }));
+    }
 
     this.reconnectTimeout = setTimeout(async () => {
-      console.log(`🔄 Attempting reconnect ${this.reconnectAttempts}/${this.MAX_RECONNECT_ATTEMPTS}...`);
+      console.log(`🔄 Attempting reconnect #${this.reconnectAttempts}...`);
       
       // Clean up old channel
       if (this.channel) {
@@ -273,6 +290,7 @@ class SupabaseRealtimeService {
 
     // Only cleanup if no more subscribers
     if (this.subscriberCount === 0) {
+      this.userInitiatedDisconnect = true;
       this.cleanup();
     }
   }
@@ -299,6 +317,7 @@ class SupabaseRealtimeService {
     this.isInitializing = false;
     this.reconnectAttempts = 0;
     this.connectionStatus = 'disconnected';
+    this.userInitiatedDisconnect = false;
     
     // Flush any pending events in manager
     realtimeManager.flush();
@@ -323,11 +342,19 @@ class SupabaseRealtimeService {
    */
   async forceReconnect() {
     console.log('🔄 Forcing realtime reconnect...');
+    this.userInitiatedDisconnect = false;
     this.reconnectAttempts = 0;
     await this.cleanup();
     if (this.subscriberCount > 0) {
       await this.initialize();
     }
+  }
+
+  /**
+   * Check if currently reconnecting
+   */
+  isReconnecting() {
+    return this.reconnectTimeout !== null;
   }
 }
 

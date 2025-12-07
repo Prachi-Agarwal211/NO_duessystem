@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
+import { RefreshCw } from 'lucide-react';
 
 export default function ApplicationsTable({ applications, currentPage, totalPages, totalItems, onPageChange }) {
   const [expandedRows, setExpandedRows] = useState(new Set());
@@ -49,11 +50,28 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
                         {isExpanded ? '▼' : '▶'}
                       </button>
                     </td>
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white group-hover:text-jecrc-red dark:group-hover:text-jecrc-red-light transition-colors">{app.student_name}</td>
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white group-hover:text-jecrc-red dark:group-hover:text-jecrc-red-light transition-colors">
+                      <div className="flex items-center gap-2">
+                        {app.student_name}
+                        {app.is_reapplication && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                            <RefreshCw className="w-3 h-3" />
+                            Reapplied
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300 font-mono">{app.registration_no}</td>
                     <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">{app.course || 'N/A'}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge status={app.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={app.status} />
+                        {app.reapplication_count > 0 && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({app.reapplication_count}x)
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <DepartmentStatusSummary departmentStatuses={app.no_dues_status || []} />

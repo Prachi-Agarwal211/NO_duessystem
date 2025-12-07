@@ -190,17 +190,9 @@ export default function StudentDetailView() {
       const result = await response.json();
 
       if (result.success) {
-        // Refresh status data
-        const statusResponse = await fetch(`/api/staff/student/${id}?userId=${user.id}`);
-        const statusResult = await statusResponse.json();
-
-        if (statusResult.success) {
-          setStudentData(statusResult.data.form);
-          setStatusData(statusResult.data.departmentStatuses);
-
-          // Navigate back to dashboard
-          router.push('/staff/dashboard');
-        }
+        console.log('✅ Approval successful - real-time will handle the update');
+        // Navigate back immediately - real-time subscription will update the dashboard
+        router.push('/staff/dashboard');
       } else {
         throw new Error(result.error || 'Failed to approve request');
       }
@@ -244,17 +236,9 @@ export default function StudentDetailView() {
       const result = await response.json();
 
       if (result.success) {
-        // Refresh status data
-        const statusResponse = await fetch(`/api/staff/student/${id}?userId=${user.id}`);
-        const statusResult = await statusResponse.json();
-
-        if (statusResult.success) {
-          setStudentData(statusResult.data.form);
-          setStatusData(statusResult.data.departmentStatuses);
-
-          // Navigate back to dashboard
-          router.push('/staff/dashboard');
-        }
+        console.log('✅ Rejection successful - real-time will handle the update');
+        // Navigate back immediately - real-time subscription will update the dashboard
+        router.push('/staff/dashboard');
       } else {
         throw new Error(result.error || 'Failed to reject request');
       }
@@ -335,8 +319,13 @@ export default function StudentDetailView() {
                   }`}>
                   Student Details
                 </h1>
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
                   <StatusBadge status={studentData.status} />
+                  {studentData.reapplication_count > 0 && (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                      🔄 Reapplication #{studentData.reapplication_count}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -349,6 +338,46 @@ export default function StudentDetailView() {
             {error && (
               <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
                 {error}
+              </div>
+            )}
+
+            {/* Reapplication Info Banner */}
+            {studentData.student_reply_message && studentData.reapplication_count > 0 && (
+              <div className={`mb-6 p-4 rounded-lg border transition-colors duration-700 ${
+                isDark
+                  ? 'bg-blue-500/10 border-blue-500/30'
+                  : 'bg-blue-50 border-blue-200'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <span className="text-blue-400 text-lg">💬</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium mb-2 transition-colors duration-700 ${
+                      isDark ? 'text-blue-300' : 'text-blue-700'
+                    }`}>
+                      Student's Reapplication Response (Reapplication #{studentData.reapplication_count}):
+                    </p>
+                    <p className={`text-sm italic transition-colors duration-700 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      "{studentData.student_reply_message}"
+                    </p>
+                    {studentData.last_reapplied_at && (
+                      <p className={`text-xs mt-2 transition-colors duration-700 ${
+                        isDark ? 'text-gray-500' : 'text-gray-500'
+                      }`}>
+                        Reapplied on: {new Date(studentData.last_reapplied_at).toLocaleString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -461,7 +490,16 @@ export default function StudentDetailView() {
                           {status.action_by ? status.action_by : '-'}
                         </td>
                         <td className="px-4 sm:px-6 py-4 text-sm">
-                          {status.status === 'rejected' && status.rejection_reason ? status.rejection_reason : '-'}
+                          {status.status === 'rejected' && status.rejection_reason ? (
+                            <div>
+                              <p className="text-red-400">{status.rejection_reason}</p>
+                              {studentData.reapplication_count > 0 && (
+                                <p className="text-xs text-orange-400 mt-1">
+                                  ⚠️ Student has reapplied - please review updates
+                                </p>
+                              )}
+                            </div>
+                          ) : '-'}
                         </td>
                       </tr>
                     ))}

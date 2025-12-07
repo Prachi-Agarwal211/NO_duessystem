@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw, XCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import ProgressBar from './ProgressBar';
 import DepartmentStatus from './DepartmentStatus';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import ReapplyModal from './ReapplyModal';
 
 export default function StatusTracker({ registrationNo }) {
   const { theme } = useTheme();
@@ -18,6 +19,7 @@ export default function StatusTracker({ registrationNo }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showReapplyModal, setShowReapplyModal] = useState(false);
 
   const fetchData = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -211,8 +213,12 @@ export default function StatusTracker({ registrationNo }) {
   }
 
   const approvedCount = statusData.filter(s => s.status === 'approved').length;
+  const rejectedCount = statusData.filter(s => s.status === 'rejected').length;
   const totalCount = statusData.length;
   const allApproved = approvedCount === totalCount;
+  const hasRejection = rejectedCount > 0;
+  const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
+  const canReapply = hasRejection && formData.status !== 'completed';
 
   return (
     <motion.div
@@ -269,6 +275,105 @@ export default function StatusTracker({ registrationNo }) {
           <ProgressBar current={approvedCount} total={totalCount} />
         </div>
       </div>
+
+      {/* Rejection Alert */}
+      {hasRejection && !allApproved && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth border-2 ${
+            isDark
+              ? 'bg-red-500/10 border-red-500/30'
+              : 'bg-red-50 border-red-200'
+          }`}
+        >
+          <div className="flex items-start gap-4">
+            <XCircle className="w-8 h-8 text-red-500 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-red-500 font-bold text-xl mb-2 flex items-center gap-2">
+                Application Rejected by {rejectedCount} Department{rejectedCount > 1 ? 's' : ''}
+              </h3>
+              <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth ${
+                isDark ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Your application has been rejected. Please review the rejection reasons below and reapply with the necessary corrections.
+              </p>
+
+              {/* Rejected Departments List */}
+              <div className="space-y-3 mb-4">
+                {rejectedDepartments.map((dept, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${
+                      isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="font-bold text-red-400">{dept.display_name}</p>
+                      {dept.action_at && (
+                        <p className={`text-xs transition-colors duration-700 ease-smooth ${
+                          isDark ? 'text-gray-500' : 'text-gray-500'
+                        }`}>
+                          {new Date(dept.action_at).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    <p className={`text-sm transition-colors duration-700 ease-smooth ${
+                      isDark ? 'text-red-300' : 'text-red-600'
+                    }`}>
+                      <span className="font-medium">Reason: </span>
+                      {dept.rejection_reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Current Reply Message if exists */}
+              {formData.student_reply_message && formData.reapplication_count > 0 && (
+                <div className={`p-4 rounded-lg mb-4 transition-all duration-700 ease-smooth ${
+                  isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-blue-400" />
+                    <p className="text-sm font-medium text-blue-400">
+                      Your Previous Response (Reapplication #{formData.reapplication_count}):
+                    </p>
+                  </div>
+                  <p className={`text-sm italic transition-colors duration-700 ease-smooth ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    "{formData.student_reply_message}"
+                  </p>
+                </div>
+              )}
+
+              {/* Reapply Button */}
+              {canReapply && (
+                <button
+                  onClick={() => setShowReapplyModal(true)}
+                  className="w-full bg-jecrc-red hover:bg-red-700 text-white py-4 rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40 flex items-center justify-center gap-2"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  Reapply with Corrections
+                </button>
+              )}
+
+              {!canReapply && formData.status === 'completed' && (
+                <div className={`text-center text-sm transition-colors duration-700 ease-smooth ${
+                  isDark ? 'text-gray-500' : 'text-gray-500'
+                }`}>
+                  Form is completed. Reapplication not allowed.
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* All Approved Message */}
       {allApproved && (
@@ -336,6 +441,20 @@ export default function StatusTracker({ registrationNo }) {
         ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
         Real-time updates enabled • Auto-refresh fallback every 60 seconds
       </p>
+
+      {/* Reapply Modal */}
+      {showReapplyModal && (
+        <ReapplyModal
+          formData={formData}
+          rejectedDepartments={rejectedDepartments}
+          onClose={() => setShowReapplyModal(false)}
+          onSuccess={(result) => {
+            setShowReapplyModal(false);
+            // Refresh data after successful reapplication
+            fetchData(true);
+          }}
+        />
+      )}
     </motion.div>
   );
 }
