@@ -150,15 +150,8 @@ export const generateCertificate = async (certificateData) => {
     pdf.setTextColor(...JECRC_RED);
     pdf.text('NO DUES CLEARANCE', pageWidth / 2, 132, { align: 'center' });
     
-    // --- 5. Academic Details Box ---
-    const boxY = 140;
-    const boxHeight = 22;
-    const boxWidth = 160;
-    
-    // Background for details
-    pdf.setFillColor(252, 252, 252); // Very light gray
-    pdf.setDrawColor(230, 230, 230);
-    pdf.rect(pageWidth / 2 - (boxWidth / 2), boxY, boxWidth, boxHeight, 'FD');
+    // --- 5. Academic Details (No Box) ---
+    const detailsY = 145;
     
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
@@ -169,8 +162,8 @@ export const generateCertificate = async (certificateData) => {
     const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
     const sessionText = `Session: ${certificateData.sessionFrom || 'N/A'} - ${certificateData.sessionTo || 'N/A'}`;
     
-    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, boxY + 9, { align: 'center' });
-    pdf.text(sessionText, pageWidth / 2, boxY + 16, { align: 'center' });
+    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, detailsY, { align: 'center' });
+    pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
     
     // --- 6. Date & Signature ---
     const footerY = 170;
