@@ -125,11 +125,18 @@ export function useAdminDashboard() {
 
       if (!session?.user?.id) return;
 
-      const response = await fetch(`/api/admin/stats?userId=${session.user.id}`);
+      // Add cache-busting timestamp to force fresh stats
+      const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${Date.now()}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const result = await response.json();
 
       if (response.ok) {
         setStats(result);
+        console.log('📊 Stats refreshed:', result.overallStats?.[0]);
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -146,16 +153,17 @@ export function useAdminDashboard() {
   };
 
   // Manual refresh function - stable reference using refs to avoid stale closures
+  // ⚠️ CRITICAL: Empty dependency array to prevent stale closures in real-time subscriptions
   const refreshData = useCallback(() => {
     console.log('🔄 Refresh triggered - updating dashboard and stats');
 
     // Force refresh by setting refreshing state
     setRefreshing(true);
 
-    // Use refs to get latest functions
+    // Use refs to get latest functions and state
     if (fetchDashboardDataRef.current) {
-      // Always refresh with current filters and current page
-      // Pass true for isRefresh to show refreshing indicator
+      // IMPORTANT: Use currentPage from state closure, not parameter
+      // This ensures we always refresh the current page the user is viewing
       fetchDashboardDataRef.current(currentFiltersRef.current, true, currentPage);
     }
 
@@ -166,7 +174,7 @@ export function useAdminDashboard() {
 
     // Update last update timestamp to trigger re-render
     setLastUpdate(new Date());
-  }, [currentPage]); // Add currentPage as dependency to ensure latest page is used
+  }, []); // Empty deps - stable reference, uses refs and state closure
 
   // ==================== REAL-TIME SUBSCRIPTION ====================
   // NEW ARCHITECTURE: Use centralized realtime service + event manager
@@ -198,12 +206,10 @@ export function useAdminDashboard() {
 
         console.log('🔄 Triggering admin dashboard refresh from real-time event...');
 
-        // Add a small delay to ensure proper digestion of previous updates
-        setTimeout(() => {
-          // Refresh data - RealtimeManager handles deduplication
-          console.log('🚀 Executing refreshData() for admin dashboard');
-          refreshData();
-        }, 100);
+        // Refresh immediately - no setTimeout delays that create race conditions
+        // RealtimeManager already handles deduplication and batching
+        console.log('🚀 Executing refreshData() for admin dashboard');
+        refreshData();
       });
     };
 

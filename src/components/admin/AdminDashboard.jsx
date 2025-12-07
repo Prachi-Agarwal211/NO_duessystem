@@ -259,10 +259,10 @@ export default function AdminDashboard() {
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GlassCard className="p-6">
-              {stats?.departmentStats && <DepartmentPerformanceChart data={stats.departmentStats} />}
+              {stats?.departmentStats && <DepartmentPerformanceChart data={stats.departmentStats} key={lastUpdate.getTime()} />}
             </GlassCard>
             <GlassCard className="p-6">
-              <RequestTrendChart userId={userId} />
+              <RequestTrendChart userId={userId} lastUpdate={lastUpdate} />
             </GlassCard>
           </div>
 

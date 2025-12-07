@@ -72,9 +72,12 @@ export function useStaffDashboard() {
         throw new Error('Session expired. Please login again.');
       }
 
-      const response = await fetch('/api/staff/stats', {
+      // Add cache-busting to force fresh stats
+      const response = await fetch(`/api/staff/stats?_t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
 
@@ -219,10 +222,8 @@ export function useStaffDashboard() {
         // This includes when staff approve/reject their own pending items
         if (analysis.formIds.length > 0) {
           console.log('🔄 Triggering staff dashboard refresh from department action...');
-          // Small delay to ensure database triggers complete
-          setTimeout(() => {
-            refreshData();
-          }, 100);
+          // Refresh immediately - RealtimeManager handles deduplication
+          refreshData();
         }
       });
 

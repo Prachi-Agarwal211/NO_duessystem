@@ -16,7 +16,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-export default function RequestTrendChart({ userId }) {
+export default function RequestTrendChart({ userId, lastUpdate }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -62,7 +62,7 @@ export default function RequestTrendChart({ userId }) {
     },
   };
 
-  // Fetch REAL trend data from API
+  // Fetch REAL trend data from API - refresh when lastUpdate changes
   useEffect(() => {
     const fetchTrendData = async () => {
       if (!userId) {
@@ -75,7 +75,13 @@ export default function RequestTrendChart({ userId }) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/admin/trends?userId=${userId}&months=12`);
+        // Add cache-busting timestamp
+        const response = await fetch(`/api/admin/trends?userId=${userId}&months=12&_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         const result = await response.json();
 
         if (!response.ok || !result.success) {
@@ -83,6 +89,7 @@ export default function RequestTrendChart({ userId }) {
         }
 
         setData(result.data);
+        console.log('📈 Trend chart refreshed');
       } catch (err) {
         console.error('Error fetching trend data:', err);
         setError(err.message);
@@ -92,7 +99,7 @@ export default function RequestTrendChart({ userId }) {
     };
 
     fetchTrendData();
-  }, [userId]);
+  }, [userId, lastUpdate]); // Re-fetch when lastUpdate changes
 
   const containerClasses = `rounded-xl border p-6 transition-all duration-700 ${
     isDark ? 'bg-white/5 border-white/10 backdrop-blur-sm' : 'bg-white border-gray-200 shadow-sm'

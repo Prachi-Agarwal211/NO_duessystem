@@ -151,6 +151,7 @@ export async function PUT(request) {
       console.log(`🎓 Form completed - triggering background certificate generation for ${formId}`);
       
       // Fire and forget - certificate generation happens in background
+      // Use proper error handling with catch to prevent unhandled promise rejections
       fetch(
         `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
         {
@@ -159,7 +160,12 @@ export async function PUT(request) {
           body: JSON.stringify({ formId })
         }
       )
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          return res.json();
+        })
         .then(result => {
           if (result.success) {
             console.log(`✅ Certificate generated: ${result.certificateUrl}`);
@@ -168,7 +174,8 @@ export async function PUT(request) {
           }
         })
         .catch(error => {
-          console.error('❌ Certificate generation error:', error);
+          // Log but don't throw - this is fire-and-forget
+          console.error('❌ Certificate generation error:', error.message || error);
         });
     }
 

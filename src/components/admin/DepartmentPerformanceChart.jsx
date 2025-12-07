@@ -86,4 +86,5 @@ function DepartmentPerformanceChart({ data }) {
   );
 }
 
-export default React.memo(DepartmentPerformanceChart);
+// Export without memo to allow real-time updates
+export default DepartmentPerformanceChart;

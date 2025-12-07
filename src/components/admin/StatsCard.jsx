@@ -79,5 +79,5 @@ function StatsCard({ title, value, change, trend, color }) {
   );
 }
 
-// Memoize to prevent unnecessary re-renders when props don't change
-export default React.memo(StatsCard);
+// Export without memo to allow real-time updates
+export default StatsCard;
