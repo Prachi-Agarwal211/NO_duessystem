@@ -6,7 +6,7 @@ export default function FormInput({
   label,
   name,
   type = 'text',
-  value,
+  value = '', // Default to empty string to prevent uncontrolled input warning
   onChange,
   required = false,
   error = '',

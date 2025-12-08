@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { notifyAllDepartments } from '@/lib/emailService';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
 
 // Create Supabase admin client for server-side operations
 const supabaseAdmin = createClient(
@@ -19,7 +21,26 @@ const supabaseAdmin = createClient(
  */
 export async function POST(request) {
   try {
+    // Rate limiting: Prevent spam form submissions
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const formData = await request.json();
+
+    // Input validation using centralized validation library
+    const validation = await validateRequest(request, VALIDATION_SCHEMAS.STUDENT_FORM);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          errors: validation.errors
+        },
+        { status: 400 }
+      );
+    }
 
     // ==================== FETCH VALIDATION RULES FROM DATABASE ====================
     const { data: validationRules, error: rulesError } = await supabaseAdmin
@@ -385,6 +406,12 @@ export async function POST(request) {
  */
 export async function GET(request) {
   try {
+    // Rate limiting for status check queries
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,7 +11,26 @@ const supabaseAdmin = createClient(
 
 export async function PUT(request) {
   try {
+    // Rate limiting: Prevent spam actions
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.ACTION);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const body = await request.json();
+
+    // Input validation using centralized validation library
+    const validation = await validateRequest(request, VALIDATION_SCHEMAS.STAFF_ACTION);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          errors: validation.errors
+        },
+        { status: 400 }
+      );
+    }
     const { formId, departmentName, action, reason, userId } = body;
 
     // Validate required fields

@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
 import { RefreshCw } from 'lucide-react';
 
 export default function ApplicationsTable({ applications, currentPage, totalPages, totalItems, onPageChange }) {
   const [expandedRows, setExpandedRows] = useState(new Set());
+  
+  // FIX: Reset expanded rows when applications change to prevent memory leak
+  useEffect(() => {
+    setExpandedRows(new Set());
+  }, [applications]);
 
   const toggleRowExpansion = (appId) => {
     setExpandedRows(prev => {

@@ -14,8 +14,9 @@ import Logo from '@/components/ui/Logo';
 import StatsCard from '@/components/staff/StatsCard';
 import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function StaffDashboard() {
+function StaffDashboardContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending'); // pending, rejected, history
@@ -498,5 +499,13 @@ export default function StaffDashboard() {
         </div>
       </div>
     </PageWrapper>
+  );
+}
+
+export default function StaffDashboard() {
+  return (
+    <ErrorBoundary>
+      <StaffDashboardContent />
+    </ErrorBoundary>
   );
 }

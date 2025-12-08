@@ -3,6 +3,8 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -22,8 +24,27 @@ const supabaseAdmin = createClient(
  */
 export async function PUT(request) {
   try {
+    // Rate limiting: Prevent spam reapplications
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const body = await request.json();
     const { registration_no, student_reply_message, updated_form_data } = body;
+
+    // Input validation for reapplication data
+    const validation = await validateRequest(request, VALIDATION_SCHEMAS.REAPPLY);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          errors: validation.errors
+        },
+        { status: 400 }
+      );
+    }
 
     // ==================== VALIDATION ====================
     if (!registration_no?.trim()) {
@@ -100,19 +121,68 @@ export async function PUT(request) {
       }, { status: 403 });
     }
 
-    // ==================== VALIDATE UPDATED FIELDS ====================
+    // ==================== INPUT SANITIZATION ====================
+    // SECURITY: Allowlist of fields students can modify
+    const ALLOWED_FIELDS = [
+      'student_name',
+      'parent_name',
+      'session_from',
+      'session_to',
+      'school',
+      'course',
+      'branch',
+      'country_code',
+      'contact_no',
+      'personal_email',
+      'college_email'
+    ];
+
+    // SECURITY: Fields that are STRICTLY FORBIDDEN to prevent attacks
+    const PROTECTED_FIELDS = [
+      'id',
+      'registration_no',
+      'status',
+      'created_at',
+      'updated_at',
+      'reapplication_count',
+      'is_reapplication',
+      'last_reapplied_at'
+    ];
+
+    let sanitizedData = {};
+    
     if (updated_form_data) {
+      // Check for attempts to modify protected fields
+      for (const field of PROTECTED_FIELDS) {
+        if (updated_form_data.hasOwnProperty(field)) {
+          return NextResponse.json({
+            success: false,
+            error: `Cannot modify protected field: ${field}`
+          }, { status: 403 });
+        }
+      }
+
+      // Only keep allowed fields
+      for (const field of ALLOWED_FIELDS) {
+        if (updated_form_data.hasOwnProperty(field)) {
+          sanitizedData[field] = updated_form_data[field];
+        }
+      }
+    }
+
+    // ==================== VALIDATE SANITIZED FIELDS ====================
+    if (sanitizedData && Object.keys(sanitizedData).length > 0) {
       // Validate email formats if updated
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       
-      if (updated_form_data.personal_email && !emailPattern.test(updated_form_data.personal_email)) {
+      if (sanitizedData.personal_email && !emailPattern.test(sanitizedData.personal_email)) {
         return NextResponse.json({
           success: false,
           error: 'Invalid personal email format'
         }, { status: 400 });
       }
 
-      if (updated_form_data.college_email && !emailPattern.test(updated_form_data.college_email)) {
+      if (sanitizedData.college_email && !emailPattern.test(sanitizedData.college_email)) {
         return NextResponse.json({
           success: false,
           error: 'Invalid college email format'
@@ -120,9 +190,9 @@ export async function PUT(request) {
       }
 
       // Validate phone if updated
-      if (updated_form_data.contact_no) {
+      if (sanitizedData.contact_no) {
         const phonePattern = /^[0-9]{6,15}$/;
-        if (!phonePattern.test(updated_form_data.contact_no)) {
+        if (!phonePattern.test(sanitizedData.contact_no)) {
           return NextResponse.json({
             success: false,
             error: 'Phone number must be 6-15 digits'
@@ -151,12 +221,12 @@ export async function PUT(request) {
 
     // ==================== LOG REAPPLICATION HISTORY ====================
     const { error: historyError } = await supabaseAdmin
-      .from('no_dues_reapplication_history')
-      .insert({
-        form_id: form.id,
-        reapplication_number: form.reapplication_count + 1,
-        student_message: student_reply_message.trim(),
-        edited_fields: updated_form_data || {},
+    .from('no_dues_reapplication_history')
+    .insert({
+      form_id: form.id,
+      reapplication_number: form.reapplication_count + 1,
+      student_message: student_reply_message.trim(),
+      edited_fields: sanitizedData || {},
         rejected_departments: rejectedDepartments,
         previous_status: previousStatus
       });
@@ -172,8 +242,8 @@ export async function PUT(request) {
       last_reapplied_at: new Date().toISOString(),
       student_reply_message: student_reply_message.trim(),
       is_reapplication: true,
-      status: 'pending', // Reset to pending
-      ...(updated_form_data || {}) // Merge updated fields
+      status: 'pending', // Reset to pending - FORCE this value
+      ...(sanitizedData || {}) // Merge only sanitized fields
     };
 
     const { error: formUpdateError } = await supabaseAdmin
@@ -265,6 +335,12 @@ export async function PUT(request) {
  */
 export async function GET(request) {
   try {
+    // Rate limiting for reapplication history queries
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 

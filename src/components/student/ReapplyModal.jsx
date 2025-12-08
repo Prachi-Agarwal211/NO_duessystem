@@ -7,6 +7,22 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FormInput from './FormInput';
 import { useFormConfig } from '@/hooks/useFormConfig';
 
+// ESC key handler hook
+function useEscapeKey(callback, enabled = true) {
+  useEffect(() => {
+    if (!enabled) return;
+    
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        callback();
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [callback, enabled]);
+}
+
 export default function ReapplyModal({ 
   formData, 
   rejectedDepartments = [],
@@ -15,6 +31,17 @@ export default function ReapplyModal({
 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+  
+  // ESC key to close (only when not loading)
+  useEscapeKey(onClose, !loading);
   
   const {
     schools,
@@ -235,15 +262,15 @@ export default function ReapplyModal({
 
   return (
     <AnimatePresence>
-      <motion.div 
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto"
+      <motion.div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
-        <motion.div 
-          className={`rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 transition-colors duration-700 ${
+        <motion.div
+          className={`rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col transition-colors duration-700 ${
             isDark ? 'bg-gray-900 border border-white/10' : 'bg-white border border-black/10'
           }`}
           initial={{ scale: 0.9, opacity: 0 }}
@@ -251,8 +278,10 @@ export default function ReapplyModal({
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="flex justify-between items-start mb-6">
+          {/* Sticky Header */}
+          <div className={`sticky top-0 z-10 flex justify-between items-start p-6 border-b transition-colors duration-700 ${
+            isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+          }`}>
             <div>
               <h2 className={`text-2xl font-bold transition-colors duration-700 ${
                 isDark ? 'text-white' : 'text-ink-black'
@@ -276,7 +305,9 @@ export default function ReapplyModal({
             </button>
           </div>
 
-          {/* Error Alert */}
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Error Alert */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -285,10 +316,10 @@ export default function ReapplyModal({
             >
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-500">{error}</p>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* Rejection Reasons */}
+            {/* Rejection Reasons */}
           <div className="mb-6">
             <h3 className={`font-bold mb-3 transition-colors duration-700 ${
               isDark ? 'text-white' : 'text-ink-black'
@@ -316,9 +347,9 @@ export default function ReapplyModal({
                 </div>
               ))}
             </div>
-          </div>
+            </div>
 
-          {/* Reply Message */}
+            {/* Reply Message */}
           <div className="mb-6">
             <label className={`block font-medium mb-2 transition-colors duration-700 ${
               isDark ? 'text-white' : 'text-ink-black'
@@ -346,9 +377,9 @@ export default function ReapplyModal({
             }`}>
               {replyMessage.length} / 20 characters minimum
             </p>
-          </div>
+            </div>
 
-          {/* Editable Form Fields */}
+            {/* Editable Form Fields */}
           <div className="mb-6">
             <h3 className={`font-bold mb-4 transition-colors duration-700 ${
               isDark ? 'text-white' : 'text-ink-black'
@@ -472,10 +503,14 @@ export default function ReapplyModal({
                 disabled={loading || configLoading}
               />
             </div>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          {/* Sticky Footer */}
+          <div className={`sticky bottom-0 z-10 p-6 border-t transition-colors duration-700 ${
+            isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
+          }`}>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
             <button
               onClick={onClose}
               disabled={loading}
@@ -504,6 +539,7 @@ export default function ReapplyModal({
                 </>
               )}
             </button>
+            </div>
           </div>
         </motion.div>
       </motion.div>

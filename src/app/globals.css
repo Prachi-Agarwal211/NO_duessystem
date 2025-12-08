@@ -88,8 +88,13 @@ body {
   overflow-x: hidden;
   background: var(--pure-black);
   color: var(--pure-white);
-  transition: all 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* OPTIMIZED: Only animate necessary properties */
+  transition: background-color 700ms cubic-bezier(0.4, 0, 0.2, 1), color 700ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  /* GPU acceleration for better performance */
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ========================================
@@ -157,7 +162,11 @@ body::after {
   background-repeat: no-repeat;
   z-index: 0; /* Above body, below content */
   pointer-events: none;
-  transition: all 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* OPTIMIZED: Only animate necessary properties */
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1), filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* GPU acceleration */
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 /* Light Mode - Gradient overlay on watermark */
@@ -239,11 +248,13 @@ body.dark::after {
   background: transparent;
 }
 
-/* Smooth transitions */
+/* Smooth transitions - OPTIMIZED: Only animate transform and opacity */
 .smooth-transition {
-  transition-property: all;
+  transition-property: transform, opacity;
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  /* GPU acceleration */
+  will-change: transform, opacity;
 }
 
 /* ========================================
@@ -275,33 +286,49 @@ input:-webkit-autofill:active {
   }
 }
 
-/***** Glass Morphism with Glow *****/
+/***** Glass Morphism with Glow - OPTIMIZED *****/
 .glass {
-  @apply backdrop-blur-xl border transition-all duration-700;
+  @apply backdrop-blur-xl border;
   @apply dark:bg-white/5 dark:border-white/10 dark:shadow-neon-white;
   @apply bg-white/60 border-jecrc-red/10 shadow-lg;
+  /* OPTIMIZED: Only animate necessary properties */
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  /* GPU acceleration */
+  will-change: background-color, border-color;
 }
 
-/* Form Input with Glow Effects */
+/* Form Input with Glow Effects - OPTIMIZED */
 .input {
-  @apply w-full rounded-lg border px-3 py-2 outline-none transition-all duration-300;
+  @apply w-full rounded-lg border px-3 py-2 outline-none;
   @apply dark:border-white/20 dark:bg-black/80 dark:text-white dark:placeholder-white/40;
   @apply dark:focus:shadow-neon-white dark:focus:border-white/40;
   @apply bg-white/90 text-black placeholder-black/50 border-jecrc-red/20;
   @apply focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/40 focus:bg-white;
   @apply focus:shadow-sharp-black;
+  /* OPTIMIZED transitions */
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 
-/* Primary Button with Glow & Animation */
+/* Primary Button with Glow & Animation - OPTIMIZED */
 .btn-primary {
   @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white;
   @apply bg-gradient-to-r from-jecrc-red to-jecrc-red-dark;
   @apply hover:from-jecrc-red-light hover:to-jecrc-red;
   @apply dark:shadow-neon-red-lg shadow-sharp-black-lg;
-  @apply transition-all duration-300 hover:scale-105 active:scale-95;
   @apply hover:shadow-neon-red-xl dark:hover:shadow-neon-red-xl;
   position: relative;
   overflow: hidden;
+  /* OPTIMIZED: Only animate transform and box-shadow */
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  will-change: transform;
+}
+
+.btn-primary:hover {
+  transform: scale(1.05);
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
 }
 
 .btn-primary::before {
@@ -314,7 +341,10 @@ input:-webkit-autofill:active {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  /* OPTIMIZED: Faster ripple animation */
+  transition: width 0.4s ease, height 0.4s ease;
+  /* GPU acceleration */
+  will-change: width, height;
 }
 
 .btn-primary:hover::before {
@@ -322,12 +352,13 @@ input:-webkit-autofill:active {
   height: 300px;
 }
 
-/* Ghost Button - Minimal Outline */
+/* Ghost Button - Minimal Outline - OPTIMIZED */
 .btn-ghost {
   @apply inline-flex items-center justify-center rounded-lg border px-4 py-2 font-semibold;
   @apply dark:border-white/20 dark:text-white dark:hover:bg-white/10 dark:hover:border-jecrc-red-bright;
   @apply border-black/20 text-black hover:bg-black/5 hover:border-jecrc-red;
-  @apply transition-all duration-300;
+  /* OPTIMIZED transitions */
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 /***** Gradient animation keyframes (red/white theme) *****/
@@ -361,8 +392,18 @@ input:-webkit-autofill:active {
   100% { transform: translate(-5%, -5%) rotate(360deg) scale(1); }
 }
 
-.animate-first { animation: moveOne 28s ease-in-out infinite; }
-.animate-second { animation: moveTwo 32s ease-in-out infinite; }
+/* OPTIMIZED: GPU acceleration for smooth animations */
+.animate-first { 
+  animation: moveOne 28s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-second { 
+  animation: moveTwo 32s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
 
 /* ========================================
    TEXT GLOW & HEADING STYLES
@@ -377,9 +418,10 @@ input:-webkit-autofill:active {
                0 0 20px rgba(255, 255, 255, 0.08);
 }
 
-/* Enhanced headings with animations */
+/* Enhanced headings with animations - OPTIMIZED */
 h1, h2, h3 {
-  @apply transition-all duration-700;
+  /* OPTIMIZED: Only animate text-shadow for performance */
+  transition: text-shadow 300ms ease;
 }
 
 .dark h1:hover,
@@ -414,13 +456,15 @@ h1, h2, h3 {
   }
 }
 
-/* Card hover lift effect */
+/* Card hover lift effect - OPTIMIZED */
 .hover-lift {
-  @apply transition-all duration-300;
+  /* OPTIMIZED: Only animate transform and filter */
+  transition: transform 200ms ease, filter 200ms ease;
+  will-change: transform;
 }
 
 .hover-lift:hover {
-  @apply -translate-y-1;
+  transform: translateY(-0.25rem);
 }
 
 .dark .hover-lift:hover {
@@ -444,9 +488,10 @@ h1, h2, h3 {
   100% { background-position: 200% 0; }
 }
 
-/* Status badge glow */
+/* Status badge glow - OPTIMIZED */
 .badge-glow {
-  @apply transition-all duration-300;
+  /* OPTIMIZED: Only animate box-shadow */
+  transition: box-shadow 200ms ease;
 }
 
 .dark .badge-glow {
@@ -457,9 +502,25 @@ h1, h2, h3 {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.2),
               0 0 30px rgba(255, 255, 255, 0.1);
 }
-.animate-third { animation: moveThree 36s ease-in-out infinite; }
-.animate-fourth { animation: moveFour 40s ease-in-out infinite; }
-.animate-fifth { animation: moveFive 44s ease-in-out infinite; }
+
+/* OPTIMIZED: GPU acceleration for smooth animations */
+.animate-third { 
+  animation: moveThree 36s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-fourth { 
+  animation: moveFour 40s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.animate-fifth { 
+  animation: moveFive 44s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
 
 /* ========================================
    AURORA BACKGROUND ANIMATIONS

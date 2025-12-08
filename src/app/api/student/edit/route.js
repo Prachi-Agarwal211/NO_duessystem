@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -19,6 +20,12 @@ const supabaseAdmin = createClient(
  */
 export async function PUT(request) {
   try {
+    // Rate limiting: Prevent spam edit requests
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     const body = await request.json();
     const { registration_no, updated_form_data } = body;
 
@@ -63,9 +70,64 @@ export async function PUT(request) {
       }, { status: 403 });
     }
 
-    // ==================== VALIDATE UPDATED FIELDS ====================
-    // Don't allow editing registration number
-    if (updated_form_data.registration_no) {
+    // ==================== INPUT SANITIZATION ====================
+    // SECURITY: Allowlist of fields students can modify
+    const ALLOWED_FIELDS = [
+      'student_name',
+      'parent_name',
+      'session_from',
+      'session_to',
+      'school',
+      'course',
+      'branch',
+      'country_code',
+      'contact_no',
+      'personal_email',
+      'college_email'
+    ];
+
+    // SECURITY: Fields that are STRICTLY FORBIDDEN to prevent attacks
+    const PROTECTED_FIELDS = [
+      'id',
+      'registration_no',
+      'status',
+      'created_at',
+      'updated_at',
+      'reapplication_count',
+      'is_reapplication',
+      'last_reapplied_at',
+      'student_reply_message'
+    ];
+
+    // Check for attempts to modify protected fields
+    for (const field of PROTECTED_FIELDS) {
+      if (updated_form_data.hasOwnProperty(field)) {
+        return NextResponse.json({
+          success: false,
+          error: `Cannot modify protected field: ${field}`
+        }, { status: 403 });
+      }
+    }
+
+    // Only keep allowed fields
+    const sanitizedData = {};
+    for (const field of ALLOWED_FIELDS) {
+      if (updated_form_data.hasOwnProperty(field)) {
+        sanitizedData[field] = updated_form_data[field];
+      }
+    }
+
+    // Check if there are any fields left after sanitization
+    if (Object.keys(sanitizedData).length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'No valid fields to update'
+      }, { status: 400 });
+    }
+
+    // ==================== VALIDATE SANITIZED FIELDS ====================
+    // Don't allow editing registration number (double-check)
+    if (sanitizedData.registration_no) {
       return NextResponse.json({
         success: false,
         error: 'Registration number cannot be changed'
@@ -75,14 +137,14 @@ export async function PUT(request) {
     // Validate email formats if updated
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     
-    if (updated_form_data.personal_email && !emailPattern.test(updated_form_data.personal_email)) {
+    if (sanitizedData.personal_email && !emailPattern.test(sanitizedData.personal_email)) {
       return NextResponse.json({
         success: false,
         error: 'Invalid personal email format'
       }, { status: 400 });
     }
 
-    if (updated_form_data.college_email && !emailPattern.test(updated_form_data.college_email)) {
+    if (sanitizedData.college_email && !emailPattern.test(sanitizedData.college_email)) {
       return NextResponse.json({
         success: false,
         error: 'Invalid college email format'
@@ -90,9 +152,9 @@ export async function PUT(request) {
     }
 
     // Validate phone if updated
-    if (updated_form_data.contact_no) {
+    if (sanitizedData.contact_no) {
       const phonePattern = /^[0-9]{6,15}$/;
-      if (!phonePattern.test(updated_form_data.contact_no)) {
+      if (!phonePattern.test(sanitizedData.contact_no)) {
         return NextResponse.json({
           success: false,
           error: 'Phone number must be 6-15 digits'
@@ -101,9 +163,9 @@ export async function PUT(request) {
     }
 
     // Validate student name if updated
-    if (updated_form_data.student_name) {
+    if (sanitizedData.student_name) {
       const namePattern = /^[A-Za-z\s.\-']+$/;
-      if (!namePattern.test(updated_form_data.student_name)) {
+      if (!namePattern.test(sanitizedData.student_name)) {
         return NextResponse.json({
           success: false,
           error: 'Name should only contain letters, spaces, dots, hyphens, and apostrophes'
@@ -112,17 +174,17 @@ export async function PUT(request) {
     }
 
     // Validate session years if updated
-    if (updated_form_data.session_from || updated_form_data.session_to) {
+    if (sanitizedData.session_from || sanitizedData.session_to) {
       const yearPattern = /^\d{4}$/;
       
-      if (updated_form_data.session_from && !yearPattern.test(updated_form_data.session_from)) {
+      if (sanitizedData.session_from && !yearPattern.test(sanitizedData.session_from)) {
         return NextResponse.json({
           success: false,
           error: 'Session from year must be in YYYY format'
         }, { status: 400 });
       }
 
-      if (updated_form_data.session_to && !yearPattern.test(updated_form_data.session_to)) {
+      if (sanitizedData.session_to && !yearPattern.test(sanitizedData.session_to)) {
         return NextResponse.json({
           success: false,
           error: 'Session to year must be in YYYY format'
@@ -130,8 +192,8 @@ export async function PUT(request) {
       }
 
       // Validate session range
-      const fromYear = updated_form_data.session_from ? parseInt(updated_form_data.session_from) : null;
-      const toYear = updated_form_data.session_to ? parseInt(updated_form_data.session_to) : null;
+      const fromYear = sanitizedData.session_from ? parseInt(sanitizedData.session_from) : null;
+      const toYear = sanitizedData.session_to ? parseInt(sanitizedData.session_to) : null;
 
       if (fromYear && toYear && toYear < fromYear) {
         return NextResponse.json({
@@ -144,7 +206,7 @@ export async function PUT(request) {
     // ==================== UPDATE FORM ====================
     const { error: updateError } = await supabaseAdmin
       .from('no_dues_forms')
-      .update(updated_form_data)
+      .update(sanitizedData)
       .eq('id', form.id);
 
     if (updateError) {
@@ -161,7 +223,7 @@ export async function PUT(request) {
       data: {
         form_id: form.id,
         registration_no: form.registration_no,
-        updated_fields: Object.keys(updated_form_data)
+        updated_fields: Object.keys(sanitizedData)
       }
     }, { status: 200 });
 

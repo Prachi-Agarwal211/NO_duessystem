@@ -7,14 +7,14 @@ import PageWrapper from '@/components/landing/PageWrapper';
 import SubmitForm from '@/components/student/SubmitForm';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function SubmitFormPage() {
+function SubmitFormPageContent() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   return (
-    <PageWrapper>
       <div className="min-h-screen py-12 px-4 sm:px-6">
         {/* Back Button */}
         <motion.button
@@ -128,6 +128,15 @@ export default function SubmitFormPage() {
           </motion.div>
         </div>
       </div>
-    </PageWrapper>
+  );
+}
+
+export default function SubmitFormPage() {
+  return (
+    <ErrorBoundary>
+      <PageWrapper>
+        <SubmitFormPageContent />
+      </PageWrapper>
+    </ErrorBoundary>
   );
 }

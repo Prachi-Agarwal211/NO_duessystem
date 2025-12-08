@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { validateAndUploadAlumniScreenshot } from '@/lib/fileUpload';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
 // Centralized error response helper
 const createErrorResponse = (message, status = 500, context = '') => {
@@ -14,6 +15,12 @@ const createErrorResponse = (message, status = 500, context = '') => {
 
 export async function POST(request) {
   try {
+    // Rate limiting: Prevent spam file uploads
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.UPLOAD);
+    if (!rateLimitCheck.allowed) {
+      return rateLimitCheck.response;
+    }
+
     // Parse form data for file upload
     const formData = await request.formData();
     const file = formData.get('file');

@@ -13,6 +13,7 @@ import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 function CheckStatusContent() {
   const searchParams = useSearchParams();
@@ -334,14 +335,18 @@ function CheckStatusContent() {
 
 export default function CheckStatusPage() {
   return (
-    <Suspense fallback={
-      <PageWrapper>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
-        </div>
-      </PageWrapper>
-    }>
-      <CheckStatusContent />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={
+        <PageWrapper>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
+          </div>
+        </PageWrapper>
+      }>
+        <PageWrapper>
+          <CheckStatusContent />
+        </PageWrapper>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
