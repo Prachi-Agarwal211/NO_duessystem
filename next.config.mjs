@@ -65,6 +65,12 @@ const nextConfig = {
     
     // Reduce memory usage during builds
     webpackBuildWorker: true,
+    
+    // Enable optimized CSS
+    optimizeCss: true,
+    
+    // Optimize server components
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
 
   images: {
@@ -137,7 +143,11 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(self), microphone=(), geolocation=()',
+          },
+          {
+            key: 'Link',
+            value: '</manifest.json>; rel="manifest"',
           }
         ],
       },

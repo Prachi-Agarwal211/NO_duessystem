@@ -28,13 +28,14 @@ export default function GlobalBackground() {
 
   return (
     <div
-      className="fixed inset-0 w-full h-full transition-colors duration-700 ease-in-out pointer-events-none"
+      className="fixed inset-0 w-screen h-screen transition-colors duration-700 ease-in-out pointer-events-none"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        minHeight: '100vh',
         zIndex: 0,
         overflow: 'hidden'
       }}

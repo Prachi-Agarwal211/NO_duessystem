@@ -1,0 +1,72 @@
+{
+  "name": "JECRC No Dues System",
+  "short_name": "JECRC No Dues",
+  "description": "Student no-dues clearance portal for JECRC University",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#C41E3A",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/9-1-1536x720.jpg",
+      "sizes": "1536x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Submit Form",
+      "short_name": "Submit",
+      "description": "Submit a new no dues application",
+      "url": "/student/submit-form",
+      "icons": [
+        {
+          "src": "/assets/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Check Status",
+      "short_name": "Status",
+      "description": "Check your application status",
+      "url": "/student/check-status",
+      "icons": [
+        {
+          "src": "/assets/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Staff Dashboard",
+      "short_name": "Staff",
+      "description": "Access staff dashboard",
+      "url": "/staff/dashboard",
+      "icons": [
+        {
+          "src": "/assets/logo.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}

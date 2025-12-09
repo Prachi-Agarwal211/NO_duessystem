@@ -21,6 +21,20 @@ if (typeof window === 'undefined') {
 export const metadata = {
   title: "JECRC No Dues System",
   description: "Student no-dues clearance portal for JECRC University",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "JECRC No Dues"
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" }
+  ],
+  icons: {
+    icon: "/assets/logo.png",
+    apple: "/assets/logo.png"
+  }
 };
 
 // Use Next.js 14's generateViewport function instead of metadata
@@ -33,6 +47,14 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#C41E3A" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="JECRC No Dues" />
+        <link rel="apple-touch-icon" href="/assets/logo.png" />
+      </head>
       <body className="antialiased font-sans">
         <ThemeProvider>
           {/* Global Fixed Background - stays fixed across all pages */}
