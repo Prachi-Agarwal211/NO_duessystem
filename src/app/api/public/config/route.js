@@ -26,7 +26,18 @@ export async function GET(request) {
         .eq('is_active', true)
         .order('display_order');
 
-      if (schoolsError) throw schoolsError;
+      if (schoolsError) {
+        console.error('❌ Error fetching schools:', schoolsError);
+        // Return empty array if table doesn't exist instead of crashing
+        if (schoolsError.code === '42P01') {
+          return NextResponse.json({
+            success: false,
+            error: 'Configuration tables not set up. Please run database migration scripts.',
+            data: { schools: [], courses: [], branches: [] }
+          }, { status: 503 });
+        }
+        throw schoolsError;
+      }
 
       if (type === 'schools') {
         return NextResponse.json({ success: true, data: schools });
@@ -40,7 +51,17 @@ export async function GET(request) {
           .eq('is_active', true)
           .order('display_order');
 
-        if (coursesError) throw coursesError;
+        if (coursesError) {
+          console.error('❌ Error fetching courses:', coursesError);
+          if (coursesError.code === '42P01') {
+            return NextResponse.json({
+              success: false,
+              error: 'Configuration tables not set up. Please run database migration scripts.',
+              data: { schools: schools || [], courses: [], branches: [] }
+            }, { status: 503 });
+          }
+          throw coursesError;
+        }
 
         const { data: branches, error: branchesError } = await supabaseAdmin
           .from('config_branches')
@@ -48,7 +69,17 @@ export async function GET(request) {
           .eq('is_active', true)
           .order('display_order');
 
-        if (branchesError) throw branchesError;
+        if (branchesError) {
+          console.error('❌ Error fetching branches:', branchesError);
+          if (branchesError.code === '42P01') {
+            return NextResponse.json({
+              success: false,
+              error: 'Configuration tables not set up. Please run database migration scripts.',
+              data: { schools: schools || [], courses: courses || [], branches: [] }
+            }, { status: 503 });
+          }
+          throw branchesError;
+        }
 
         const { data: emailConfig, error: emailError } = await supabaseAdmin
           .from('config_emails')

@@ -42,10 +42,10 @@ export default function ManualEntryPage() {
     async function fetchSchools() {
       try {
         const { data } = await supabase
-          .from('schools')
+          .from('config_schools')
           .select('*')
           .eq('is_active', true)
-          .order('name');
+          .order('display_order');
         setSchools(data || []);
       } catch (err) {
         console.error('Error fetching schools:', err);
@@ -71,11 +71,11 @@ export default function ManualEntryPage() {
 
     if (schoolId) {
       const { data } = await supabase
-        .from('courses')
+        .from('config_courses')
         .select('*')
         .eq('school_id', schoolId)
         .eq('is_active', true)
-        .order('name');
+        .order('display_order');
       setCourses(data || []);
     }
   };
@@ -94,11 +94,11 @@ export default function ManualEntryPage() {
 
     if (courseId) {
       const { data } = await supabase
-        .from('branches')
+        .from('config_branches')
         .select('*')
         .eq('course_id', courseId)
         .eq('is_active', true)
-        .order('name');
+        .order('display_order');
       setBranches(data || []);
     }
   };

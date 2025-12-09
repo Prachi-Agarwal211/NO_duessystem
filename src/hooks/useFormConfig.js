@@ -95,12 +95,18 @@ export function useFormConfig() {
 
   // Get courses for selected school
   const getCoursesForSchool = useCallback((schoolId) => {
-    return courses.filter(course => course.school_id === schoolId);
+    if (!schoolId) return [];
+    const filtered = courses.filter(course => course.school_id === schoolId);
+    console.log(`🔍 getCoursesForSchool(${schoolId}):`, filtered);
+    return filtered;
   }, [courses]);
 
   // Get branches for selected course
   const getBranchesForCourse = useCallback((courseId) => {
-    return branches.filter(branch => branch.course_id === courseId);
+    if (!courseId) return [];
+    const filtered = branches.filter(branch => branch.course_id === courseId);
+    console.log(`🔍 getBranchesForCourse(${courseId}):`, filtered);
+    return filtered;
   }, [branches]);
 
   // Get validation rule by name

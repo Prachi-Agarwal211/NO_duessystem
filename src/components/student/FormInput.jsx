@@ -68,9 +68,12 @@ export default function FormInput({
           onBlur={() => setIsFocused(false)}
           disabled={disabled}
           required={required}
+          style={{
+            colorScheme: isDark ? 'dark' : 'light'
+          }}
           className={`
             w-full rounded-lg border px-3 pt-6 pb-2 outline-none
-            font-sans text-sm
+            font-sans text-sm cursor-pointer
             transition-all duration-300 ease-spring
             ${isDark
               ? `
@@ -78,6 +81,7 @@ export default function FormInput({
                 focus:border-jecrc-red-bright focus:shadow-neon-red
                 hover:border-white/30
                 disabled:opacity-50 disabled:cursor-not-allowed
+                [&>option]:bg-black [&>option]:text-white
               `
               : `
                 bg-white/90 text-black border-gray-300
@@ -85,20 +89,16 @@ export default function FormInput({
                 focus:shadow-sharp-black
                 hover:border-gray-400
                 disabled:bg-gray-100 disabled:cursor-not-allowed
+                [&>option]:bg-white [&>option]:text-black
               `
             }
             ${isFocused ? 'scale-[1.01]' : 'scale-100'}
           `}
           {...props}
         >
-          <option value="" disabled hidden>
+          <option value="" disabled>
             {placeholder || `Select ${label}`}
           </option>
-          {options.length === 0 && (
-            <option value="" disabled>
-              No options available
-            </option>
-          )}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
