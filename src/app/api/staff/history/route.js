@@ -44,7 +44,7 @@ export async function GET(request) {
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
+    if (profileError || !profile || (profile.role !== 'staff' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -74,7 +74,7 @@ export async function GET(request) {
       `);
 
     // Filter by department if not admin
-    if (profile.role === 'department') {
+    if (profile.role === 'staff') {
       query = query.eq('department_name', profile.department_name);
 
       // Apply scope filtering
@@ -121,7 +121,7 @@ export async function GET(request) {
       .from('no_dues_status')
       .select('*', { count: 'exact', head: true });
 
-    if (profile.role === 'department') {
+    if (profile.role === 'staff') {
       countQuery = countQuery
         .eq('department_name', profile.department_name)
         .eq('action_by_user_id', userId);

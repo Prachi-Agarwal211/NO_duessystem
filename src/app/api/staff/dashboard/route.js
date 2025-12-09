@@ -59,7 +59,7 @@ export async function GET(request) {
     // Get user profile to check role, department, and access scope
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
+      .select('role, department_name, school, course, branch')
       .eq('id', userId)
       .single();
 
@@ -67,8 +67,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Verify user has department or admin role (Phase 1: only 2 roles)
-    if (profile.role !== 'department' && profile.role !== 'admin') {
+    // Verify user has staff or admin role
+    if (profile.role !== 'staff' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -120,8 +120,8 @@ export async function GET(request) {
           totalPages: Math.ceil((totalCount || 0) / limit)
         }
       };
-    } else if (profile.role === 'department') {
-      // Department staff gets applications pending for their department
+    } else if (profile.role === 'staff') {
+      // Staff gets applications pending for their department
       let query = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -136,38 +136,37 @@ export async function GET(request) {
             id,
             student_name,
             registration_no,
+            school,
             course,
             branch,
             contact_no,
             created_at,
             updated_at,
-            status,
-            school_id,
-            course_id,
-            branch_id
+            status
           )
         `)
         .eq('department_name', profile.department_name)
         .eq('status', 'pending');
 
-      // Apply scope filtering based on staff's access configuration
-      // Filter by school_ids (if configured)
-      if (profile.school_ids && profile.school_ids.length > 0) {
-        query = query.in('no_dues_forms.school_id', profile.school_ids);
-      } else if (profile.department_name === 'school_hod' && profile.school_id) {
-        // Backward compatibility: old school_id field
-        query = query.eq('no_dues_forms.school_id', profile.school_id);
+      // IMPORTANT: Apply scope filtering ONLY for Department staff (HOD/Dean)
+      // The other 9 departments see ALL students
+      if (profile.department_name === 'Department') {
+        // Apply school filtering for Department staff
+        if (profile.school) {
+          query = query.eq('no_dues_forms.school', profile.school);
+        }
+        
+        // Apply course filtering for Department staff
+        if (profile.course) {
+          query = query.eq('no_dues_forms.course', profile.course);
+        }
+        
+        // Apply branch filtering for Department staff
+        if (profile.branch) {
+          query = query.eq('no_dues_forms.branch', profile.branch);
+        }
       }
-
-      // Filter by course_ids (if configured)
-      if (profile.course_ids && profile.course_ids.length > 0) {
-        query = query.in('no_dues_forms.course_id', profile.course_ids);
-      }
-
-      // Filter by branch_ids (if configured)
-      if (profile.branch_ids && profile.branch_ids.length > 0) {
-        query = query.in('no_dues_forms.branch_id', profile.branch_ids);
-      }
+      // For other 9 departments: No additional filtering - they see all students
 
       // ✅ CRITICAL FIX: Apply search BEFORE pagination using !inner
       // This searches inside the database query, not client-side
@@ -217,7 +216,7 @@ export async function GET(request) {
       }
 
       dashboardData = {
-        role: 'department',
+        role: 'staff',
         department: profile.department_name,
         applications: filteredApplications,
         pagination: {

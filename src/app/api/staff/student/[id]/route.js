@@ -29,8 +29,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Verify user has department or admin role (Phase 1: only 2 roles)
-    if (profile.role !== 'department' && profile.role !== 'admin') {
+    // Verify user has staff or admin role
+    if (profile.role !== 'staff' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -61,8 +61,8 @@ export async function GET(request, { params }) {
       `)
       .eq('id', id);
 
-    // If user is department staff, verify they can access this form
-    if (profile.role === 'department') {
+    // If user is staff member, verify they can access this form
+    if (profile.role === 'staff') {
       // Check if this form has a status entry for the user's department
       const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')

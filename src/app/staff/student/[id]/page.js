@@ -42,7 +42,7 @@ export default function StudentDetailView() {
         .eq('id', session.user.id)
         .single();
 
-      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
+      if (userError || !userData || (userData.role !== 'staff' && userData.role !== 'admin')) {
         router.push('/unauthorized');
         return;
       }
@@ -306,7 +306,7 @@ export default function StudentDetailView() {
   }
 
   const userDepartmentStatus = statusData.find(s => s.department_name === user?.department_name);
-  const canApproveOrReject = user?.role === 'department' && userDepartmentStatus?.status === 'pending';
+  const canApproveOrReject = user?.role === 'staff' && userDepartmentStatus?.status === 'pending';
 
   return (
     <PageWrapper>

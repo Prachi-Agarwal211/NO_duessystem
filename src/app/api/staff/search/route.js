@@ -23,14 +23,14 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Verify user has department or admin role (Phase 1: only 2 roles)
+    // Verify user has staff or admin role
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role, department_name')
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
+    if (profileError || !profile || (profile.role !== 'staff' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -52,8 +52,8 @@ export async function GET(request) {
       .or(`student_name.ilike.%${query}%,registration_no.ilike.%${query}%`)
       .limit(20);
 
-    if (profile.role === 'department') {
-      // Department staff can only see forms related to their department
+    if (profile.role === 'staff') {
+      // Staff members can only see forms related to their department
       formsQuery = formsQuery.in('id', supabaseAdmin
         .from('no_dues_status')
         .select('form_id', { head: true })

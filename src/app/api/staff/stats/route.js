@@ -54,7 +54,7 @@ export async function GET(request) {
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
+    if (profileError || !profile || (profile.role !== 'staff' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -131,8 +131,8 @@ export async function GET(request) {
           stats.departmentStats = [];
         }
       }
-    } else if (profile.role === 'department') {
-      // Department staff gets comprehensive stats for their department AND personal actions
+    } else if (profile.role === 'staff') {
+      // Staff members get comprehensive stats for their department AND personal actions
       
       // 1. Get PERSONAL action counts (actions taken by THIS staff member)
       let personalQuery = supabaseAdmin

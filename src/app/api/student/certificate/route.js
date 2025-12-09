@@ -101,8 +101,8 @@ export async function GET(request) {
         if (profile.role === 'admin') {
           canAccess = true;
         }
-        // Department staff can access completed forms
-        else if (profile.role === 'department' && formData.status === 'completed') {
+        // Staff members can access completed forms
+        else if (profile.role === 'staff' && formData.status === 'completed') {
           canAccess = true;
         }
       }

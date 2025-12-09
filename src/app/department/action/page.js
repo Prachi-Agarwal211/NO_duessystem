@@ -64,8 +64,8 @@ function DepartmentActionContent() {
         .eq('id', session.user.id)
         .single();
 
-      if (profileError || !profile || profile.role !== 'department') {
-        setError('Unauthorized: Only department staff can perform this action');
+      if (profileError || !profile || profile.role !== 'staff') {
+        setError('Unauthorized: Only staff members can perform this action');
         setLoading(false);
         return;
       }

@@ -350,35 +350,65 @@ export async function POST(request) {
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
     
-    // UNIFIED SYSTEM: Fetch all active staff members from profiles table
-    // This replaces the old department email system
-    const { data: staffMembers, error: staffError } = await supabaseAdmin
+    // IMPORTANT: Fetch staff based on department scope rules:
+    // - 9 departments (Library, Hostel, Accounts, etc.): See ALL students
+    // - 1 department (Department/HOD): Only see students from their school/course/branch
+    
+    const { data: allStaff, error: staffError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, full_name, department_name')
-      .eq('role', 'department')
+      .select('id, email, full_name, department_name, school, course, branch')
+      .eq('role', 'staff')
       .not('email', 'is', null);
 
     if (staffError) {
       console.error('Failed to fetch staff members:', staffError);
       // Continue even if email fails - form is already created
-    } else if (staffMembers && staffMembers.length > 0) {
+    } else if (allStaff && allStaff.length > 0) {
       try {
-        const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
-        
-        // Send notifications to all active staff members
-        const emailResults = await notifyAllDepartments({
-          staffMembers: staffMembers.map(staff => ({
-            email: staff.email,
-            name: staff.full_name,
-            department: staff.department_name
-          })),
-          studentName: form.student_name,
-          registrationNo: form.registration_no,
-          formId: form.id,
-          dashboardUrl
+        // Filter staff based on scope:
+        // - Department staff: Only those matching student's school/course/branch
+        // - All other 9 departments: No filtering, all staff get notified
+        const staffToNotify = allStaff.filter(staff => {
+          // If Department staff (HOD/Dean), apply scope filtering
+          if (staff.department_name === 'Department') {
+            // Check school scope
+            if (staff.school && staff.school !== sanitizedData.school) {
+              return false; // Different school, don't notify
+            }
+            // Check course scope
+            if (staff.course && staff.course !== sanitizedData.course) {
+              return false; // Different course, don't notify
+            }
+            // Check branch scope
+            if (staff.branch && staff.branch !== sanitizedData.branch) {
+              return false; // Different branch, don't notify
+            }
+            return true; // Matches scope, notify this staff
+          }
+          
+          // For all other 9 departments, notify everyone
+          return true;
         });
 
-        console.log(`📧 Email notifications sent to ${staffMembers.length} staff member(s) across all departments`);
+        if (staffToNotify.length > 0) {
+          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
+          
+          const emailResults = await notifyAllDepartments({
+            staffMembers: staffToNotify.map(staff => ({
+              email: staff.email,
+              name: staff.full_name,
+              department: staff.department_name
+            })),
+            studentName: form.student_name,
+            registrationNo: form.registration_no,
+            formId: form.id,
+            dashboardUrl
+          });
+
+          console.log(`📧 Notified ${staffToNotify.length} staff members (filtered from ${allStaff.length} total)`);
+        } else {
+          console.warn('⚠️ No staff members match the scope for this student');
+        }
       } catch (emailError) {
         console.error('Failed to send email notifications:', emailError);
         // Continue - form submission should not fail if emails fail

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { sendEmail } from '@/lib/emailService';
 
 /**
  * POST /api/manual-entry
- * Submit a manual entry for offline no-dues certificate
+ * Register offline no-dues certificate
+ * Creates entry directly in no_dues_forms table with is_manual_entry=true
  */
 export async function POST(request) {
   try {
@@ -11,87 +13,58 @@ export async function POST(request) {
     
     const {
       registration_no,
-      student_name,
-      personal_email,
-      college_email,
-      session_from,
-      session_to,
-      parent_name,
       school,
       course,
       branch,
-      country_code,
-      contact_no,
-      certificate_screenshot_url,
       school_id,
       course_id,
-      branch_id
+      branch_id,
+      certificate_url
     } = body;
 
     // Validate required fields
-    if (!registration_no || !student_name || !personal_email || !college_email || 
-        !session_from || !session_to || !school || !contact_no || !certificate_screenshot_url) {
+    if (!registration_no || !school || !course || !certificate_url) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: registration_no, school, course, and certificate are required' },
         { status: 400 }
       );
     }
 
-    // Check if registration number already exists in manual entries
-    const { data: existing, error: existingError } = await supabaseAdmin
-      .from('manual_entries')
-      .select('id, status')
-      .eq('registration_no', registration_no)
-      .single();
-
-    if (existing) {
-      return NextResponse.json(
-        { 
-          error: 'Manual entry already exists',
-          details: `A manual entry with registration number ${registration_no} already exists with status: ${existing.status}`
-        },
-        { status: 409 }
-      );
-    }
-
-    // Check if registration number exists in regular forms
+    // ===== CRITICAL: Check if student already exists in system =====
     const { data: existingForm } = await supabaseAdmin
       .from('no_dues_forms')
-      .select('id, status')
+      .select('id, status, is_manual_entry')
       .eq('registration_no', registration_no)
       .single();
 
     if (existingForm) {
+      const entryType = existingForm.is_manual_entry ? 'manual' : 'online';
       return NextResponse.json(
         { 
-          error: 'Form already exists',
-          details: `A no-dues form with registration number ${registration_no} already exists in the system`
+          error: 'Registration number already exists',
+          details: `A ${entryType} form with registration number ${registration_no} already exists with status: ${existingForm.status}`
         },
         { status: 409 }
       );
     }
 
-    // Insert manual entry
-    const { data: manualEntry, error: insertError } = await supabaseAdmin
-      .from('manual_entries')
+    // ===== INSERT INTO no_dues_forms with is_manual_entry=true =====
+    const { data: newForm, error: insertError } = await supabaseAdmin
+      .from('no_dues_forms')
       .insert([{
         registration_no,
-        student_name,
-        personal_email,
-        college_email,
-        session_from,
-        session_to,
-        parent_name,
+        student_name: 'Offline Student', // Minimal info
+        email: `${registration_no.toLowerCase()}@student.temp`, // Placeholder
+        phone: '0000000000', // Placeholder
         school,
         course,
-        branch,
-        country_code: country_code || '+91',
-        contact_no,
-        certificate_screenshot_url,
-        school_id,
-        course_id,
-        branch_id,
-        status: 'pending'
+        branch: branch || null,
+        semester: '0', // Not applicable for manual entries
+        reason_for_request: 'Offline Certificate Registration',
+        id_card_path: null, // Not needed for manual
+        is_manual_entry: true, // FLAG: This is a manual entry
+        manual_certificate_url: certificate_url, // Store proof
+        status: 'pending' // Pending department verification
       }])
       .select()
       .single();
@@ -99,19 +72,151 @@ export async function POST(request) {
     if (insertError) {
       console.error('Error inserting manual entry:', insertError);
       return NextResponse.json(
-        { error: 'Failed to submit manual entry', details: insertError.message },
+        { error: 'Failed to register manual entry', details: insertError.message },
         { status: 500 }
       );
     }
 
+    // ===== CREATE DEPARTMENT STATUS - ONLY FOR "Department" =====
+    // Manual entries only need Department approval (not all 11 departments)
+    const { error: statusError } = await supabaseAdmin
+      .from('no_dues_status')
+      .insert([{
+        form_id: newForm.id,
+        department_name: 'Department',
+        status: 'pending',
+        comment: 'Manual entry - requires certificate verification'
+      }]);
+
+    if (statusError) {
+      console.error('Error creating department status:', statusError);
+      // Continue even if status creation fails
+    }
+
+    // ===== NOTIFY ONLY MATCHING DEPARTMENT STAFF =====
+    const { data: departmentStaff, error: staffError } = await supabaseAdmin
+      .from('profiles')
+      .select('email, full_name')
+      .eq('role', 'staff')
+      .eq('department_name', 'Department')
+      .or(`school.is.null,school.eq.${school}`)
+      .or(`course.is.null,course.eq.${course}`)
+      .or(`branch.is.null,branch.eq.${branch || ''}`);
+
+    if (staffError) {
+      console.error('Error fetching department staff:', staffError);
+    }
+
+    // Send email ONLY to matching department staff
+    if (departmentStaff && departmentStaff.length > 0) {
+      const emailPromises = departmentStaff.map(staff => 
+        sendEmail({
+          to: staff.email,
+          subject: `New Offline Certificate Registration - ${registration_no}`,
+          text: `
+Hello ${staff.full_name || 'Department Staff'},
+
+A student has registered their offline no-dues certificate for verification.
+
+Registration Details:
+- Registration Number: ${registration_no}
+- School: ${school}
+- Course: ${course}
+- Branch: ${branch || 'N/A'}
+
+Action Required:
+Please log in to your dashboard to review and verify the certificate.
+
+Certificate URL: ${certificate_url}
+
+This is an automated notification from JECRC No Dues System.
+          `.trim(),
+          html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+  <div style="background: linear-gradient(135deg, #C41E3A 0%, #8B0000 100%); padding: 30px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">🔔 New Offline Certificate</h1>
+  </div>
+  
+  <div style="padding: 30px; background: #f9f9f9;">
+    <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+      Hello <strong>${staff.full_name || 'Department Staff'}</strong>,
+    </p>
+    
+    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+      A student has registered their offline no-dues certificate and needs your verification.
+    </p>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #C41E3A;">
+      <h3 style="color: #C41E3A; margin-top: 0;">Registration Details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-weight: bold;">Registration Number:</td>
+          <td style="padding: 8px 0; color: #333;">${registration_no}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-weight: bold;">School:</td>
+          <td style="padding: 8px 0; color: #333;">${school}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-weight: bold;">Course:</td>
+          <td style="padding: 8px 0; color: #333;">${course}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; color: #666; font-weight: bold;">Branch:</td>
+          <td style="padding: 8px 0; color: #333;">${branch || 'N/A'}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 20px 0;">
+      <p style="margin: 0; color: #856404; font-weight: bold;">⚠️ Action Required</p>
+      <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
+        Please log in to your dashboard to review and verify the uploaded certificate.
+      </p>
+    </div>
+    
+    <div style="margin: 20px 0; text-align: center;">
+      <a href="${certificate_url}" 
+         style="display: inline-block; background: #C41E3A; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+        View Certificate
+      </a>
+    </div>
+  </div>
+  
+  <div style="background: #333; padding: 20px; text-align: center;">
+    <p style="color: #999; font-size: 12px; margin: 0;">
+      This is an automated notification from JECRC No Dues Clearance System
+    </p>
+  </div>
+</div>
+          `.trim()
+        })
+      );
+
+      try {
+        await Promise.all(emailPromises);
+        console.log(`✅ Notified ${departmentStaff.length} department staff members for ${school} - ${course}`);
+      } catch (emailError) {
+        console.error('Error sending notification emails:', emailError);
+        // Don't fail the request if email fails
+      }
+    } else {
+      console.warn(`⚠️ No department staff found for school: ${school}, course: ${course}`);
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Manual entry submitted successfully',
-      data: manualEntry
+      message: 'Offline certificate registered successfully',
+      data: {
+        id: newForm.id,
+        registration_no: newForm.registration_no,
+        status: 'pending',
+        note: 'Waiting for department verification'
+      }
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error in manual entry submission:', error);
+    console.error('Error in manual entry registration:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }
@@ -121,26 +226,63 @@ export async function POST(request) {
 
 /**
  * GET /api/manual-entry
- * Get all manual entries (admin only)
+ * Get manual entries (for department staff dashboard)
+ * Filtered by staff scope
  */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const staffId = searchParams.get('staff_id');
 
+    // Query only manual entries from no_dues_forms
     let query = supabaseAdmin
-      .from('manual_entries')
+      .from('no_dues_forms')
       .select(`
-        *,
-        config_schools:school_id (name),
-        config_courses:course_id (name, level),
-        config_branches:branch_id (name),
-        profiles:approved_by (full_name, email)
+        id,
+        registration_no,
+        school,
+        course,
+        branch,
+        manual_certificate_url,
+        status,
+        created_at,
+        updated_at
       `)
+      .eq('is_manual_entry', true)
       .order('created_at', { ascending: false });
 
+    // Filter by status if provided
     if (status) {
       query = query.eq('status', status);
+    }
+
+    // Apply staff scope filtering
+    if (staffId) {
+      const { data: staffProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('department_name, school, course, branch')
+        .eq('id', staffId)
+        .single();
+
+      if (staffProfile && staffProfile.department_name === 'Department') {
+        // Apply scope filtering
+        if (staffProfile.school) {
+          query = query.eq('school', staffProfile.school);
+        }
+        if (staffProfile.course) {
+          query = query.eq('course', staffProfile.course);
+        }
+        if (staffProfile.branch) {
+          query = query.eq('branch', staffProfile.branch);
+        }
+      } else {
+        // Non-department staff see no manual entries
+        return NextResponse.json({
+          success: true,
+          data: []
+        });
+      }
     }
 
     const { data, error } = await query;

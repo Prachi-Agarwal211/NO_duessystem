@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Upload, FileCheck, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileCheck, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
-import FormInput from '@/components/student/FormInput';
-import FileUpload from '@/components/student/FileUpload';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -18,57 +16,42 @@ export default function ManualEntryPage() {
 
   const [formData, setFormData] = useState({
     registration_no: '',
-    student_name: '',
-    personal_email: '',
-    college_email: '',
-    session_from: '',
-    session_to: '',
-    parent_name: '',
     school: '',
     course: '',
-    branch: '',
-    country_code: '+91',
-    contact_no: '',
-    certificate_screenshot_url: ''
+    branch: ''
   });
 
   const [schools, setSchools] = useState([]);
   const [courses, setCourses] = useState([]);
   const [branches, setBranches] = useState([]);
-  const [countryCodes, setCountryCodes] = useState([]);
   
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
 
+  const [certificateFile, setCertificateFile] = useState(null);
+  const [certificatePreview, setCertificatePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // Fetch configuration data
-  useState(() => {
-    async function fetchConfig() {
+  // Fetch schools on mount
+  useEffect(() => {
+    async function fetchSchools() {
       try {
-        // Fetch schools
-        const { data: schoolsData } = await supabase
-          .from('config_schools')
+        const { data } = await supabase
+          .from('schools')
           .select('*')
           .eq('is_active', true)
-          .order('display_order');
-        setSchools(schoolsData || []);
-
-        // Fetch country codes
-        const { data: codesData } = await supabase
-          .from('config_country_codes')
-          .select('*')
-          .eq('is_active', true)
-          .order('display_order');
-        setCountryCodes(codesData || []);
+          .order('name');
+        setSchools(data || []);
       } catch (err) {
-        console.error('Error fetching config:', err);
+        console.error('Error fetching schools:', err);
       }
     }
-    fetchConfig();
+    fetchSchools();
   }, []);
 
   // Fetch courses when school changes
@@ -88,11 +71,11 @@ export default function ManualEntryPage() {
 
     if (schoolId) {
       const { data } = await supabase
-        .from('config_courses')
+        .from('courses')
         .select('*')
         .eq('school_id', schoolId)
         .eq('is_active', true)
-        .order('display_order');
+        .order('name');
       setCourses(data || []);
     }
   };
@@ -111,11 +94,11 @@ export default function ManualEntryPage() {
 
     if (courseId) {
       const { data } = await supabase
-        .from('config_branches')
+        .from('branches')
         .select('*')
         .eq('course_id', courseId)
         .eq('is_active', true)
-        .order('display_order');
+        .order('name');
       setBranches(data || []);
     }
   };
@@ -128,6 +111,60 @@ export default function ManualEntryPage() {
     }));
   };
 
+  // Handle file selection with drag and drop
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const processFile = (file) => {
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      setError('Please upload a valid image (JPEG, PNG, GIF, WebP) or PDF file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB');
+      return;
+    }
+
+    setCertificateFile(file);
+    setError('');
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCertificatePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setCertificatePreview(''); // PDF, no preview
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const removeFile = () => {
+    setCertificateFile(null);
+    setCertificatePreview('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -135,19 +172,48 @@ export default function ManualEntryPage() {
 
     try {
       // Validate required fields
-      if (!formData.certificate_screenshot_url) {
+      if (!formData.registration_no || !formData.school || !formData.course) {
+        throw new Error('Please fill all required fields');
+      }
+
+      if (!certificateFile) {
         throw new Error('Please upload your no-dues certificate');
       }
+
+      // Upload certificate file
+      setUploading(true);
+      const fileExt = certificateFile.name.split('.').pop();
+      const fileName = `${formData.registration_no}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('manual-certificates')
+        .upload(filePath, certificateFile);
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('manual-certificates')
+        .getPublicUrl(filePath);
+
+      setUploading(false);
 
       // Submit to API
       const response = await fetch('/api/manual-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          registration_no: formData.registration_no,
+          school: formData.school,
+          course: formData.course,
+          branch: formData.branch || null,
           school_id: selectedSchoolId,
           course_id: selectedCourseId,
-          branch_id: selectedBranchId
+          branch_id: selectedBranchId || null,
+          certificate_url: publicUrl
         })
       });
 
@@ -161,12 +227,13 @@ export default function ManualEntryPage() {
       
       // Redirect after 3 seconds
       setTimeout(() => {
-        router.push('/student/check-status');
+        router.push('/');
       }, 3000);
 
     } catch (err) {
       console.error('Submission error:', err);
       setError(err.message);
+      setUploading(false);
     } finally {
       setLoading(false);
     }
@@ -190,10 +257,10 @@ export default function ManualEntryPage() {
               Submission Successful!
             </h2>
             <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Your manual entry has been submitted for admin review.
+              Your offline certificate has been registered successfully.
             </p>
             <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-              Redirecting to status page...
+              The department will verify your certificate shortly.
             </p>
           </motion.div>
         </div>
@@ -204,7 +271,7 @@ export default function ManualEntryPage() {
   return (
     <PageWrapper>
       <div className="min-h-screen py-12 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -218,7 +285,7 @@ export default function ManualEntryPage() {
               Register Offline Certificate
             </h1>
             <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Already completed your no-dues offline? Register your certificate here.
+              Already completed your no-dues offline? Register it here.
             </p>
           </motion.div>
 
@@ -234,12 +301,11 @@ export default function ManualEntryPage() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-bold text-blue-500 mb-1">Important Information</h3>
+                <h3 className="font-bold text-blue-500 mb-1">Important</h3>
                 <ul className={`text-sm space-y-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  <li>• This form is only for students who have <strong>already completed</strong> the no-dues process offline</li>
-                  <li>• You must upload a clear photo/scan of your <strong>physical no-dues certificate</strong></li>
-                  <li>• Admin will verify your certificate before approving the entry</li>
-                  <li>• Once approved, it will appear in the system as a completed form</li>
+                  <li>• Only for students who <strong>already have</strong> offline no-dues certificate</li>
+                  <li>• Upload clear photo/scan of your certificate (PDF, JPEG, PNG)</li>
+                  <li>• Your department will verify before approval</li>
                 </ul>
               </div>
             </div>
@@ -256,98 +322,68 @@ export default function ManualEntryPage() {
             }`}
           >
             {error && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500">
-                {error}
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-6">
               {/* Registration Number */}
-              <FormInput
-                label="Registration Number"
-                name="registration_no"
-                value={formData.registration_no}
-                onChange={(e) => setFormData(prev => ({ ...prev, registration_no: e.target.value }))}
-                required
-                placeholder="e.g., 20JEXXXX"
-              />
-
-              {/* Student Name */}
-              <FormInput
-                label="Student Name"
-                name="student_name"
-                value={formData.student_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, student_name: e.target.value }))}
-                required
-                placeholder="Full name as per records"
-              />
-
-              {/* Email Fields */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <FormInput
-                  label="Personal Email"
-                  name="personal_email"
-                  type="email"
-                  value={formData.personal_email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, personal_email: e.target.value }))}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Registration Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.registration_no}
+                  onChange={(e) => setFormData(prev => ({ ...prev, registration_no: e.target.value.toUpperCase() }))}
                   required
-                  placeholder="your.email@example.com"
-                />
-                <FormInput
-                  label="College Email"
-                  name="college_email"
-                  type="email"
-                  value={formData.college_email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, college_email: e.target.value }))}
-                  required
-                  placeholder="rollno@jecrc.ac.in"
+                  placeholder="e.g., 21JEXXXX"
+                  className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                    isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
+                      : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
+                  }`}
                 />
               </div>
 
-              {/* Session Years */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <FormInput
-                  label="Admission Year (YYYY)"
-                  name="session_from"
-                  value={formData.session_from}
-                  onChange={(e) => setFormData(prev => ({ ...prev, session_from: e.target.value }))}
+              {/* School */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  School <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedSchoolId}
+                  onChange={(e) => {
+                    const school = schools.find(s => s.id === e.target.value);
+                    handleSchoolChange(e.target.value, school?.name || '');
+                  }}
                   required
-                  placeholder="2020"
-                  pattern="\d{4}"
-                  maxLength={4}
-                />
-                <FormInput
-                  label="Passing Year (YYYY)"
-                  name="session_to"
-                  value={formData.session_to}
-                  onChange={(e) => setFormData(prev => ({ ...prev, session_to: e.target.value }))}
-                  required
-                  placeholder="2024"
-                  pattern="\d{4}"
-                  maxLength={4}
-                />
+                  className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                    isDark
+                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
+                      : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
+                  }`}
+                >
+                  <option value="">Select School</option>
+                  {schools.map(school => (
+                    <option key={school.id} value={school.id}>{school.name}</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Parent Name */}
-              <FormInput
-                label="Parent/Guardian Name"
-                name="parent_name"
-                value={formData.parent_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, parent_name: e.target.value }))}
-                placeholder="Parent or guardian name"
-              />
-
-              {/* School/Course/Branch Cascade */}
-              <div className="space-y-4">
+              {/* Course */}
+              {selectedSchoolId && (
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    School <span className="text-red-500">*</span>
+                    Course <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={selectedSchoolId}
+                    value={selectedCourseId}
                     onChange={(e) => {
-                      const school = schools.find(s => s.id === e.target.value);
-                      handleSchoolChange(e.target.value, school?.name || '');
+                      const course = courses.find(c => c.id === e.target.value);
+                      handleCourseChange(e.target.value, course?.name || '');
                     }}
                     required
                     className={`w-full px-4 py-3 rounded-lg border transition-all ${
@@ -356,135 +392,124 @@ export default function ManualEntryPage() {
                         : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >
-                    <option value="">Select School</option>
-                    {schools.map(school => (
-                      <option key={school.id} value={school.id}>{school.name}</option>
+                    <option value="">Select Course</option>
+                    {courses.map(course => (
+                      <option key={course.id} value={course.id}>{course.name}</option>
                     ))}
                   </select>
                 </div>
+              )}
 
-                {selectedSchoolId && (
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Course <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedCourseId}
-                      onChange={(e) => {
-                        const course = courses.find(c => c.id === e.target.value);
-                        handleCourseChange(e.target.value, course?.name || '');
-                      }}
-                      required
-                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
-                          : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
-                      }`}
-                    >
-                      <option value="">Select Course</option>
-                      {courses.map(course => (
-                        <option key={course.id} value={course.id}>
-                          {course.name} ({course.level})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {selectedCourseId && branches.length > 0 && (
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Branch/Specialization
-                    </label>
-                    <select
-                      value={selectedBranchId}
-                      onChange={(e) => {
-                        const branch = branches.find(b => b.id === e.target.value);
-                        handleBranchChange(e.target.value, branch?.name || '');
-                      }}
-                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
-                          : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
-                      }`}
-                    >
-                      <option value="">Select Branch (Optional)</option>
-                      {branches.map(branch => (
-                        <option key={branch.id} value={branch.id}>{branch.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Contact Number */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Contact Number <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-2">
+              {/* Branch (Optional) */}
+              {selectedCourseId && branches.length > 0 && (
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Branch/Specialization <span className="text-gray-400">(Optional)</span>
+                  </label>
                   <select
-                    value={formData.country_code}
-                    onChange={(e) => setFormData(prev => ({ ...prev, country_code: e.target.value }))}
-                    className={`px-3 py-3 rounded-lg border transition-all ${
+                    value={selectedBranchId}
+                    onChange={(e) => {
+                      const branch = branches.find(b => b.id === e.target.value);
+                      handleBranchChange(e.target.value, branch?.name || '');
+                    }}
+                    className={`w-full px-4 py-3 rounded-lg border transition-all ${
                       isDark
-                        ? 'bg-white/5 border-white/10 text-white'
-                        : 'bg-white border-black/10 text-ink-black'
+                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
+                        : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >
-                    {countryCodes.map(code => (
-                      <option key={code.id} value={code.dial_code}>
-                        {code.country_code} {code.dial_code}
-                      </option>
+                    <option value="">Select Branch (Optional)</option>
+                    {branches.map(branch => (
+                      <option key={branch.id} value={branch.id}>{branch.name}</option>
                     ))}
                   </select>
-                  <input
-                    type="tel"
-                    value={formData.contact_no}
-                    onChange={(e) => setFormData(prev => ({ ...prev, contact_no: e.target.value }))}
-                    required
-                    placeholder="Phone number"
-                    className={`flex-1 px-4 py-3 rounded-lg border transition-all ${
-                      isDark
-                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
-                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400'
-                    }`}
-                  />
                 </div>
-              </div>
+              )}
 
-              {/* Certificate Upload */}
+              {/* Certificate Upload with Drag & Drop */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   No-Dues Certificate <span className="text-red-500">*</span>
                 </label>
                 <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Upload a clear photo or scan of your physical no-dues certificate
+                  Upload your offline certificate (PDF, JPEG, PNG, max 10MB)
                 </p>
-                <FileUpload
-                  label=""
-                  accept="image/*,application/pdf"
-                  onUploadComplete={(url) => setFormData(prev => ({ ...prev, certificate_screenshot_url: url }))}
-                  bucket="manual-certificates"
-                  existingUrl={formData.certificate_screenshot_url}
-                />
+                
+                {!certificateFile ? (
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+                      isDark
+                        ? 'border-white/20 hover:border-jecrc-red bg-white/5'
+                        : 'border-gray-300 hover:border-jecrc-red bg-gray-50'
+                    }`}
+                    onClick={() => document.getElementById('certificate-input').click()}
+                  >
+                    <Upload className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+                    <p className={`text-lg font-medium mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      Drop your certificate here
+                    </p>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                      or click to browse
+                    </p>
+                    <input
+                      id="certificate-input"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  <div className={`border rounded-lg p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className="flex items-start gap-4">
+                      {certificatePreview ? (
+                        <img 
+                          src={certificatePreview} 
+                          alt="Certificate preview" 
+                          className="w-20 h-20 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 bg-red-500/20 rounded flex items-center justify-center">
+                          <FileCheck className="w-8 h-8 text-red-500" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {certificateFile.name}
+                        </p>
+                        <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {(certificateFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeFile}
+                        className="p-2 rounded-lg hover:bg-red-500/10 transition-colors"
+                      >
+                        <X className="w-5 h-5 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading || !formData.certificate_screenshot_url}
+                disabled={loading || uploading || !certificateFile}
                 className="w-full bg-jecrc-red hover:bg-red-700 text-white py-4 rounded-lg font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? (
+                {loading || uploading ? (
                   <>
                     <LoadingSpinner />
-                    <span>Submitting...</span>
+                    <span>{uploading ? 'Uploading...' : 'Submitting...'}</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-5 h-5" />
-                    <span>Submit for Review</span>
+                    <span>Submit for Verification</span>
                   </>
                 )}
               </button>
