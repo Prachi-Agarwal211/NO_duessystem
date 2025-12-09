@@ -14,21 +14,8 @@ const REQUIRED_ENV_VARS = [
 
 const OPTIONAL_ENV_VARS = [
     'NEXT_PUBLIC_BASE_URL',
-    'RESEND_FROM',
-    // Department emails - should be set for production
-    'SCHOOL_HOD_EMAIL',
-    'SCHOOL_EMAIL',
-    'LIBRARY_EMAIL',
-    'IT_DEPARTMENT_EMAIL',
-    'HOSTEL_EMAIL',
-    'MESS_EMAIL',
-    'CANTEEN_EMAIL',
-    'TPO_EMAIL',
-    'ALUMNI_EMAIL',
-    'ACCOUNTS_EMAIL',
-    'REGISTRAR_EMAIL',
-    'EXAM_CELL_EMAIL',
-    'SPORTS_EMAIL'
+    'RESEND_FROM'
+    // REMOVED: Department emails - Not used (staff accounts handle emails via database)
 ];
 
 const DEVELOPMENT_OPTIONAL = [
@@ -87,50 +74,16 @@ export const validateOptionalEnvVars = () => {
 };
 
 /**
- * Validates department email configurations
- * @returns {Object} - Validation result for department emails
+ * Validates department email configurations (REMOVED - NOT USED)
+ * Staff accounts system handles emails via database, not env vars
  */
 export const validateDepartmentEmails = () => {
-    const departmentEmails = {
-        "School (HOD/Department)": process.env.SCHOOL_HOD_EMAIL || process.env.SCHOOL_EMAIL,
-        "Library": process.env.LIBRARY_EMAIL,
-        "IT Department": process.env.IT_DEPARTMENT_EMAIL,
-        "Hostel": process.env.HOSTEL_EMAIL,
-        "Mess": process.env.MESS_EMAIL,
-        "Canteen": process.env.CANTEEN_EMAIL,
-        "TPO": process.env.TPO_EMAIL,
-        "Alumni Association": process.env.ALUMNI_EMAIL,
-        "Accounts Department": process.env.ACCOUNTS_EMAIL,
-        "Library": process.env.LIBRARY_EMAIL,
-        "IT Department": process.env.IT_DEPARTMENT_EMAIL,
-        "Hostel": process.env.HOSTEL_EMAIL,
-        "Mess": process.env.MESS_EMAIL,
-        "Canteen": process.env.CANTEEN_EMAIL,
-        "TPO": process.env.TPO_EMAIL,
-        "Alumni Association": process.env.ALUMNI_EMAIL,
-        "Accounts Department": process.env.ACCOUNTS_EMAIL,
-        "DY. Registrar Office": process.env.REGISTRAR_EMAIL,
-        "Examination Cell": process.env.EXAM_CELL_EMAIL,
-        "Sports Department": process.env.SPORTS_EMAIL,
-    };
-
-    const configured = [];
-    const missing = [];
-
-    for (const [department, email] of Object.entries(departmentEmails)) {
-        if (email) {
-            configured.push({ department, email });
-        } else {
-            missing.push(department);
-        }
-    }
-
     return {
-        allConfigured: missing.length === 0,
-        configured,
-        missing,
-        totalDepartments: Object.keys(departmentEmails).length,
-        totalConfigured: configured.length
+        allConfigured: true,
+        configured: [],
+        missing: [],
+        totalDepartments: 0,
+        totalConfigured: 0
     };
 };
 
@@ -294,13 +247,12 @@ export const validateEnvironment = (options = {}) => {
         results.errors.push(...emailValidation.issues.map(issue => `Email: ${issue}`));
     }
 
-    // Collect warnings
-    if (!departmentValidation.allConfigured && process.env.NODE_ENV === 'production') {
-        results.warnings.push(`Missing department email configurations: ${departmentValidation.missing.join(', ')}`);
-    }
-
+    // Collect warnings (removed department email warnings - not needed)
     if (optionalValidation.missing.length > 0 && process.env.NODE_ENV === 'development') {
-        results.warnings.push(`Optional environment variables not set: ${optionalValidation.missing.slice(0, 5).join(', ')}`);
+        const missingVars = optionalValidation.missing.filter(v => !v.includes('EMAIL'));
+        if (missingVars.length > 0) {
+            results.warnings.push(`Optional environment variables not set: ${missingVars.slice(0, 3).join(', ')}`);
+        }
     }
 
     // Handle strict mode
@@ -313,13 +265,12 @@ export const validateEnvironment = (options = {}) => {
         console.log('🔧 Environment Validation Results:');
         console.log(`✅ Valid: ${results.isValid}`);
         console.log(`📝 Required vars: ${requiredValidation.totalPresent}/${requiredValidation.totalRequired}`);
-        console.log(`📧 Department emails: ${departmentValidation.totalConfigured}/${departmentValidation.totalDepartments}`);
 
         if (results.errors.length > 0) {
             console.error('❌ Errors:', results.errors);
         }
 
-        if (results.warnings.length > 0) {
+        if (results.warnings.length > 0 && results.warnings.some(w => !w.includes('not set'))) {
             console.warn('⚠️ Warnings:', results.warnings);
         }
     }

@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { createLogger } from '@/lib/errorLogger';
+
+const logger = createLogger('useFormConfig');
 
 export function useFormConfig() {
   const [schools, setSchools] = useState([]);
@@ -10,6 +13,8 @@ export function useFormConfig() {
   const [validationRules, setValidationRules] = useState([]);
   const [countryCodes, setCountryCodes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [branchesLoading, setBranchesLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Fetch all configuration data at once
@@ -34,11 +39,15 @@ export function useFormConfig() {
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
       
-      console.log('✅ Loaded Schools:', result.data.schools?.length || 0);
-      console.log('✅ Loaded Courses:', result.data.courses?.length || 0);
-      console.log('✅ Loaded Branches:', result.data.branches?.length || 0);
+      logger.success('Configuration loaded', {
+        schoolsCount: result.data.schools?.length || 0,
+        coursesCount: result.data.courses?.length || 0,
+        branchesCount: result.data.branches?.length || 0
+      });
     } catch (err) {
-      console.error('Fetch config error:', err);
+      logger.apiError('/api/public/config?type=all', err, {
+        action: 'fetchAllConfig'
+      });
       setError(err.message);
       // Set defaults on error
       setCountryCodes([
@@ -49,13 +58,14 @@ export function useFormConfig() {
     }
   }, []);
 
-  // Fetch courses by school
+  // Fetch courses by school with proper loading state
   const fetchCoursesBySchool = useCallback(async (schoolId) => {
     if (!schoolId) {
       setCourses([]);
-      return;
+      return [];
     }
     
+    setCoursesLoading(true);
     try {
       const response = await fetch(`/api/public/config?type=courses&school_id=${schoolId}`);
       const result = await response.json();
@@ -64,20 +74,34 @@ export function useFormConfig() {
         throw new Error(result.error || 'Failed to fetch courses');
       }
       
-      setCourses(result.data || []);
+      const coursesData = result.data || [];
+      setCourses(coursesData);
+      logger.success('Courses fetched', {
+        schoolId,
+        count: coursesData.length
+      });
+      return coursesData;
     } catch (err) {
-      console.error('Fetch courses error:', err);
+      logger.apiError(`/api/public/config?type=courses&school_id=${schoolId}`, err, {
+        action: 'fetchCoursesBySchool',
+        schoolId
+      });
       setError(err.message);
+      setCourses([]);
+      return [];
+    } finally {
+      setCoursesLoading(false);
     }
   }, []);
 
-  // Fetch branches by course
+  // Fetch branches by course with proper loading state
   const fetchBranchesByCourse = useCallback(async (courseId) => {
     if (!courseId) {
       setBranches([]);
-      return;
+      return [];
     }
     
+    setBranchesLoading(true);
     try {
       const response = await fetch(`/api/public/config?type=branches&course_id=${courseId}`);
       const result = await response.json();
@@ -86,26 +110,39 @@ export function useFormConfig() {
         throw new Error(result.error || 'Failed to fetch branches');
       }
       
-      setBranches(result.data || []);
+      const branchesData = result.data || [];
+      setBranches(branchesData);
+      logger.success('Branches fetched', {
+        courseId,
+        count: branchesData.length
+      });
+      return branchesData;
     } catch (err) {
-      console.error('Fetch branches error:', err);
+      logger.apiError(`/api/public/config?type=branches&course_id=${courseId}`, err, {
+        action: 'fetchBranchesByCourse',
+        courseId
+      });
       setError(err.message);
+      setBranches([]);
+      return [];
+    } finally {
+      setBranchesLoading(false);
     }
   }, []);
 
-  // Get courses for selected school
+  // Get courses for selected school (client-side filtering for initial load)
   const getCoursesForSchool = useCallback((schoolId) => {
     if (!schoolId) return [];
     const filtered = courses.filter(course => course.school_id === schoolId);
-    console.log(`🔍 getCoursesForSchool(${schoolId}):`, filtered);
+    logger.debug('Filtered courses for school', { schoolId, count: filtered.length });
     return filtered;
   }, [courses]);
 
-  // Get branches for selected course
+  // Get branches for selected course (client-side filtering for initial load)
   const getBranchesForCourse = useCallback((courseId) => {
     if (!courseId) return [];
     const filtered = branches.filter(branch => branch.course_id === courseId);
-    console.log(`🔍 getBranchesForCourse(${courseId}):`, filtered);
+    logger.debug('Filtered branches for course', { courseId, count: filtered.length });
     return filtered;
   }, [branches]);
 
@@ -145,6 +182,8 @@ export function useFormConfig() {
     validationRules,
     countryCodes,
     loading,
+    coursesLoading,
+    branchesLoading,
     error,
     fetchAllConfig,
     fetchCoursesBySchool,

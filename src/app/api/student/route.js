@@ -261,7 +261,7 @@ export async function POST(request) {
       );
     }
 
-    // ==================== SANITIZE AND PREPARE DATA ====================
+    // ==================== VALIDATE FOREIGN KEY RELATIONSHIPS ====================
     
     // Get the UUIDs for school, course, and branch from the form data
     // These are already UUIDs from the frontend dropdown selections
@@ -269,25 +269,63 @@ export async function POST(request) {
     const course_id = formData.course; // This is the UUID
     const branch_id = formData.branch; // This is the UUID
     
-    // Fetch the names for display purposes (keep text fields for backward compatibility)
-    const { data: schoolData } = await supabaseAdmin
+    // Validate school exists and is active
+    const { data: schoolData, error: schoolError } = await supabaseAdmin
       .from('config_schools')
-      .select('name')
+      .select('id, name')
       .eq('id', school_id)
+      .eq('is_active', true)
       .single();
     
-    const { data: courseData } = await supabaseAdmin
+    if (schoolError || !schoolData) {
+      console.error('Invalid school ID:', school_id, schoolError);
+      return NextResponse.json(
+        { success: false, error: 'Invalid school selection. Please refresh and try again.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate course exists, is active, and belongs to selected school
+    const { data: courseData, error: courseError } = await supabaseAdmin
       .from('config_courses')
-      .select('name')
+      .select('id, name, school_id')
       .eq('id', course_id)
+      .eq('school_id', school_id)
+      .eq('is_active', true)
       .single();
     
-    const { data: branchData } = await supabaseAdmin
+    if (courseError || !courseData) {
+      console.error('Invalid course ID or school mismatch:', course_id, courseError);
+      return NextResponse.json(
+        { success: false, error: 'Invalid course selection or course does not belong to selected school. Please refresh and try again.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate branch exists, is active, and belongs to selected course
+    const { data: branchData, error: branchError } = await supabaseAdmin
       .from('config_branches')
-      .select('name')
+      .select('id, name, course_id')
       .eq('id', branch_id)
+      .eq('course_id', course_id)
+      .eq('is_active', true)
       .single();
     
+    if (branchError || !branchData) {
+      console.error('Invalid branch ID or course mismatch:', branch_id, branchError);
+      return NextResponse.json(
+        { success: false, error: 'Invalid branch selection or branch does not belong to selected course. Please refresh and try again.' },
+        { status: 400 }
+      );
+    }
+    
+    console.log('✅ Validated:', {
+      school: schoolData.name,
+      course: courseData.name,
+      branch: branchData.name
+    });
+    
+    // ==================== PREPARE SANITIZED DATA ====================
     const sanitizedData = {
       registration_no: registrationNo,
       student_name: formData.student_name.trim(),
@@ -295,11 +333,11 @@ export async function POST(request) {
       session_to: formData.session_to?.trim() || null,
       parent_name: formData.parent_name?.trim() || null,
       school_id: school_id, // Store UUID for foreign key
-      school: schoolData?.name || formData.school, // Store name for backward compatibility
+      school: schoolData.name, // Store validated name
       course_id: course_id, // Store UUID for foreign key
-      course: courseData?.name || formData.course, // Store name for backward compatibility
+      course: courseData.name, // Store validated name
       branch_id: branch_id, // Store UUID for foreign key
-      branch: branchData?.name || formData.branch, // Store name for backward compatibility
+      branch: branchData.name, // Store validated name
       country_code: formData.country_code || '+91',
       contact_no: formData.contact_no.trim(),
       personal_email: formData.personal_email.trim().toLowerCase(),

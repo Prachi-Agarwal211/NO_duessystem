@@ -1,119 +1,74 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ✅ AWS AMPLIFY: Enable Standalone mode for optimized deployment
+  // Balanced configuration for both performance and reliability
   output: 'standalone',
-  
-  // ✅ OPTIMIZATION: Enable SWC minification (faster than Terser)
   swcMinify: true,
-  
-  // ✅ OPTIMIZATION: Compress output for smaller bundle
   compress: true,
-  
-  // ✅ OPTIMIZATION: Reduce build output
-  productionBrowserSourceMaps: false,
-  
-  // ✅ OPTIMIZATION: Webpack configuration
-  webpack: (config, { dev, isServer }) => {
-    // Production optimizations only
-    if (!dev && !isServer) {
-      // Enable tree shaking
-      config.optimization = {
-        ...config.optimization,
-        usedExports: true,
-        sideEffects: false,
-        
-        // Split chunks for better caching - AWS Amplify optimized
-        splitChunks: {
-          chunks: 'all',
-          maxInitialRequests: 25,
-          minSize: 20000,
-          cacheGroups: {
-            // Separate vendor chunks
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name(module) {
-                const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
-                return `vendor.${packageName?.replace('@', '')}`;
-              },
-              priority: 10,
-            },
-            // Separate Framer Motion (large library)
-            framerMotion: {
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
-              name: 'vendor.framer-motion',
-              priority: 20,
-            },
-            // Separate Supabase
-            supabase: {
-              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
-              name: 'vendor.supabase',
-              priority: 20,
-            },
-            // Common UI components
-            common: {
-              minChunks: 2,
-              priority: 5,
-              reuseExistingChunk: true,
-            },
+
+  // Simplified webpack configuration
+  webpack: (config) => {
+    // Basic optimizations without aggressive code splitting
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'async',
+        minSize: 30000,
+        maxSize: 0,
+        minChunks: 1,
+        maxAsyncRequests: 5,
+        maxInitialRequests: 3,
+        automaticNameDelimiter: '~',
+        cacheGroups: {
+          defaultVendors: {
+            test: /[\\/]node_modules[\\/]/,
+            priority: -10,
+            reuseExistingChunk: true,
+          },
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
           },
         },
-      };
-    }
-    
+      },
+    };
+
     return config;
   },
-  
-  // ✅ OPTIMIZATION: Experimental features for better performance
+
+  // Simplified experimental features
   experimental: {
-    // Enable optimized fonts
-    optimizePackageImports: ['lucide-react', 'framer-motion'],
-    
-    // Reduce memory usage during builds
+    optimizePackageImports: ['lucide-react'],
     webpackBuildWorker: true,
-    
-    // Optimize server components
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
 
   images: {
-    // ✅ AWS AMPLIFY: Unoptimized images to prevent build lag
-    unoptimized: true,
+    unoptimized: false, // Allow Next.js to optimize images
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'imagedelivery.net',
       },
     ],
-    // Enable image optimization for better mobile performance
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/webp'], // Modern format for better compression
+    formats: ['image/webp'],
   },
-  
-  // ✅ OPTIMIZATION: Cache static assets aggressively
+
   async headers() {
     return [
-      // Cache static assets
-      {
-        source: '/assets/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Cache built files
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Security headers for all routes
       {
         source: '/(.*)',
         headers: [
@@ -135,11 +90,7 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(), geolocation=()',
-          },
-          {
-            key: 'Link',
-            value: '</manifest.json>; rel="manifest"',
+            value: 'camera=(), microphone=(), geolocation=()',
           }
         ],
       },

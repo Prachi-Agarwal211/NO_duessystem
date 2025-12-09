@@ -1,29 +1,42 @@
 import { NextResponse } from "next/server";
 import { sendDepartmentNotification } from '@/lib/emailService';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * POST /api/notify
- * Send email notification to a specific department about a new form submission
- * 
- * This route is called per-department to send individual notifications
- * For bulk notifications, use the emailService directly
+ * Send email notification to staff based on department
+ * CLEANED UP - Removed hardcoded fallback emails
+ * Now uses staff accounts from database (primary) with NO fallbacks
  */
 
-// Department email mapping
-const DEPARTMENT_EMAILS = {
-  'School (HOD/Department)': process.env.SCHOOL_HOD_EMAIL || 'hod@jecrc.ac.in',
-  'Library': process.env.LIBRARY_EMAIL || 'library@jecrc.ac.in',
-  'IT Department': process.env.IT_DEPARTMENT_EMAIL || 'it@jecrc.ac.in',
-  'Hostel': process.env.HOSTEL_EMAIL || 'hostel@jecrc.ac.in',
-  'Mess': process.env.MESS_EMAIL || 'mess@jecrc.ac.in',
-  'Canteen': process.env.CANTEEN_EMAIL || 'canteen@jecrc.ac.in',
-  'TPO': process.env.TPO_EMAIL || 'tpo@jecrc.ac.in',
-  'Alumni Association': process.env.ALUMNI_EMAIL || 'alumni@jecrc.ac.in',
-  'Accounts Department': process.env.ACCOUNTS_EMAIL || 'accounts@jecrc.ac.in',
-  'Security': process.env.SECURITY_EMAIL || 'security@jecrc.ac.in',
-  'IT & Infrastructure': process.env.IT_EMAIL || 'it@jecrc.ac.in',
-  'Other Departments': process.env.OTHER_DEPT_EMAIL || 'admin@jecrc.ac.in'
-};
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+/**
+ * Get staff email for department from database
+ */
+async function getStaffEmailForDepartment(departmentName) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('department', departmentName)
+      .eq('role', 'staff')
+      .single();
+    
+    if (error || !data) {
+      console.warn(`No staff account found for department: ${departmentName}`);
+      return null;
+    }
+    
+    return data.email;
+  } catch (err) {
+    console.error('Error fetching staff email:', err);
+    return null;
+  }
+}
 
 /**
  * Create error response helper
@@ -73,14 +86,18 @@ export async function POST(request) {
       return createErrorResponse("Department is required", 400, 'validation');
     }
 
-    // Get the target email for the department
-    const toEmail = DEPARTMENT_EMAILS[department];
+    // Get staff email from database
+    const toEmail = await getStaffEmailForDepartment(department);
+    
     if (!toEmail) {
-      return createErrorResponse(
-        `No email configured for department: ${department}`,
-        400,
-        'email-config'
-      );
+      console.warn(`No staff email found for ${department}, skipping notification`);
+      return NextResponse.json({
+        success: true,
+        message: "No staff assigned to this department yet",
+        department,
+        skipped: true,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // ==================== SEND EMAIL ====================

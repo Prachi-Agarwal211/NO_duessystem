@@ -1,4 +1,5 @@
 import "./globals.css";
+import "@/styles/performance-animations.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Toaster } from "react-hot-toast";

@@ -9,6 +9,10 @@ import FileUpload from './FileUpload';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
 import { useFormConfig } from '@/hooks/useFormConfig';
+import { DropdownWithErrorBoundary } from '@/components/ui/DropdownErrorBoundary';
+import { createLogger } from '@/lib/errorLogger';
+
+const logger = createLogger('SubmitForm');
 
 export default function SubmitForm() {
   const router = useRouter();
@@ -24,6 +28,10 @@ export default function SubmitForm() {
     countryCodes,
     validateField,
     loading: configLoading,
+    coursesLoading,
+    branchesLoading,
+    fetchCoursesBySchool,
+    fetchBranchesByCourse,
     getCoursesForSchool,
     getBranchesForCourse
   } = useFormConfig();
@@ -54,41 +62,59 @@ export default function SubmitForm() {
   const [success, setSuccess] = useState(false);
   const [formId, setFormId] = useState(null);
 
-  // Update available courses when school changes
+  // Update available courses when school changes - Use API call for fresh data
   useEffect(() => {
-    if (formData.school) {
-      const coursesForSchool = getCoursesForSchool(formData.school);
-      console.log('🎓 Selected school:', formData.school);
-      console.log('📚 Available courses for school:', coursesForSchool);
-      setAvailableCourses(coursesForSchool);
-      
-      // Reset course and branch if current selection is not in filtered list
-      if (formData.course && !coursesForSchool.find(c => c.id === formData.course)) {
-        setFormData(prev => ({ ...prev, course: '', branch: '' }));
+    const loadCourses = async () => {
+      if (formData.school) {
+        logger.debug('School selected', { schoolId: formData.school });
+        
+        // Fetch courses from API for selected school
+        const coursesForSchool = await fetchCoursesBySchool(formData.school);
+        logger.debug('Courses loaded for school', {
+          schoolId: formData.school,
+          count: coursesForSchool.length
+        });
+        setAvailableCourses(coursesForSchool);
+        
+        // Reset course and branch since school changed
+        if (formData.course) {
+          setFormData(prev => ({ ...prev, course: '', branch: '' }));
+          setAvailableBranches([]);
+        }
+      } else {
+        setAvailableCourses([]);
         setAvailableBranches([]);
       }
-    } else {
-      setAvailableCourses([]);
-      setAvailableBranches([]);
-    }
-  }, [formData.school, getCoursesForSchool]);
+    };
+    
+    loadCourses();
+  }, [formData.school, fetchCoursesBySchool]);
 
-  // Update available branches when course changes
+  // Update available branches when course changes - Use API call for fresh data
   useEffect(() => {
-    if (formData.course) {
-      const branchesForCourse = getBranchesForCourse(formData.course);
-      console.log('📖 Selected course:', formData.course);
-      console.log('🌿 Available branches for course:', branchesForCourse);
-      setAvailableBranches(branchesForCourse);
-      
-      // Reset branch if current selection is not in new course
-      if (formData.branch && !branchesForCourse.find(b => b.id === formData.branch)) {
-        setFormData(prev => ({ ...prev, branch: '' }));
+    const loadBranches = async () => {
+      if (formData.course) {
+        logger.debug('Course selected', { courseId: formData.course });
+        
+        // Fetch branches from API for selected course
+        const branchesForCourse = await fetchBranchesByCourse(formData.course);
+        logger.debug('Branches loaded for course', {
+          courseId: formData.course,
+          count: branchesForCourse.length
+        });
+        setAvailableBranches(branchesForCourse);
+        
+        // Reset branch since course changed
+        if (formData.branch) {
+          setFormData(prev => ({ ...prev, branch: '' }));
+        }
+      } else {
+        setAvailableBranches([]);
       }
-    } else {
-      setAvailableBranches([]);
-    }
-  }, [formData.course, getBranchesForCourse]);
+    };
+    
+    loadBranches();
+  }, [formData.course, fetchBranchesByCourse]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -344,7 +370,10 @@ export default function SubmitForm() {
       setFormId(result.data.id);
       setSuccess(true);
 
-      console.log('✅ Form submitted successfully:', result.data.id);
+      logger.success('Form submitted successfully', {
+        formId: result.data.id,
+        registrationNo: sanitizedData.registration_no
+      });
 
       // Redirect to status page after 3 seconds
       setTimeout(() => {
@@ -352,7 +381,13 @@ export default function SubmitForm() {
       }, 3000);
 
     } catch (err) {
-      console.error('Form submission error:', err);
+      logger.error(err, {
+        action: 'formSubmission',
+        registrationNo: formData.registration_no,
+        school: formData.school,
+        course: formData.course,
+        branch: formData.branch
+      });
       
       // Provide user-friendly error messages
       let errorMessage = err.message;
@@ -534,53 +569,84 @@ export default function SubmitForm() {
           disabled={loading}
         />
 
-        <FormInput
-          label="School"
-          name="school"
-          type="select"
-          value={formData.school}
-          onChange={handleInputChange}
-          required
-          disabled={loading || configLoading}
-          placeholder={configLoading ? "Loading schools..." : "Select School"}
-          options={schools.map(s => ({ value: s.id, label: s.name }))}
-        />
+        <DropdownWithErrorBoundary
+          componentName="SchoolDropdown"
+          dropdownType="schools"
+          onReset={() => window.location.reload()}
+        >
+          <FormInput
+            label="School"
+            name="school"
+            type="select"
+            value={formData.school}
+            onChange={handleInputChange}
+            required
+            disabled={loading || configLoading}
+            loading={configLoading}
+            placeholder={configLoading ? "Loading schools..." : "Select School"}
+            options={schools.map(s => ({ value: s.id, label: s.name }))}
+          />
+        </DropdownWithErrorBoundary>
 
-        <FormInput
-          label="Course"
-          name="course"
-          type="select"
-          value={formData.course}
-          onChange={handleInputChange}
-          required
-          disabled={loading || configLoading || !formData.school}
-          placeholder={
-            !formData.school
-              ? "Select a school first"
-              : availableCourses.length === 0
-                ? "No courses available"
-                : "Select Course"
-          }
-          options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
-        />
+        <DropdownWithErrorBoundary
+          componentName="CourseDropdown"
+          dropdownType="courses"
+          onReset={() => {
+            setFormData(prev => ({ ...prev, course: '', branch: '' }));
+            setAvailableCourses([]);
+          }}
+        >
+          <FormInput
+            label="Course"
+            name="course"
+            type="select"
+            value={formData.course}
+            onChange={handleInputChange}
+            required
+            disabled={loading || configLoading || coursesLoading || !formData.school}
+            loading={coursesLoading}
+            placeholder={
+              coursesLoading
+                ? "Loading courses..."
+                : !formData.school
+                  ? "Select a school first"
+                  : availableCourses.length === 0
+                    ? "No courses available"
+                    : "Select Course"
+            }
+            options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
+          />
+        </DropdownWithErrorBoundary>
 
-        <FormInput
-          label="Branch"
-          name="branch"
-          type="select"
-          value={formData.branch}
-          onChange={handleInputChange}
-          required
-          disabled={loading || configLoading || !formData.course}
-          placeholder={
-            !formData.course
-              ? "Select a course first"
-              : availableBranches.length === 0
-                ? "No branches available"
-                : "Select Branch"
-          }
-          options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
-        />
+        <DropdownWithErrorBoundary
+          componentName="BranchDropdown"
+          dropdownType="branches"
+          onReset={() => {
+            setFormData(prev => ({ ...prev, branch: '' }));
+            setAvailableBranches([]);
+          }}
+        >
+          <FormInput
+            label="Branch"
+            name="branch"
+            type="select"
+            value={formData.branch}
+            onChange={handleInputChange}
+            required
+            disabled={loading || configLoading || branchesLoading || !formData.course}
+            loading={branchesLoading}
+            placeholder={
+              branchesLoading
+                ? "Loading branches..."
+                : !formData.course
+                  ? "Select a course first"
+                  : availableBranches.length === 0
+                    ? "No branches available"
+                    : "Select Branch"
+            }
+            options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+          />
+        </DropdownWithErrorBoundary>
         
         <FormInput
           label="Personal Email"

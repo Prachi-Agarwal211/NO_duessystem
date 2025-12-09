@@ -204,8 +204,19 @@ class BlockchainService {
   }
 }
 
-// Export singleton instance
-export const blockchainService = new BlockchainService();
+// Create singleton instance
+const blockchainService = new BlockchainService();
 
-// Export class for testing
-export { BlockchainService };
+// ✅ Export individual methods as named exports (for certificateService.js compatibility)
+export const generateCertificateHash = (data) => blockchainService.generateCertificateHash(data);
+export const generateTransactionId = (hash) => blockchainService.generateTransactionId(hash);
+export const createBlockchainRecord = (data) => blockchainService.createBlockchainRecord(data);
+export const generateQRData = (record, data) => blockchainService.generateQRData(record, data);
+export const verifyCertificate = (data, hash) => blockchainService.verifyCertificate(data, hash);
+export const verifyQRData = (qr, db) => blockchainService.verifyQRData(qr, db);
+
+// Export singleton instance as default
+export default blockchainService;
+
+// Export class and instance for testing
+export { BlockchainService, blockchainService };
