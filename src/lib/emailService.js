@@ -97,9 +97,11 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
         <!-- Main Container -->
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
           
-          <!-- Header -->
+          <!-- Header with Logo -->
           <tr>
             <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
+              <!-- JECRC Logo -->
+              <img src="https://jecrc.ac.in/wp-content/uploads/2023/06/logo-1.png" alt="JECRC University" style="height: 60px; width: auto; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
                 JECRC University
               </h1>
