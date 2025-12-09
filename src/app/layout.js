@@ -2,6 +2,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Toaster } from "react-hot-toast";
+import GlobalBackground from "@/components/ui/GlobalBackground";
 
 // Validate environment on startup (server-side only)
 if (typeof window === 'undefined') {
@@ -34,7 +35,10 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans">
         <ThemeProvider>
-          <Toaster 
+          {/* Global Fixed Background - stays fixed across all pages */}
+          <GlobalBackground />
+          
+          <Toaster
             position="top-right"
             toastOptions={{
               className: 'dark:bg-black dark:text-white dark:border dark:border-white/20',
@@ -51,7 +55,11 @@ export default function RootLayout({ children }) {
               },
             }}
           />
-          {children}
+          
+          {/* Content container - scrollable above background */}
+          <div className="relative z-10">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>
