@@ -17,35 +17,35 @@ export default function ActionCard({ title, subtitle, icon: Icon, onClick, index
   
   return (
     <motion.button
-      initial={{ opacity: 0, y: 60, scale: 0.9 }}
+      initial={{ opacity: 0, y: 40, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        duration: 0.7, 
-        delay: 0.1 + index * 0.1,
-        type: "spring",
-        stiffness: 100,
-        damping: 15
+      transition={{
+        duration: 0.5,
+        delay: 0.05 + index * 0.08,
+        ease: [0.22, 1, 0.36, 1]
       }}
-      whileHover={{ 
-        y: -12, 
-        scale: 1.03,
-        transition: springConfig
+      whileHover={{
+        y: -8,
+        scale: 1.02,
+        transition: { duration: 0.3, ease: "easeOut" }
       }}
-      whileTap={{ 
-        scale: 0.97,
-        transition: { duration: 0.1 }
+      whileTap={{
+        scale: 0.98,
+        transition: { duration: 0.15 }
       }}
       onClick={onClick}
       className={`
         interactive group relative
-        w-full md:w-[340px] h-[280px]
-        overflow-hidden text-left p-8
+        w-full h-[240px] sm:h-[260px] md:h-[280px]
+        overflow-hidden text-left
+        p-6 sm:p-7 md:p-8
         flex flex-col justify-between
-        transition-all duration-500 ease-spring
+        transition-all duration-300 ease-out
         border backdrop-blur-md rounded-xl
+        touch-manipulation
         ${isDark
-          ? 'bg-white/[0.02] hover:bg-white/[0.06] border-white/10 shadow-neon-white hover:shadow-neon-white-lg hover:border-white/30'
-          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 hover:from-white hover:via-gray-50 hover:to-white border-black/10 shadow-sharp-black hover:shadow-sharp-black-lg hover:border-black/20'
+          ? 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10 shadow-lg hover:shadow-xl hover:border-white/25'
+          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 hover:from-white hover:via-gray-50 hover:to-white border-black/10 shadow-md hover:shadow-lg hover:border-black/20'
         }
       `}
       style={{
@@ -106,21 +106,17 @@ export default function ActionCard({ title, subtitle, icon: Icon, onClick, index
           <Icon size={24} strokeWidth={1.5} className="relative z-10" />
         </motion.div>
         
-        <motion.h2 
-          className={`font-serif text-3xl mb-3 transition-colors duration-500 ${isDark ? 'text-white' : 'text-ink-black'}`}
-          whileHover={{ scale: 1.02 }}
-          transition={springConfig}
+        <h2
+          className={`font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 transition-colors duration-300 ${isDark ? 'text-white' : 'text-ink-black'}`}
         >
           {title}
-        </motion.h2>
+        </h2>
         
-        <motion.p 
-          className={`font-sans text-sm font-medium leading-relaxed transition-colors duration-500 ${isDark ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-600'}`}
-          whileHover={{ scale: 1.01 }}
-          transition={springConfig}
+        <p
+          className={`font-sans text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300 ${isDark ? 'text-gray-400 group-hover:text-gray-300' : 'text-gray-500 group-hover:text-gray-600'}`}
         >
           {subtitle}
-        </motion.p>
+        </p>
       </div>
 
       {/* CTA with animated arrow */}

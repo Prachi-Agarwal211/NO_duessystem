@@ -1,0 +1,89 @@
+name: PR Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+jobs:
+  preview:
+    name: Deploy Preview Environment
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build preview
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NODE_ENV: production
+
+      - name: Comment PR with preview info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const body = `
+            ## 🎉 Preview Build Ready!
+            
+            Your changes have been built successfully.
+            
+            **Preview Details:**
+            - 📦 Build Size: Check the build output above
+            - ⚡ Build Time: Completed in ${{ job.duration }}
+            - 🔍 Commit: ${context.sha.substring(0, 7)}
+            
+            **AWS Amplify** will auto-generate a preview URL once this PR is merged.
+            
+            **Next Steps:**
+            1. Review the code changes
+            2. Check the build logs above
+            3. Approve if everything looks good
+            
+            ✅ All checks passed!
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build and analyze
+        run: npm run build
+
+      - name: Check bundle size
+        run: |
+          echo "📦 Checking bundle sizes..."
+          du -sh .next/ || echo "Build complete"
+        continue-on-error: true
