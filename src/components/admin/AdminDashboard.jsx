@@ -16,6 +16,7 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
+import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import { LogOut, Shield, RefreshCw } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -163,6 +164,16 @@ export default function AdminDashboard() {
               }`}
             >
               Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('manual-entries')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                activeTab === 'manual-entries'
+                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              Manual Entries
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -338,6 +349,12 @@ export default function AdminDashboard() {
               totalItems={totalItems}
               onPageChange={setCurrentPage}
             />
+          </GlassCard>
+        </div>
+      ) : activeTab === 'manual-entries' ? (
+        <div className="animate-fade-in">
+          <GlassCard className="p-6">
+            <ManualEntriesTable />
           </GlassCard>
         </div>
       ) : (

@@ -185,8 +185,8 @@ export default function AdminRequestDetail() {
                 <p className="font-medium">{request.school}</p>
               </div>
               <div>
-                <span className="text-gray-400 text-sm">Session:</span>
-                <p className="font-medium">{request.session_from} - {request.session_to}</p>
+                <span className="text-gray-400 text-sm">Academic Period:</span>
+                <p className="font-medium">{request.session_from} (Admission) - {request.session_to} (Passing)</p>
               </div>
               <div>
                 <span className="text-gray-400 text-sm">Parent Name:</span>

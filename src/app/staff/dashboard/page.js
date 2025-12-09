@@ -12,9 +12,10 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import Logo from '@/components/ui/Logo';
 import StatsCard from '@/components/staff/StatsCard';
-import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
+import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { exportApplicationsToCSV } from '@/lib/csvExport';
 
 function StaffDashboardContent() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -155,6 +156,59 @@ function StaffDashboardContent() {
     }
   };
 
+  // Handle CSV export for current tab
+  const handleExportCSV = async () => {
+    try {
+      let dataToExport = [];
+      let filename = '';
+
+      if (activeTab === 'pending') {
+        // Export pending requests
+        dataToExport = requests.map(req => ({
+          ...req,
+          no_dues_status: [] // Pending requests don't have status yet
+        }));
+        filename = `pending_applications_${stats?.department || 'staff'}_${new Date().toISOString().split('T')[0]}.csv`;
+      } else if (activeTab === 'rejected') {
+        // Export rejected forms
+        dataToExport = rejectedForms.map(item => ({
+          ...item.no_dues_forms,
+          no_dues_status: [{
+            status: 'rejected',
+            rejection_reason: item.rejection_reason,
+            action_at: item.action_at,
+            profiles: { full_name: user?.full_name }
+          }]
+        }));
+        filename = `rejected_applications_${stats?.department || 'staff'}_${new Date().toISOString().split('T')[0]}.csv`;
+      } else if (activeTab === 'history') {
+        // Export action history
+        dataToExport = actionHistory.map(item => ({
+          ...item.no_dues_forms,
+          no_dues_status: [{
+            status: item.status,
+            rejection_reason: item.rejection_reason,
+            action_at: item.action_at,
+            profiles: { full_name: user?.full_name }
+          }]
+        }));
+        filename = `action_history_${stats?.department || 'staff'}_${new Date().toISOString().split('T')[0]}.csv`;
+      }
+
+      if (dataToExport.length === 0) {
+        toast.error('No data to export');
+        return;
+      }
+
+      // Use the existing CSV export function
+      await exportApplicationsToCSV(dataToExport);
+      toast.success(`Exported ${dataToExport.length} record(s)`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
+
   // Table data for pending requests
   const tableHeaders = ['Student Name', 'Registration No', 'Course', 'Branch', 'Date'];
   const tableData = requests.map(request => ({
@@ -235,6 +289,25 @@ function StaffDashboardContent() {
                 >
                   <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                </button>
+
+                {/* Export CSV Button */}
+                <button
+                  onClick={handleExportCSV}
+                  disabled={
+                    (activeTab === 'pending' && requests.length === 0) ||
+                    (activeTab === 'rejected' && rejectedForms.length === 0) ||
+                    (activeTab === 'history' && actionHistory.length === 0)
+                  }
+                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                    isDark
+                      ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30'
+                      : 'bg-green-50 hover:bg-green-100 text-green-600 border border-green-200'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title="Export to CSV"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export</span>
                 </button>
 
                 {/* Logout Button */}

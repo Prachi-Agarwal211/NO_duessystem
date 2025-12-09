@@ -44,9 +44,9 @@ export const createSecureToken = async (payload) => {
     })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
-        .setExpirationTime('30d') // 30 days expiration
-        .setIssuer('jecrc-no-dues-system') // Add issuer claim
-        .setAudience('department-action') // Add audience claim
+        .setExpirationTime('7d') // SECURITY: 7 days expiration (reduced from 30d)
+        .setIssuer('jecrc-no-dues-system')
+        .setAudience('department-action')
         .sign(key);
 };
 
@@ -79,7 +79,8 @@ export const validateToken = async (token) => {
         const { payload } = await jwtVerify(token, key, {
             issuer: 'jecrc-no-dues-system',
             audience: 'department-action',
-            algorithms: ['HS256']
+            algorithms: ['HS256'],
+            clockTolerance: 60 // SECURITY: Allow 60 seconds clock skew
         });
 
         // Validate required fields are present
@@ -87,9 +88,9 @@ export const validateToken = async (token) => {
             throw new Error('Token missing required fields');
         }
 
-        // Additional security: Check if token is not too old (even if not expired)
+        // SECURITY: Check if token is not too old (even if not expired)
         const tokenAge = Date.now() / 1000 - payload.iat;
-        const maxAge = 30 * 24 * 60 * 60; // 30 days in seconds
+        const maxAge = 7 * 24 * 60 * 60; // SECURITY: 7 days max age (reduced from 30)
         if (tokenAge > maxAge) {
             throw new Error('Token is too old');
         }

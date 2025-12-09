@@ -10,8 +10,9 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email configuration
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'JECRC No Dues <noreply@jecrc.ac.in>';
-const REPLY_TO = process.env.RESEND_REPLY_TO || 'support@jecrc.ac.in';
+// Use Resend's default sender for testing, or custom verified domain in production
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'JECRC No Dues <onboarding@resend.dev>';
+const REPLY_TO = process.env.RESEND_REPLY_TO || 'onboarding@resend.dev';
 
 /**
  * Send email using Resend
@@ -210,9 +211,10 @@ export async function sendDepartmentNotification({
 }
 
 /**
- * Send notification to all departments when form is submitted
+ * Send notification to all staff members of specified departments
+ * UNIFIED SYSTEM: Uses staff account emails from profiles table
  * @param {Object} params - Notification parameters
- * @param {Array} params.departments - Array of department objects with email
+ * @param {Array} params.staffMembers - Array of staff objects with email and department info
  * @param {string} params.studentName - Student name
  * @param {string} params.registrationNo - Registration number
  * @param {string} params.formId - Form UUID
@@ -220,18 +222,23 @@ export async function sendDepartmentNotification({
  * @returns {Promise<Array>} - Array of email send results
  */
 export async function notifyAllDepartments({
-  departments,
+  staffMembers,
   studentName,
   registrationNo,
   formId,
   dashboardUrl
 }) {
-  console.log(`📧 Sending notifications to ${departments.length} departments...`);
+  if (!staffMembers || staffMembers.length === 0) {
+    console.warn('⚠️ No staff members to notify');
+    return [];
+  }
+
+  console.log(`📧 Sending notifications to ${staffMembers.length} staff member(s)...`);
   
   const results = await Promise.allSettled(
-    departments.map(dept => 
+    staffMembers.map(staff =>
       sendDepartmentNotification({
-        departmentEmail: dept.email,
+        departmentEmail: staff.email,
         studentName,
         registrationNo,
         formId,
@@ -241,7 +248,7 @@ export async function notifyAllDepartments({
   );
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`✅ ${successful}/${departments.length} notifications sent successfully`);
+  console.log(`✅ ${successful}/${staffMembers.length} notifications sent successfully`);
 
   return results;
 }
@@ -390,9 +397,10 @@ export async function sendCertificateReadyNotification({
 }
 
 /**
- * Send reapplication notification to departments
+ * Send reapplication notification to staff members
+ * UNIFIED SYSTEM: Uses staff account emails from profiles table
  * @param {Object} params - Notification parameters
- * @param {Array} params.departments - Array of department objects with email and name
+ * @param {Array} params.staffMembers - Array of staff objects with email and department info
  * @param {string} params.studentName - Student name
  * @param {string} params.registrationNo - Registration number
  * @param {string} params.studentMessage - Student's reply message
@@ -402,7 +410,7 @@ export async function sendCertificateReadyNotification({
  * @returns {Promise<Array>} - Array of email send results
  */
 export async function sendReapplicationNotifications({
-  departments,
+  staffMembers,
   studentName,
   registrationNo,
   studentMessage,
@@ -410,7 +418,12 @@ export async function sendReapplicationNotifications({
   dashboardUrl,
   formUrl
 }) {
-  console.log(`📧 Sending reapplication notifications to ${departments.length} department(s)...`);
+  if (!staffMembers || staffMembers.length === 0) {
+    console.warn('⚠️ No staff members to notify for reapplication');
+    return [];
+  }
+
+  console.log(`📧 Sending reapplication notifications to ${staffMembers.length} staff member(s)...`);
   
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
@@ -456,9 +469,9 @@ export async function sendReapplicationNotifications({
   });
 
   const results = await Promise.allSettled(
-    departments.map(dept =>
+    staffMembers.map(staff =>
       sendEmail({
-        to: dept.email,
+        to: staff.email,
         subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
         html
       })
@@ -466,7 +479,7 @@ export async function sendReapplicationNotifications({
   );
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`✅ ${successful}/${departments.length} reapplication notifications sent successfully`);
+  console.log(`✅ ${successful}/${staffMembers.length} reapplication notifications sent successfully`);
 
   return results;
 }

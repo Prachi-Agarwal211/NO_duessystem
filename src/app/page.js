@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FileCheck, Search } from 'lucide-react';
+import { FileCheck, Search, Upload } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import ActionCard from '@/components/landing/ActionCard';
 import Logo from '@/components/ui/Logo';
@@ -61,7 +61,7 @@ export default function Home() {
 
         {/* Main Content Area */}
         <main className="w-full max-w-5xl px-6 md:px-12 pb-12">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center justify-center">
             <ActionCard
               index={0}
               title="Check Status"
@@ -76,12 +76,19 @@ export default function Home() {
               icon={FileCheck}
               onClick={() => router.push('/student/submit-form')}
             />
+            <ActionCard
+              index={2}
+              title="Register Certificate"
+              subtitle="Already completed offline? Register your existing no-dues certificate here."
+              icon={Upload}
+              onClick={() => router.push('/student/manual-entry')}
+            />
           </div>
         </main>
 
-        {/* Minimal Footer */}
+        {/* Minimal Footer with adaptive text shadow for visibility */}
         <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-60 hover:opacity-100 transition-opacity duration-500">
-          <div className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+          <div className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth text-shadow-adaptive ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
             Jaipur Engineering College and Research Centre
           </div>
         </footer>

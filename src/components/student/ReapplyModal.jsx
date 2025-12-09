@@ -406,20 +406,24 @@ export default function ReapplyModal({
               />
 
               <FormInput
-                label="Session From"
+                label="Admission Year (YYYY)"
                 name="session_from"
                 value={editedData.session_from}
                 onChange={handleInputChange}
-                placeholder="e.g., 2021"
+                placeholder="e.g., 2020"
+                maxLength={4}
+                pattern="\d{4}"
                 disabled={loading || configLoading}
               />
 
               <FormInput
-                label="Session To"
+                label="Passing Year (YYYY)"
                 name="session_to"
                 value={editedData.session_to}
                 onChange={handleInputChange}
-                placeholder="e.g., 2025"
+                placeholder="e.g., 2024"
+                maxLength={4}
+                pattern="\d{4}"
                 disabled={loading || configLoading}
               />
 

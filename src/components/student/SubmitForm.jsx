@@ -31,8 +31,8 @@ export default function SubmitForm() {
   const [formData, setFormData] = useState({
     registration_no: '',
     student_name: '',
-    session_from: '',
-    session_to: '',
+    session_from: '', // Now represents admission_year
+    session_to: '',   // Now represents passing_year
     parent_name: '',
     school: '',
     course: '',
@@ -229,12 +229,40 @@ export default function SubmitForm() {
         throw new Error(`College email must end with ${collegeDomain}`);
       }
 
-      // Session year range validation (if both provided)
+      // Admission/Passing year validation
+      if (formData.session_from) {
+        // Validate YYYY format
+        if (!/^\d{4}$/.test(formData.session_from)) {
+          throw new Error('Admission Year must be in YYYY format (e.g., 2020)');
+        }
+        const admissionYear = parseInt(formData.session_from);
+        const currentYear = new Date().getFullYear();
+        if (admissionYear < 1950 || admissionYear > currentYear + 1) {
+          throw new Error('Please enter a valid Admission Year');
+        }
+      }
+      
+      if (formData.session_to) {
+        // Validate YYYY format
+        if (!/^\d{4}$/.test(formData.session_to)) {
+          throw new Error('Passing Year must be in YYYY format (e.g., 2024)');
+        }
+        const passingYear = parseInt(formData.session_to);
+        const currentYear = new Date().getFullYear();
+        if (passingYear < 1950 || passingYear > currentYear + 10) {
+          throw new Error('Please enter a valid Passing Year');
+        }
+      }
+      
+      // Validate year range (if both provided)
       if (formData.session_from && formData.session_to) {
-        const fromYear = parseInt(formData.session_from);
-        const toYear = parseInt(formData.session_to);
-        if (toYear < fromYear) {
-          throw new Error('Session to year must be greater than or equal to session from year');
+        const admissionYear = parseInt(formData.session_from);
+        const passingYear = parseInt(formData.session_to);
+        if (passingYear < admissionYear) {
+          throw new Error('Passing Year must be greater than or equal to Admission Year');
+        }
+        if (passingYear - admissionYear > 10) {
+          throw new Error('Duration between Admission and Passing Year cannot exceed 10 years');
         }
       }
 
@@ -370,7 +398,13 @@ export default function SubmitForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -384,7 +418,12 @@ export default function SubmitForm() {
       )}
 
       {/* Registration Number with Check Button */}
-      <div className="flex gap-2">
+      <motion.div
+        className="flex gap-2"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 100 }}
+      >
         <div className="flex-1">
           <FormInput
             label="Registration Number"
@@ -415,9 +454,14 @@ export default function SubmitForm() {
             'Check'
           )}
         </button>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
+      >
         <FormInput
           label="Student Name"
           name="student_name"
@@ -456,20 +500,24 @@ export default function SubmitForm() {
         />
 
         <FormInput
-          label="Session From"
+          label="Admission Year (YYYY)"
           name="session_from"
           value={formData.session_from}
           onChange={handleInputChange}
-          placeholder="e.g., 2021"
+          placeholder="e.g., 2020"
+          maxLength={4}
+          pattern="\d{4}"
           disabled={loading}
         />
 
         <FormInput
-          label="Session To"
+          label="Passing Year (YYYY)"
           name="session_to"
           value={formData.session_to}
           onChange={handleInputChange}
-          placeholder="e.g., 2025"
+          placeholder="e.g., 2024"
+          maxLength={4}
+          pattern="\d{4}"
           disabled={loading}
         />
 
@@ -536,15 +584,26 @@ export default function SubmitForm() {
           placeholder={`yourname${collegeDomain}`}
           disabled={loading}
         />
-      </div>
+      </motion.div>
 
-      <FileUpload
-        onFileSelect={setFile}
-        accept="image/*"
-        maxSize={5 * 1024 * 1024}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.6, type: "spring", stiffness: 100 }}
+      >
+        <FileUpload
+          onFileSelect={setFile}
+          accept="image/*"
+          maxSize={5 * 1024 * 1024}
+        />
+      </motion.div>
 
-      <button
+      <motion.button
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4, duration: 0.5, type: "spring", stiffness: 120 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         type="submit"
         disabled={loading}
         className={`interactive w-full py-4 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2
@@ -559,7 +618,7 @@ export default function SubmitForm() {
         ) : (
           'Submit Form'
         )}
-      </button>
-    </form>
+      </motion.button>
+    </motion.form>
   );
 }

@@ -350,33 +350,41 @@ export async function POST(request) {
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
     
-    // Fetch all department emails
-    const { data: departments, error: deptError } = await supabaseAdmin
-      .from('departments')
-      .select('name, email, display_name')
-      .order('display_order');
+    // UNIFIED SYSTEM: Fetch all active staff members from profiles table
+    // This replaces the old department email system
+    const { data: staffMembers, error: staffError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email, full_name, department_name')
+      .eq('role', 'department')
+      .not('email', 'is', null);
 
-    if (deptError) {
-      console.error('Failed to fetch departments:', deptError);
+    if (staffError) {
+      console.error('Failed to fetch staff members:', staffError);
       // Continue even if email fails - form is already created
-    } else if (departments && departments.length > 0) {
+    } else if (staffMembers && staffMembers.length > 0) {
       try {
         const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
         
-        // Send notifications to all departments
+        // Send notifications to all active staff members
         const emailResults = await notifyAllDepartments({
-          departments: departments.map(d => ({ email: d.email, name: d.display_name })),
+          staffMembers: staffMembers.map(staff => ({
+            email: staff.email,
+            name: staff.full_name,
+            department: staff.department_name
+          })),
           studentName: form.student_name,
           registrationNo: form.registration_no,
           formId: form.id,
           dashboardUrl
         });
 
-        console.log(`📧 Email notifications sent to ${departments.length} departments`);
+        console.log(`📧 Email notifications sent to ${staffMembers.length} staff member(s) across all departments`);
       } catch (emailError) {
         console.error('Failed to send email notifications:', emailError);
         // Continue - form submission should not fail if emails fail
       }
+    } else {
+      console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
     }
 
     // ==================== RETURN SUCCESS ====================

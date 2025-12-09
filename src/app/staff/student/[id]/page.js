@@ -395,7 +395,7 @@ export default function StudentDetailView() {
                     <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Registration No:</span> {studentData.registration_no}
                   </div>
                   <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Session:</span> {studentData.session_from} - {studentData.session_to}
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Academic Period:</span> {studentData.session_from} (Admission) - {studentData.session_to} (Passing)
                   </div>
                   <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Parent Name:</span> {studentData.parent_name}

@@ -312,9 +312,9 @@ function CheckStatusContent() {
                   )}
                   {formData.session_from && formData.session_to && (
                     <div>
-                      <p className="text-gray-500 dark:text-gray-400">Session</p>
+                      <p className="text-gray-500 dark:text-gray-400">Academic Period</p>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {formData.session_from} - {formData.session_to}
+                        {formData.session_from} (Admission) - {formData.session_to} (Passing)
                       </p>
                     </div>
                   )}

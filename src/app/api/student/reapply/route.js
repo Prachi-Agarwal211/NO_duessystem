@@ -237,13 +237,15 @@ export async function PUT(request) {
     }
 
     // ==================== UPDATE FORM DATA ====================
+    // SECURITY FIX: Spread sanitizedData FIRST, then override with protected fields
     const formUpdateData = {
+      ...(sanitizedData || {}), // Merge sanitized fields FIRST
+      // CRITICAL: These fields MUST come AFTER to override any malicious input
       reapplication_count: form.reapplication_count + 1,
       last_reapplied_at: new Date().toISOString(),
       student_reply_message: student_reply_message.trim(),
       is_reapplication: true,
-      status: 'pending', // Reset to pending - FORCE this value
-      ...(sanitizedData || {}) // Merge only sanitized fields
+      status: 'pending' // FORCE pending status - cannot be overridden
     };
 
     const { error: formUpdateError } = await supabaseAdmin
@@ -274,22 +276,24 @@ export async function PUT(request) {
     }
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // Get department emails for rejected departments
-    const { data: departments, error: deptError } = await supabaseAdmin
-      .from('departments')
-      .select('name, email, display_name')
-      .in('name', rejectedDeptNames)
-      .eq('is_active', true);
+    // UNIFIED SYSTEM: Get all active staff members for rejected departments
+    const { data: staffMembers, error: staffError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email, full_name, department_name')
+      .eq('role', 'department')
+      .in('department_name', rejectedDeptNames)
+      .not('email', 'is', null);
 
-    if (!deptError && departments && departments.length > 0) {
+    if (!staffError && staffMembers && staffMembers.length > 0) {
       try {
         // Import email service
         const { sendReapplicationNotifications } = await import('@/lib/emailService');
         
         await sendReapplicationNotifications({
-          departments: departments.map(d => ({ 
-            email: d.email, 
-            name: d.display_name 
+          staffMembers: staffMembers.map(staff => ({
+            email: staff.email,
+            name: staff.full_name,
+            department: staff.department_name
           })),
           studentName: form.student_name,
           registrationNo: form.registration_no,
@@ -299,11 +303,13 @@ export async function PUT(request) {
           formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/student/${form.id}`
         });
 
-        console.log(`📧 Reapplication notifications sent to ${departments.length} department(s)`);
+        console.log(`📧 Reapplication notifications sent to ${staffMembers.length} staff member(s) in rejected departments`);
       } catch (emailError) {
         console.error('Failed to send reapplication notifications:', emailError);
         // Don't fail the request if email fails
       }
+    } else {
+      console.warn('⚠️ No staff members found for rejected departments. Please ensure staff accounts exist.');
     }
 
     // ==================== SUCCESS RESPONSE ====================
