@@ -66,9 +66,6 @@ const nextConfig = {
     // Reduce memory usage during builds
     webpackBuildWorker: true,
     
-    // Enable optimized CSS
-    optimizeCss: true,
-    
     // Optimize server components
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },

@@ -27,10 +27,6 @@ export const metadata = {
     statusBarStyle: "black-translucent",
     title: "JECRC No Dues"
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" }
-  ],
   icons: {
     icon: "/assets/logo.png",
     apple: "/assets/logo.png"
@@ -42,6 +38,10 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" }
+  ],
 };
 
 export default function RootLayout({ children }) {
