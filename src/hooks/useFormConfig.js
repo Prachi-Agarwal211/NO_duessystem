@@ -21,6 +21,8 @@ export function useFormConfig() {
       const response = await fetch('/api/public/config?type=all');
       const result = await response.json();
       
+      console.log('🔧 Config API Response:', result);
+      
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch configuration');
       }
@@ -31,6 +33,10 @@ export function useFormConfig() {
       setCollegeDomain(result.data.collegeDomain || 'jecrcu.edu.in');
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
+      
+      console.log('✅ Loaded Schools:', result.data.schools?.length || 0);
+      console.log('✅ Loaded Courses:', result.data.courses?.length || 0);
+      console.log('✅ Loaded Branches:', result.data.branches?.length || 0);
     } catch (err) {
       console.error('Fetch config error:', err);
       setError(err.message);

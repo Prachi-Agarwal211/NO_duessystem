@@ -91,9 +91,14 @@ export default function FormInput({
           `}
           {...props}
         >
-          <option value="" disabled>
-            Select {label}
+          <option value="" disabled hidden>
+            {placeholder || `Select ${label}`}
           </option>
+          {options.length === 0 && (
+            <option value="" disabled>
+              No options available
+            </option>
+          )}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

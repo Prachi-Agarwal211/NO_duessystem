@@ -58,6 +58,8 @@ export default function SubmitForm() {
   useEffect(() => {
     if (formData.school) {
       const coursesForSchool = getCoursesForSchool(formData.school);
+      console.log('🎓 Selected school:', formData.school);
+      console.log('📚 Available courses for school:', coursesForSchool);
       setAvailableCourses(coursesForSchool);
       
       // Reset course and branch if current selection is not in filtered list
@@ -75,6 +77,8 @@ export default function SubmitForm() {
   useEffect(() => {
     if (formData.course) {
       const branchesForCourse = getBranchesForCourse(formData.course);
+      console.log('📖 Selected course:', formData.course);
+      console.log('🌿 Available branches for course:', branchesForCourse);
       setAvailableBranches(branchesForCourse);
       
       // Reset branch if current selection is not in new course
@@ -538,6 +542,7 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading || configLoading}
+          placeholder={configLoading ? "Loading schools..." : "Select School"}
           options={schools.map(s => ({ value: s.id, label: s.name }))}
         />
 
@@ -549,6 +554,13 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading || configLoading || !formData.school}
+          placeholder={
+            !formData.school
+              ? "Select a school first"
+              : availableCourses.length === 0
+                ? "No courses available"
+                : "Select Course"
+          }
           options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
         />
 
@@ -560,6 +572,13 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading || configLoading || !formData.course}
+          placeholder={
+            !formData.course
+              ? "Select a course first"
+              : availableBranches.length === 0
+                ? "No branches available"
+                : "Select Branch"
+          }
           options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
         />
         
