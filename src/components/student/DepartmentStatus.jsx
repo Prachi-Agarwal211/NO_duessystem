@@ -1,9 +1,10 @@
 'use client';
 
+import React from 'react';
 import { CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function DepartmentStatus({ departmentName, status, actionAt, rejectionReason }) {
+function DepartmentStatus({ departmentName, status, actionAt, rejectionReason }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -79,3 +80,13 @@ export default function DepartmentStatus({ departmentName, status, actionAt, rej
     </div>
   );
 }
+
+// Memoize for performance (safe for real-time - props change triggers update)
+export default React.memo(DepartmentStatus, (prevProps, nextProps) => {
+  return (
+    prevProps.departmentName === nextProps.departmentName &&
+    prevProps.status === nextProps.status &&
+    prevProps.actionAt === nextProps.actionAt &&
+    prevProps.rejectionReason === nextProps.rejectionReason
+  );
+});

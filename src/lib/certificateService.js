@@ -3,8 +3,15 @@
 
 import { jsPDF } from 'jspdf';
 import { createClient } from '@supabase/supabase-js';
+import QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
+import {
+  generateCertificateHash,
+  generateTransactionId,
+  createBlockchainRecord,
+  generateQRData
+} from './blockchainService';
 
 // Initialize Supabase Admin Client for file storage
 const supabaseAdmin = createClient(
@@ -18,6 +25,29 @@ const GOLD_ACCENT = [218, 165, 32]; // #DAA520
 
 export const generateCertificate = async (certificateData) => {
   try {
+    // Generate blockchain hash and transaction ID FIRST
+    const blockchainHash = await generateCertificateHash(certificateData);
+    const transactionId = generateTransactionId(blockchainHash);
+    
+    // Generate QR code data
+    const qrData = generateQRData({
+      formId: certificateData.formId,
+      transactionId,
+      hash: blockchainHash,
+      registrationNo: certificateData.registrationNo,
+      studentName: certificateData.studentName
+    });
+    
+    // Generate QR code image as base64
+    const qrCodeImage = await QRCode.toDataURL(JSON.stringify(qrData), {
+      width: 120,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
+    });
+    
     // Create a new PDF document
     const pdf = new jsPDF({
       orientation: 'landscape',
@@ -193,11 +223,35 @@ export const generateCertificate = async (certificateData) => {
     pdf.setTextColor(100, 100, 100);
     pdf.text('JECRC University', pageWidth - 60, footerY + 5, { align: 'center' });
 
-    // --- 8. Footer (ID) ---
+    // --- 7. QR Code & Blockchain Verification (Bottom Left) ---
+    const qrX = 25;
+    const qrY = footerY - 25;
+    const qrSize = 28;
+    
+    // Add QR Code
+    pdf.addImage(qrCodeImage, 'PNG', qrX, qrY, qrSize, qrSize);
+    
+    // QR Label
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...JECRC_RED);
+    pdf.text('SCAN TO VERIFY', qrX + qrSize / 2, qrY + qrSize + 4, { align: 'center' });
+    
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Blockchain Secured', qrX + qrSize / 2, qrY + qrSize + 8, { align: 'center' });
+
+    // --- 8. Footer (Certificate ID & Transaction ID) ---
     pdf.setFontSize(7);
     pdf.setTextColor(180, 180, 180);
     const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
-    pdf.text(certId, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    pdf.text(certId, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    
+    // Transaction ID (Blockchain)
+    pdf.setFontSize(6);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text(`Blockchain TX: ${transactionId}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
@@ -227,7 +281,9 @@ export const generateCertificate = async (certificateData) => {
       success: true,
       certificateUrl: publicUrl,
       fileName,
-      mimeType: 'application/pdf'
+      mimeType: 'application/pdf',
+      blockchainHash,
+      transactionId
     };
   } catch (error) {
     console.error('Error generating certificate:', error);
@@ -276,7 +332,7 @@ export const finalizeCertificate = async (formId) => {
       throw new Error('Form not found');
     }
     
-    // Generate certificate
+    // Generate certificate with blockchain
     const certificateResult = await generateCertificate({
       studentName: formData.student_name,
       registrationNo: formData.registration_no,
@@ -287,25 +343,47 @@ export const finalizeCertificate = async (formId) => {
       formId
     });
     
-    // Update form record with certificate URL and final status
+    // Create blockchain record in database
+    const blockchainRecord = await createBlockchainRecord({
+      formId,
+      hash: certificateResult.blockchainHash,
+      transactionId: certificateResult.transactionId,
+      certificateData: {
+        studentName: formData.student_name,
+        registrationNo: formData.registration_no,
+        course: formData.course,
+        branch: formData.branch,
+        sessionFrom: formData.session_from,
+        sessionTo: formData.session_to
+      }
+    });
+    
+    // Update form record with certificate URL, blockchain info, and final status
     const { error: updateError } = await supabaseAdmin
       .from('no_dues_forms')
-      .update({ 
+      .update({
         final_certificate_generated: true,
         certificate_url: certificateResult.certificateUrl,
+        blockchain_hash: certificateResult.blockchainHash,
+        blockchain_tx: certificateResult.transactionId,
+        blockchain_block: blockchainRecord.blockNumber,
+        blockchain_timestamp: blockchainRecord.timestamp,
+        blockchain_verified: true,
         updated_at: new Date().toISOString()
       })
       .eq('id', formId);
     
     if (updateError) {
-      throw new Error('Failed to update form with certificate URL');
+      throw new Error('Failed to update form with certificate URL and blockchain data');
     }
     
     return {
       success: true,
-      message: 'Certificate generated successfully',
+      message: 'Certificate generated successfully with blockchain verification',
       formId,
-      certificateUrl: certificateResult.certificateUrl
+      certificateUrl: certificateResult.certificateUrl,
+      blockchainHash: certificateResult.blockchainHash,
+      transactionId: certificateResult.transactionId
     };
   } catch (error) {
     console.error('Error finalizing certificate:', error);

@@ -41,8 +41,14 @@ export default function Home() {
             <span className="font-sans text-[10px] md:text-xs text-jecrc-red font-bold tracking-[0.5em] uppercase opacity-80">
               Student Services
             </span>
-            <h1 className={`font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight transition-colors duration-700 ease-smooth 
-              ${isDark ? 'text-transparent bg-clip-text bg-gradient-to-b from-white to-white/70' : 'text-ink-black'}`}>
+            <h1 className={`font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight transition-colors duration-700 ease-smooth
+              ${isDark
+                ? 'text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/80'
+                : 'text-ink-black'}`}
+              style={isDark ? {
+                textShadow: '0 0 40px rgba(255, 255, 255, 0.5), 0 0 80px rgba(196, 30, 58, 0.3), 0 4px 20px rgba(0, 0, 0, 0.8)',
+                filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.3))'
+              } : {}}>
               NO DUES
             </h1>
 
@@ -86,9 +92,13 @@ export default function Home() {
           </div>
         </main>
 
-        {/* Minimal Footer with adaptive text shadow for visibility */}
-        <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-60 hover:opacity-100 transition-opacity duration-500">
-          <div className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth text-shadow-adaptive ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+        {/* Minimal Footer with enhanced visibility */}
+        <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-70 hover:opacity-100 transition-opacity duration-500">
+          <div
+            className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
+            style={isDark ? {
+              textShadow: '0 0 20px rgba(255, 255, 255, 0.3), 0 2px 10px rgba(0, 0, 0, 0.8)'
+            } : {}}>
             Jaipur Engineering College and Research Centre
           </div>
         </footer>

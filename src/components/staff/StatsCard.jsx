@@ -1,8 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function StatsCard({ title, value, subtitle, icon: Icon, color = 'blue', loading = false }) {
+function StatsCard({ title, value, subtitle, icon: Icon, color = 'blue', loading = false }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -75,3 +76,14 @@ export default function StatsCard({ title, value, subtitle, icon: Icon, color = 
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders (safe for real-time as props change triggers update)
+export default React.memo(StatsCard, (prevProps, nextProps) => {
+  return (
+    prevProps.title === nextProps.title &&
+    prevProps.value === nextProps.value &&
+    prevProps.subtitle === nextProps.subtitle &&
+    prevProps.color === nextProps.color &&
+    prevProps.loading === nextProps.loading
+  );
+});

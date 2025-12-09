@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function LoadingSpinner({ size = 'md', text = '' }) {
+function LoadingSpinner({ size = 'md', text = '' }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -34,3 +34,6 @@ export default function LoadingSpinner({ size = 'md', text = '' }) {
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default React.memo(LoadingSpinner);

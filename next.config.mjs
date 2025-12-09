@@ -1,5 +1,72 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ✅ OPTIMIZATION: Enable SWC minification (faster than Terser)
+  swcMinify: true,
+  
+  // ✅ OPTIMIZATION: Compress output for smaller bundle
+  compress: true,
+  
+  // ✅ OPTIMIZATION: Reduce build output
+  productionBrowserSourceMaps: false,
+  
+  // ✅ OPTIMIZATION: Webpack configuration
+  webpack: (config, { dev, isServer }) => {
+    // Production optimizations only
+    if (!dev) {
+      // Enable tree shaking
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: false,
+        
+        // Split chunks for better caching
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            // Separate vendor chunks
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name(module) {
+                const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)?.[1];
+                return `vendor.${packageName?.replace('@', '')}`;
+              },
+              priority: 10,
+            },
+            // Separate Framer Motion (large library)
+            framerMotion: {
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+              name: 'vendor.framer-motion',
+              priority: 20,
+            },
+            // Separate Supabase
+            supabase: {
+              test: /[\\/]node_modules[\\/]@supabase[\\/]/,
+              name: 'vendor.supabase',
+              priority: 20,
+            },
+            // Common UI components
+            common: {
+              minChunks: 2,
+              priority: 5,
+              reuseExistingChunk: true,
+            },
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
+  
+  // ✅ OPTIMIZATION: Experimental features for better performance
+  experimental: {
+    // Enable optimized fonts
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+    
+    // Reduce memory usage during builds
+    webpackBuildWorker: true,
+  },
+
   images: {
     remotePatterns: [
       {
@@ -24,8 +91,31 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'], // Modern format for better compression
   },
+  
+  // ✅ OPTIMIZATION: Cache static assets aggressively
   async headers() {
     return [
+      // Cache static assets
+      {
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache built files
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Security headers for all routes
       {
         source: '/(.*)',
         headers: [

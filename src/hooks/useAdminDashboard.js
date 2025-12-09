@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { realtimeManager } from '@/lib/realtimeManager';
@@ -265,19 +265,47 @@ export function useAdminDashboard() {
     currentPageRef.current = currentPage;
   }, [currentPage]);
 
+  // ✅ SAFE: Memoize derived stats (doesn't affect real-time, just reduces re-calculations)
+  const memoizedStats = useMemo(() => {
+    if (!stats) return null;
+    
+    // Pre-calculate percentages and formatted values
+    return {
+      ...stats,
+      completionRate: stats?.overallStats?.[0]?.total_requests > 0
+        ? Math.round((stats.overallStats[0].completed / stats.overallStats[0].total_requests) * 100)
+        : 0,
+      pendingRate: stats?.overallStats?.[0]?.total_requests > 0
+        ? Math.round((stats.overallStats[0].pending / stats.overallStats[0].total_requests) * 100)
+        : 0
+    };
+  }, [stats]); // Only recalculate when stats change
+
+  // ✅ SAFE: Memoize pagination info
+  const paginationInfo = useMemo(() => ({
+    currentPage,
+    totalPages,
+    totalItems,
+    hasNextPage: currentPage < totalPages,
+    hasPrevPage: currentPage > 1,
+    startItem: (currentPage - 1) * 20 + 1,
+    endItem: Math.min(currentPage * 20, totalItems)
+  }), [currentPage, totalPages, totalItems]);
+
   return {
     user,
     userId,
     loading,
     refreshing,
     applications,
-    stats,
+    stats: memoizedStats, // Use memoized stats
     error,
     currentPage,
     setCurrentPage,
     totalPages,
     totalItems,
     lastUpdate,
+    paginationInfo, // Add pagination helper
     fetchDashboardData,
     fetchStats,
     refreshData,

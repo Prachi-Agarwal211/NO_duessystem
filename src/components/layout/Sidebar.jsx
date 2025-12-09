@@ -4,14 +4,15 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Settings, 
-  History, 
+import {
+  LayoutDashboard,
+  FileText,
+  Settings,
+  History,
   LogOut,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -24,8 +25,13 @@ export default function Sidebar({ isOpen, onClose, userType = 'admin' }) {
   const navItems = userType === 'admin' ? [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Requests', href: '/admin/requests', icon: FileText },
+    { name: 'Verify Certificate', href: '/admin/verify', icon: Shield },
     { name: 'History', href: '/admin/history', icon: History },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
+  ] : userType === 'staff' ? [
+    { name: 'Dashboard', href: '/staff/dashboard', icon: LayoutDashboard },
+    { name: 'Verify Certificate', href: '/staff/verify', icon: Shield },
+    { name: 'History', href: '/staff/history', icon: History },
   ] : [
     { name: 'Home', href: '/', icon: LayoutDashboard },
     { name: 'Check Status', href: '/student/check-status', icon: FileText },

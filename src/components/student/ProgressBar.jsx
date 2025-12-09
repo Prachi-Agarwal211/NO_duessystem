@@ -1,9 +1,10 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function ProgressBar({ current, total }) {
+function ProgressBar({ current, total }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const percentage = Math.round((current / total) * 100);
@@ -45,3 +46,11 @@ export default function ProgressBar({ current, total }) {
     </div>
   );
 }
+
+// Memoize for performance (safe for real-time - progress updates trigger re-render)
+export default React.memo(ProgressBar, (prevProps, nextProps) => {
+  return (
+    prevProps.current === nextProps.current &&
+    prevProps.total === nextProps.total
+  );
+});

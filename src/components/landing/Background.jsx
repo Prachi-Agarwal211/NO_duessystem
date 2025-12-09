@@ -234,7 +234,12 @@ export default function Background({ theme }) {
       className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none"
       style={{
         background: 'transparent',
-        zIndex: 1
+        zIndex: 1,
+        position: 'fixed', // Ensure fixed positioning
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh'
       }}
     />
   );

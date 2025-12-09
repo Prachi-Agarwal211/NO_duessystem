@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 /**
  * SkeletonLoader Component
  * 
@@ -12,7 +14,7 @@
  * <SkeletonLoader variant="table" rows={5} />
  */
 
-export default function SkeletonLoader({ 
+function SkeletonLoader({
   variant = 'text', 
   width = '100%', 
   height = '20px',
@@ -195,15 +197,18 @@ export default function SkeletonLoader({
           <span className="sr-only">Loading...</span>
         </div>
       );
+    }
   }
-}
-
-/**
- * Compound Skeleton Components for common patterns
- */
-
-// Profile Card Skeleton
-export function SkeletonProfileCard() {
+  
+  // Memoize main component
+  export default React.memo(SkeletonLoader);
+  
+  /**
+   * Compound Skeleton Components for common patterns
+   */
+  
+  // Profile Card Skeleton - Memoized
+  export const SkeletonProfileCard = React.memo(function SkeletonProfileCard() {
   return (
     <div className="glass p-6 rounded-lg space-y-4" role="status" aria-label="Loading profile">
       <div className="flex items-center gap-4">
@@ -217,20 +222,20 @@ export function SkeletonProfileCard() {
       <span className="sr-only">Loading...</span>
     </div>
   );
-}
+});
 
-// Data Table Skeleton
-export function SkeletonDataTable({ rows = 5 }) {
+// Data Table Skeleton - Memoized
+export const SkeletonDataTable = React.memo(function SkeletonDataTable({ rows = 5 }) {
   return (
     <div className="glass rounded-lg overflow-hidden" role="status" aria-label="Loading table">
       <SkeletonLoader variant="table" rows={rows} />
       <span className="sr-only">Loading...</span>
     </div>
   );
-}
+});
 
-// Dashboard Stats Skeleton
-export function SkeletonDashboardStats() {
+// Dashboard Stats Skeleton - Memoized
+export const SkeletonDashboardStats = React.memo(function SkeletonDashboardStats() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" role="status" aria-label="Loading statistics">
       {Array.from({ length: 4 }).map((_, index) => (
@@ -243,10 +248,10 @@ export function SkeletonDashboardStats() {
       <span className="sr-only">Loading...</span>
     </div>
   );
-}
+});
 
-// Form Skeleton with proper structure
-export function SkeletonForm({ fields = 4 }) {
+// Form Skeleton with proper structure - Memoized
+export const SkeletonForm = React.memo(function SkeletonForm({ fields = 4 }) {
   return (
     <div className="glass p-6 rounded-lg" role="status" aria-label="Loading form">
       <SkeletonLoader variant="title" />
@@ -256,4 +261,4 @@ export function SkeletonForm({ fields = 4 }) {
       <span className="sr-only">Loading...</span>
     </div>
   );
-}
+});

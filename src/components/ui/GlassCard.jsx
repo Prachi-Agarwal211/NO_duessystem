@@ -19,7 +19,7 @@ import { useTheme } from '@/contexts/ThemeContext';
  * @param {boolean} hover - Enable hover scale effect (default: true)
  * @param {string} variant - Style variant: 'default' | 'elevated' | 'flat'
  */
-export default function GlassCard({
+function GlassCard({
   children,
   className = "",
   hover = true,
@@ -96,3 +96,6 @@ export default function GlassCard({
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default React.memo(GlassCard);
