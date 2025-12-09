@@ -55,73 +55,78 @@ export default function AuroraBackground({ className = '', children }) {
         `}
         style={{ position: 'absolute' }}
         >
-          {/* Large Red/Pink Blob - Top Left - ENHANCED GLOW */}
+          {/* ✅ PERFORMANCE FIX #3: Reduced blur and simplified blobs on mobile */}
+          {/* Large Red/Pink Blob - Top Left */}
           <div className={`
             absolute top-[-20%] left-[-20%] w-[70%] h-[70%]
             bg-gradient-to-br
             ${isDark
               ? 'from-jecrc-red/80 via-jecrc-red/50 to-transparent'
               : 'from-red-600/40 via-rose-500/30 to-transparent mix-blend-multiply'}
-            ${isMobile ? 'blur-[80px]' : 'blur-[150px]'}
-            animate-blob-slow
+            ${isMobile ? 'blur-[40px]' : 'blur-[100px]'}
+            ${isMobile ? '' : 'animate-blob-slow'}
             rounded-full
-            will-change-transform
           `}
           style={{
-            boxShadow: isDark ? '0 0 200px 100px rgba(196, 30, 58, 0.3)' : 'none'
+            boxShadow: isDark && !isMobile ? '0 0 200px 100px rgba(196, 30, 58, 0.3)' : 'none',
+            willChange: isMobile ? 'auto' : 'transform',
           }}
           />
           
-          {/* Large Red/Rose Blob - Top Right - ENHANCED GLOW */}
+          {/* Large Red/Rose Blob - Top Right */}
           <div className={`
             absolute top-[-20%] right-[-20%] w-[70%] h-[70%]
             bg-gradient-to-bl
             ${isDark
               ? 'from-jecrc-red-bright/70 via-jecrc-red-dark/40 to-transparent'
               : 'from-rose-600/40 via-pink-600/30 to-transparent mix-blend-multiply'}
-            ${isMobile ? 'blur-[80px]' : 'blur-[150px]'}
-            animate-blob-slow animation-delay-2000
+            ${isMobile ? 'blur-[40px]' : 'blur-[100px]'}
+            ${isMobile ? '' : 'animate-blob-slow animation-delay-2000'}
             rounded-full
-            will-change-transform
           `}
           style={{
-            boxShadow: isDark ? '0 0 200px 100px rgba(220, 50, 80, 0.3)' : 'none'
+            boxShadow: isDark && !isMobile ? '0 0 200px 100px rgba(220, 50, 80, 0.3)' : 'none',
+            willChange: isMobile ? 'auto' : 'transform',
           }}
           />
           
-          {/* Large Purple/Blue Blob - Bottom Left - ENHANCED GLOW */}
-          <div className={`
-            absolute bottom-[-20%] left-[-20%] w-[70%] h-[70%]
-            bg-gradient-to-tr
-            ${isDark
-              ? 'from-purple-600/60 via-purple-900/35 to-transparent'
-              : 'from-blue-600/40 via-indigo-500/30 to-transparent mix-blend-multiply'}
-            ${isMobile ? 'blur-[80px]' : 'blur-[150px]'}
-            animate-blob-slow animation-delay-4000
-            rounded-full
-            will-change-transform
-          `}
-          style={{
-            boxShadow: isDark ? '0 0 200px 100px rgba(147, 51, 234, 0.2)' : 'none'
-          }}
-          />
-          
-          {/* Center Glow - ENHANCED for visibility */}
-          <div className={`
-            absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%]
-            bg-gradient-to-br
-            ${isDark
-              ? 'from-jecrc-red/50 via-jecrc-red/20 to-transparent'
-              : 'from-rose-500/30 to-transparent mix-blend-multiply'}
-            ${isMobile ? 'blur-[70px]' : 'blur-[130px]'}
-            rounded-full
-            animate-pulse-slow
-            will-change-transform
-          `}
-          style={{
-            boxShadow: isDark ? '0 0 300px 150px rgba(196, 30, 58, 0.25)' : 'none'
-          }}
-          />
+          {/* Only render bottom blob on desktop for performance */}
+          {!isMobile && (
+            <>
+              {/* Large Red Blob - Bottom Left - Desktop Only */}
+              <div className={`
+                absolute bottom-[-20%] left-[-20%] w-[70%] h-[70%]
+                bg-gradient-to-tr
+                ${isDark
+                  ? 'from-jecrc-red-dark/70 via-jecrc-red/40 to-transparent'
+                  : 'from-blue-600/40 via-indigo-500/30 to-transparent mix-blend-multiply'}
+                blur-[100px]
+                animate-blob-slow animation-delay-4000
+                rounded-full
+              `}
+              style={{
+                boxShadow: isDark ? '0 0 200px 100px rgba(196, 30, 58, 0.25)' : 'none',
+                willChange: 'transform',
+              }}
+              />
+              
+              {/* Center Glow - Desktop Only */}
+              <div className={`
+                absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%]
+                bg-gradient-to-br
+                ${isDark
+                  ? 'from-jecrc-red/50 via-jecrc-red/20 to-transparent'
+                  : 'from-rose-500/30 to-transparent mix-blend-multiply'}
+                blur-[130px]
+                rounded-full
+                animate-pulse-slow
+              `}
+              style={{
+                boxShadow: isDark ? '0 0 300px 150px rgba(196, 30, 58, 0.25)' : 'none',
+              }}
+              />
+            </>
+          )}
         </div>
 
         {/* Subtle grain texture overlay for depth */}

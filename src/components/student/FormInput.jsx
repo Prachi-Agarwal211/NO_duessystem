@@ -89,10 +89,6 @@ export default function FormInput({
             }
             ${isFocused ? 'scale-[1.01]' : 'scale-100'}
           `}
-          style={{
-            willChange: 'transform, box-shadow',
-            transform: 'translateZ(0)'
-          }}
           {...props}
         >
           <option value="" disabled>
@@ -137,10 +133,6 @@ export default function FormInput({
               `
             }
           `}
-          style={{
-            willChange: 'transform, box-shadow',
-            transform: 'translateZ(0)'
-          }}
           {...props}
         />
       )}

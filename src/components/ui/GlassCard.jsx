@@ -47,7 +47,6 @@ function GlassCard({
         rounded-xl sm:rounded-2xl
         p-4 sm:p-6 lg:p-8
         border
-        transition-all duration-500 ease-spring
         animate-fade-in
         ${isDark
           ? `
@@ -59,7 +58,7 @@ function GlassCard({
             hover:bg-black/90
             text-white
             before:absolute before:inset-0 before:rounded-xl sm:before:rounded-2xl
-            before:p-[2px] before:bg-gradient-to-r before:from-jecrc-red/0 
+            before:p-[2px] before:bg-gradient-to-r before:from-jecrc-red/0
             before:via-jecrc-red/50 before:to-jecrc-red/0
             before:opacity-0 hover:before:opacity-100
             before:transition-opacity before:duration-700
@@ -79,8 +78,11 @@ function GlassCard({
         ${className}
       `}
       style={{
+        // ✅ PERFORMANCE FIX #2: Only transition essential properties (not 'all')
+        // This prevents the browser from recalculating layout/paint on every frame
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease',
+        // ✅ Hint the browser to optimize these properties
         willChange: hover ? 'transform, box-shadow' : 'auto',
-        transform: 'translateZ(0)', // GPU acceleration
       }}
       {...props}
     >

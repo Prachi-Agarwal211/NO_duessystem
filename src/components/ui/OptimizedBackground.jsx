@@ -37,13 +37,11 @@ export default function OptimizedBackground() {
         backgroundAttachment: isMobile ? 'scroll' : 'fixed',
         opacity: isDark ? 0.08 : 0.35,
         mixBlendMode: isDark ? 'screen' : 'multiply',
-        filter: isMobile 
-          ? 'brightness(0.7)' 
-          : isDark 
+        filter: isMobile
+          ? 'brightness(0.7)'
+          : isDark
             ? 'brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px)'
             : 'brightness(0.9) contrast(1.1)',
-        willChange: 'opacity',
-        transform: 'translateZ(0)', // Force GPU layer
       }}
     />
   );

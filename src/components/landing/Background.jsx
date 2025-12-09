@@ -1,12 +1,24 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { calculateOptimalParticleCount, prefersReducedMotion } from '@/hooks/useDeviceDetection';
 
 export default function Background({ theme }) {
   const canvasRef = useRef(null);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  // ✅ PERFORMANCE FIX #4: Detect mobile and disable canvas completely
+  useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      setShouldRender(true);
+    }
+  }, []);
 
   useEffect(() => {
+    // ✅ Don't even run canvas logic on mobile devices
+    if (!shouldRender) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -226,7 +238,10 @@ export default function Background({ theme }) {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [theme]);
+  }, [theme, shouldRender]); // ✅ Add shouldRender to deps
+
+  // ✅ PERFORMANCE FIX #4: Don't render canvas at all on mobile
+  if (!shouldRender) return null;
 
   return (
     <canvas

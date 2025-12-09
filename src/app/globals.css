@@ -81,18 +81,22 @@
   --info-dark: #4D9FFF;
 }
 
+/* Ensure smooth scrolling globally */
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
 html, body, #__next { height: 100%; }
 
 body {
   margin: 0;
   overflow-x: hidden;
-  background: var(--pure-black);
+  background: transparent; /* Let GlobalBackground handle the background */
   color: var(--pure-white);
-  /* OPTIMIZED: Only animate necessary properties */
+  min-height: 100vh;
   transition: background-color 700ms cubic-bezier(0.4, 0, 0.2, 1), color 700ms cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  /* GPU acceleration for better performance */
-  transform: translateZ(0);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -146,27 +150,23 @@ body {
 
 /* Low-end device optimization */
 @media (max-width: 768px) and (prefers-contrast: less) {
-  body::after {
-    filter: brightness(0.7) !important;
-  }
+body::after {
+  filter: brightness(0.7) !important;
+}
 }
 
 /* JECRC Campus Watermark - Visible on ALL pages */
 body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url('/assets/9-1-1536x720.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: 0; /* Above body, below content */
-  pointer-events: none;
-  /* OPTIMIZED: Only animate necessary properties */
-  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1), filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
-  /* GPU acceleration */
-  will-change: opacity;
-  transform: translateZ(0);
+content: '';
+position: fixed;
+inset: 0;
+background-image: url('/assets/9-1-1536x720.jpg');
+background-size: cover;
+background-position: center;
+background-repeat: no-repeat;
+z-index: 0; /* Above body, below content */
+pointer-events: none;
+transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1), filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Light Mode - Gradient overlay on watermark */
@@ -248,13 +248,11 @@ body.dark::after {
   background: transparent;
 }
 
-/* Smooth transitions - OPTIMIZED: Only animate transform and opacity */
+/* Smooth transitions - Pure CSS without GPU hints */
 .smooth-transition {
   transition-property: transform, opacity;
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  /* GPU acceleration */
-  will-change: transform, opacity;
 }
 
 /* ========================================
@@ -286,18 +284,15 @@ input:-webkit-autofill:active {
   }
 }
 
-/***** Glass Morphism with Glow - OPTIMIZED *****/
+/***** Glass Morphism with Glow *****/
 .glass {
   @apply backdrop-blur-xl border;
   @apply dark:bg-white/5 dark:border-white/10 dark:shadow-neon-white;
   @apply bg-white/60 border-jecrc-red/10 shadow-lg;
-  /* OPTIMIZED: Only animate necessary properties */
   transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
-  /* GPU acceleration */
-  will-change: background-color, border-color;
 }
 
-/* Form Input with Glow Effects - OPTIMIZED */
+/* Form Input with Glow Effects */
 .input {
   @apply w-full rounded-lg border px-3 py-2 outline-none;
   @apply dark:border-white/20 dark:bg-black/80 dark:text-white dark:placeholder-white/40;
@@ -305,11 +300,10 @@ input:-webkit-autofill:active {
   @apply bg-white/90 text-black placeholder-black/50 border-jecrc-red/20;
   @apply focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/40 focus:bg-white;
   @apply focus:shadow-sharp-black;
-  /* OPTIMIZED transitions */
   transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 
-/* Primary Button with Glow & Animation - OPTIMIZED */
+/* Primary Button with Glow & Animation */
 .btn-primary {
   @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white;
   @apply bg-gradient-to-r from-jecrc-red to-jecrc-red-dark;
@@ -318,9 +312,7 @@ input:-webkit-autofill:active {
   @apply hover:shadow-neon-red-xl dark:hover:shadow-neon-red-xl;
   position: relative;
   overflow: hidden;
-  /* OPTIMIZED: Only animate transform and box-shadow */
   transition: transform 200ms ease, box-shadow 200ms ease;
-  will-change: transform;
 }
 
 .btn-primary:hover {
@@ -341,10 +333,7 @@ input:-webkit-autofill:active {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  /* OPTIMIZED: Faster ripple animation */
   transition: width 0.4s ease, height 0.4s ease;
-  /* GPU acceleration */
-  will-change: width, height;
 }
 
 .btn-primary:hover::before {
@@ -352,12 +341,11 @@ input:-webkit-autofill:active {
   height: 300px;
 }
 
-/* Ghost Button - Minimal Outline - OPTIMIZED */
+/* Ghost Button - Minimal Outline */
 .btn-ghost {
   @apply inline-flex items-center justify-center rounded-lg border px-4 py-2 font-semibold;
   @apply dark:border-white/20 dark:text-white dark:hover:bg-white/10 dark:hover:border-jecrc-red-bright;
   @apply border-black/20 text-black hover:bg-black/5 hover:border-jecrc-red;
-  /* OPTIMIZED transitions */
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
@@ -392,17 +380,13 @@ input:-webkit-autofill:active {
   100% { transform: translate(-5%, -5%) rotate(360deg) scale(1); }
 }
 
-/* OPTIMIZED: GPU acceleration for smooth animations */
-.animate-first { 
+/* Pure CSS animations without GPU hints */
+.animate-first {
   animation: moveOne 28s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
-.animate-second { 
+.animate-second {
   animation: moveTwo 32s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 /* ========================================
@@ -418,9 +402,8 @@ input:-webkit-autofill:active {
                0 0 20px rgba(255, 255, 255, 0.08);
 }
 
-/* Enhanced headings with animations - OPTIMIZED */
+/* Enhanced headings with animations */
 h1, h2, h3 {
-  /* OPTIMIZED: Only animate text-shadow for performance */
   transition: text-shadow 300ms ease;
 }
 
@@ -456,11 +439,9 @@ h1, h2, h3 {
   }
 }
 
-/* Card hover lift effect - OPTIMIZED */
+/* Card hover lift effect - Pure CSS */
 .hover-lift {
-  /* OPTIMIZED: Only animate transform and filter */
   transition: transform 200ms ease, filter 200ms ease;
-  will-change: transform;
 }
 
 .hover-lift:hover {
@@ -488,9 +469,8 @@ h1, h2, h3 {
   100% { background-position: 200% 0; }
 }
 
-/* Status badge glow - OPTIMIZED */
+/* Status badge glow */
 .badge-glow {
-  /* OPTIMIZED: Only animate box-shadow */
   transition: box-shadow 200ms ease;
 }
 
@@ -503,28 +483,43 @@ h1, h2, h3 {
               0 0 30px rgba(255, 255, 255, 0.1);
 }
 
-/* OPTIMIZED: GPU acceleration for smooth animations */
-.animate-third { 
+/* Pure CSS animations without GPU hints */
+.animate-third {
   animation: moveThree 36s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
-.animate-fourth { 
+.animate-fourth {
   animation: moveFour 40s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
-.animate-fifth { 
+.animate-fifth {
   animation: moveFive 44s ease-in-out infinite;
-  will-change: transform;
-  transform: translateZ(0);
 }
 
 /* ========================================
    AURORA BACKGROUND ANIMATIONS
+   Pure CSS without GPU dependencies
    ======================================== */
+
+/* Simple CSS animation without GPU hints */
+@keyframes aurora-flow {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translate(2%, -2%) rotate(120deg) scale(1.05);
+  }
+  66% {
+    transform: translate(-2%, 2%) rotate(240deg) scale(1.03);
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg) scale(1);
+  }
+}
+
+.animate-aurora-flow {
+  animation: aurora-flow 20s ease-in-out infinite;
+}
 
 @keyframes aurora {
   0%, 100% {

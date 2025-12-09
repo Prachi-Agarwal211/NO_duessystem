@@ -19,6 +19,23 @@ import AdminSettings from '@/components/admin/settings/AdminSettings';
 import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import { LogOut, Shield, RefreshCw } from 'lucide-react';
 
+// ✅ PERFORMANCE FIX #1: Debounce hook to prevent API spam while typing
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -50,6 +67,9 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // ✅ PERFORMANCE FIX #1: Wait 500ms after typing stops before fetching
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -100,7 +120,7 @@ export default function AdminDashboard() {
       console.log('📥 Initial admin dashboard data load');
       fetchDashboardData({
         status: statusFilter,
-        search: searchTerm,
+        search: '',
         department: departmentFilter
       });
       fetchStats();
@@ -108,21 +128,20 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // Fetch data when filters or pagination change
-  // ⚠️ CRITICAL: Only trigger on manual filter/page changes, NOT on every render
-  // Real-time updates are handled by refreshData() from the hook
+  // ✅ PERFORMANCE FIX #1: Fetch data when filters or debounced search change
+  // This prevents API spam while typing - waits 500ms after user stops typing
   useEffect(() => {
     if (userId) {
       console.log('🔍 Filters/pagination changed, fetching data');
       fetchDashboardData({
         status: statusFilter,
-        search: searchTerm,
+        search: debouncedSearch, // ✅ Use debounced value instead of searchTerm
         department: departmentFilter
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, statusFilter, departmentFilter, searchTerm]);
-  // Note: This is correct - we want to refetch when user changes filters
+  }, [currentPage, statusFilter, departmentFilter, debouncedSearch]); // ✅ Removed searchTerm from deps
+  // Now API is only called 500ms AFTER user stops typing, not on every keystroke!
 
   const statusCounts = stats?.overallStats?.[0] || {};
 

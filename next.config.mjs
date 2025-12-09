@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // ✅ AWS AMPLIFY: Enable Standalone mode for optimized deployment
+  output: 'standalone',
+  
   // ✅ OPTIMIZATION: Enable SWC minification (faster than Terser)
   swcMinify: true,
   
@@ -12,16 +15,18 @@ const nextConfig = {
   // ✅ OPTIMIZATION: Webpack configuration
   webpack: (config, { dev, isServer }) => {
     // Production optimizations only
-    if (!dev) {
+    if (!dev && !isServer) {
       // Enable tree shaking
       config.optimization = {
         ...config.optimization,
         usedExports: true,
         sideEffects: false,
         
-        // Split chunks for better caching
+        // Split chunks for better caching - AWS Amplify optimized
         splitChunks: {
           chunks: 'all',
+          maxInitialRequests: 25,
+          minSize: 20000,
           cacheGroups: {
             // Separate vendor chunks
             vendor: {
@@ -71,22 +76,12 @@ const nextConfig = {
   },
 
   images: {
+    // ✅ AWS AMPLIFY: Unoptimized images to prevent build lag
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'imagedelivery.net',
+        hostname: '**',
       },
     ],
     // Enable image optimization for better mobile performance
