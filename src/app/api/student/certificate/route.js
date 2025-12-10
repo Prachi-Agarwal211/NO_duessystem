@@ -102,7 +102,7 @@ export async function GET(request) {
           canAccess = true;
         }
         // Staff members can access completed forms
-        else if (profile.role === 'staff' && formData.status === 'completed') {
+        else if (profile.role === 'department' && formData.status === 'completed') {
           canAccess = true;
         }
       }

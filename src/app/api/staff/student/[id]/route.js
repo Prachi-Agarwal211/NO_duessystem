@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
     }
 
     // Verify user has staff or admin role
-    if (profile.role !== 'staff' && profile.role !== 'admin') {
+    if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -62,7 +62,7 @@ export async function GET(request, { params }) {
       .eq('id', id);
 
     // If user is staff member, verify they can access this form
-    if (profile.role === 'staff') {
+    if (profile.role === 'department') {
       // Check if this form has a status entry for the user's department
       const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')

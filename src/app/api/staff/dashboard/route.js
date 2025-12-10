@@ -67,8 +67,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Verify user has staff or admin role
-    if (profile.role !== 'staff' && profile.role !== 'admin') {
+    // Verify user has department staff or admin role
+    if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -120,8 +120,8 @@ export async function GET(request) {
           totalPages: Math.ceil((totalCount || 0) / limit)
         }
       };
-    } else if (profile.role === 'staff') {
-      // Staff gets applications pending for their department
+    } else if (profile.role === 'department') {
+      // Department staff gets applications pending for their department
       let query = supabaseAdmin
         .from('no_dues_status')
         .select(`

@@ -30,7 +30,7 @@ export async function GET(request) {
       .eq('id', userId)
       .single();
 
-    if (profileError || !profile || (profile.role !== 'staff' && profile.role !== 'admin')) {
+    if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -52,7 +52,7 @@ export async function GET(request) {
       .or(`student_name.ilike.%${query}%,registration_no.ilike.%${query}%`)
       .limit(20);
 
-    if (profile.role === 'staff') {
+    if (profile.role === 'department') {
       // Staff members can only see forms related to their department
       formsQuery = formsQuery.in('id', supabaseAdmin
         .from('no_dues_status')

@@ -45,7 +45,7 @@ export function useStaffDashboard() {
         .eq('id', session.user.id)
         .single();
 
-      if (userError || !userData || (userData.role !== 'staff' && userData.role !== 'admin')) {
+      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
         router.push('/unauthorized');
         return;
       }

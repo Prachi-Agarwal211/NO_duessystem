@@ -63,16 +63,16 @@ export async function PUT(request) {
       }, { status: 404 });
     }
 
-    // Verify user has staff or admin role
-    if (profile.role !== 'staff' && profile.role !== 'admin') {
+    // Verify user has department staff or admin role
+    if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({
         success: false,
         error: 'Unauthorized'
       }, { status: 401 });
     }
 
-    // For staff members, verify they can only act on their department
-    if (profile.role === 'staff' && profile.department_name !== departmentName) {
+    // For department staff members, verify they can only act on their department
+    if (profile.role === 'department' && profile.department_name !== departmentName) {
       return NextResponse.json({
         success: false,
         error: 'You can only take actions for your own department'
