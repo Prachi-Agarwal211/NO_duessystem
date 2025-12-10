@@ -54,14 +54,17 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- SECTION 2: CREATE CORE TABLES WITH CORRECT STRUCTURE
 -- ============================================================================
 
--- 2.1 Profiles Table (Staff/Admin users) - WITH department_name for login
+-- 2.1 Profiles Table (Staff/Admin users) - WITH department_name for login AND scoping arrays
 CREATE TABLE public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('department', 'admin')),
     department_name TEXT,  -- CRITICAL: Required for staff login and filtering
-    school_id UUID,  -- For school-specific filtering (optional, added later)
+    school_id UUID,  -- For school-specific filtering (single school, backward compatibility)
+    school_ids UUID[],  -- For multiple schools filtering (array)
+    course_ids UUID[],  -- For multiple courses filtering (array)
+    branch_ids UUID[],  -- For multiple branches filtering (array)
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -1237,7 +1240,223 @@ ALTER TABLE public.no_dues_forms REPLICA IDENTITY FULL;
 ALTER TABLE public.no_dues_status REPLICA IDENTITY FULL;
 
 -- ============================================================================
--- SECTION 12: VERIFICATION & SUCCESS MESSAGE
+-- SECTION 12: CREATE 5 STAFF PROFILES WITH PROPER SCOPING
+-- ============================================================================
+-- This section creates staff profiles with school/course/branch-level filtering
+-- IMPORTANT: These profiles will only work if auth users exist in auth.users table
+-- You must create auth users in Supabase Dashboard first (Authentication → Users)
+-- ============================================================================
+
+-- First, check if any auth users exist and create profiles for them
+DO $$
+DECLARE
+    admin_user_id UUID;
+    tpo_user_id UUID;
+    bca_hod_user_id UUID;
+    cse_hod_user_id UUID;
+    accounts_user_id UUID;
+    user_count INTEGER;
+BEGIN
+    -- Count existing auth users
+    SELECT COUNT(*) INTO user_count FROM auth.users;
+    
+    RAISE NOTICE '';
+    RAISE NOTICE '📋 Creating Staff Profiles...';
+    RAISE NOTICE '   Found % auth users', user_count;
+    
+    -- Only proceed if auth users exist
+    IF user_count >= 5 THEN
+        -- Get user IDs by email (these must exist in auth.users)
+        SELECT id INTO admin_user_id FROM auth.users WHERE email = 'admin@jecrcu.edu.in' LIMIT 1;
+        SELECT id INTO tpo_user_id FROM auth.users WHERE email = 'razorrag.official@gmail.com' LIMIT 1;
+        SELECT id INTO bca_hod_user_id FROM auth.users WHERE email = 'prachiagarwal211@gmail.com' LIMIT 1;
+        SELECT id INTO cse_hod_user_id FROM auth.users WHERE email = '15anuragsingh2003@gmail.com' LIMIT 1;
+        SELECT id INTO accounts_user_id FROM auth.users WHERE email = 'anurag.22bcom1367@jecrcu.edu.in' LIMIT 1;
+        
+        -- Profile 1: System Administrator (admin@jecrcu.edu.in)
+        IF admin_user_id IS NOT NULL THEN
+            INSERT INTO public.profiles (
+                id, email, full_name, role, department_name,
+                school_id, school_ids, course_ids, branch_ids, is_active
+            ) VALUES (
+                admin_user_id,
+                'admin@jecrcu.edu.in',
+                'System Administrator',
+                'admin',
+                NULL,  -- Admins don't have a department
+                NULL, NULL, NULL, NULL,  -- NULL = sees everything
+                true
+            ) ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                full_name = EXCLUDED.full_name,
+                role = EXCLUDED.role,
+                department_name = EXCLUDED.department_name,
+                school_ids = EXCLUDED.school_ids,
+                course_ids = EXCLUDED.course_ids,
+                branch_ids = EXCLUDED.branch_ids;
+            
+            RAISE NOTICE '   ✅ Created: admin@jecrcu.edu.in (Admin)';
+        ELSE
+            RAISE NOTICE '   ⚠️  Skipped: admin@jecrcu.edu.in (user not found in auth.users)';
+        END IF;
+        
+        -- Profile 2: TPO Department Staff (razorrag.official@gmail.com)
+        IF tpo_user_id IS NOT NULL THEN
+            INSERT INTO public.profiles (
+                id, email, full_name, role, department_name,
+                school_id, school_ids, course_ids, branch_ids, is_active
+            ) VALUES (
+                tpo_user_id,
+                'razorrag.official@gmail.com',
+                'Razorrag (TPO Staff)',
+                'department',
+                'tpo',
+                NULL, NULL, NULL, NULL,  -- NULL = sees all students (TPO is not school-specific)
+                true
+            ) ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                full_name = EXCLUDED.full_name,
+                role = EXCLUDED.role,
+                department_name = EXCLUDED.department_name,
+                school_ids = EXCLUDED.school_ids,
+                course_ids = EXCLUDED.course_ids,
+                branch_ids = EXCLUDED.branch_ids;
+            
+            RAISE NOTICE '   ✅ Created: razorrag.official@gmail.com (TPO)';
+        ELSE
+            RAISE NOTICE '   ⚠️  Skipped: razorrag.official@gmail.com (user not found in auth.users)';
+        END IF;
+        
+        -- Profile 3: BCA/MCA HOD (prachiagarwal211@gmail.com)
+        IF bca_hod_user_id IS NOT NULL THEN
+            INSERT INTO public.profiles (
+                id, email, full_name, role, department_name,
+                school_id, school_ids, course_ids, branch_ids, is_active
+            ) VALUES (
+                bca_hod_user_id,
+                'prachiagarwal211@gmail.com',
+                'Prachi Agarwal (HOD - BCA/MCA)',
+                'department',
+                'school_hod',
+                (SELECT id FROM public.config_schools WHERE name = 'School of Computer Applications'),  -- Single school (backward compatibility)
+                ARRAY[(SELECT id FROM public.config_schools WHERE name = 'School of Computer Applications')],  -- School filter
+                ARRAY[
+                    (SELECT id FROM public.config_courses WHERE name = 'BCA' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Computer Applications')),
+                    (SELECT id FROM public.config_courses WHERE name = 'MCA' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Computer Applications'))
+                ],  -- Course filter: BCA + MCA only
+                NULL,  -- NULL = sees ALL branches of BCA/MCA
+                true
+            ) ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                full_name = EXCLUDED.full_name,
+                role = EXCLUDED.role,
+                department_name = EXCLUDED.department_name,
+                school_id = EXCLUDED.school_id,
+                school_ids = EXCLUDED.school_ids,
+                course_ids = EXCLUDED.course_ids,
+                branch_ids = EXCLUDED.branch_ids;
+            
+            RAISE NOTICE '   ✅ Created: prachiagarwal211@gmail.com (BCA/MCA HOD - 22 branches)';
+        ELSE
+            RAISE NOTICE '   ⚠️  Skipped: prachiagarwal211@gmail.com (user not found in auth.users)';
+        END IF;
+        
+        -- Profile 4: B.Tech/M.Tech CSE HOD (15anuragsingh2003@gmail.com)
+        IF cse_hod_user_id IS NOT NULL THEN
+            INSERT INTO public.profiles (
+                id, email, full_name, role, department_name,
+                school_id, school_ids, course_ids, branch_ids, is_active
+            ) VALUES (
+                cse_hod_user_id,
+                '15anuragsingh2003@gmail.com',
+                'Anurag Singh (HOD - B.Tech/M.Tech CSE)',
+                'department',
+                'school_hod',
+                (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'),  -- Single school
+                ARRAY[(SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology')],  -- School filter
+                ARRAY[
+                    (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology')),
+                    (SELECT id FROM public.config_courses WHERE name = 'M.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))
+                ],  -- Course filter: B.Tech + M.Tech
+                ARRAY[
+                    -- B.Tech CSE branches (15 CSE-related branches)
+                    (SELECT id FROM public.config_branches WHERE name = 'Computer Science and Engineering' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Artificial Intelligence and Data Science' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Generative AI (L&T EduTech)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Software Product Engineering with Kalvium' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Artificial Intelligence and Machine Learning (Xebia)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Full Stack Web Design and Development (Xebia)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Artificial Intelligence and Machine Learning (Samatrix.io)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Data Science and Data Analytics (Samatrix.io)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Cyber Security (EC-Council, USA)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'Computer Science and Business Systems (CSBS) - TCS' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Artificial Intelligence and Machine Learning (IBM)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Cloud Computing (Microsoft)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Cloud Computing (AWS Verified Program)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'CSE - Blockchain (upGrad Campus)' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    (SELECT id FROM public.config_branches WHERE name = 'B.Tech Lateral Entry / Migration' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'B.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology'))),
+                    -- M.Tech CSE branch (1 branch)
+                    (SELECT id FROM public.config_branches WHERE name = 'Computer Science and Engineering' AND course_id = (SELECT id FROM public.config_courses WHERE name = 'M.Tech' AND school_id = (SELECT id FROM public.config_schools WHERE name = 'School of Engineering & Technology')))
+                ],  -- Branch filter: Only CSE branches (16 total)
+                true
+            ) ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                full_name = EXCLUDED.full_name,
+                role = EXCLUDED.role,
+                department_name = EXCLUDED.department_name,
+                school_id = EXCLUDED.school_id,
+                school_ids = EXCLUDED.school_ids,
+                course_ids = EXCLUDED.course_ids,
+                branch_ids = EXCLUDED.branch_ids;
+            
+            RAISE NOTICE '   ✅ Created: 15anuragsingh2003@gmail.com (CSE HOD - 16 branches)';
+        ELSE
+            RAISE NOTICE '   ⚠️  Skipped: 15anuragsingh2003@gmail.com (user not found in auth.users)';
+        END IF;
+        
+        -- Profile 5: Accounts Department Staff (anurag.22bcom1367@jecrcu.edu.in)
+        IF accounts_user_id IS NOT NULL THEN
+            INSERT INTO public.profiles (
+                id, email, full_name, role, department_name,
+                school_id, school_ids, course_ids, branch_ids, is_active
+            ) VALUES (
+                accounts_user_id,
+                'anurag.22bcom1367@jecrcu.edu.in',
+                'Anurag Kumar (Accounts Staff)',
+                'department',
+                'accounts_department',
+                NULL, NULL, NULL, NULL,  -- NULL = sees all students (Accounts is not school-specific)
+                true
+            ) ON CONFLICT (id) DO UPDATE SET
+                email = EXCLUDED.email,
+                full_name = EXCLUDED.full_name,
+                role = EXCLUDED.role,
+                department_name = EXCLUDED.department_name,
+                school_ids = EXCLUDED.school_ids,
+                course_ids = EXCLUDED.course_ids,
+                branch_ids = EXCLUDED.branch_ids;
+            
+            RAISE NOTICE '   ✅ Created: anurag.22bcom1367@jecrcu.edu.in (Accounts)';
+        ELSE
+            RAISE NOTICE '   ⚠️  Skipped: anurag.22bcom1367@jecrcu.edu.in (user not found in auth.users)';
+        END IF;
+        
+    ELSE
+        RAISE NOTICE '   ⚠️  WARNING: Less than 5 auth users found!';
+        RAISE NOTICE '   ⚠️  Please create these 5 users in Supabase Dashboard first:';
+        RAISE NOTICE '      1. admin@jecrcu.edu.in';
+        RAISE NOTICE '      2. razorrag.official@gmail.com';
+        RAISE NOTICE '      3. prachiagarwal211@gmail.com';
+        RAISE NOTICE '      4. 15anuragsingh2003@gmail.com';
+        RAISE NOTICE '      5. anurag.22bcom1367@jecrcu.edu.in';
+        RAISE NOTICE '   ⚠️  Then re-run this script to create profiles.';
+    END IF;
+    
+    RAISE NOTICE '';
+END $$;
+
+-- ============================================================================
+-- SECTION 13: VERIFICATION & SUCCESS MESSAGE
 -- ============================================================================
 
 DO $$
