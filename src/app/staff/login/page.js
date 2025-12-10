@@ -60,7 +60,7 @@ function StaffLoginContent() {
         throw new Error(`Failed to load user profile: ${profileError.message || profileError.code || 'Unknown error'}`);
       }
 
-      if (!profile || (profile.role !== 'staff' && profile.role !== 'admin')) {
+      if (!profile || (profile.role !== 'department' && profile.role !== 'admin')) {
         // Sign out the user since they're not authorized
         await supabase.auth.signOut();
         throw new Error('Access denied. Only department staff and administrators can log in here.');
