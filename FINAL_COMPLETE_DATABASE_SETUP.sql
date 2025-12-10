@@ -1153,9 +1153,9 @@ INSERT INTO public.config_emails (key, value, description) VALUES
 -- 10.2 Validation Rules
 INSERT INTO public.config_validation_rules (rule_name, rule_pattern, error_message, is_active, description) VALUES
     ('registration_number', '^[A-Z0-9]{6,15}$', 'Registration number must be 6-15 alphanumeric characters', true, 'Validates student registration number format'),
-    ('student_name', '^[A-Za-z\\s.\\-'']+$', 'Name should only contain letters, spaces, dots, hyphens, and apostrophes', true, 'Validates student and parent name format'),
+    ('student_name', '^[A-Za-z\s.\-'']+$', 'Name should only contain letters, spaces, dots, hyphens, and apostrophes', true, 'Validates student and parent name format'),
     ('phone_number', '^[0-9]{6,15}$', 'Phone number must be 6-15 digits', true, 'Validates contact number (without country code)'),
-    ('session_year', '^\\d{4}$', 'Session year must be in YYYY format', true, 'Validates session year format');
+    ('session_year', '^\d{4}$', 'Session year must be in YYYY format', true, 'Validates session year format');
 
 -- 10.3 Country Codes (Top 30 countries)
 INSERT INTO public.config_country_codes (country_name, country_code, dial_code, is_active, display_order) VALUES
