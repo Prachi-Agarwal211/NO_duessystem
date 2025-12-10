@@ -523,17 +523,17 @@ CREATE POLICY "Service role can manage notifications" ON public.notifications
 -- ============================================================================
 
 INSERT INTO public.departments (name, display_name, email, display_order, is_school_specific, is_active) VALUES
-    ('school_hod', 'School (HOD/Department)', 'hod@jecrc.ac.in', 1, true, true),
-    ('library', 'Library', 'library@jecrc.ac.in', 2, false, true),
-    ('it_department', 'IT Department', 'it@jecrc.ac.in', 3, false, true),
-    ('hostel', 'Hostel', 'hostel@jecrc.ac.in', 4, false, true),
-    ('mess', 'Mess', 'mess@jecrc.ac.in', 5, false, true),
-    ('canteen', 'Canteen', 'canteen@jecrc.ac.in', 6, false, true),
-    ('tpo', 'TPO', 'tpo@jecrc.ac.in', 7, false, true),
-    ('alumni_association', 'Alumni Association', 'alumni@jecrc.ac.in', 8, false, true),
-    ('accounts_department', 'Accounts Department', 'accounts@jecrc.ac.in', 9, false, true),
-    ('jic', 'JECRC Incubation Center (JIC)', 'jic@jecrc.ac.in', 10, false, true),
-    ('student_council', 'Student Council', 'studentcouncil@jecrc.ac.in', 11, false, true);
+    ('school_hod', 'School (HOD/Department)', 'hod@jecrcu.edu.in', 1, true, true),
+    ('library', 'Library', 'library@jecrcu.edu.in', 2, false, true),
+    ('it_department', 'IT Department', 'it@jecrcu.edu.in', 3, false, true),
+    ('hostel', 'Hostel', 'hostel@jecrcu.edu.in', 4, false, true),
+    ('mess', 'Mess', 'mess@jecrcu.edu.in', 5, false, true),
+    ('canteen', 'Canteen', 'canteen@jecrcu.edu.in', 6, false, true),
+    ('tpo', 'TPO', 'tpo@jecrcu.edu.in', 7, false, true),
+    ('alumni_association', 'Alumni Association', 'alumni@jecrcu.edu.in', 8, false, true),
+    ('accounts_department', 'Accounts Department', 'accounts@jecrcu.edu.in', 9, false, true),
+    ('jic', 'JECRC Incubation Center (JIC)', 'jic@jecrcu.edu.in', 10, false, true),
+    ('student_council', 'Student Council', 'studentcouncil@jecrcu.edu.in', 11, false, true);
 
 -- ============================================================================
 -- SECTION 8: POPULATE ALL 13 SCHOOLS
@@ -1145,9 +1145,9 @@ FROM (VALUES
 
 -- 10.1 Email Configuration
 INSERT INTO public.config_emails (key, value, description) VALUES
-    ('college_domain', 'jecrc.ac.in', 'College email domain for validation'),
-    ('admin_email', 'admin@jecrc.ac.in', 'Admin notification email'),
-    ('system_email', 'noreply@jecrc.ac.in', 'System sender email for notifications'),
+    ('college_domain', 'jecrcu.edu.in', 'College email domain for validation'),
+    ('admin_email', 'admin@jecrcu.edu.in', 'Admin notification email'),
+    ('system_email', 'noreply@jecrcu.edu.in', 'System sender email for notifications'),
     ('notifications_enabled', 'true', 'Enable/disable email notifications');
 
 -- 10.2 Validation Rules
