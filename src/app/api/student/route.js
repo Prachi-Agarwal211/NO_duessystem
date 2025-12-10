@@ -162,8 +162,8 @@ export async function POST(request) {
       );
     }
 
-    // Validate parent name if provided
-    if (formData.parent_name && rules.student_name &&
+    // Validate parent name if provided (only if it has actual content)
+    if (formData.parent_name && formData.parent_name.trim() && rules.student_name &&
         !rules.student_name.pattern.test(formData.parent_name.trim())) {
       return NextResponse.json(
         { success: false, error: `Parent name - ${rules.student_name.error}` },
@@ -172,7 +172,8 @@ export async function POST(request) {
     }
 
     // Validate session years if provided using database rule
-    if (formData.session_from && rules.session_year) {
+    // Only validate if field has actual content (not empty string or null)
+    if (formData.session_from && formData.session_from.trim() && rules.session_year) {
       if (!rules.session_year.pattern.test(formData.session_from)) {
         return NextResponse.json(
           { success: false, error: `Session from - ${rules.session_year.error}` },
@@ -188,7 +189,7 @@ export async function POST(request) {
       }
     }
 
-    if (formData.session_to && rules.session_year) {
+    if (formData.session_to && formData.session_to.trim() && rules.session_year) {
       if (!rules.session_year.pattern.test(formData.session_to)) {
         return NextResponse.json(
           { success: false, error: `Session to - ${rules.session_year.error}` },
@@ -203,8 +204,8 @@ export async function POST(request) {
         );
       }
       
-      // Validate session range
-      if (formData.session_from && toYear < parseInt(formData.session_from)) {
+      // Validate session range (only if both fields have values)
+      if (formData.session_from && formData.session_from.trim() && toYear < parseInt(formData.session_from)) {
         return NextResponse.json(
           {
             success: false,
@@ -330,9 +331,9 @@ export async function POST(request) {
     const sanitizedData = {
       registration_no: registrationNo,
       student_name: formData.student_name.trim(),
-      session_from: formData.session_from?.trim() || null,
-      session_to: formData.session_to?.trim() || null,
-      parent_name: formData.parent_name?.trim() || null,
+      session_from: formData.session_from?.trim() ? formData.session_from.trim() : null,
+      session_to: formData.session_to?.trim() ? formData.session_to.trim() : null,
+      parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
       school_id: school_id, // Store UUID for foreign key
       school: schoolData.name, // Store validated name
       course_id: course_id, // Store UUID for foreign key
