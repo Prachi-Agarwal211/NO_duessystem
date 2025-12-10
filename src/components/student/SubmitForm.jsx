@@ -254,8 +254,8 @@ export default function SubmitForm() {
         throw new Error('Invalid college email format');
       }
       
-      // College email domain check
-      if (!formData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
+      // College email domain check (only if collegeDomain is loaded)
+      if (collegeDomain && !formData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
         throw new Error(`College email must end with ${collegeDomain}`);
       }
 

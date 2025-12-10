@@ -9,7 +9,7 @@ export function useFormConfig() {
   const [schools, setSchools] = useState([]);
   const [courses, setCourses] = useState([]);
   const [branches, setBranches] = useState([]);
-  const [collegeDomain, setCollegeDomain] = useState('jecrcu.edu.in');
+  const [collegeDomain, setCollegeDomain] = useState('jecrc.ac.in');
   const [validationRules, setValidationRules] = useState([]);
   const [countryCodes, setCountryCodes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export function useFormConfig() {
       setSchools(result.data.schools || []);
       setCourses(result.data.courses || []);
       setBranches(result.data.branches || []);
-      setCollegeDomain(result.data.collegeDomain || 'jecrcu.edu.in');
+      setCollegeDomain(result.data.collegeDomain || 'jecrc.ac.in');
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
       
