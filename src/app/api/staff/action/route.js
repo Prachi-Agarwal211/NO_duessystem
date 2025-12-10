@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -20,7 +20,9 @@ export async function PUT(request) {
     const body = await request.json();
 
     // Input validation using centralized validation library
-    const validation = await validateRequest(request, VALIDATION_SCHEMAS.STAFF_ACTION);
+    // Note: validateRequest reads the body, but we already read it above
+    // So we'll validate the body directly instead
+    const validation = validateForm(body, VALIDATION_SCHEMAS.STAFF_ACTION);
     if (!validation.isValid) {
       return NextResponse.json(
         {
