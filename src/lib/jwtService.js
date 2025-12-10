@@ -128,10 +128,10 @@ export const createActionUrl = async ({ user_id, form_id, department }, baseUrl 
     }
 
     const token = await createSecureToken({ user_id, form_id, department });
-    
+
     // Use environment variable or fallback
     const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
+
     // Validate base URL format
     try {
         const url = new URL('/department/action', base);
@@ -160,3 +160,6 @@ export const decodeTokenUnsafe = (token) => {
         throw new Error('Failed to decode token');
     }
 };
+
+// Alias for backward compatibility - verifyToken is the same as validateToken
+export const verifyToken = validateToken;

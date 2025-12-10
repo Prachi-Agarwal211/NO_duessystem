@@ -76,6 +76,9 @@ function stripHtml(html) {
     .trim();
 }
 
+// Export sendEmail as named export for compatibility
+export { sendEmail };
+
 /**
  * Generate HTML email template
  * @param {Object} params - Template parameters
@@ -236,7 +239,7 @@ export async function notifyAllDepartments({
   }
 
   console.log(`📧 Sending notifications to ${staffMembers.length} staff member(s)...`);
-  
+
   const results = await Promise.allSettled(
     staffMembers.map(staff =>
       sendDepartmentNotification({
@@ -426,7 +429,7 @@ export async function sendReapplicationNotifications({
   }
 
   console.log(`📧 Sending reapplication notifications to ${staffMembers.length} staff member(s)...`);
-  
+
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
       A student has <strong>reapplied</strong> to their No Dues application after addressing the rejection reasons.

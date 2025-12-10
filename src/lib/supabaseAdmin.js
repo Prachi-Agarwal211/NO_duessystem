@@ -17,4 +17,6 @@ const supabaseAdmin = createClient(
   }
 );
 
+// Export as both default and named for compatibility
+export { supabaseAdmin };
 export default supabaseAdmin;
