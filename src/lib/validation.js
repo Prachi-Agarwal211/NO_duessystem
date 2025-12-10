@@ -418,8 +418,8 @@ export const VALIDATION_SCHEMAS = {
     personal_email: { type: 'email', required: true, label: 'Personal Email' },
     college_email: { type: 'email', required: true, label: 'College Email' },
     contact_no: { type: 'phone', required: true, label: 'Contact Number' },
-    session_from: { type: 'year', required: false, label: 'Session From' },
-    session_to: { type: 'year', required: false, label: 'Session To' }
+    admission_year: { type: 'year', required: false, label: 'Admission Year' },
+    passing_year: { type: 'year', required: false, label: 'Passing Year' }
   },
 
   STAFF_ACTION: {

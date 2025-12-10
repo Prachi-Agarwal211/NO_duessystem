@@ -39,8 +39,8 @@ export default function SubmitForm() {
   const [formData, setFormData] = useState({
     registration_no: '',
     student_name: '',
-    session_from: '', // Now represents admission_year
-    session_to: '',   // Now represents passing_year
+    admission_year: '', // Admission year
+    passing_year: '',   // Passing year
     parent_name: '',
     school: '',
     course: '',
@@ -260,24 +260,24 @@ export default function SubmitForm() {
       }
 
       // Admission/Passing year validation
-      if (formData.session_from) {
+      if (formData.admission_year) {
         // Validate YYYY format
-        if (!/^\d{4}$/.test(formData.session_from)) {
+        if (!/^\d{4}$/.test(formData.admission_year)) {
           throw new Error('Admission Year must be in YYYY format (e.g., 2020)');
         }
-        const admissionYear = parseInt(formData.session_from);
+        const admissionYear = parseInt(formData.admission_year);
         const currentYear = new Date().getFullYear();
         if (admissionYear < 1950 || admissionYear > currentYear + 1) {
           throw new Error('Please enter a valid Admission Year');
         }
       }
       
-      if (formData.session_to) {
+      if (formData.passing_year) {
         // Validate YYYY format
-        if (!/^\d{4}$/.test(formData.session_to)) {
+        if (!/^\d{4}$/.test(formData.passing_year)) {
           throw new Error('Passing Year must be in YYYY format (e.g., 2024)');
         }
-        const passingYear = parseInt(formData.session_to);
+        const passingYear = parseInt(formData.passing_year);
         const currentYear = new Date().getFullYear();
         if (passingYear < 1950 || passingYear > currentYear + 10) {
           throw new Error('Please enter a valid Passing Year');
@@ -285,9 +285,9 @@ export default function SubmitForm() {
       }
       
       // Validate year range (if both provided)
-      if (formData.session_from && formData.session_to) {
-        const admissionYear = parseInt(formData.session_from);
-        const passingYear = parseInt(formData.session_to);
+      if (formData.admission_year && formData.passing_year) {
+        const admissionYear = parseInt(formData.admission_year);
+        const passingYear = parseInt(formData.passing_year);
         if (passingYear < admissionYear) {
           throw new Error('Passing Year must be greater than or equal to Admission Year');
         }
@@ -320,8 +320,8 @@ export default function SubmitForm() {
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
-        session_from: formData.session_from?.trim() ? formData.session_from.trim() : null,
-        session_to: formData.session_to?.trim() ? formData.session_to.trim() : null,
+        admission_year: formData.admission_year?.trim() ? formData.admission_year.trim() : null,
+        passing_year: formData.passing_year?.trim() ? formData.passing_year.trim() : null,
         parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
         school: formData.school,        // Send UUID from dropdown
         course: formData.course,        // Send UUID from dropdown
@@ -539,9 +539,9 @@ export default function SubmitForm() {
         />
 
         <FormInput
-          label="Admission Year (YYYY)"
-          name="session_from"
-          value={formData.session_from}
+          label="Admission Year"
+          name="admission_year"
+          value={formData.admission_year}
           onChange={handleInputChange}
           placeholder="e.g., 2020"
           maxLength={4}
@@ -550,9 +550,9 @@ export default function SubmitForm() {
         />
 
         <FormInput
-          label="Passing Year (YYYY)"
-          name="session_to"
-          value={formData.session_to}
+          label="Passing Year"
+          name="passing_year"
+          value={formData.passing_year}
           onChange={handleInputChange}
           placeholder="e.g., 2024"
           maxLength={4}

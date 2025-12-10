@@ -38,8 +38,8 @@ export async function GET(request) {
         registration_no,
         course,
         branch,
-        session_from,
-        session_to,
+        admission_year,
+        passing_year,
         status,
         final_certificate_generated,
         certificate_url
@@ -143,8 +143,8 @@ export async function GET(request) {
         registration_no: formData.registration_no,
         course: formData.course,
         branch: formData.branch,
-        session_from: formData.session_from,
-        session_to: formData.session_to,
+        admission_year: formData.admission_year,
+        passing_year: formData.passing_year,
         status: formData.status
       }
     });

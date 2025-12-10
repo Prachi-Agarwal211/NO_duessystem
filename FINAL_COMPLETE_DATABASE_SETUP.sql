@@ -152,8 +152,8 @@ CREATE TABLE public.no_dues_forms (
     student_name TEXT NOT NULL,
     personal_email TEXT NOT NULL,
     college_email TEXT NOT NULL,
-    session_from TEXT,
-    session_to TEXT,
+    admission_year INTEGER,  -- Year student joined (e.g., 2020)
+    passing_year INTEGER,    -- Year student graduated (e.g., 2024)
     parent_name TEXT,
     school_id UUID REFERENCES public.config_schools(id),
     course_id UUID REFERENCES public.config_courses(id),
@@ -171,6 +171,29 @@ CREATE TABLE public.no_dues_forms (
     CONSTRAINT check_personal_email_format CHECK (personal_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     CONSTRAINT check_college_email_format CHECK (college_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
 );
+
+-- Ensure admission_year and passing_year columns exist (for existing databases)
+-- Also REMOVE session_from and session_to if they exist
+DO $$
+BEGIN
+    -- Add required columns if missing
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'admission_year') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN admission_year INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'passing_year') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN passing_year INTEGER;
+    END IF;
+    
+    -- Remove session_from and session_to if they exist (we don't use them)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'session_from') THEN
+        ALTER TABLE public.no_dues_forms DROP COLUMN session_from;
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'session_to') THEN
+        ALTER TABLE public.no_dues_forms DROP COLUMN session_to;
+    END IF;
+END $$;
 
 -- 2.5 No Dues Status Table (Individual department clearances)
 CREATE TABLE public.no_dues_status (
@@ -1150,12 +1173,23 @@ INSERT INTO public.config_emails (key, value, description) VALUES
     ('system_email', 'noreply@jecrcu.edu.in', 'System sender email for notifications'),
     ('notifications_enabled', 'true', 'Enable/disable email notifications');
 
--- 10.2 Validation Rules
+-- 10.2 Validation Rules (Complete set of 10 rules)
 INSERT INTO public.config_validation_rules (rule_name, rule_pattern, error_message, is_active, description) VALUES
     ('registration_number', '^[A-Z0-9]{6,15}$', 'Registration number must be 6-15 alphanumeric characters', true, 'Validates student registration number format'),
     ('student_name', '^[A-Za-z\s.\-'']+$', 'Name should only contain letters, spaces, dots, hyphens, and apostrophes', true, 'Validates student and parent name format'),
     ('phone_number', '^[0-9]{6,15}$', 'Phone number must be 6-15 digits', true, 'Validates contact number (without country code)'),
-    ('session_year', '^\d{4}$', 'Session year must be in YYYY format', true, 'Validates session year format');
+    ('session_year', '^\d{4}$', 'Session year must be in YYYY format', true, 'Validates session year format'),
+    ('email', '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', 'Invalid email format', true, 'Validates personal email format'),
+    ('college_email', '^[a-zA-Z0-9._%+-]+@jecrcu\.edu\.in$', 'Must use JECRC college email (@jecrcu.edu.in)', true, 'Validates college email domain'),
+    ('admission_year', '^\d{4}$', 'Must be a valid year (YYYY)', true, 'Validates admission year format'),
+    ('passing_year', '^\d{4}$', 'Must be a valid year (YYYY)', true, 'Validates passing year format'),
+    ('parent_name', '^[A-Za-z\s.\-'']+$', 'Invalid parent name format', true, 'Validates parent/guardian name format'),
+    ('address', '^.{10,500}$', 'Address must be 10-500 characters', true, 'Validates address length')
+ON CONFLICT (rule_name) DO UPDATE SET
+    rule_pattern = EXCLUDED.rule_pattern,
+    error_message = EXCLUDED.error_message,
+    is_active = EXCLUDED.is_active,
+    description = EXCLUDED.description;
 
 -- 10.3 Country Codes (Top 30 countries)
 INSERT INTO public.config_country_codes (country_name, country_code, dial_code, is_active, display_order) VALUES

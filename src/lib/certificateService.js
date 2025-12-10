@@ -190,7 +190,7 @@ export const generateCertificate = async (certificateData) => {
     // Details Text
     const courseText = `Course: ${certificateData.course || 'N/A'}`;
     const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
-    const sessionText = `Session: ${certificateData.sessionFrom || 'N/A'} - ${certificateData.sessionTo || 'N/A'}`;
+    const sessionText = `Session: ${certificateData.admissionYear || 'N/A'} - ${certificateData.passingYear || 'N/A'}`;
     
     pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, detailsY, { align: 'center' });
     pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
@@ -338,8 +338,8 @@ export const finalizeCertificate = async (formId) => {
       registrationNo: formData.registration_no,
       course: formData.course,
       branch: formData.branch,
-      sessionFrom: formData.session_from,
-      sessionTo: formData.session_to,
+      admissionYear: formData.admission_year,
+      passingYear: formData.passing_year,
       formId
     });
     
@@ -353,8 +353,8 @@ export const finalizeCertificate = async (formId) => {
         registrationNo: formData.registration_no,
         course: formData.course,
         branch: formData.branch,
-        sessionFrom: formData.session_from,
-        sessionTo: formData.session_to
+        admissionYear: formData.admission_year,
+        passingYear: formData.passing_year
       }
     });
     

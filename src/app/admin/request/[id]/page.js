@@ -186,7 +186,7 @@ export default function AdminRequestDetail() {
               </div>
               <div>
                 <span className="text-gray-400 text-sm">Academic Period:</span>
-                <p className="font-medium">{request.session_from} (Admission) - {request.session_to} (Passing)</p>
+                <p className="font-medium">{request.admission_year} (Admission) - {request.passing_year} (Passing)</p>
               </div>
               <div>
                 <span className="text-gray-400 text-sm">Parent Name:</span>

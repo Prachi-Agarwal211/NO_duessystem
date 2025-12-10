@@ -84,7 +84,7 @@ export async function POST(request) {
       };
       rules.session_year = {
         pattern: /^\d{4}$/,
-        error: 'Session year must be in YYYY format'
+        error: 'Year must be in YYYY format'
       };
     }
 
@@ -171,16 +171,16 @@ export async function POST(request) {
       );
     }
 
-    // Validate session years if provided using database rule
+    // Validate years if provided using database rule
     // Only validate if field has actual content (not empty string or null)
-    if (formData.session_from && formData.session_from.trim() && rules.session_year) {
-      if (!rules.session_year.pattern.test(formData.session_from)) {
+    if (formData.admission_year && formData.admission_year.trim() && rules.session_year) {
+      if (!rules.session_year.pattern.test(formData.admission_year)) {
         return NextResponse.json(
           { success: false, error: `Session from - ${rules.session_year.error}` },
           { status: 400 }
         );
       }
-      const fromYear = parseInt(formData.session_from);
+      const fromYear = parseInt(formData.admission_year);
       if (fromYear < 1900 || fromYear > new Date().getFullYear() + 10) {
         return NextResponse.json(
           { success: false, error: 'Session from year is invalid' },
@@ -189,14 +189,14 @@ export async function POST(request) {
       }
     }
 
-    if (formData.session_to && formData.session_to.trim() && rules.session_year) {
-      if (!rules.session_year.pattern.test(formData.session_to)) {
+    if (formData.passing_year && formData.passing_year.trim() && rules.session_year) {
+      if (!rules.session_year.pattern.test(formData.passing_year)) {
         return NextResponse.json(
           { success: false, error: `Session to - ${rules.session_year.error}` },
           { status: 400 }
         );
       }
-      const toYear = parseInt(formData.session_to);
+      const toYear = parseInt(formData.passing_year);
       if (toYear < 1900 || toYear > new Date().getFullYear() + 10) {
         return NextResponse.json(
           { success: false, error: 'Session to year is invalid' },
@@ -205,7 +205,7 @@ export async function POST(request) {
       }
       
       // Validate session range (only if both fields have values)
-      if (formData.session_from && formData.session_from.trim() && toYear < parseInt(formData.session_from)) {
+      if (formData.admission_year && formData.admission_year.trim() && toYear < parseInt(formData.admission_year)) {
         return NextResponse.json(
           {
             success: false,
@@ -331,8 +331,8 @@ export async function POST(request) {
     const sanitizedData = {
       registration_no: registrationNo,
       student_name: formData.student_name.trim(),
-      session_from: formData.session_from?.trim() ? formData.session_from.trim() : null,
-      session_to: formData.session_to?.trim() ? formData.session_to.trim() : null,
+      admission_year: formData.admission_year?.trim() ? formData.admission_year.trim() : null,
+      passing_year: formData.passing_year?.trim() ? formData.passing_year.trim() : null,
       parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
       school_id: school_id, // Store UUID for foreign key
       school: schoolData.name, // Store validated name
@@ -397,7 +397,7 @@ export async function POST(request) {
     const { data: allStaff, error: staffError } = await supabaseAdmin
       .from('profiles')
       .select('id, email, full_name, department_name, school, course, branch')
-      .eq('role', 'staff')
+      .eq('role', 'department')
       .not('email', 'is', null);
 
     if (staffError) {

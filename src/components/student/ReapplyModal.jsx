@@ -56,8 +56,8 @@ export default function ReapplyModal({
 
   const [editedData, setEditedData] = useState({
     student_name: formData.student_name || '',
-    session_from: formData.session_from || '',
-    session_to: formData.session_to || '',
+    admission_year: formData.admission_year || '',
+    passing_year: formData.passing_year || '',
     parent_name: formData.parent_name || '',
     school: formData.school_id || formData.school || '',
     course: formData.course_id || formData.course || '',
@@ -406,9 +406,9 @@ export default function ReapplyModal({
               />
 
               <FormInput
-                label="Admission Year (YYYY)"
-                name="session_from"
-                value={editedData.session_from}
+                label="Admission Year"
+                name="admission_year"
+                value={editedData.admission_year}
                 onChange={handleInputChange}
                 placeholder="e.g., 2020"
                 maxLength={4}
@@ -417,9 +417,9 @@ export default function ReapplyModal({
               />
 
               <FormInput
-                label="Passing Year (YYYY)"
-                name="session_to"
-                value={editedData.session_to}
+                label="Passing Year"
+                name="passing_year"
+                value={editedData.passing_year}
                 onChange={handleInputChange}
                 placeholder="e.g., 2024"
                 maxLength={4}

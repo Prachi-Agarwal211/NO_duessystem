@@ -126,8 +126,8 @@ export async function PUT(request) {
     const ALLOWED_FIELDS = [
       'student_name',
       'parent_name',
-      'session_from',
-      'session_to',
+      'admission_year',
+      'passing_year',
       'school',
       'course',
       'branch',

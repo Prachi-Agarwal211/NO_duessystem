@@ -192,7 +192,7 @@ export default function ManualEntriesTable() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>{entry.session_from} - {entry.session_to}</span>
+                      <span>{entry.admission_year} - {entry.passing_year}</span>
                     </div>
                   </div>
                 </div>
@@ -317,7 +317,7 @@ export default function ManualEntriesTable() {
                   <div>
                     <span className={`${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Session:</span>
                     <p className={`font-medium ${isDark ? 'text-white' : 'text-ink-black'}`}>
-                      {selectedEntry.session_from} - {selectedEntry.session_to}
+                      {selectedEntry.admission_year} - {selectedEntry.passing_year}
                     </p>
                   </div>
                 </div>

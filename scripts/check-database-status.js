@@ -1,5 +1,10 @@
-const { createClient } = require('@supabase/supabase-js');
+/**
+ * Quick Database Health Check
+ * Run: node scripts/check-database-status.js
+ */
+
 require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,134 +12,111 @@ const supabase = createClient(
 );
 
 async function checkDatabase() {
-  console.log('🔍 Checking Database Status...\n');
-  console.log('📡 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('');
-
-  // Check config_schools
-  console.log('1️⃣ Checking config_schools table...');
-  const { data: schools, error: schoolsError } = await supabase
-    .from('config_schools')
-    .select('*')
-    .limit(5);
-
-  if (schoolsError) {
-    if (schoolsError.code === '42P01') {
-      console.log('   ❌ Table does NOT exist');
-    } else {
-      console.log('   ❌ Error:', schoolsError.message);
-    }
-  } else {
-    console.log(`   ✅ Table exists with ${schools?.length || 0} records (showing first 5)`);
-    if (schools && schools.length > 0) {
-      schools.forEach(s => console.log(`      - ${s.name} (active: ${s.is_active})`));
-    }
-  }
-
-  // Check total count
-  const { count: schoolCount } = await supabase
-    .from('config_schools')
-    .select('*', { count: 'exact', head: true });
-  console.log(`   📊 Total schools: ${schoolCount || 0}\n`);
-
-  // Check config_courses
-  console.log('2️⃣ Checking config_courses table...');
-  const { data: courses, error: coursesError } = await supabase
-    .from('config_courses')
-    .select('*')
-    .limit(5);
-
-  if (coursesError) {
-    if (coursesError.code === '42P01') {
-      console.log('   ❌ Table does NOT exist');
-    } else {
-      console.log('   ❌ Error:', coursesError.message);
-    }
-  } else {
-    console.log(`   ✅ Table exists with ${courses?.length || 0} records (showing first 5)`);
-    if (courses && courses.length > 0) {
-      courses.forEach(c => console.log(`      - ${c.name} (school_id: ${c.school_id})`));
-    }
-  }
-
-  const { count: courseCount } = await supabase
-    .from('config_courses')
-    .select('*', { count: 'exact', head: true });
-  console.log(`   📊 Total courses: ${courseCount || 0}\n`);
-
-  // Check config_branches
-  console.log('3️⃣ Checking config_branches table...');
-  const { data: branches, error: branchesError } = await supabase
-    .from('config_branches')
-    .select('*')
-    .limit(5);
-
-  if (branchesError) {
-    if (branchesError.code === '42P01') {
-      console.log('   ❌ Table does NOT exist');
-    } else {
-      console.log('   ❌ Error:', branchesError.message);
-    }
-  } else {
-    console.log(`   ✅ Table exists with ${branches?.length || 0} records (showing first 5)`);
-    if (branches && branches.length > 0) {
-      branches.forEach(b => console.log(`      - ${b.name} (course_id: ${b.course_id})`));
-    }
-  }
-
-  const { count: branchCount } = await supabase
-    .from('config_branches')
-    .select('*', { count: 'exact', head: true });
-  console.log(`   📊 Total branches: ${branchCount || 0}\n`);
-
-  // Check config_emails
-  console.log('4️⃣ Checking config_emails table...');
-  const { data: emails, error: emailsError } = await supabase
-    .from('config_emails')
-    .select('*');
-
-  if (emailsError) {
-    if (emailsError.code === '42P01') {
-      console.log('   ❌ Table does NOT exist');
-    } else {
-      console.log('   ❌ Error:', emailsError.message);
-    }
-  } else {
-    console.log(`   ✅ Table exists with ${emails?.length || 0} records`);
-    if (emails && emails.length > 0) {
-      emails.forEach(e => console.log(`      - ${e.key}: ${e.value}`));
-    }
-  }
-  console.log('');
-
-  // Check college domain specifically
-  const { data: domain } = await supabase
-    .from('config_emails')
-    .select('value')
-    .eq('key', 'college_domain')
-    .single();
+  console.log('\n🔍 JECRC No Dues System - Database Health Check\n');
   
-  if (domain) {
-    console.log(`   📧 College Domain: ${domain.value}`);
-  } else {
-    console.log('   ⚠️  College domain not configured');
-  }
-
-  console.log('\n' + '='.repeat(60));
-  console.log('📋 SUMMARY:');
-  console.log('='.repeat(60));
-  console.log(`Schools:  ${schoolCount || 0} records`);
-  console.log(`Courses:  ${courseCount || 0} records`);
-  console.log(`Branches: ${branchCount || 0} records`);
-  console.log(`Domain:   ${domain?.value || 'NOT SET'}`);
-  console.log('='.repeat(60));
-
-  if (schoolCount === 0 || courseCount === 0 || branchCount === 0) {
-    console.log('\n⚠️  WARNING: Config tables are empty!');
-    console.log('📝 Solution: Run FINAL_COMPLETE_DATABASE_SETUP.sql in Supabase SQL Editor');
-  } else {
-    console.log('\n✅ Database has data - dropdowns should work!');
+  try {
+    // Test connection
+    console.log('📡 Testing database connection...');
+    const { data, error } = await supabase.from('config_schools').select('count').limit(1);
+    
+    if (error) {
+      console.log('❌ Database connection: FAILED');
+      console.log('Error:', error.message);
+      return;
+    }
+    
+    console.log('✅ Database connection: SUCCESS\n');
+    
+    // Check data counts
+    console.log('📊 Data Summary:');
+    
+    const checks = [
+      { table: 'config_schools', expected: 13, name: 'Schools' },
+      { table: 'config_courses', expected: 28, name: 'Courses' },
+      { table: 'config_branches', expected: 139, name: 'Branches' },
+      { table: 'departments', expected: 11, name: 'Departments' },
+      { table: 'config_validation_rules', expected: 10, name: 'Validation Rules' },
+      { table: 'config_emails', expected: 1, name: 'Email Configs' },
+      { table: 'profiles', expected: null, name: 'User Accounts' }
+    ];
+    
+    for (const check of checks) {
+      const { count, error } = await supabase
+        .from(check.table)
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) {
+        console.log(`❌ ${check.name}: ERROR - ${error.message}`);
+      } else {
+        const status = check.expected && count < check.expected ? '⚠️' : '✅';
+        console.log(`${status} ${check.name}: ${count} ${check.expected ? `(expected ${check.expected})` : ''}`);
+      }
+    }
+    
+    // Check college email domain
+    console.log('\n📧 Email Configuration:');
+    const { data: emails } = await supabase
+      .from('config_emails')
+      .select('*')
+      .eq('is_active', true)
+      .single();
+    
+    if (emails) {
+      console.log(`✅ College domain: ${emails.college_domain}`);
+      console.log(`✅ Department emails configured: ${emails.department_emails ? 'Yes' : 'No'}`);
+    }
+    
+    // Check validation rules format
+    console.log('\n🔍 Validation Rules Check:');
+    const { data: rules } = await supabase
+      .from('config_validation_rules')
+      .select('*')
+      .in('rule_name', ['session_year', 'student_name']);
+    
+    const sessionRule = rules?.find(r => r.rule_name === 'session_year');
+    const nameRule = rules?.find(r => r.rule_name === 'student_name');
+    
+    if (sessionRule) {
+      const hasIssue = sessionRule.rule_pattern.includes('\\\\');
+      console.log(`${hasIssue ? '❌' : '✅'} Session Year Pattern: ${sessionRule.rule_pattern}`);
+      if (hasIssue) {
+        console.log('   ⚠️  WARNING: Double backslash detected! Should be: ^\\d{4}$');
+      }
+    }
+    
+    if (nameRule) {
+      const hasIssue = nameRule.rule_pattern.includes('\\\\');
+      console.log(`${hasIssue ? '❌' : '✅'} Student Name Pattern: ${nameRule.rule_pattern}`);
+      if (hasIssue) {
+        console.log('   ⚠️  WARNING: Double backslash detected!');
+      }
+    }
+    
+    // Check for forms
+    console.log('\n📝 Forms Summary:');
+    const { count: totalForms } = await supabase
+      .from('no_dues_forms')
+      .select('*', { count: 'exact', head: true });
+    
+    console.log(`Total forms: ${totalForms}`);
+    
+    if (totalForms > 0) {
+      const statuses = ['pending', 'completed', 'rejected'];
+      for (const status of statuses) {
+        const { count } = await supabase
+          .from('no_dues_forms')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', status);
+        console.log(`  - ${status}: ${count}`);
+      }
+    }
+    
+    console.log('\n✅ Database health check complete!\n');
+    
+  } catch (err) {
+    console.log('\n❌ Health check failed:', err.message);
+    console.error(err);
   }
 }
 
-checkDatabase().catch(console.error);
+checkDatabase();

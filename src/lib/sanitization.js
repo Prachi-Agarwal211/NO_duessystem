@@ -336,8 +336,8 @@ export const studentFormSchema = {
         }
     },
     contact_no: { type: 'phone', required: true },
-    session_from: { type: 'string', maxLength: 4 },
-    session_to: { type: 'string', maxLength: 4 },
+    admission_year: { type: 'string', maxLength: 4 },
+    passing_year: { type: 'string', maxLength: 4 },
     school: { type: 'string', required: false, maxLength: 50 },
     course: { type: 'string', required: false, maxLength: 50 },
     branch: { type: 'string', required: false, maxLength: 50 },

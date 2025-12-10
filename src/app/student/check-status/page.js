@@ -310,11 +310,11 @@ function CheckStatusContent() {
                       <p className="font-medium text-gray-900 dark:text-white">{formData.college_email}</p>
                     </div>
                   )}
-                  {formData.session_from && formData.session_to && (
+                  {formData.admission_year && formData.passing_year && (
                     <div>
                       <p className="text-gray-500 dark:text-gray-400">Academic Period</p>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {formData.session_from} (Admission) - {formData.session_to} (Passing)
+                        {formData.admission_year} (Admission) - {formData.passing_year} (Passing)
                       </p>
                     </div>
                   )}

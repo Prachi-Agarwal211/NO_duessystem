@@ -63,8 +63,8 @@ export async function POST(request) {
         registration_no,
         course,
         branch,
-        session_from,
-        session_to,
+        admission_year,
+        passing_year,
         certificate_url,
         blockchain_hash,
         blockchain_tx,
@@ -120,8 +120,8 @@ export async function POST(request) {
       registrationNo: formData.registration_no,
       course: formData.course,
       branch: formData.branch,
-      sessionFrom: formData.session_from,
-      sessionTo: formData.session_to,
+      admissionYear: formData.admission_year,
+      passingYear: formData.passing_year,
       formId: formData.id
     };
 
@@ -172,8 +172,8 @@ export async function POST(request) {
         registrationNo: formData.registration_no,
         course: formData.course,
         branch: formData.branch,
-        sessionFrom: formData.session_from,
-        sessionTo: formData.session_to,
+        admissionYear: formData.admission_year,
+        passingYear: formData.passing_year,
         certificateUrl: formData.certificate_url,
         issueDate: formData.updated_at,
         transactionId: formData.blockchain_tx,

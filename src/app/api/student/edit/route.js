@@ -75,8 +75,8 @@ export async function PUT(request) {
     const ALLOWED_FIELDS = [
       'student_name',
       'parent_name',
-      'session_from',
-      'session_to',
+      'admission_year',
+      'passing_year',
       'school',
       'course',
       'branch',
@@ -173,18 +173,18 @@ export async function PUT(request) {
       }
     }
 
-    // Validate session years if updated
-    if (sanitizedData.session_from || sanitizedData.session_to) {
+    // Validate years if updated
+    if (sanitizedData.admission_year || sanitizedData.passing_year) {
       const yearPattern = /^\d{4}$/;
       
-      if (sanitizedData.session_from && !yearPattern.test(sanitizedData.session_from)) {
+      if (sanitizedData.admission_year && !yearPattern.test(sanitizedData.admission_year)) {
         return NextResponse.json({
           success: false,
           error: 'Session from year must be in YYYY format'
         }, { status: 400 });
       }
 
-      if (sanitizedData.session_to && !yearPattern.test(sanitizedData.session_to)) {
+      if (sanitizedData.passing_year && !yearPattern.test(sanitizedData.passing_year)) {
         return NextResponse.json({
           success: false,
           error: 'Session to year must be in YYYY format'
@@ -192,8 +192,8 @@ export async function PUT(request) {
       }
 
       // Validate session range
-      const fromYear = sanitizedData.session_from ? parseInt(sanitizedData.session_from) : null;
-      const toYear = sanitizedData.session_to ? parseInt(sanitizedData.session_to) : null;
+      const fromYear = sanitizedData.admission_year ? parseInt(sanitizedData.admission_year) : null;
+      const toYear = sanitizedData.passing_year ? parseInt(sanitizedData.passing_year) : null;
 
       if (fromYear && toYear && toYear < fromYear) {
         return NextResponse.json({
