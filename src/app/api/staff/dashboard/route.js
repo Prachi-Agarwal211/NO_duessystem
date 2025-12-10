@@ -59,7 +59,7 @@ export async function GET(request) {
     // Get user profile to check role, department, and access scope
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, school, course, branch')
+      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
@@ -148,22 +148,22 @@ export async function GET(request) {
         .eq('department_name', profile.department_name)
         .eq('status', 'pending');
 
-      // IMPORTANT: Apply scope filtering ONLY for Department staff (HOD/Dean)
+      // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
       // The other 9 departments see ALL students
-      if (profile.department_name === 'Department') {
-        // Apply school filtering for Department staff
-        if (profile.school) {
-          query = query.eq('no_dues_forms.school', profile.school);
+      if (profile.department_name === 'school_hod') {
+        // Apply school filtering for HOD staff using UUID arrays
+        if (profile.school_ids && profile.school_ids.length > 0) {
+          query = query.in('no_dues_forms.school', profile.school_ids);
         }
         
-        // Apply course filtering for Department staff
-        if (profile.course) {
-          query = query.eq('no_dues_forms.course', profile.course);
+        // Apply course filtering for HOD staff using UUID arrays
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          query = query.in('no_dues_forms.course', profile.course_ids);
         }
         
-        // Apply branch filtering for Department staff
-        if (profile.branch) {
-          query = query.eq('no_dues_forms.branch', profile.branch);
+        // Apply branch filtering for HOD staff using UUID arrays
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          query = query.in('no_dues_forms.branch', profile.branch_ids);
         }
       }
       // For other 9 departments: No additional filtering - they see all students

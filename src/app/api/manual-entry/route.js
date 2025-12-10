@@ -96,20 +96,33 @@ export async function POST(request) {
     // ===== NOTIFY ONLY MATCHING DEPARTMENT STAFF =====
     const { data: departmentStaff, error: staffError } = await supabaseAdmin
       .from('profiles')
-      .select('email, full_name')
+      .select('email, full_name, school_id, school_ids, course_ids, branch_ids')
       .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
-      .eq('department_name', 'Department')
-      .or(`school.is.null,school.eq.${school}`)
-      .or(`course.is.null,course.eq.${course}`)
-      .or(`branch.is.null,branch.eq.${branch || ''}`);
+      .eq('department_name', 'Department');
+    
+    // Filter staff by scoping on the application side since we're using UUID arrays
+    const matchingStaff = departmentStaff?.filter(staff => {
+      // If staff has no scope, they see all students
+      const hasNoScope = !staff.school_ids && !staff.course_ids && !staff.branch_ids;
+      if (hasNoScope) return true;
+      
+      // Check if school matches
+      const schoolMatches = !staff.school_ids || staff.school_ids.includes(school_id);
+      // Check if course matches
+      const courseMatches = !staff.course_ids || staff.course_ids.includes(course_id);
+      // Check if branch matches
+      const branchMatches = !staff.branch_ids || !branch_id || staff.branch_ids.includes(branch_id);
+      
+      return schoolMatches && courseMatches && branchMatches;
+    }) || [];
 
     if (staffError) {
       console.error('Error fetching department staff:', staffError);
     }
 
     // Send email ONLY to matching department staff
-    if (departmentStaff && departmentStaff.length > 0) {
-      const emailPromises = departmentStaff.map(staff => 
+    if (matchingStaff && matchingStaff.length > 0) {
+      const emailPromises = matchingStaff.map(staff =>
         sendEmail({
           to: staff.email,
           subject: `New Offline Certificate Registration - ${registration_no}`,
@@ -195,7 +208,7 @@ This is an automated notification from JECRC No Dues System.
 
       try {
         await Promise.all(emailPromises);
-        console.log(`✅ Notified ${departmentStaff.length} department staff members for ${school} - ${course}`);
+        console.log(`✅ Notified ${matchingStaff.length} department staff members for ${school} - ${course}`);
       } catch (emailError) {
         console.error('Error sending notification emails:', emailError);
         // Don't fail the request if email fails
@@ -261,20 +274,20 @@ export async function GET(request) {
     if (staffId) {
       const { data: staffProfile } = await supabaseAdmin
         .from('profiles')
-        .select('department_name, school, course, branch')
+        .select('department_name, school_id, school_ids, course_ids, branch_ids')
         .eq('id', staffId)
         .single();
 
       if (staffProfile && staffProfile.department_name === 'Department') {
-        // Apply scope filtering
-        if (staffProfile.school) {
-          query = query.eq('school', staffProfile.school);
+        // Apply scope filtering using UUID arrays
+        if (staffProfile.school_ids && staffProfile.school_ids.length > 0) {
+          query = query.in('school', staffProfile.school_ids);
         }
-        if (staffProfile.course) {
-          query = query.eq('course', staffProfile.course);
+        if (staffProfile.course_ids && staffProfile.course_ids.length > 0) {
+          query = query.in('course', staffProfile.course_ids);
         }
-        if (staffProfile.branch) {
-          query = query.eq('branch', staffProfile.branch);
+        if (staffProfile.branch_ids && staffProfile.branch_ids.length > 0) {
+          query = query.in('branch', staffProfile.branch_ids);
         }
       } else {
         // Non-department staff see no manual entries
