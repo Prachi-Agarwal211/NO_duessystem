@@ -414,12 +414,12 @@ export const VALIDATION_SCHEMAS = {
   STUDENT_FORM: {
     registration_no: { type: 'registration_no', required: true, label: 'Registration Number' },
     student_name: { type: 'name', required: true, label: 'Student Name' },
-    parent_name: { type: 'name', required: true, label: 'Parent Name' },
+    parent_name: { type: 'name', required: false, label: 'Parent Name' },
     personal_email: { type: 'email', required: true, label: 'Personal Email' },
-    college_email: { type: 'email', required: false, label: 'College Email' },
+    college_email: { type: 'email', required: true, label: 'College Email' },
     contact_no: { type: 'phone', required: true, label: 'Contact Number' },
-    session_from: { type: 'year', required: true, label: 'Session From' },
-    session_to: { type: 'year', required: true, label: 'Session To' }
+    session_from: { type: 'year', required: false, label: 'Session From' },
+    session_to: { type: 'year', required: false, label: 'Session To' }
   },
 
   STAFF_ACTION: {
