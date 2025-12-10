@@ -65,15 +65,11 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Build query with filters
+    // Build query with filters - Using * to get all columns (safer)
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
         *,
-        reapplication_count,
-        last_reapplied_at,
-        is_reapplication,
-        student_reply_message,
         no_dues_status (
           id,
           department_name,

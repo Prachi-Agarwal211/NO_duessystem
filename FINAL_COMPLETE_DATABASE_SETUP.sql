@@ -169,23 +169,65 @@ CREATE TABLE public.no_dues_forms (
     alumni_screenshot_url TEXT,
     certificate_url TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'completed')),
+    
+    -- Reapplication System Columns (CRITICAL - Added 2025-12-10)
+    reapplication_count INTEGER DEFAULT 0,
+    last_reapplied_at TIMESTAMPTZ,
+    is_reapplication BOOLEAN DEFAULT false,
+    student_reply_message TEXT,
+    
+    -- Manual Entry System Columns (CRITICAL - Added 2025-12-10)
+    is_manual_entry BOOLEAN DEFAULT false,
+    manual_certificate_url TEXT,
+    final_certificate_generated BOOLEAN DEFAULT false,
+    
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT check_personal_email_format CHECK (personal_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
     CONSTRAINT check_college_email_format CHECK (college_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$')
 );
 
--- Ensure admission_year and passing_year columns exist (for existing databases)
+-- Ensure ALL required columns exist (for existing databases)
 -- Also REMOVE session_from and session_to if they exist
 DO $$
 BEGIN
-    -- Add required columns if missing
+    -- Add basic columns if missing
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'admission_year') THEN
         ALTER TABLE public.no_dues_forms ADD COLUMN admission_year INTEGER;
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'passing_year') THEN
         ALTER TABLE public.no_dues_forms ADD COLUMN passing_year INTEGER;
+    END IF;
+    
+    -- Add reapplication system columns if missing (CRITICAL - Added 2025-12-10)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'reapplication_count') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN reapplication_count INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'last_reapplied_at') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN last_reapplied_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'is_reapplication') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN is_reapplication BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'student_reply_message') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN student_reply_message TEXT;
+    END IF;
+    
+    -- Add manual entry system columns if missing (CRITICAL - Added 2025-12-10)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'is_manual_entry') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN is_manual_entry BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'manual_certificate_url') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN manual_certificate_url TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'final_certificate_generated') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN final_certificate_generated BOOLEAN DEFAULT false;
     END IF;
     
     -- Remove session_from and session_to if they exist (we don't use them)
@@ -236,6 +278,19 @@ CREATE TABLE public.notifications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 2.8 Reapplication History Table (Track all reapplication attempts)
+CREATE TABLE public.no_dues_reapplication_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    form_id UUID NOT NULL REFERENCES public.no_dues_forms(id) ON DELETE CASCADE,
+    reapplication_number INTEGER NOT NULL,
+    student_message TEXT NOT NULL,
+    edited_fields JSONB DEFAULT '{}'::jsonb,
+    rejected_departments JSONB DEFAULT '[]'::jsonb,
+    previous_status JSONB DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT unique_form_reapplication UNIQUE(form_id, reapplication_number)
+);
+
 -- ============================================================================
 -- SECTION 3: CREATE INDEXES FOR PERFORMANCE
 -- ============================================================================
@@ -265,6 +320,10 @@ CREATE INDEX idx_forms_college_email ON public.no_dues_forms(college_email);
 CREATE INDEX idx_forms_school_id ON public.no_dues_forms(school_id);
 CREATE INDEX idx_forms_course_id ON public.no_dues_forms(course_id);
 CREATE INDEX idx_forms_branch_id ON public.no_dues_forms(branch_id);
+CREATE INDEX idx_forms_is_reapplication ON public.no_dues_forms(is_reapplication);
+CREATE INDEX idx_forms_reapplication_count ON public.no_dues_forms(reapplication_count);
+CREATE INDEX idx_forms_is_manual_entry ON public.no_dues_forms(is_manual_entry);
+CREATE INDEX idx_forms_final_certificate ON public.no_dues_forms(final_certificate_generated);
 
 CREATE INDEX idx_status_form ON public.no_dues_status(form_id);
 CREATE INDEX idx_status_department ON public.no_dues_status(department_name);
@@ -272,6 +331,8 @@ CREATE INDEX idx_status_status ON public.no_dues_status(status);
 
 CREATE INDEX idx_audit_log_created ON public.audit_log(created_at);
 CREATE INDEX idx_notifications_form ON public.notifications(form_id);
+CREATE INDEX idx_reapplication_history_form ON public.no_dues_reapplication_history(form_id);
+CREATE INDEX idx_reapplication_history_number ON public.no_dues_reapplication_history(reapplication_number);
 
 -- ============================================================================
 -- SECTION 4: CREATE FUNCTIONS
@@ -458,6 +519,7 @@ ALTER TABLE public.no_dues_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.no_dues_reapplication_history ENABLE ROW LEVEL SECURITY;
 
 -- Configuration Tables Policies (Public read, Admin write)
 CREATE POLICY "Anyone can view active schools" ON public.config_schools
@@ -542,6 +604,13 @@ CREATE POLICY "Anyone can view notifications" ON public.notifications
     FOR SELECT USING (true);
 
 CREATE POLICY "Service role can manage notifications" ON public.notifications
+    FOR ALL USING (true);
+
+-- Reapplication History Policies
+CREATE POLICY "Anyone can view reapplication history" ON public.no_dues_reapplication_history
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage reapplication history" ON public.no_dues_reapplication_history
     FOR ALL USING (true);
 
 -- ============================================================================
@@ -1231,13 +1300,15 @@ INSERT INTO public.config_country_codes (country_name, country_code, dial_code, 
 -- SECTION 11: ENABLE REALTIME (for live dashboard updates)
 -- ============================================================================
 
--- Enable realtime for forms and status tables
+-- Enable realtime for forms, status, and reapplication history tables
 ALTER PUBLICATION supabase_realtime ADD TABLE public.no_dues_forms;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.no_dues_status;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.no_dues_reapplication_history;
 
 -- Set replica identity for realtime updates
 ALTER TABLE public.no_dues_forms REPLICA IDENTITY FULL;
 ALTER TABLE public.no_dues_status REPLICA IDENTITY FULL;
+ALTER TABLE public.no_dues_reapplication_history REPLICA IDENTITY FULL;
 
 -- ============================================================================
 -- SECTION 12: CREATE 5 STAFF PROFILES WITH PROPER SCOPING
