@@ -33,6 +33,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # credentials and sensitive data
 ACCOUNT_CREDENTIALS.csv
@@ -42,6 +43,12 @@ ACCOUNT_CREDENTIALS_README.md
 
 # vercel
 .vercel
+.vercelignore
+
+# deployment
+.netlify
+railway.json
+render.yaml
 
 # typescript
 *.tsbuildinfo
