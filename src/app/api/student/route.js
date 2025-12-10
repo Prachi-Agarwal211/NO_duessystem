@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { notifyAllDepartments } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
 
 // Create Supabase admin client for server-side operations
 const supabaseAdmin = createClient(
@@ -30,7 +30,8 @@ export async function POST(request) {
     const formData = await request.json();
 
     // Input validation using centralized validation library
-    const validation = await validateRequest(request, VALIDATION_SCHEMAS.STUDENT_FORM);
+    // NOTE: We use validateForm instead of validateRequest because we already parsed the body
+    const validation = validateForm(formData, VALIDATION_SCHEMAS.STUDENT_FORM);
     if (!validation.isValid) {
       return NextResponse.json(
         {
