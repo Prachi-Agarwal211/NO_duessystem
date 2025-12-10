@@ -20,6 +20,8 @@
 -- ============================================================================
 
 -- Drop all tables in correct order (respecting foreign keys)
+DROP TABLE IF EXISTS public.certificate_verifications CASCADE;
+DROP TABLE IF EXISTS public.no_dues_reapplication_history CASCADE;
 DROP TABLE IF EXISTS public.audit_log CASCADE;
 DROP TABLE IF EXISTS public.notifications CASCADE;
 DROP TABLE IF EXISTS public.no_dues_status CASCADE;
@@ -181,6 +183,13 @@ CREATE TABLE public.no_dues_forms (
     manual_certificate_url TEXT,
     final_certificate_generated BOOLEAN DEFAULT false,
     
+    -- Blockchain Verification Columns (CRITICAL - Added 2025-12-10)
+    blockchain_hash TEXT,
+    blockchain_tx TEXT,
+    blockchain_block INTEGER,
+    blockchain_timestamp TIMESTAMPTZ,
+    blockchain_verified BOOLEAN DEFAULT false,
+    
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT check_personal_email_format CHECK (personal_email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'),
@@ -228,6 +237,27 @@ BEGIN
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'final_certificate_generated') THEN
         ALTER TABLE public.no_dues_forms ADD COLUMN final_certificate_generated BOOLEAN DEFAULT false;
+    END IF;
+    
+    -- Add blockchain verification columns if missing (CRITICAL - Added 2025-12-10)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'blockchain_hash') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN blockchain_hash TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'blockchain_tx') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN blockchain_tx TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'blockchain_block') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN blockchain_block INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'blockchain_timestamp') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN blockchain_timestamp TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'blockchain_verified') THEN
+        ALTER TABLE public.no_dues_forms ADD COLUMN blockchain_verified BOOLEAN DEFAULT false;
     END IF;
     
     -- Remove session_from and session_to if they exist (we don't use them)
@@ -291,6 +321,18 @@ CREATE TABLE public.no_dues_reapplication_history (
     CONSTRAINT unique_form_reapplication UNIQUE(form_id, reapplication_number)
 );
 
+-- 2.9 Certificate Verifications Table (Track all certificate verification attempts)
+CREATE TABLE public.certificate_verifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    form_id UUID NOT NULL REFERENCES public.no_dues_forms(id) ON DELETE CASCADE,
+    transaction_id TEXT NOT NULL,
+    verification_result TEXT NOT NULL CHECK (verification_result IN ('VALID', 'TAMPERED', 'INVALID')),
+    tampered_fields JSONB DEFAULT '[]'::jsonb,
+    verified_by_ip TEXT,
+    verified_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================================================
 -- SECTION 3: CREATE INDEXES FOR PERFORMANCE
 -- ============================================================================
@@ -324,6 +366,8 @@ CREATE INDEX idx_forms_is_reapplication ON public.no_dues_forms(is_reapplication
 CREATE INDEX idx_forms_reapplication_count ON public.no_dues_forms(reapplication_count);
 CREATE INDEX idx_forms_is_manual_entry ON public.no_dues_forms(is_manual_entry);
 CREATE INDEX idx_forms_final_certificate ON public.no_dues_forms(final_certificate_generated);
+CREATE INDEX idx_forms_blockchain_tx ON public.no_dues_forms(blockchain_tx);
+CREATE INDEX idx_forms_blockchain_verified ON public.no_dues_forms(blockchain_verified);
 
 CREATE INDEX idx_status_form ON public.no_dues_status(form_id);
 CREATE INDEX idx_status_department ON public.no_dues_status(department_name);
@@ -333,6 +377,9 @@ CREATE INDEX idx_audit_log_created ON public.audit_log(created_at);
 CREATE INDEX idx_notifications_form ON public.notifications(form_id);
 CREATE INDEX idx_reapplication_history_form ON public.no_dues_reapplication_history(form_id);
 CREATE INDEX idx_reapplication_history_number ON public.no_dues_reapplication_history(reapplication_number);
+CREATE INDEX idx_certificate_verifications_form ON public.certificate_verifications(form_id);
+CREATE INDEX idx_certificate_verifications_result ON public.certificate_verifications(verification_result);
+CREATE INDEX idx_certificate_verifications_verified_at ON public.certificate_verifications(verified_at DESC);
 
 -- ============================================================================
 -- SECTION 4: CREATE FUNCTIONS
@@ -520,6 +567,7 @@ ALTER TABLE public.no_dues_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_reapplication_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.certificate_verifications ENABLE ROW LEVEL SECURITY;
 
 -- Configuration Tables Policies (Public read, Admin write)
 CREATE POLICY "Anyone can view active schools" ON public.config_schools
@@ -611,6 +659,16 @@ CREATE POLICY "Anyone can view reapplication history" ON public.no_dues_reapplic
     FOR SELECT USING (true);
 
 CREATE POLICY "Service role can manage reapplication history" ON public.no_dues_reapplication_history
+    FOR ALL USING (true);
+
+-- Certificate Verifications Policies
+CREATE POLICY "Anyone can view certificate verifications" ON public.certificate_verifications
+    FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can insert certificate verifications" ON public.certificate_verifications
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Service role can manage certificate verifications" ON public.certificate_verifications
     FOR ALL USING (true);
 
 -- ============================================================================
