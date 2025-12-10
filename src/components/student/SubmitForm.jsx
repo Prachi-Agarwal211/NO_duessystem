@@ -320,9 +320,9 @@ export default function SubmitForm() {
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
-        session_from: formData.session_from?.trim() || null,
-        session_to: formData.session_to?.trim() || null,
-        parent_name: formData.parent_name?.trim() || null,
+        session_from: formData.session_from?.trim() ? formData.session_from.trim() : null,
+        session_to: formData.session_to?.trim() ? formData.session_to.trim() : null,
+        parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
         school: formData.school,        // Send UUID from dropdown
         course: formData.course,        // Send UUID from dropdown
         branch: formData.branch,        // Send UUID from dropdown
