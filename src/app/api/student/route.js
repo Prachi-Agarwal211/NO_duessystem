@@ -391,12 +391,12 @@ export async function POST(request) {
     // ==================== SEND EMAIL NOTIFICATIONS ====================
     
     // IMPORTANT: Fetch staff based on department scope rules:
-    // - 9 departments (Library, Hostel, Accounts, etc.): See ALL students
-    // - 1 department (Department/HOD): Only see students from their school/course/branch
+    // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
+    // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
     
     const { data: allStaff, error: staffError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, full_name, department_name, school, course, branch')
+      .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('role', 'department')
       .not('email', 'is', null);
 
@@ -406,27 +406,38 @@ export async function POST(request) {
     } else if (allStaff && allStaff.length > 0) {
       try {
         // Filter staff based on scope:
-        // - Department staff: Only those matching student's school/course/branch
-        // - All other 9 departments: No filtering, all staff get notified
+        // - school_hod staff: Only those matching student's school/course/branch (using UUID arrays)
+        // - All other departments: No filtering, all staff get notified
         const staffToNotify = allStaff.filter(staff => {
-          // If Department staff (HOD/Dean), apply scope filtering
-          if (staff.department_name === 'Department') {
-            // Check school scope
-            if (staff.school && staff.school !== sanitizedData.school) {
-              return false; // Different school, don't notify
+          // If school_hod staff (HOD/Dean), apply scope filtering using UUID arrays
+          if (staff.department_name === 'school_hod') {
+            // Check school scope (using UUID arrays OR single school_id for backward compatibility)
+            if (staff.school_ids && staff.school_ids.length > 0) {
+              if (!staff.school_ids.includes(school_id)) {
+                return false; // Student's school not in HOD's school array
+              }
+            } else if (staff.school_id && staff.school_id !== school_id) {
+              return false; // Backward compatibility: single school_id doesn't match
             }
-            // Check course scope
-            if (staff.course && staff.course !== sanitizedData.course) {
-              return false; // Different course, don't notify
+            
+            // Check course scope (using UUID arrays)
+            if (staff.course_ids && staff.course_ids.length > 0) {
+              if (!staff.course_ids.includes(course_id)) {
+                return false; // Student's course not in HOD's course array
+              }
             }
-            // Check branch scope
-            if (staff.branch && staff.branch !== sanitizedData.branch) {
-              return false; // Different branch, don't notify
+            
+            // Check branch scope (using UUID arrays)
+            if (staff.branch_ids && staff.branch_ids.length > 0) {
+              if (!staff.branch_ids.includes(branch_id)) {
+                return false; // Student's branch not in HOD's branch array
+              }
             }
-            return true; // Matches scope, notify this staff
+            
+            return true; // Matches scope, notify this HOD
           }
           
-          // For all other 9 departments, notify everyone
+          // For all other 10 departments (non-HOD), notify everyone
           return true;
         });
 

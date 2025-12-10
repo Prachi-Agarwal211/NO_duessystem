@@ -23,7 +23,7 @@ async function getStaffEmailForDepartment(departmentName) {
       .from('profiles')
       .select('email')
       .eq('department', departmentName)
-      .eq('role', 'staff')
+      .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
       .single();
     
     if (error || !data) {

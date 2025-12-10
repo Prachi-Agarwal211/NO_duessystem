@@ -53,7 +53,7 @@ export async function GET(request) {
     let query = supabaseAdmin
       .from('profiles')
       .select('id, full_name, email, department_name, role, school_ids, course_ids, branch_ids, created_at')
-      .eq('role', 'staff')
+      .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
       .order('created_at', { ascending: false });
 
     if (department) {
@@ -148,7 +148,7 @@ export async function POST(request) {
       email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name: body.full_name.trim(),
-        role: 'staff',
+        role: 'department',  // FIXED: Changed from 'staff' to 'department'
         department_name: body.department_name.trim()
       }
     });
@@ -162,7 +162,7 @@ export async function POST(request) {
         id: authData.user.id,
         full_name: body.full_name.trim(),
         email: body.email.trim(),
-        role: 'staff',
+        role: 'department',  // FIXED: Changed from 'staff' to 'department'
         department_name: body.department_name.trim(),
         school_ids: body.school_ids && body.school_ids.length > 0 ? body.school_ids : null,
         course_ids: body.course_ids && body.course_ids.length > 0 ? body.course_ids : null,
@@ -259,7 +259,7 @@ export async function PUT(request) {
       .from('profiles')
       .update(updates)
       .eq('id', body.id)
-      .eq('role', 'staff') // Safety check
+      .eq('role', 'department') // FIXED: Changed from 'staff' to 'department'
       .select()
       .single();
 
@@ -310,9 +310,9 @@ export async function DELETE(request) {
       .eq('id', staffId)
       .single();
 
-    if (!profile || profile.role !== 'staff') {
+    if (!profile || profile.role !== 'department') {  // FIXED: Changed from 'staff' to 'department'
       return NextResponse.json(
-        { success: false, error: 'Staff member not found or not a staff user' },
+        { success: false, error: 'Staff member not found or not a department user' },
         { status: 404 }
       );
     }

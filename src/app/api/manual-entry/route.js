@@ -97,7 +97,7 @@ export async function POST(request) {
     const { data: departmentStaff, error: staffError } = await supabaseAdmin
       .from('profiles')
       .select('email, full_name')
-      .eq('role', 'staff')
+      .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
       .eq('department_name', 'Department')
       .or(`school.is.null,school.eq.${school}`)
       .or(`course.is.null,course.eq.${course}`)
