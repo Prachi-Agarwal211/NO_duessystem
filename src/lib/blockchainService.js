@@ -69,8 +69,9 @@ class BlockchainService {
       // Generate transaction ID
       const transactionId = this.generateTransactionId(certificateHash);
       
-      // Generate block number (timestamp-based)
-      const blockNumber = Date.now();
+      // Generate block number (use seconds instead of milliseconds to fit in INTEGER)
+      // PostgreSQL INTEGER max is 2147483647, Date.now() in milliseconds exceeds this
+      const blockNumber = Math.floor(Date.now() / 1000); // Convert to seconds
       
       // Create blockchain record
       const blockchainRecord = {
