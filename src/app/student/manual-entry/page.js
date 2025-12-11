@@ -285,10 +285,10 @@ export default function ManualEntryPage() {
               <FileCheck className="w-8 h-8 text-jecrc-red" />
             </div>
             <h1 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-ink-black'}`}>
-              Submit Manual Filled No Dues
+              Upload Manual Completed No Dues
             </h1>
             <p className={`text-lg ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Already completed your no-dues offline? Submit your manually filled form here.
+              Already completed your no-dues offline? Upload your manually completed form here.
             </p>
           </motion.div>
 
