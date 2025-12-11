@@ -4,8 +4,6 @@
 import { jsPDF } from 'jspdf';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
-import fs from 'fs';
-import path from 'path';
 import {
   generateCertificateHash,
   generateTransactionId,
@@ -106,26 +104,39 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     drawCorner(18, pageHeight - 18, 270);
 
     // --- 2. Logo & Header ---
-    // Using absolute positioning for better control
-    
+    // Load logo using fetch API (works in all serverless environments)
     try {
-        const logoPath = path.join(process.cwd(), 'public', 'assets', 'logo light.png');
-        if (fs.existsSync(logoPath)) {
-            const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-            const logoData = `data:image/png;base64,${logoBase64}`;
-            
-            // Logo centered at top
-            // Actual dimensions are 1280x310 (Ratio ~4.13)
-            const logoWidth = 90;
-            const logoHeight = 22; // 90 / 4.13 approx
-            pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight); 
-        }
+        // Use absolute URL for production, relative for local
+        const logoUrl = process.env.NEXT_PUBLIC_APP_URL
+            ? `${process.env.NEXT_PUBLIC_APP_URL}/assets/logo light.png`
+            : '/assets/logo light.png';
+        
+        const response = await fetch(logoUrl);
+        const logoBuffer = await response.arrayBuffer();
+        const logoBase64 = Buffer.from(logoBuffer).toString('base64');
+        const logoData = `data:image/png;base64,${logoBase64}`;
+        
+        // Logo centered at top
+        // Actual dimensions are 1280x310 (Ratio ~4.13)
+        const logoWidth = 90;
+        const logoHeight = 22; // 90 / 4.13 approx
+        pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight);
     } catch (e) {
         console.error("Error loading logo:", e);
+        // Fallback to text-based header if logo fails
+        pdf.setFontSize(24);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...JECRC_RED);
+        pdf.text('JECRC UNIVERSITY', pageWidth / 2, 35, { align: 'center' });
+        
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 42, { align: 'center' });
     }
 
     // --- 3. Certificate Title ---
-    const titleY = 60; // Adjusted up slightly since logo is shorter
+    const titleY = 58; // Adjusted for text-based header
     
     // Decorative lines around title
     pdf.setDrawColor(...GOLD_ACCENT);
