@@ -22,8 +22,8 @@ async function getStaffEmailForDepartment(departmentName) {
     const { data, error } = await supabase
       .from('profiles')
       .select('email')
-      .eq('department', departmentName)
-      .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
+      .eq('department_name', departmentName)
+      .eq('role', 'department')
       .single();
     
     if (error || !data) {
