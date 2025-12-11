@@ -329,13 +329,13 @@ export default function ManualEntriesTable() {
                   Uploaded Certificate
                 </h4>
                 <a
-                  href={selectedEntry.certificate_screenshot_url}
+                  href={selectedEntry.manual_certificate_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-jecrc-red hover:underline"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  View Certificate
+                  View Certificate (PDF)
                 </a>
               </div>
 

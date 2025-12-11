@@ -44,11 +44,12 @@ export async function POST(request) {
       );
     }
 
-    // Get the manual entry
+    // Get the manual entry from no_dues_forms table
     const { data: entry, error: fetchError } = await supabaseAdmin
-      .from('manual_entries')
+      .from('no_dues_forms')
       .select('*')
       .eq('id', entry_id)
+      .eq('is_manual_entry', true)
       .single();
 
     if (fetchError || !entry) {
@@ -66,54 +67,54 @@ export async function POST(request) {
     }
 
     if (action === 'approve') {
-      // Update manual entry to approved
+      // Update form status to completed (admin approved)
       const { error: updateError } = await supabaseAdmin
-        .from('manual_entries')
+        .from('no_dues_forms')
         .update({
-          status: 'approved',
-          approved_by: decoded.userId,
-          approved_at: new Date().toISOString()
+          status: 'completed',
+          updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
 
       if (updateError) {
-        console.error('Error updating manual entry:', updateError);
+        console.error('Error approving manual entry:', updateError);
         return NextResponse.json(
           { error: 'Failed to approve manual entry', details: updateError.message },
           { status: 500 }
         );
       }
 
-      // Convert to completed form using the database function
-      const { data: formData, error: convertError } = await supabaseAdmin
-        .rpc('convert_manual_entry_to_form', { manual_entry_id: entry_id });
+      // Update department status to approved
+      const { error: statusError } = await supabaseAdmin
+        .from('no_dues_status')
+        .update({
+          status: 'approved',
+          action_by_user_id: decoded.userId,
+          action_at: new Date().toISOString()
+        })
+        .eq('form_id', entry_id)
+        .eq('department_name', 'Department');
 
-      if (convertError) {
-        console.error('Error converting manual entry to form:', convertError);
-        return NextResponse.json(
-          { error: 'Manual entry approved but failed to create form', details: convertError.message },
-          { status: 500 }
-        );
+      if (statusError) {
+        console.error('Error updating department status:', statusError);
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Manual entry approved and converted to completed form',
+        message: 'Manual entry approved successfully',
         data: {
-          manual_entry_id: entry_id,
-          form_id: formData
+          form_id: entry_id,
+          status: 'completed'
         }
       });
 
     } else if (action === 'reject') {
-      // Update manual entry to rejected
+      // Update form status to rejected
       const { error: updateError } = await supabaseAdmin
-        .from('manual_entries')
+        .from('no_dues_forms')
         .update({
           status: 'rejected',
-          rejection_reason,
-          approved_by: decoded.userId,
-          approved_at: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
 
@@ -125,11 +126,27 @@ export async function POST(request) {
         );
       }
 
+      // Update department status to rejected
+      const { error: statusError } = await supabaseAdmin
+        .from('no_dues_status')
+        .update({
+          status: 'rejected',
+          rejection_reason,
+          action_by_user_id: decoded.userId,
+          action_at: new Date().toISOString()
+        })
+        .eq('form_id', entry_id)
+        .eq('department_name', 'Department');
+
+      if (statusError) {
+        console.error('Error updating department status:', statusError);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Manual entry rejected',
         data: {
-          manual_entry_id: entry_id,
+          form_id: entry_id,
           rejection_reason
         }
       });

@@ -322,15 +322,23 @@ export async function GET(request) {
     const status = searchParams.get('status');
     const staffId = searchParams.get('staff_id');
 
-    // Query only manual entries from no_dues_forms
+    // Query only manual entries from no_dues_forms with all needed fields
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
         id,
         registration_no,
+        student_name,
+        personal_email,
+        college_email,
+        contact_no,
+        country_code,
+        parent_name,
         school,
         course,
         branch,
+        admission_year,
+        passing_year,
         manual_certificate_url,
         status,
         created_at,
