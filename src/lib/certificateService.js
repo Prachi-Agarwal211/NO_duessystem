@@ -327,6 +327,8 @@ export const saveCertificate = async (certificateBuffer, fileName, formId) => {
 // Function to finalize certificate generation for a form
 export const finalizeCertificate = async (formId) => {
   try {
+    console.log('🔵 Step 1: Fetching form data for formId:', formId);
+    
     // STEP 1: Get form data with department statuses
     const { data: formData, error } = await supabaseAdmin
       .from('no_dues_forms')
@@ -342,9 +344,19 @@ export const finalizeCertificate = async (formId) => {
       .eq('id', formId)
       .single();
     
-    if (error || !formData) {
+    if (error) {
+      console.error('❌ Error fetching form data:', error);
+      throw new Error(`Form fetch error: ${error.message}`);
+    }
+    
+    if (!formData) {
+      console.error('❌ Form not found');
       throw new Error('Form not found');
     }
+    
+    console.log('✅ Form data fetched successfully');
+    
+    console.log('🔵 Step 2: Creating blockchain record');
     
     // STEP 2: Create blockchain record FIRST (with correct data structure and department statuses)
     const blockchainRecord = await createBlockchainRecord({
@@ -358,6 +370,15 @@ export const finalizeCertificate = async (formId) => {
       department_statuses: formData.no_dues_status || []  // Include actual department statuses
     });
     
+    if (!blockchainRecord || !blockchainRecord.success) {
+      console.error('❌ Blockchain record creation failed:', blockchainRecord);
+      throw new Error('Failed to create blockchain record');
+    }
+    
+    console.log('✅ Blockchain record created:', blockchainRecord.transactionId);
+    
+    console.log('🔵 Step 3: Generating certificate PDF');
+    
     // STEP 3: Generate certificate WITH blockchain data
     const certificateResult = await generateCertificate({
       studentName: formData.student_name,
@@ -368,6 +389,15 @@ export const finalizeCertificate = async (formId) => {
       passingYear: formData.passing_year,
       formId
     }, blockchainRecord);  // Pass blockchain record as second parameter
+    
+    if (!certificateResult || !certificateResult.success) {
+      console.error('❌ Certificate generation failed:', certificateResult);
+      throw new Error('Failed to generate certificate PDF');
+    }
+    
+    console.log('✅ Certificate generated:', certificateResult.certificateUrl);
+    
+    console.log('🔵 Step 4: Updating database with certificate info');
     
     // STEP 4: Update form record with certificate URL, blockchain info, and final status
     const { error: updateError } = await supabaseAdmin
@@ -385,8 +415,21 @@ export const finalizeCertificate = async (formId) => {
       .eq('id', formId);
     
     if (updateError) {
-      throw new Error('Failed to update form with certificate URL and blockchain data');
+      console.error('❌ Database update failed:', updateError);
+      throw new Error(`Database update error: ${updateError.message}`);
     }
+    
+    console.log('✅ Database updated successfully');
+    
+    return {
+      success: true,
+      message: 'Certificate generated successfully with blockchain verification',
+      formId,
+      certificateUrl: certificateResult.certificateUrl,
+      blockchainHash: blockchainRecord.certificateHash,
+      transactionId: blockchainRecord.transactionId
+    };
+    console.log('🎉 Certificate generation completed successfully!');
     
     return {
       success: true,
@@ -397,7 +440,8 @@ export const finalizeCertificate = async (formId) => {
       transactionId: blockchainRecord.transactionId
     };
   } catch (error) {
-    console.error('Error finalizing certificate:', error);
-    throw new Error('Failed to finalize certificate');
+    console.error('❌ Fatal error in finalizeCertificate:', error);
+    console.error('Error stack:', error.stack);
+    throw new Error(`Failed to finalize certificate: ${error.message}`);
   }
 };
