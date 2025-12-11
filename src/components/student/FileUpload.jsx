@@ -7,7 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 export default function FileUpload({ 
   onFileSelect, 
   accept = 'image/*',
-  maxSize = 5 * 1024 * 1024, // 5MB default
+  maxSize = 1 * 1024 * 1024, // 1MB default (updated from 5MB)
   currentFile = null
 }) {
   const { theme } = useTheme();
@@ -155,7 +155,7 @@ export default function FileUpload({
           
           <p className={`text-xs transition-colors duration-700 ease-smooth
             ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-            PNG, JPG, JPEG up to {maxSize / (1024 * 1024)}MB
+            PNG, JPG, JPEG up to 1MB
           </p>
         </div>
       )}

@@ -120,32 +120,22 @@ export default function ManualEntryPage() {
   };
 
   const processFile = (file) => {
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+    // Validate file type - PDF ONLY
+    const validTypes = ['application/pdf'];
     if (!validTypes.includes(file.type)) {
-      setError('Please upload a valid image (JPEG, PNG, GIF, WebP) or PDF file');
+      setError('Please upload a PDF file only');
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB');
+    // Validate file size (max 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      setError('File size must be less than 1MB');
       return;
     }
 
     setCertificateFile(file);
     setError('');
-
-    // Create preview for images
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCertificatePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setCertificatePreview(''); // PDF, no preview
-    }
+    setCertificatePreview(''); // No preview for PDF
   };
 
   const handleDrop = (e) => {
@@ -435,7 +425,7 @@ export default function ManualEntryPage() {
                   No-Dues Certificate <span className="text-red-500">*</span>
                 </label>
                 <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Upload your offline certificate (PDF, JPEG, PNG, max 10MB)
+                  Upload your offline certificate (PDF only, max 1MB)
                 </p>
                 
                 {!certificateFile ? (
@@ -459,7 +449,7 @@ export default function ManualEntryPage() {
                     <input
                       id="certificate-input"
                       type="file"
-                      accept="image/*,application/pdf"
+                      accept="application/pdf"
                       onChange={handleFileChange}
                       className="hidden"
                     />
@@ -467,17 +457,9 @@ export default function ManualEntryPage() {
                 ) : (
                   <div className={`border rounded-lg p-4 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                     <div className="flex items-start gap-4">
-                      {certificatePreview ? (
-                        <img 
-                          src={certificatePreview} 
-                          alt="Certificate preview" 
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-20 h-20 bg-red-500/20 rounded flex items-center justify-center">
-                          <FileCheck className="w-8 h-8 text-red-500" />
-                        </div>
-                      )}
+                      <div className="w-20 h-20 bg-red-500/20 rounded flex items-center justify-center">
+                        <FileCheck className="w-8 h-8 text-red-500" />
+                      </div>
                       <div className="flex-1">
                         <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
                           {certificateFile.name}

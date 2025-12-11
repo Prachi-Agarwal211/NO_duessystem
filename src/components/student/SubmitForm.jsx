@@ -302,9 +302,9 @@ export default function SubmitForm() {
       // Upload file if provided
       let fileUrl = null;
       if (file) {
-        // Validate file before upload
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error('File size must be less than 5MB');
+        // Validate file before upload (1MB limit)
+        if (file.size > 1 * 1024 * 1024) {
+          throw new Error('File size must be less than 1MB');
         }
         
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -679,7 +679,7 @@ export default function SubmitForm() {
         <FileUpload
           onFileSelect={setFile}
           accept="image/*"
-          maxSize={5 * 1024 * 1024}
+          maxSize={1 * 1024 * 1024}
         />
       </motion.div>
 

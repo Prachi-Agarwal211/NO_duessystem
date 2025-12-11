@@ -19,7 +19,7 @@ const supabase = createClient(
  */
 export const validateFile = (file, options = {}) => {
     const {
-        maxSize = 5 * 1024 * 1024, // 5MB default
+        maxSize = 1 * 1024 * 1024, // 1MB default (updated from 5MB)
         allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
     } = options;
 
@@ -207,7 +207,7 @@ export const deleteFromSupabase = async (filePath, bucket = 'no-dues-files') => 
 export const validateAndUploadAlumniScreenshot = async (file, userId, formId) => {
     // Specific validation for alumni screenshot
     const validation = validateFile(file, {
-        maxSize: 5 * 1024 * 1024, // 5MB limit
+        maxSize: 1 * 1024 * 1024, // 1MB limit (updated from 5MB)
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
     });
 
@@ -233,12 +233,12 @@ export const validateAndUploadAlumniScreenshot = async (file, userId, formId) =>
  */
 export const getUploadConfig = () => {
     return {
-        maxFileSize: 5 * 1024 * 1024, // 5MB
+        maxFileSize: 1 * 1024 * 1024, // 1MB (updated from 5MB)
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
         allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
         bucket: 'no-dues-files',
         // For display purposes
-        maxFileSizeDisplay: '5MB',
+        maxFileSizeDisplay: '1MB',
         allowedTypesDisplay: 'JPEG, PNG, WebP images'
     };
 };

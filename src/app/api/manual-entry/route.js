@@ -23,9 +23,9 @@ export async function POST(request) {
     } = body;
 
     // Validate required fields
-    if (!registration_no || !school || !course || !certificate_url) {
+    if (!registration_no || !school_id || !course_id || !certificate_url) {
       return NextResponse.json(
-        { error: 'Missing required fields: registration_no, school, course, and certificate are required' },
+        { error: 'Missing required fields: registration_no, school_id, course_id, and certificate are required' },
         { status: 400 }
       );
     }
@@ -40,13 +40,75 @@ export async function POST(request) {
     if (existingForm) {
       const entryType = existingForm.is_manual_entry ? 'manual' : 'online';
       return NextResponse.json(
-        { 
+        {
           error: 'Registration number already exists',
           details: `A ${entryType} form with registration number ${registration_no} already exists with status: ${existingForm.status}`
         },
         { status: 409 }
       );
     }
+
+    // ===== VALIDATE FOREIGN KEY RELATIONSHIPS (same as /api/student) =====
+    
+    // Validate school exists and is active
+    const { data: schoolData, error: schoolError } = await supabaseAdmin
+      .from('config_schools')
+      .select('id, name')
+      .eq('id', school_id)
+      .eq('is_active', true)
+      .single();
+    
+    if (schoolError || !schoolData) {
+      console.error('Invalid school ID:', school_id, schoolError);
+      return NextResponse.json(
+        { error: 'Invalid school selection. Please refresh and try again.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate course exists, is active, and belongs to selected school
+    const { data: courseData, error: courseError } = await supabaseAdmin
+      .from('config_courses')
+      .select('id, name, school_id')
+      .eq('id', course_id)
+      .eq('school_id', school_id)
+      .eq('is_active', true)
+      .single();
+    
+    if (courseError || !courseData) {
+      console.error('Invalid course ID or school mismatch:', course_id, courseError);
+      return NextResponse.json(
+        { error: 'Invalid course selection or course does not belong to selected school. Please refresh and try again.' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate branch (if provided) - branch is optional for some courses
+    let branchData = null;
+    if (branch_id) {
+      const { data: branchResult, error: branchError } = await supabaseAdmin
+        .from('config_branches')
+        .select('id, name, course_id')
+        .eq('id', branch_id)
+        .eq('course_id', course_id)
+        .eq('is_active', true)
+        .single();
+      
+      if (branchError || !branchResult) {
+        console.error('Invalid branch ID or course mismatch:', branch_id, branchError);
+        return NextResponse.json(
+          { error: 'Invalid branch selection or branch does not belong to selected course. Please refresh and try again.' },
+          { status: 400 }
+        );
+      }
+      branchData = branchResult;
+    }
+    
+    console.log('✅ Validated:', {
+      school: schoolData.name,
+      course: courseData.name,
+      branch: branchData ? branchData.name : 'N/A'
+    });
 
     // ===== INSERT INTO no_dues_forms with is_manual_entry=true =====
     const { data: newForm, error: insertError } = await supabaseAdmin
@@ -56,15 +118,21 @@ export async function POST(request) {
         student_name: 'Offline Student', // Minimal info
         email: `${registration_no.toLowerCase()}@student.temp`, // Placeholder
         phone: '0000000000', // Placeholder
-        school,
-        course,
-        branch: branch || null,
+        country_code: '+91',
+        // Store BOTH UUIDs and text names (same as regular form submission)
+        school_id: school_id,           // UUID for foreign key
+        school: schoolData.name,        // Text name for display
+        course_id: course_id,           // UUID for foreign key
+        course: courseData.name,        // Text name for display
+        branch_id: branch_id || null,   // UUID for foreign key (nullable)
+        branch: branchData ? branchData.name : null,  // Text name for display (nullable)
         semester: '0', // Not applicable for manual entries
         reason_for_request: 'Offline Certificate Registration',
         id_card_path: null, // Not needed for manual
         is_manual_entry: true, // FLAG: This is a manual entry
         manual_certificate_url: certificate_url, // Store proof
-        status: 'pending' // Pending department verification
+        status: 'pending', // Pending department verification
+        user_id: null // No user authentication for manual entries
       }])
       .select()
       .single();
