@@ -102,7 +102,7 @@ export async function POST(request) {
 
     // ==================== SEND EMAIL ====================
 
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
+    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`;
 
     try {
       const result = await sendDepartmentNotification({

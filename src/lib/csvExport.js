@@ -25,9 +25,9 @@ export async function exportApplicationsToCSV(applications) {
         .sort((a, b) => a.display_order - b.display_order)
         .map(d => d.name);
     } else {
-      // Fallback to default departments if API fails
+      // Fallback to default departments if API fails (Updated: 9 departments)
       console.warn('Failed to fetch departments, using fallback list');
-      departments = ['school_hod', 'library', 'it_department', 'hostel', 'mess', 'canteen', 'tpo', 'alumni_association', 'accounts_department'];
+      departments = ['school_hod', 'library', 'it_department', 'hostel', 'mess', 'canteen', 'tpo', 'alumni_association', 'accounts_department', 'registrar'];
     }
 
     // Build headers with country code

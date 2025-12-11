@@ -184,11 +184,14 @@ export default function ManualEntryPage() {
       setUploading(true);
       const fileExt = certificateFile.name.split('.').pop();
       const fileName = `${formData.registration_no}_${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = `manual-entries/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('manual-certificates')
-        .upload(filePath, certificateFile);
+        .from('no-dues-files')
+        .upload(filePath, certificateFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         throw new Error(`Upload failed: ${uploadError.message}`);
@@ -196,7 +199,7 @@ export default function ManualEntryPage() {
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('manual-certificates')
+        .from('no-dues-files')
         .getPublicUrl(filePath);
 
       setUploading(false);

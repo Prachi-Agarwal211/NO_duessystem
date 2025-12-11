@@ -8,7 +8,7 @@
 -- 1. Complete cleanup of existing database
 -- 2. All tables with CORRECT structure (especially profiles with department_name)
 -- 3. All 13 schools, 40+ courses, 200+ branches from JECRC data
--- 4. All 11 departments with proper configuration
+-- 4. All 9 departments with proper configuration (removed JIC & Student Council, added Registrar)
 -- 5. All functions and triggers (department status auto-creation)
 -- 6. Row Level Security (RLS) policies for public + staff access
 -- 7. Indexes for performance
@@ -72,7 +72,7 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2.2 Departments Table (11 JECRC clearance departments)
+-- 2.2 Departments Table (9 JECRC clearance departments)
 CREATE TABLE public.departments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT UNIQUE NOT NULL,
@@ -672,7 +672,7 @@ CREATE POLICY "Service role can manage certificate verifications" ON public.cert
     FOR ALL USING (true);
 
 -- ============================================================================
--- SECTION 7: POPULATE ALL 11 DEPARTMENTS
+-- SECTION 7: POPULATE ALL 9 DEPARTMENTS (Updated: Removed JIC & Student Council, Added Registrar)
 -- ============================================================================
 
 INSERT INTO public.departments (name, display_name, email, display_order, is_school_specific, is_active) VALUES
@@ -684,9 +684,8 @@ INSERT INTO public.departments (name, display_name, email, display_order, is_sch
     ('canteen', 'Canteen', 'canteen@jecrcu.edu.in', 6, false, true),
     ('tpo', 'TPO', 'tpo@jecrcu.edu.in', 7, false, true),
     ('alumni_association', 'Alumni Association', 'alumni@jecrcu.edu.in', 8, false, true),
-    ('accounts_department', 'Accounts Department', 'accounts@jecrcu.edu.in', 9, false, true),
-    ('jic', 'JECRC Incubation Center (JIC)', 'jic@jecrcu.edu.in', 10, false, true),
-    ('student_council', 'Student Council', 'studentcouncil@jecrcu.edu.in', 11, false, true);
+    ('accounts_department', 'Accounts', 'accounts@jecrcu.edu.in', 9, false, true),
+    ('registrar', 'Registrar', 'registrar@jecrcu.edu.in', 10, false, true);
 
 -- ============================================================================
 -- SECTION 8: POPULATE ALL 13 SCHOOLS
