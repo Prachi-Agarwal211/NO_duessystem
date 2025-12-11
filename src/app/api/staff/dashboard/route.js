@@ -151,19 +151,20 @@ export async function GET(request) {
       // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
       // The other 9 departments see ALL students
       if (profile.department_name === 'school_hod') {
+        // CRITICAL FIX: Use UUID columns (school_id, course_id, branch_id) instead of TEXT columns
         // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
-          query = query.in('no_dues_forms.school', profile.school_ids);
+          query = query.in('no_dues_forms.school_id', profile.school_ids);
         }
         
         // Apply course filtering for HOD staff using UUID arrays
         if (profile.course_ids && profile.course_ids.length > 0) {
-          query = query.in('no_dues_forms.course', profile.course_ids);
+          query = query.in('no_dues_forms.course_id', profile.course_ids);
         }
         
         // Apply branch filtering for HOD staff using UUID arrays
         if (profile.branch_ids && profile.branch_ids.length > 0) {
-          query = query.in('no_dues_forms.branch', profile.branch_ids);
+          query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
       }
       // For other 9 departments: No additional filtering - they see all students

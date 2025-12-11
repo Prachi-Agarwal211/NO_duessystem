@@ -176,7 +176,7 @@ export async function PUT(request) {
       // Fire and forget - certificate generation happens in background
       // Use proper error handling with catch to prevent unhandled promise rejections
       fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/certificate/generate`,
+        `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/api/certificate/generate`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

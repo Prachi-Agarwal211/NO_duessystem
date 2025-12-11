@@ -299,8 +299,8 @@ export async function PUT(request) {
           registrationNo: form.registration_no,
           studentMessage: student_reply_message.trim(),
           reapplicationNumber: form.reapplication_count + 1,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`,
-          formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/student/${form.id}`
+          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`,
+          formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/student/${form.id}`
         });
 
         console.log(`📧 Reapplication notifications sent to ${staffMembers.length} staff member(s) in rejected departments`);

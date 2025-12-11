@@ -218,6 +218,8 @@ export async function sendDepartmentNotification({
 /**
  * Send notification to all staff members of specified departments
  * UNIFIED SYSTEM: Uses staff account emails from profiles table
+ * RATE LIMIT COMPLIANT: Sends emails sequentially with 1.1 second delay
+ *
  * @param {Object} params - Notification parameters
  * @param {Array} params.staffMembers - Array of staff objects with email and department info
  * @param {string} params.studentName - Student name
@@ -239,21 +241,47 @@ export async function notifyAllDepartments({
   }
 
   console.log(`📧 Sending notifications to ${staffMembers.length} staff member(s)...`);
+  console.log(`⏱️ Estimated time: ${Math.ceil(staffMembers.length * 1.1)} seconds (rate limit: 1 email/sec)`);
 
-  const results = await Promise.allSettled(
-    staffMembers.map(staff =>
-      sendDepartmentNotification({
+  const results = [];
+  
+  // Send emails sequentially with delay to respect Resend's rate limit (1 email/second)
+  for (let i = 0; i < staffMembers.length; i++) {
+    const staff = staffMembers[i];
+    
+    try {
+      console.log(`📤 [${i + 1}/${staffMembers.length}] Sending to ${staff.department} (${staff.email})...`);
+      
+      const result = await sendDepartmentNotification({
         departmentEmail: staff.email,
         studentName,
         registrationNo,
         formId,
         dashboardUrl
-      })
-    )
-  );
+      });
+      
+      results.push({ status: 'fulfilled', value: result });
+      
+      if (result.success) {
+        console.log(`   ✅ Sent successfully`);
+      } else {
+        console.log(`   ❌ Failed: ${result.error}`);
+      }
+      
+      // Wait 1.1 seconds before sending next email (Resend rate limit: 1 email/sec)
+      // Add 100ms buffer to avoid hitting rate limit exactly
+      if (i < staffMembers.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
+      }
+      
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.message}`);
+      results.push({ status: 'rejected', reason: error });
+    }
+  }
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`✅ ${successful}/${staffMembers.length} notifications sent successfully`);
+  console.log(`\n✅ ${successful}/${staffMembers.length} notifications sent successfully`);
 
   return results;
 }
@@ -404,6 +432,8 @@ export async function sendCertificateReadyNotification({
 /**
  * Send reapplication notification to staff members
  * UNIFIED SYSTEM: Uses staff account emails from profiles table
+ * RATE LIMIT COMPLIANT: Sends emails sequentially with 1.1 second delay
+ *
  * @param {Object} params - Notification parameters
  * @param {Array} params.staffMembers - Array of staff objects with email and department info
  * @param {string} params.studentName - Student name
@@ -429,6 +459,7 @@ export async function sendReapplicationNotifications({
   }
 
   console.log(`📧 Sending reapplication notifications to ${staffMembers.length} staff member(s)...`);
+  console.log(`⏱️ Estimated time: ${Math.ceil(staffMembers.length * 1.1)} seconds (rate limit: 1 email/sec)`);
 
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
@@ -473,18 +504,42 @@ export async function sendReapplicationNotifications({
     footerText: 'This is a reapplication. Previous rejection reasons should be addressed.'
   });
 
-  const results = await Promise.allSettled(
-    staffMembers.map(staff =>
-      sendEmail({
+  const results = [];
+
+  // Send emails sequentially with delay to respect Resend's rate limit (1 email/second)
+  for (let i = 0; i < staffMembers.length; i++) {
+    const staff = staffMembers[i];
+    
+    try {
+      console.log(`📤 [${i + 1}/${staffMembers.length}] Sending reapplication to ${staff.department} (${staff.email})...`);
+      
+      const result = await sendEmail({
         to: staff.email,
         subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
         html
-      })
-    )
-  );
+      });
+      
+      results.push({ status: 'fulfilled', value: result });
+      
+      if (result.success) {
+        console.log(`   ✅ Sent successfully`);
+      } else {
+        console.log(`   ❌ Failed: ${result.error}`);
+      }
+      
+      // Wait 1.1 seconds before sending next email
+      if (i < staffMembers.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
+      }
+      
+    } catch (error) {
+      console.log(`   ❌ Error: ${error.message}`);
+      results.push({ status: 'rejected', reason: error });
+    }
+  }
 
   const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`✅ ${successful}/${staffMembers.length} reapplication notifications sent successfully`);
+  console.log(`\n✅ ${successful}/${staffMembers.length} reapplication notifications sent successfully`);
 
   return results;
 }

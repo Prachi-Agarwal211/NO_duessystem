@@ -442,7 +442,7 @@ export async function POST(request) {
         });
 
         if (staffToNotify.length > 0) {
-          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/staff/dashboard`;
+          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`;
           
           const emailResults = await notifyAllDepartments({
             staffMembers: staffToNotify.map(staff => ({
