@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { finalizeCertificate } from '@/lib/certificateService';
 
+// Force Node.js runtime (required for crypto module and fs operations)
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // Create Supabase admin client
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
