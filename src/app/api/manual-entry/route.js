@@ -110,29 +110,35 @@ export async function POST(request) {
       branch: branchData ? branchData.name : 'N/A'
     });
 
-    // ===== INSERT INTO no_dues_forms with is_manual_entry=true =====
+    // ===== INSERT INTO no_dues_forms with MINIMAL data for manual entry =====
     const { data: newForm, error: insertError } = await supabaseAdmin
       .from('no_dues_forms')
       .insert([{
+        // ONLY registration number (what user provides)
         registration_no,
-        student_name: 'Offline Student', // Minimal info
-        email: `${registration_no.toLowerCase()}@student.temp`, // Placeholder
-        phone: '0000000000', // Placeholder
+        
+        // Database required fields - use minimal placeholders
+        student_name: 'Manual Entry',
+        personal_email: `${registration_no.toLowerCase()}@manual.temp`,
+        college_email: `${registration_no.toLowerCase()}@manual.jecrc.temp`,
+        contact_no: '0000000000',
         country_code: '+91',
-        // Store BOTH UUIDs and text names (same as regular form submission)
-        school_id: school_id,           // UUID for foreign key
-        school: schoolData.name,        // Text name for display
-        course_id: course_id,           // UUID for foreign key
-        course: courseData.name,        // Text name for display
-        branch_id: branch_id || null,   // UUID for foreign key (nullable)
-        branch: branchData ? branchData.name : null,  // Text name for display (nullable)
-        semester: '0', // Not applicable for manual entries
-        reason_for_request: 'Offline Certificate Registration',
-        id_card_path: null, // Not needed for manual
-        is_manual_entry: true, // FLAG: This is a manual entry
-        manual_certificate_url: certificate_url, // Store proof
-        status: 'pending', // Pending department verification
-        user_id: null // No user authentication for manual entries
+        school: schoolData.name,  // Required field - use text name
+        
+        // Optional UUID foreign keys for filtering
+        school_id: school_id || null,
+        course_id: course_id || null,
+        branch_id: branch_id || null,
+        
+        // Optional text fields
+        course: courseData ? courseData.name : null,
+        branch: branchData ? branchData.name : null,
+        
+        // Manual entry specific fields
+        is_manual_entry: true,
+        manual_certificate_url: certificate_url,
+        status: 'pending',
+        user_id: null
       }])
       .select()
       .single();
