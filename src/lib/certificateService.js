@@ -343,19 +343,16 @@ export const finalizeCertificate = async (formId) => {
       formId
     });
     
-    // Create blockchain record in database
+    // Create blockchain record in database - FIXED: Match blockchainService expected format
     const blockchainRecord = await createBlockchainRecord({
-      formId,
-      hash: certificateResult.blockchainHash,
-      transactionId: certificateResult.transactionId,
-      certificateData: {
-        studentName: formData.student_name,
-        registrationNo: formData.registration_no,
-        course: formData.course,
-        branch: formData.branch,
-        admissionYear: formData.admission_year,
-        passingYear: formData.passing_year
-      }
+      student_id: formData.id || formId,  // Use form UUID as student_id
+      registration_no: formData.registration_no,
+      full_name: formData.student_name,  // Map student_name to full_name
+      course: formData.course,
+      branch: formData.branch,
+      status: formData.status || 'completed',
+      completed_at: new Date().toISOString(),  // Use current timestamp
+      department_statuses: []  // Empty array, not used for hash generation
     });
     
     // Update form record with certificate URL, blockchain info, and final status
