@@ -3,12 +3,14 @@
 -- ============================================================================
 -- This is the SINGLE SOURCE OF TRUTH that fixes EVERYTHING
 -- Run this ONCE in Supabase SQL Editor to restore full system functionality
--- 
+--
 -- This script includes:
 -- 1. Complete cleanup of existing database
--- 2. All tables with CORRECT structure (especially profiles with department_name)
--- 3. All 13 schools, 40+ courses, 200+ branches from JECRC data
--- 4. All 9 departments with proper configuration (removed JIC & Student Council, added Registrar)
+-- 2. All tables with CORRECT structure:
+--    - profiles with department_name for staff login
+--    - admission_year & passing_year as TEXT (not INTEGER) - CRITICAL FIX
+-- 3. All 13 schools, 28+ courses, 139+ branches from JECRC data
+-- 4. All 10 departments (removed JIC & Student Council, added Registrar)
 -- 5. All functions and triggers (department status auto-creation)
 -- 6. Row Level Security (RLS) policies for public + staff access
 -- 7. Indexes for performance
@@ -157,8 +159,8 @@ CREATE TABLE public.no_dues_forms (
     student_name TEXT NOT NULL,
     personal_email TEXT NOT NULL,
     college_email TEXT NOT NULL,
-    admission_year INTEGER,  -- Year student joined (e.g., 2020)
-    passing_year INTEGER,    -- Year student graduated (e.g., 2024)
+    admission_year TEXT,  -- Year student joined (e.g., "2020") - TEXT because API sends as string
+    passing_year TEXT,    -- Year student graduated (e.g., "2024") - TEXT because API sends as string
     parent_name TEXT,
     school_id UUID REFERENCES public.config_schools(id),
     course_id UUID REFERENCES public.config_courses(id),
@@ -202,11 +204,11 @@ DO $$
 BEGIN
     -- Add basic columns if missing
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'admission_year') THEN
-        ALTER TABLE public.no_dues_forms ADD COLUMN admission_year INTEGER;
+        ALTER TABLE public.no_dues_forms ADD COLUMN admission_year TEXT;
     END IF;
     
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'no_dues_forms' AND column_name = 'passing_year') THEN
-        ALTER TABLE public.no_dues_forms ADD COLUMN passing_year INTEGER;
+        ALTER TABLE public.no_dues_forms ADD COLUMN passing_year TEXT;
     END IF;
     
     -- Add reapplication system columns if missing (CRITICAL - Added 2025-12-10)
@@ -677,15 +679,15 @@ CREATE POLICY "Service role can manage certificate verifications" ON public.cert
 
 INSERT INTO public.departments (name, display_name, email, display_order, is_school_specific, is_active) VALUES
     ('school_hod', 'School (HOD/Department)', 'hod@jecrcu.edu.in', 1, true, true),
-    ('library', 'Library', 'library@jecrcu.edu.in', 2, false, true),
-    ('it_department', 'IT Department', 'it@jecrcu.edu.in', 3, false, true),
-    ('hostel', 'Hostel', 'hostel@jecrcu.edu.in', 4, false, true),
-    ('mess', 'Mess', 'mess@jecrcu.edu.in', 5, false, true),
-    ('canteen', 'Canteen', 'canteen@jecrcu.edu.in', 6, false, true),
-    ('tpo', 'TPO', 'tpo@jecrcu.edu.in', 7, false, true),
-    ('alumni_association', 'Alumni Association', 'alumni@jecrcu.edu.in', 8, false, true),
-    ('accounts_department', 'Accounts', 'accounts@jecrcu.edu.in', 9, false, true),
-    ('registrar', 'Registrar', 'registrar@jecrcu.edu.in', 10, false, true);
+    ('library', 'Library', 'vishal.tiwari@jecrcu.edu.in', 2, false, true),
+    ('it_department', 'IT Department', 'seniormanager.it@jecrcu.edu.in', 3, false, true),
+    ('hostel', 'Hostel', 'akshar.bhardwaj@jecrcu.edu.in', 4, false, true),
+    ('mess', 'Mess', 'sailendra.trivedi@jecrcu.edu.in', 5, false, true),
+    ('canteen', 'Canteen', 'umesh.sharma@jecrcu.edu.in', 6, false, true),
+    ('tpo', 'TPO', 'arjit.jain@jecrcu.edu.in', 7, false, true),
+    ('alumni_association', 'Alumni Association', 'anurag.sharma@jecrcu.edu.in', 8, false, true),
+    ('accounts_department', 'Accounts', 'surbhi.jetavat@jecrcu.edu.in', 9, false, true),
+    ('registrar', 'Registrar', 'ganesh.jat@jecrcu.edu.in', 10, false, true);
 
 -- ============================================================================
 -- SECTION 8: POPULATE ALL 13 SCHOOLS

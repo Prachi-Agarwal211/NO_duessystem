@@ -275,7 +275,7 @@ export async function POST(request) {
     const { data: schoolData, error: schoolError } = await supabaseAdmin
       .from('config_schools')
       .select('id, name')
-      .eq('id', school_id)
+      .eq('id', school_id)  // Fixed: Use ID not name
       .eq('is_active', true)
       .single();
     
@@ -291,7 +291,7 @@ export async function POST(request) {
     const { data: courseData, error: courseError } = await supabaseAdmin
       .from('config_courses')
       .select('id, name, school_id')
-      .eq('id', course_id)
+      .eq('id', course_id)  // Fixed: Use ID not name
       .eq('school_id', school_id)
       .eq('is_active', true)
       .single();
@@ -308,7 +308,7 @@ export async function POST(request) {
     const { data: branchData, error: branchError } = await supabaseAdmin
       .from('config_branches')
       .select('id, name, course_id')
-      .eq('id', branch_id)
+      .eq('id', branch_id)  // Fixed: Use ID not name
       .eq('course_id', course_id)
       .eq('is_active', true)
       .single();
