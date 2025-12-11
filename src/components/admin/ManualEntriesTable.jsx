@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FileCheck, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  FileCheck,
+  CheckCircle,
+  XCircle,
+  Clock,
   Eye,
   ExternalLink,
   Calendar,
@@ -16,6 +16,7 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase } from '@/lib/supabaseClient';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function ManualEntriesTable() {
@@ -57,9 +58,19 @@ export default function ManualEntriesTable() {
 
     setActionLoading(true);
     try {
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Session expired. Please log in again.');
+        return;
+      }
+
       const response = await fetch('/api/manual-entry/action', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           entry_id: entryId,
           action,

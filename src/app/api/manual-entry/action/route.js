@@ -8,14 +8,27 @@ import { verifyToken } from '@/lib/jwtService';
  */
 export async function POST(request) {
   try {
-    // Verify admin authentication
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
+    // Verify admin authentication using Supabase (same as other admin APIs)
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== 'admin') {
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Verify user is admin
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || profile.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
     }
 
@@ -89,7 +102,7 @@ export async function POST(request) {
         .from('no_dues_status')
         .update({
           status: 'approved',
-          action_by_user_id: decoded.userId,
+          action_by_user_id: user.id,
           action_at: new Date().toISOString()
         })
         .eq('form_id', entry_id)
@@ -132,7 +145,7 @@ export async function POST(request) {
         .update({
           status: 'rejected',
           rejection_reason,
-          action_by_user_id: decoded.userId,
+          action_by_user_id: user.id,
           action_at: new Date().toISOString()
         })
         .eq('form_id', entry_id)
