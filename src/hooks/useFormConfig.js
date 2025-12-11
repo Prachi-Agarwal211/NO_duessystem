@@ -17,13 +17,22 @@ export function useFormConfig() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch all configuration data at once
+  // Fetch all configuration data at once with cache busting
   const fetchAllConfig = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/public/config?type=all');
+      // Add timestamp to bust cache
+      const cacheBuster = `&_t=${Date.now()}`;
+      const response = await fetch(`/api/public/config?type=all${cacheBuster}`, {
+        cache: 'no-store', // Force no caching
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       const result = await response.json();
       
       console.log('🔧 Config API Response:', result);
@@ -58,7 +67,7 @@ export function useFormConfig() {
     }
   }, []);
 
-  // Fetch courses by school with proper loading state
+  // Fetch courses by school with proper loading state and cache busting
   const fetchCoursesBySchool = useCallback(async (schoolId) => {
     if (!schoolId) {
       setCourses([]);
@@ -67,7 +76,13 @@ export function useFormConfig() {
     
     setCoursesLoading(true);
     try {
-      const response = await fetch(`/api/public/config?type=courses&school_id=${schoolId}`);
+      const cacheBuster = `&_t=${Date.now()}`;
+      const response = await fetch(`/api/public/config?type=courses&school_id=${schoolId}${cacheBuster}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       const result = await response.json();
       
       if (!result.success) {
@@ -94,7 +109,7 @@ export function useFormConfig() {
     }
   }, []);
 
-  // Fetch branches by course with proper loading state
+  // Fetch branches by course with proper loading state and cache busting
   const fetchBranchesByCourse = useCallback(async (courseId) => {
     if (!courseId) {
       setBranches([]);
@@ -103,7 +118,13 @@ export function useFormConfig() {
     
     setBranchesLoading(true);
     try {
-      const response = await fetch(`/api/public/config?type=branches&course_id=${courseId}`);
+      const cacheBuster = `&_t=${Date.now()}`;
+      const response = await fetch(`/api/public/config?type=branches&course_id=${courseId}${cacheBuster}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       const result = await response.json();
       
       if (!result.success) {
