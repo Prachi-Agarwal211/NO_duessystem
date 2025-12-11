@@ -127,6 +127,8 @@ class BlockchainService {
 
   /**
    * Generate QR code data with all verification info
+   * @param {Object} blockchainRecord - The blockchain record with transactionId, hash, etc.
+   * @param {Object} certificateData - Certificate data with formId, registrationNo, studentName
    */
   generateQRData(blockchainRecord, certificateData) {
     return {
@@ -135,10 +137,10 @@ class BlockchainService {
       hash: blockchainRecord.certificateHash,
       block: blockchainRecord.blockNumber,
       
-      // Student info for quick verification
-      studentId: certificateData.student_id,
-      regNo: certificateData.registration_no,
-      name: certificateData.full_name,
+      // Student info for quick verification (use correct field names from certificateData)
+      studentId: certificateData.formId || certificateData.student_id,
+      regNo: certificateData.registrationNo || certificateData.registration_no,
+      name: certificateData.studentName || certificateData.full_name,
       
       // Timestamp
       issued: blockchainRecord.timestamp,

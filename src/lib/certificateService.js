@@ -23,17 +23,13 @@ const supabaseAdmin = createClient(
 const JECRC_RED = [196, 30, 58]; // #C41E3A
 const GOLD_ACCENT = [218, 165, 32]; // #DAA520
 
-export const generateCertificate = async (certificateData) => {
+export const generateCertificate = async (certificateData, blockchainRecord) => {
   try {
-    // Generate blockchain hash and transaction ID FIRST
-    const blockchainHash = await generateCertificateHash(certificateData);
-    const transactionId = generateTransactionId(blockchainHash);
+    // blockchainRecord is now passed as parameter (created before certificate generation)
     
-    // Generate QR code data
-    const qrData = generateQRData({
+    // Generate QR code data with correct two-parameter signature
+    const qrData = generateQRData(blockchainRecord, {
       formId: certificateData.formId,
-      transactionId,
-      hash: blockchainHash,
       registrationNo: certificateData.registrationNo,
       studentName: certificateData.studentName
     });
@@ -248,10 +244,10 @@ export const generateCertificate = async (certificateData) => {
     const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
     pdf.text(certId, pageWidth / 2, pageHeight - 10, { align: 'center' });
     
-    // Transaction ID (Blockchain)
+    // Transaction ID (Blockchain) - use from blockchainRecord
     pdf.setFontSize(6);
     pdf.setTextColor(150, 150, 150);
-    pdf.text(`Blockchain TX: ${transactionId}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    pdf.text(`Blockchain TX: ${blockchainRecord.transactionId}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
@@ -281,9 +277,8 @@ export const generateCertificate = async (certificateData) => {
       success: true,
       certificateUrl: publicUrl,
       fileName,
-      mimeType: 'application/pdf',
-      blockchainHash,
-      transactionId
+      mimeType: 'application/pdf'
+      // Don't return blockchain data here - it's already in blockchainRecord
     };
   } catch (error) {
     console.error('Error generating certificate:', error);
@@ -321,10 +316,18 @@ export const saveCertificate = async (certificateBuffer, fileName, formId) => {
 // Function to finalize certificate generation for a form
 export const finalizeCertificate = async (formId) => {
   try {
-    // Get form data
+    // STEP 1: Get form data with department statuses
     const { data: formData, error } = await supabaseAdmin
       .from('no_dues_forms')
-      .select('*')
+      .select(`
+        *,
+        no_dues_status (
+          department_name,
+          status,
+          action_at,
+          action_by_user_id
+        )
+      `)
       .eq('id', formId)
       .single();
     
@@ -332,7 +335,19 @@ export const finalizeCertificate = async (formId) => {
       throw new Error('Form not found');
     }
     
-    // Generate certificate with blockchain
+    // STEP 2: Create blockchain record FIRST (with correct data structure and department statuses)
+    const blockchainRecord = await createBlockchainRecord({
+      student_id: formId,  // Use formId as student_id
+      registration_no: formData.registration_no,
+      full_name: formData.student_name,  // Map student_name to full_name
+      course: formData.course,
+      branch: formData.branch,
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      department_statuses: formData.no_dues_status || []  // Include actual department statuses
+    });
+    
+    // STEP 3: Generate certificate WITH blockchain data
     const certificateResult = await generateCertificate({
       studentName: formData.student_name,
       registrationNo: formData.registration_no,
@@ -341,28 +356,16 @@ export const finalizeCertificate = async (formId) => {
       admissionYear: formData.admission_year,
       passingYear: formData.passing_year,
       formId
-    });
+    }, blockchainRecord);  // Pass blockchain record as second parameter
     
-    // Create blockchain record in database - FIXED: Match blockchainService expected format
-    const blockchainRecord = await createBlockchainRecord({
-      student_id: formData.id || formId,  // Use form UUID as student_id
-      registration_no: formData.registration_no,
-      full_name: formData.student_name,  // Map student_name to full_name
-      course: formData.course,
-      branch: formData.branch,
-      status: formData.status || 'completed',
-      completed_at: new Date().toISOString(),  // Use current timestamp
-      department_statuses: []  // Empty array, not used for hash generation
-    });
-    
-    // Update form record with certificate URL, blockchain info, and final status
+    // STEP 4: Update form record with certificate URL, blockchain info, and final status
     const { error: updateError } = await supabaseAdmin
       .from('no_dues_forms')
       .update({
         final_certificate_generated: true,
         certificate_url: certificateResult.certificateUrl,
-        blockchain_hash: certificateResult.blockchainHash,
-        blockchain_tx: certificateResult.transactionId,
+        blockchain_hash: blockchainRecord.certificateHash,
+        blockchain_tx: blockchainRecord.transactionId,
         blockchain_block: blockchainRecord.blockNumber,
         blockchain_timestamp: blockchainRecord.timestamp,
         blockchain_verified: true,
@@ -379,8 +382,8 @@ export const finalizeCertificate = async (formId) => {
       message: 'Certificate generated successfully with blockchain verification',
       formId,
       certificateUrl: certificateResult.certificateUrl,
-      blockchainHash: certificateResult.blockchainHash,
-      transactionId: certificateResult.transactionId
+      blockchainHash: blockchainRecord.certificateHash,
+      transactionId: blockchainRecord.transactionId
     };
   } catch (error) {
     console.error('Error finalizing certificate:', error);

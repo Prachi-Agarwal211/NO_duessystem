@@ -156,7 +156,7 @@ function CheckStatusContent() {
               <Logo size="medium" />
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              Check Your Status
+              Check No Dues Form Status
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Enter your registration number to view the current status of your No Dues application

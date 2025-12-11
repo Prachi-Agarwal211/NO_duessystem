@@ -70,22 +70,22 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 md:gap-14 lg:gap-16 items-stretch">
             <ActionCard
               index={0}
-              title="Check Status"
-              subtitle="Track the status of your no dues application using your registration number."
-              icon={Search}
-              onClick={() => router.push('/student/check-status')}
-            />
-            <ActionCard
-              index={1}
-              title="Submit Form"
+              title="Submit No Dues Form"
               subtitle="Submit a new no-dues application for semester end or degree completion."
               icon={FileCheck}
               onClick={() => router.push('/student/submit-form')}
             />
             <ActionCard
+              index={1}
+              title="Check No Dues Form Status"
+              subtitle="Track the status of your no dues application using your registration number."
+              icon={Search}
+              onClick={() => router.push('/student/check-status')}
+            />
+            <ActionCard
               index={2}
-              title="Register Certificate"
-              subtitle="Already completed offline? Register your existing no-dues certificate here."
+              title="Submit Manual Filled No Dues"
+              subtitle="Already completed offline? Submit your manually filled no-dues form here."
               icon={Upload}
               onClick={() => router.push('/student/manual-entry')}
             />
