@@ -19,7 +19,7 @@ function StatsCard({ title, value, change, trend, color }) {
   const isDark = theme === 'dark';
 
   return (
-    <GlassCard className="p-6 hover:scale-[1.02] transition-transform duration-300">
+    <GlassCard className="p-6 hover:scale-[1.02] transition-transform duration-300 cursor-pointer">
       <div className="flex items-center justify-between">
         {/* Left: Title and Value */}
         <div className="flex-1">

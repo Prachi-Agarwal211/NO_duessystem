@@ -87,6 +87,14 @@ export default function AdminDashboard() {
     }
   };
 
+  // Scroll to table helper function
+  const scrollToTable = () => {
+    const tableElement = document.querySelector('[data-table="applications"]');
+    if (tableElement) {
+      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // Handle global errors with Toast
   useEffect(() => {
     if (error) {
@@ -269,36 +277,75 @@ export default function AdminDashboard() {
 
       {activeTab === 'dashboard' ? (
         <div className="space-y-8 animate-fade-in">
-          {/* Stats Grid */}
+          {/* Stats Grid - Clickable Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard
-              title="Total Requests"
-              value={statusCounts.total_requests || 0}
-              change={statusCounts ? `+${(statusCounts.total_requests || 0)}` : '0'}
-              trend="up"
-              color="bg-blue-500"
-            />
-            <StatsCard
-              title="Completed"
-              value={statusCounts.completed_requests || 0}
-              change={statusCounts ? `${((statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
-              trend="up"
-              color="bg-green-500"
-            />
-            <StatsCard
-              title="Pending"
-              value={statusCounts.pending_requests || 0}
-              change={statusCounts ? `${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
-              trend="down"
-              color="bg-yellow-500"
-            />
-            <StatsCard
-              title="Rejected"
-              value={statusCounts.rejected_requests || 0}
-              change={statusCounts ? `${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
-              trend="down"
-              color="bg-red-500"
-            />
+            <div
+              onClick={() => {
+                setStatusFilter('');
+                scrollToTable();
+              }}
+              className="cursor-pointer"
+              title="Click to view all requests"
+            >
+              <StatsCard
+                title="Total Requests"
+                value={statusCounts.total_requests || 0}
+                change={statusCounts ? `+${(statusCounts.total_requests || 0)}` : '0'}
+                trend="up"
+                color="bg-blue-500"
+              />
+            </div>
+            
+            <div
+              onClick={() => {
+                setStatusFilter('completed');
+                scrollToTable();
+              }}
+              className="cursor-pointer"
+              title="Click to view completed requests"
+            >
+              <StatsCard
+                title="Completed"
+                value={statusCounts.completed_requests || 0}
+                change={statusCounts ? `${((statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                trend="up"
+                color="bg-green-500"
+              />
+            </div>
+            
+            <div
+              onClick={() => {
+                setStatusFilter('pending');
+                scrollToTable();
+              }}
+              className="cursor-pointer"
+              title="Click to view pending requests"
+            >
+              <StatsCard
+                title="Pending"
+                value={statusCounts.pending_requests || 0}
+                change={statusCounts ? `${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                trend="down"
+                color="bg-yellow-500"
+              />
+            </div>
+            
+            <div
+              onClick={() => {
+                setStatusFilter('rejected');
+                scrollToTable();
+              }}
+              className="cursor-pointer"
+              title="Click to view rejected requests"
+            >
+              <StatsCard
+                title="Rejected"
+                value={statusCounts.rejected_requests || 0}
+                change={statusCounts ? `${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                trend="down"
+                color="bg-red-500"
+              />
+            </div>
           </div>
 
           {/* Charts Section */}
@@ -372,7 +419,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Data Table */}
-          <GlassCard className="overflow-hidden">
+          <GlassCard className="overflow-hidden" data-table="applications">
             <ApplicationsTable
               applications={applications}
               currentPage={currentPage}

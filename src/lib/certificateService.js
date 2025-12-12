@@ -232,7 +232,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
 
     // --- 7. QR Code & Blockchain Verification (Bottom Left) ---
     const qrX = 25;
-    const qrY = footerY - 25;
+    const qrY = footerY - 40; // Moved higher to prevent overlap with date (was -25, now -40)
     const qrSize = 28;
     
     // Add QR Code

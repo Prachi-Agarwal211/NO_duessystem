@@ -36,10 +36,10 @@ function StatsCard({ title, value, subtitle, icon: Icon, color = 'blue', loading
 
   return (
     <div
-      className={`p-6 rounded-xl border transition-all duration-700 hover:scale-105 ${
+      className={`p-6 rounded-xl border transition-all duration-700 hover:scale-105 cursor-pointer ${
         isDark
-          ? 'bg-white/5 border-white/10 hover:bg-white/10'
-          : 'bg-white border-black/10 hover:shadow-lg'
+          ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+          : 'bg-white border-black/10 hover:shadow-lg hover:border-black/20'
       }`}
     >
       <div className="flex items-start justify-between mb-4">

@@ -327,41 +327,68 @@ function StaffDashboardContent() {
               </div>
             </div>
 
-            {/* Statistics Cards */}
+            {/* Statistics Cards - Clickable */}
             {stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatsCard
-                  title="Pending Requests"
-                  value={stats.pending || 0}
-                  subtitle="Awaiting your action"
-                  icon={Clock}
-                  color="yellow"
-                  loading={statsLoading}
-                />
-                <StatsCard
-                  title="My Approved"
-                  value={stats.approved || 0}
-                  subtitle="Applications you approved"
-                  icon={CheckCircle}
-                  color="green"
-                  loading={statsLoading}
-                />
-                <StatsCard
-                  title="My Rejected"
-                  value={stats.rejected || 0}
-                  subtitle="Applications you rejected"
-                  icon={XCircle}
-                  color="red"
-                  loading={statsLoading}
-                />
-                <StatsCard
-                  title="My Total Actions"
-                  value={stats.total || 0}
-                  subtitle={stats.approvalRate ? `${stats.approvalRate}% your approval rate` : 'Your all time actions'}
-                  icon={TrendingUp}
-                  color="blue"
-                  loading={statsLoading}
-                />
+                <div
+                  onClick={() => setActiveTab('pending')}
+                  className="cursor-pointer"
+                  title="Click to view pending requests"
+                >
+                  <StatsCard
+                    title="Pending Requests"
+                    value={stats.pending || 0}
+                    subtitle="Awaiting your action"
+                    icon={Clock}
+                    color="yellow"
+                    loading={statsLoading}
+                  />
+                </div>
+                
+                <div
+                  onClick={() => setActiveTab('history')}
+                  className="cursor-pointer"
+                  title="Click to view approved applications"
+                >
+                  <StatsCard
+                    title="My Approved"
+                    value={stats.approved || 0}
+                    subtitle="Applications you approved"
+                    icon={CheckCircle}
+                    color="green"
+                    loading={statsLoading}
+                  />
+                </div>
+                
+                <div
+                  onClick={() => setActiveTab('rejected')}
+                  className="cursor-pointer"
+                  title="Click to view rejected applications"
+                >
+                  <StatsCard
+                    title="My Rejected"
+                    value={stats.rejected || 0}
+                    subtitle="Applications you rejected"
+                    icon={XCircle}
+                    color="red"
+                    loading={statsLoading}
+                  />
+                </div>
+                
+                <div
+                  onClick={() => setActiveTab('history')}
+                  className="cursor-pointer"
+                  title="Click to view action history"
+                >
+                  <StatsCard
+                    title="My Total Actions"
+                    value={stats.total || 0}
+                    subtitle={stats.approvalRate ? `${stats.approvalRate}% your approval rate` : 'Your all time actions'}
+                    icon={TrendingUp}
+                    color="blue"
+                    loading={statsLoading}
+                  />
+                </div>
               </div>
             )}
 

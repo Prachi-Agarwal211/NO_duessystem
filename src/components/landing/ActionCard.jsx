@@ -146,7 +146,7 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         className={`relative z-10 flex items-center gap-3 text-xs font-bold tracking-[0.25em] uppercase transition-colors duration-500
           ${isDark
             ? 'text-gray-400 group-hover:text-jecrc-red-bright'
-            : 'text-gray-400 group-hover:text-jecrc-red'
+            : 'text-gray-600 group-hover:text-jecrc-red'
           }`}
         style={isDark ? {
           textShadow: '0 0 15px rgba(255, 255, 255, 0.2)'
