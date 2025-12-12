@@ -231,18 +231,21 @@ export default function ReapplyModal({
 
   if (success) {
     return (
-      <motion.div 
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+      <motion.div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        style={{ willChange: 'opacity' }}
       >
-        <motion.div 
+        <motion.div
           className={`rounded-xl max-w-md w-full p-8 text-center transition-colors duration-700 ${
             isDark ? 'bg-gray-900 border border-white/10' : 'bg-white border border-black/10'
           }`}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
         >
           <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
           <h2 className={`text-2xl font-bold mb-2 transition-colors duration-700 ${
@@ -263,11 +266,12 @@ export default function ReapplyModal({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        style={{ willChange: 'opacity' }}
       >
         <motion.div
           className={`rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col transition-colors duration-700 ${
@@ -276,7 +280,9 @@ export default function ReapplyModal({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           onClick={(e) => e.stopPropagation()}
+          style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
         >
           {/* Sticky Header */}
           <div className={`sticky top-0 z-10 flex justify-between items-start p-6 border-b transition-colors duration-700 ${

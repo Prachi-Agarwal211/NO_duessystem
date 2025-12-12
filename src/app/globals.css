@@ -644,3 +644,42 @@ h1, h2, h3 {
 .dark .text-shadow-adaptive {
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
 }
+
+/* ========================================
+   SELECT DROPDOWN SCROLLBAR STYLING
+   ======================================== */
+
+/* Make select dropdowns scrollable with visible scrollbars */
+select {
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--jecrc-red) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+select::-webkit-scrollbar {
+  width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+select::-webkit-scrollbar-thumb {
+  background: var(--jecrc-red);
+  border-radius: 4px;
+}
+
+select::-webkit-scrollbar-thumb:hover {
+  background: var(--jecrc-red-dark);
+}
+
+/* Dark mode scrollbar */
+.dark select::-webkit-scrollbar-thumb {
+  background: var(--jecrc-red-bright);
+}
+
+.dark select::-webkit-scrollbar-thumb:hover {
+  background: var(--jecrc-red-light);
+}

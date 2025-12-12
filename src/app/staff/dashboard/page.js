@@ -327,12 +327,21 @@ function StaffDashboardContent() {
               </div>
             </div>
 
-            {/* Statistics Cards - Clickable */}
+            {/* Statistics Cards - Clickable with Smooth Scroll Animation */}
             {stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div
-                  onClick={() => setActiveTab('pending')}
-                  className="cursor-pointer"
+                  onClick={() => {
+                    setActiveTab('pending');
+                    // Smooth scroll to content section after tab switch
+                    setTimeout(() => {
+                      document.getElementById('content-section')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+                    }, 100);
+                  }}
+                  className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
                   title="Click to view pending requests"
                 >
                   <StatsCard
@@ -346,8 +355,17 @@ function StaffDashboardContent() {
                 </div>
                 
                 <div
-                  onClick={() => setActiveTab('history')}
-                  className="cursor-pointer"
+                  onClick={() => {
+                    setActiveTab('history');
+                    // Smooth scroll to content section after tab switch
+                    setTimeout(() => {
+                      document.getElementById('content-section')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+                    }, 100);
+                  }}
+                  className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
                   title="Click to view approved applications"
                 >
                   <StatsCard
@@ -361,8 +379,17 @@ function StaffDashboardContent() {
                 </div>
                 
                 <div
-                  onClick={() => setActiveTab('rejected')}
-                  className="cursor-pointer"
+                  onClick={() => {
+                    setActiveTab('rejected');
+                    // Smooth scroll to content section after tab switch
+                    setTimeout(() => {
+                      document.getElementById('content-section')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+                    }, 100);
+                  }}
+                  className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
                   title="Click to view rejected applications"
                 >
                   <StatsCard
@@ -376,8 +403,17 @@ function StaffDashboardContent() {
                 </div>
                 
                 <div
-                  onClick={() => setActiveTab('history')}
-                  className="cursor-pointer"
+                  onClick={() => {
+                    setActiveTab('history');
+                    // Smooth scroll to content section after tab switch
+                    setTimeout(() => {
+                      document.getElementById('content-section')?.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+                    }, 100);
+                  }}
+                  className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
                   title="Click to view action history"
                 >
                   <StatsCard
@@ -411,7 +447,7 @@ function StaffDashboardContent() {
             )}
 
             {/* Tab Navigation */}
-            <div className="flex gap-4 mb-6 border-b" style={{
+            <div id="content-section" className="flex gap-4 mb-6 border-b scroll-mt-8" style={{
               borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
             }}>
               <button

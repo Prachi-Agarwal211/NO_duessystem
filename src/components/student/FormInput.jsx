@@ -12,8 +12,12 @@ export default function FormInput({
   error = '',
   placeholder = '',
   options = [], // For select inputs
-  disabled = false
+  disabled = false,
+  loading = false
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   // Modern "Filled" Input Style
   // No border cutting needed. Label floats inside the padding.
 
@@ -53,12 +57,28 @@ export default function FormInput({
               value={value}
               onChange={onChange}
               required={required}
-              disabled={disabled}
+              disabled={disabled || loading}
               className={`${inputClasses} appearance-none cursor-pointer`}
+              style={{
+                colorScheme: isDark ? 'dark' : 'light'
+              }}
             >
-              <option value="" disabled></option>
+              <option value="" disabled style={{
+                backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+                color: isDark ? '#ffffff' : '#000000'
+              }}>
+                {loading ? 'Loading...' : (placeholder || '')}
+              </option>
               {options.map((option) => (
-                <option key={option.value} value={option.value} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+                <option
+                  key={option.value}
+                  value={option.value}
+                  style={{
+                    backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#000000',
+                    padding: '8px 12px'
+                  }}
+                >
                   {option.label}
                 </option>
               ))}

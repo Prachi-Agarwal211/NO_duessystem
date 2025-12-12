@@ -337,15 +337,11 @@ export default function CheckStatusPage() {
   return (
     <ErrorBoundary>
       <Suspense fallback={
-        <PageWrapper>
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
-          </div>
-        </PageWrapper>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+          <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
+        </div>
       }>
-        <PageWrapper>
-          <CheckStatusContent />
-        </PageWrapper>
+        <CheckStatusContent />
       </Suspense>
     </ErrorBoundary>
   );

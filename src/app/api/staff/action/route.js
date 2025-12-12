@@ -51,12 +51,29 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    // Get user profile to check role and department using admin client
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, department_name, full_name')
-      .eq('id', userId)
-      .single();
+    // OPTIMIZATION: Parallelize all validation queries for faster response
+    const [
+      { data: profile, error: profileError },
+      { data: form, error: formError },
+      { data: existingStatus, error: statusError }
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('role, department_name, full_name')
+        .eq('id', userId)
+        .single(),
+      supabaseAdmin
+        .from('no_dues_forms')
+        .select('id, status, student_name, registration_no')
+        .eq('id', formId)
+        .single(),
+      supabaseAdmin
+        .from('no_dues_status')
+        .select('id, status')
+        .eq('form_id', formId)
+        .eq('department_name', departmentName)
+        .single()
+    ]);
 
     if (profileError || !profile) {
       return NextResponse.json({
@@ -81,27 +98,12 @@ export async function PUT(request) {
       }, { status: 403 });
     }
 
-    // Check if the form exists
-    const { data: form, error: formError } = await supabaseAdmin
-      .from('no_dues_forms')
-      .select('id, status, student_name, registration_no')
-      .eq('id', formId)
-      .single();
-
     if (formError || !form) {
       return NextResponse.json({
         success: false,
         error: 'Form not found'
       }, { status: 404 });
     }
-
-    // Check if the status record exists for this department and form
-    const { data: existingStatus, error: statusError } = await supabaseAdmin
-      .from('no_dues_status')
-      .select('id, status')
-      .eq('form_id', formId)
-      .eq('department_name', departmentName)
-      .single();
 
     if (statusError || !existingStatus) {
       return NextResponse.json({

@@ -276,13 +276,33 @@ export async function POST(request) {
     const course_id = formData.course; // This is the UUID
     const branch_id = formData.branch; // This is the UUID
     
-    // Validate school exists and is active
-    const { data: schoolData, error: schoolError } = await supabaseAdmin
-      .from('config_schools')
-      .select('id, name')
-      .eq('id', school_id)  // Fixed: Use ID not name
-      .eq('is_active', true)
-      .single();
+    // OPTIMIZATION: Parallelize school/course/branch validation for faster form submission
+    const [
+      { data: schoolData, error: schoolError },
+      { data: courseData, error: courseError },
+      { data: branchData, error: branchError }
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('config_schools')
+        .select('id, name')
+        .eq('id', school_id)
+        .eq('is_active', true)
+        .single(),
+      supabaseAdmin
+        .from('config_courses')
+        .select('id, name, school_id')
+        .eq('id', course_id)
+        .eq('school_id', school_id)
+        .eq('is_active', true)
+        .single(),
+      supabaseAdmin
+        .from('config_branches')
+        .select('id, name, course_id')
+        .eq('id', branch_id)
+        .eq('course_id', course_id)
+        .eq('is_active', true)
+        .single()
+    ]);
     
     if (schoolError || !schoolData) {
       console.error('Invalid school ID:', school_id, schoolError);
@@ -292,15 +312,6 @@ export async function POST(request) {
       );
     }
     
-    // Validate course exists, is active, and belongs to selected school
-    const { data: courseData, error: courseError } = await supabaseAdmin
-      .from('config_courses')
-      .select('id, name, school_id')
-      .eq('id', course_id)  // Fixed: Use ID not name
-      .eq('school_id', school_id)
-      .eq('is_active', true)
-      .single();
-    
     if (courseError || !courseData) {
       console.error('Invalid course ID or school mismatch:', course_id, courseError);
       return NextResponse.json(
@@ -308,15 +319,6 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
-    // Validate branch exists, is active, and belongs to selected course
-    const { data: branchData, error: branchError } = await supabaseAdmin
-      .from('config_branches')
-      .select('id, name, course_id')
-      .eq('id', branch_id)  // Fixed: Use ID not name
-      .eq('course_id', course_id)
-      .eq('is_active', true)
-      .single();
     
     if (branchError || !branchData) {
       console.error('Invalid branch ID or course mismatch:', branch_id, branchError);

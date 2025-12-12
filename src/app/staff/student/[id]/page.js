@@ -8,6 +8,7 @@ import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export default function StudentDetailView() {
   const { id } = useParams();
@@ -154,13 +155,13 @@ export default function StudentDetailView() {
 
   const handleApproveClick = () => {
     setShowApproveModal(true);
-    // Scroll to action buttons smoothly
+    // Scroll modal into view after it appears
     setTimeout(() => {
-      document.getElementById('action-buttons')?.scrollIntoView({
+      document.getElementById('approve-modal')?.scrollIntoView({
         behavior: 'smooth',
         block: 'center'
       });
-    }, 100);
+    }, 150);
   };
 
   const handleApprove = async () => {
@@ -173,6 +174,21 @@ export default function StudentDetailView() {
     setError('');
     setShowApproveModal(false);
 
+    // OPTIMISTIC UI: Show success immediately for instant feedback
+    toast.success('✅ Request approved! Updating...', {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#10B981',
+        color: '#fff',
+        fontWeight: '600',
+      },
+    });
+
+    // Navigate immediately for perceived <100ms response
+    router.push('/staff/dashboard');
+
+    // Send request in background (will complete after navigation)
     try {
       const response = await fetch('/api/staff/action', {
         method: 'PUT',
@@ -189,16 +205,20 @@ export default function StudentDetailView() {
 
       const result = await response.json();
 
-      if (result.success) {
-        console.log('✅ Approval successful - real-time will handle the update');
-        // Navigate back immediately - real-time subscription will update the dashboard
-        router.push('/staff/dashboard');
+      if (!result.success) {
+        // Only show error if request failed (user already navigated away)
+        console.error('❌ Approval failed (background):', result.error);
+        toast.error('Failed to approve request. Please check dashboard.', {
+          duration: 4000,
+        });
       } else {
-        throw new Error(result.error || 'Failed to approve request');
+        console.log('✅ Approval successful (background) - real-time will update dashboard');
       }
     } catch (error) {
-      console.error('Approval error:', error);
-      setError(error.message);
+      console.error('❌ Approval error (background):', error);
+      toast.error('Network error during approval. Please check dashboard.', {
+        duration: 4000,
+      });
     } finally {
       setApproving(false);
     }
@@ -217,7 +237,23 @@ export default function StudentDetailView() {
 
     setRejecting(true);
     setError('');
+    setShowRejectModal(false);
 
+    // OPTIMISTIC UI: Show success immediately for instant feedback
+    toast.error('🚫 Request rejected! Updating...', {
+      duration: 2000,
+      position: 'top-center',
+      style: {
+        background: '#EF4444',
+        color: '#fff',
+        fontWeight: '600',
+      },
+    });
+
+    // Navigate immediately for perceived <100ms response
+    router.push('/staff/dashboard');
+
+    // Send request in background (will complete after navigation)
     try {
       const response = await fetch('/api/staff/action', {
         method: 'PUT',
@@ -235,19 +271,22 @@ export default function StudentDetailView() {
 
       const result = await response.json();
 
-      if (result.success) {
-        console.log('✅ Rejection successful - real-time will handle the update');
-        // Navigate back immediately - real-time subscription will update the dashboard
-        router.push('/staff/dashboard');
+      if (!result.success) {
+        // Only show error if request failed (user already navigated away)
+        console.error('❌ Rejection failed (background):', result.error);
+        toast.error('Failed to reject request. Please check dashboard.', {
+          duration: 4000,
+        });
       } else {
-        throw new Error(result.error || 'Failed to reject request');
+        console.log('✅ Rejection successful (background) - real-time will update dashboard');
       }
     } catch (error) {
-      console.error('Rejection error:', error);
-      setError(error.message);
+      console.error('❌ Rejection error (background):', error);
+      toast.error('Network error during rejection. Please check dashboard.', {
+        duration: 4000,
+      });
     } finally {
       setRejecting(false);
-      setShowRejectModal(false);
       setRejectionReason('');
     }
   };
@@ -521,13 +560,13 @@ export default function StudentDetailView() {
                 <button
                   onClick={() => {
                     setShowRejectModal(true);
-                    // Scroll to action buttons smoothly
+                    // Scroll modal into view after it appears
                     setTimeout(() => {
-                      document.getElementById('action-buttons')?.scrollIntoView({
+                      document.getElementById('reject-modal')?.scrollIntoView({
                         behavior: 'smooth',
                         block: 'center'
                       });
-                    }, 100);
+                    }, 150);
                   }}
                   disabled={rejecting}
                   className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -539,8 +578,8 @@ export default function StudentDetailView() {
 
             {/* Approve Confirmation Modal */}
             {showApproveModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                <div className="w-full max-w-md">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                <div id="approve-modal" className="w-full max-w-md my-8 animate-scale-in">
                   <GlassCard>
                     <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>
@@ -578,8 +617,8 @@ export default function StudentDetailView() {
 
             {/* Reject Modal */}
             {showRejectModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                <div className="w-full max-w-md">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                <div id="reject-modal" className="w-full max-w-md my-8 animate-scale-in">
                   <GlassCard>
                     <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>

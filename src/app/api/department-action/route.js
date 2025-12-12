@@ -133,23 +133,26 @@ export async function POST(request) {
 
         if (error) throw error;
 
-        // STEP 2: Fetch student details for email notification
-        const { data: formData, error: formError } = await supabaseAdmin
-            .from('no_dues_forms')
-            .select('student_name, registration_no, personal_email, status')
-            .eq('id', form_id)
-            .single();
+        // STEP 2 & 3: Parallelize database queries for faster response (saves ~250ms)
+        const [
+            { data: formData, error: formError },
+            { data: deptData }
+        ] = await Promise.all([
+            supabaseAdmin
+                .from('no_dues_forms')
+                .select('student_name, registration_no, personal_email, status')
+                .eq('id', form_id)
+                .single(),
+            supabaseAdmin
+                .from('config_departments')
+                .select('display_name')
+                .eq('name', department)
+                .single()
+        ]);
 
         if (formError) {
             console.error('❌ Failed to fetch form data:', formError);
         }
-
-        // STEP 3: Get department display name
-        const { data: deptData } = await supabaseAdmin
-            .from('config_departments')
-            .select('display_name')
-            .eq('name', department)
-            .single();
 
         const departmentDisplayName = deptData?.display_name || department;
 
