@@ -178,11 +178,29 @@ export default function SubmitForm() {
         setConvocationValid(true);
         setConvocationData(result.student);
         
-        // ==================== AUTO-FILL FORM DATA ====================
-        // Auto-fill student name and admission year
+        // ==================== AUTO-FILL FORM DATA WITH SANITIZATION ====================
+        // Sanitize and validate data before setting state
+        const sanitizedName = result.student.name ? result.student.name.trim() : formData.student_name;
+        const sanitizedYear = result.student.admission_year
+          ? result.student.admission_year.toString().trim().replace(/\D/g, '') // Remove non-digits and whitespace
+          : formData.admission_year;
+
+        // Validate sanitized year format BEFORE setting state
+        if (sanitizedYear && !/^\d{4}$/.test(sanitizedYear)) {
+          logger.warn('Invalid admission year from convocation', {
+            original: result.student.admission_year,
+            sanitized: sanitizedYear,
+            registration_no
+          });
+          setConvocationError('Invalid admission year format in convocation data. Please enter year manually.');
+          setConvocationValid(false);
+          setValidatingConvocation(false);
+          return;
+        }
+
         const updates = {
-          student_name: result.student.name || formData.student_name,
-          admission_year: result.student.admission_year || formData.admission_year
+          student_name: sanitizedName,
+          admission_year: sanitizedYear
         };
         
         // Auto-fill school dropdown using fuzzy matching
@@ -226,7 +244,12 @@ export default function SubmitForm() {
         
         logger.success('Convocation validation successful - form auto-filled', {
           registration_no,
-          autoFilled: Object.keys(updates)
+          autoFilled: Object.keys(updates),
+          sanitizedData: {
+            name: sanitizedName,
+            year: sanitizedYear,
+            school: updates.school || 'not matched'
+          }
         });
       } else {
         setConvocationValid(false);
