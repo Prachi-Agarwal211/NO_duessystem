@@ -12,6 +12,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import Logo from '@/components/ui/Logo';
 import StatsCard from '@/components/staff/StatsCard';
+import TableSkeleton from '@/components/ui/TableSkeleton';
+import CardSkeleton from '@/components/ui/CardSkeleton';
+import FilterPills from '@/components/ui/FilterPills';
 import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -280,7 +283,7 @@ function StaffDashboardContent() {
                 <button
                   onClick={refreshData}
                   disabled={refreshing}
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
                     isDark
                       ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                       : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
@@ -299,7 +302,7 @@ function StaffDashboardContent() {
                     (activeTab === 'rejected' && rejectedForms.length === 0) ||
                     (activeTab === 'history' && actionHistory.length === 0)
                   }
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
                     isDark
                       ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30'
                       : 'bg-green-50 hover:bg-green-100 text-green-600 border border-green-200'
@@ -314,7 +317,7 @@ function StaffDashboardContent() {
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
                     isDark
                       ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
                       : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
@@ -328,7 +331,11 @@ function StaffDashboardContent() {
             </div>
 
             {/* Statistics Cards - Clickable with Smooth Scroll Animation */}
-            {stats && (
+            {statsLoading ? (
+              <div className="mb-8">
+                <CardSkeleton count={4} />
+              </div>
+            ) : stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div
                   onClick={() => {
@@ -497,12 +504,22 @@ function StaffDashboardContent() {
             {/* Pending Requests Tab */}
             {activeTab === 'pending' && (
               <>
-                <div className="mb-6">
+                <div className="mb-6 space-y-4">
                   <SearchBar
                     value={searchTerm}
                     onChange={setSearchTerm}
                     placeholder="Search by name or registration number..."
                   />
+                  
+                  {/* Active Filter Pills */}
+                  {searchTerm && (
+                    <FilterPills
+                      filters={{ search: searchTerm }}
+                      onRemoveFilter={() => setSearchTerm('')}
+                      onClearAll={() => setSearchTerm('')}
+                      isDark={isDark}
+                    />
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -512,7 +529,9 @@ function StaffDashboardContent() {
                     Pending Applications
                   </h2>
 
-                  {requests.length > 0 ? (
+                  {loading ? (
+                    <TableSkeleton rows={5} columns={5} />
+                  ) : requests.length > 0 ? (
                     <DataTable
                       headers={tableHeaders}
                       data={tableData}
@@ -547,9 +566,7 @@ function StaffDashboardContent() {
                 </h2>
 
                 {rejectedLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingSpinner />
-                  </div>
+                  <TableSkeleton rows={5} columns={5} />
                 ) : rejectedForms.length > 0 ? (
                   <>
                     <div className={`mb-4 p-4 rounded-lg border transition-colors duration-700 ${
@@ -602,9 +619,7 @@ function StaffDashboardContent() {
                 </h2>
 
                 {historyLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingSpinner />
-                  </div>
+                  <TableSkeleton rows={5} columns={5} />
                 ) : actionHistory.length > 0 ? (
                   <DataTable
                     headers={historyHeaders}

@@ -3,6 +3,7 @@
 import React from 'react';
 import GlassCard from '@/components/ui/GlassCard';
 import { useTheme } from '@/contexts/ThemeContext';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 /**
  * StatsCard Component - Displays key performance metrics
@@ -31,7 +32,15 @@ function StatsCard({ title, value, change, trend, color }) {
           <p className={`text-2xl font-bold mt-1 ${
             isDark ? 'text-white' : 'text-ink-black'
           }`}>
-            {value}
+            {typeof value === 'number' ? (
+              <AnimatedCounter
+                value={value}
+                duration={1.5}
+                delay={0.2}
+              />
+            ) : (
+              value
+            )}
           </p>
         </div>
 

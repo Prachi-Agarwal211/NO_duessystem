@@ -135,7 +135,7 @@ function CheckStatusContent() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             onClick={() => router.push('/')}
-            className={`interactive mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md
+            className={`interactive mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md active:scale-95
               ${isDark
                 ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
                 : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
@@ -265,7 +265,7 @@ function CheckStatusContent() {
                     onClick={handleReset}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700"
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700 active:scale-95"
                   >
                     Check Another
                   </motion.button>

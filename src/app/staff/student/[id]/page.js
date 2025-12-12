@@ -552,7 +552,7 @@ export default function StudentDetailView() {
                 <button
                   onClick={handleApproveClick}
                   disabled={approving}
-                  className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {approving ? 'Approving...' : 'Approve Request'}
                 </button>
@@ -569,7 +569,7 @@ export default function StudentDetailView() {
                     }, 150);
                   }}
                   disabled={rejecting}
-                  className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {rejecting ? 'Rejecting...' : 'Reject Request'}
                 </button>
@@ -595,7 +595,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={() => setShowApproveModal(false)}
                         disabled={approving}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${isDark
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 active:scale-95 ${isDark
                           ? 'bg-gray-700 hover:bg-gray-600 text-white'
                           : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -605,7 +605,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={handleApprove}
                         disabled={approving}
-                        className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {approving ? 'Approving...' : 'Confirm Approve'}
                       </button>
@@ -649,7 +649,7 @@ export default function StudentDetailView() {
                           setShowRejectModal(false);
                           setRejectionReason('');
                         }}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 ${isDark
+                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 active:scale-95 ${isDark
                           ? 'bg-gray-700 hover:bg-gray-600 text-white'
                           : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
                           }`}
@@ -659,7 +659,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={handleReject}
                         disabled={!rejectionReason.trim() || rejecting}
-                        className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-medium text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {rejecting ? 'Rejecting...' : 'Confirm Reject'}
                       </button>

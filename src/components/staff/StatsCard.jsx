@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import AnimatedCounter from '@/components/ui/AnimatedCounter';
 
 function StatsCard({ title, value, subtitle, icon: Icon, color = 'blue', loading = false }) {
   const { theme } = useTheme();
@@ -61,7 +62,15 @@ function StatsCard({ title, value, subtitle, icon: Icon, color = 'blue', loading
           isDark ? 'text-white' : 'text-ink-black'
         }`}
       >
-        {value}
+        {typeof value === 'number' ? (
+          <AnimatedCounter
+            value={value}
+            duration={1.5}
+            delay={0.2}
+          />
+        ) : (
+          value
+        )}
       </div>
       
       {subtitle && (

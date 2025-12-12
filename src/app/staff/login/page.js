@@ -4,20 +4,24 @@ export const dynamic = 'force-dynamic';
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Logo from '@/components/ui/Logo';
+import ForgotPasswordFlow from '@/components/staff/ForgotPasswordFlow';
 
 function StaffLoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signIn } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -32,43 +36,11 @@ function StaffLoginContent() {
         throw new Error('Email and password are required');
       }
 
-      // Attempt login
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user || !authData.session) {
-        throw new Error('Login failed. Please try again.');
-      }
-
-      // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Verify user has staff role (department or admin)
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role, full_name, department_name')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        console.error('Auth data:', authData);
-        throw new Error(`Failed to load user profile: ${profileError.message || profileError.code || 'Unknown error'}`);
-      }
-
-      if (!profile || (profile.role !== 'department' && profile.role !== 'admin')) {
-        // Sign out the user since they're not authorized
-        await supabase.auth.signOut();
-        throw new Error('Access denied. Only department staff and administrators can log in here.');
-      }
+      // Sign in using AuthContext
+      const result = await signIn(email, password, rememberMe);
 
       // Success! Redirect based on role
-      const redirect = searchParams.get('redirect') ||
-        (profile.role === 'admin' ? '/admin' : '/staff/dashboard');
+      const redirect = searchParams.get('redirect') || result.redirectTo;
       router.push(redirect);
     } catch (err) {
       console.error('Login error:', err);
@@ -144,6 +116,40 @@ function StaffLoginContent() {
                 />
               </div>
 
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                  className={`h-4 w-4 rounded border transition-colors duration-300 focus:ring-2 focus:ring-jecrc-red focus:ring-offset-0 ${
+                    isDark
+                      ? 'bg-white/10 border-white/20 text-jecrc-red'
+                      : 'bg-white border-gray-300 text-jecrc-red'
+                  }`}
+                />
+                <label
+                  htmlFor="remember-me"
+                  className={`ml-2 block text-sm cursor-pointer select-none transition-colors duration-700 ${
+                    isDark ? 'text-gray-300' : 'text-gray-700'
+                  }`}
+                >
+                  Remember me for 30 days
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  disabled={loading}
+                  className={`text-sm transition-colors duration-300 hover:underline ${
+                    isDark ? 'text-red-400 hover:text-red-300' : 'text-jecrc-red hover:text-red-700'
+                  }`}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -175,6 +181,16 @@ function StaffLoginContent() {
               <p>Need help? Contact your system administrator</p>
             </div>
           </GlassCard>
+
+          {/* Forgot Password Flow Modal */}
+          <ForgotPasswordFlow
+            isOpen={showForgotPassword}
+            onClose={() => setShowForgotPassword(false)}
+            onSuccess={() => {
+              setError('');
+              // Optionally show a success message
+            }}
+          />
         </div>
       </div>
     </PageWrapper>

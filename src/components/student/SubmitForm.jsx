@@ -657,7 +657,7 @@ export default function SubmitForm() {
             type="button"
             onClick={() => validateConvocation(formData.registration_no)}
             disabled={validatingConvocation || !formData.registration_no}
-            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap
+            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95
               ${isDark
                 ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
                 : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
@@ -678,7 +678,7 @@ export default function SubmitForm() {
             type="button"
             onClick={checkExistingForm}
             disabled={checking || !formData.registration_no}
-            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap
+            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95
               ${isDark
                 ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                 : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'

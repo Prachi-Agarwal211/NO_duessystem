@@ -18,6 +18,7 @@ import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
 import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
+import FilterPills from '@/components/ui/FilterPills';
 import { LogOut, Shield, RefreshCw, GraduationCap } from 'lucide-react';
 
 // ✅ PERFORMANCE FIX #1: Debounce hook to prevent API spam while typing
@@ -277,14 +278,17 @@ export default function AdminDashboard() {
 
       {activeTab === 'dashboard' ? (
         <div className="space-y-8 animate-fade-in">
-          {/* Stats Grid - Clickable Cards */}
+          {/* Stats Grid - Clickable Cards with Smooth Scroll Animation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
               onClick={() => {
                 setStatusFilter('');
-                scrollToTable();
+                // Smooth scroll to table after filter update
+                setTimeout(() => {
+                  scrollToTable();
+                }, 100);
               }}
-              className="cursor-pointer"
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
               title="Click to view all requests"
             >
               <StatsCard
@@ -299,9 +303,12 @@ export default function AdminDashboard() {
             <div
               onClick={() => {
                 setStatusFilter('completed');
-                scrollToTable();
+                // Smooth scroll to table after filter update
+                setTimeout(() => {
+                  scrollToTable();
+                }, 100);
               }}
-              className="cursor-pointer"
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
               title="Click to view completed requests"
             >
               <StatsCard
@@ -316,9 +323,12 @@ export default function AdminDashboard() {
             <div
               onClick={() => {
                 setStatusFilter('pending');
-                scrollToTable();
+                // Smooth scroll to table after filter update
+                setTimeout(() => {
+                  scrollToTable();
+                }, 100);
               }}
-              className="cursor-pointer"
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
               title="Click to view pending requests"
             >
               <StatsCard
@@ -333,9 +343,12 @@ export default function AdminDashboard() {
             <div
               onClick={() => {
                 setStatusFilter('rejected');
-                scrollToTable();
+                // Smooth scroll to table after filter update
+                setTimeout(() => {
+                  scrollToTable();
+                }, 100);
               }}
-              className="cursor-pointer"
+              className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
               title="Click to view rejected requests"
             >
               <StatsCard
@@ -357,6 +370,26 @@ export default function AdminDashboard() {
               <RequestTrendChart userId={userId} lastUpdate={lastUpdate} />
             </GlassCard>
           </div>
+
+          {/* Active Filter Pills */}
+          <FilterPills
+            filters={{
+              status: statusFilter,
+              search: searchTerm,
+              department: departmentFilter
+            }}
+            onRemoveFilter={(filterKey) => {
+              if (filterKey === 'status') setStatusFilter('');
+              if (filterKey === 'search') setSearchTerm('');
+              if (filterKey === 'department') setDepartmentFilter('');
+            }}
+            onClearAll={() => {
+              setStatusFilter('');
+              setSearchTerm('');
+              setDepartmentFilter('');
+            }}
+            isDark={isDark}
+          />
 
           {/* Filter & Actions Bar */}
           <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10">
@@ -402,7 +435,7 @@ export default function AdminDashboard() {
                   exportStatsToCSV(stats);
                   toast.success("Stats exported successfully");
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-95"
               >
                 Export Stats
               </button>
@@ -411,7 +444,7 @@ export default function AdminDashboard() {
                   exportApplicationsToCSV(applications);
                   toast.success("Data exported successfully");
                 }}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all duration-200 active:scale-95"
               >
                 Export Data
               </button>
