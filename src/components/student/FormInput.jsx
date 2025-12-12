@@ -32,19 +32,18 @@ export default function FormInput({
   `;
 
   const inputClasses = `
-    peer w-full px-4 pt-6 pb-2 bg-transparent outline-none border-none
+    peer w-full px-4 pt-7 pb-2 bg-transparent outline-none border-none
     text-gray-900 dark:text-white placeholder-transparent
     disabled:cursor-not-allowed
   `;
 
-  // Label logic:
-  // If value is present or input is focused, label floats to top.
-  // Otherwise, it sits in the middle.
+  // Label logic: Fixed positioning to prevent overlap
+  // Label always stays at top when field has value or is focused
   const labelClasses = `
-    absolute left-4 transition-all duration-300 pointer-events-none origin-top-left
-    ${value
-      ? 'top-1 text-xs text-jecrc-red font-medium'
-      : 'top-4 text-base text-gray-500 dark:text-gray-400 peer-focus:top-1 peer-focus:text-xs peer-focus:text-jecrc-red peer-placeholder-shown:top-4 peer-placeholder-shown:text-base'
+    absolute left-4 top-1.5 text-xs transition-all duration-300 pointer-events-none
+    ${value || value === 0
+      ? 'text-jecrc-red font-medium'
+      : 'text-gray-500 dark:text-gray-400 peer-focus:text-jecrc-red'
     }
   `;
 

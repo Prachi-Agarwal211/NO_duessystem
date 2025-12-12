@@ -84,8 +84,8 @@ export default function Home() {
             />
             <ActionCard
               index={2}
-              title="Upload Manual Completed No Dues"
-              subtitle="Already completed offline? Upload your manually completed no-dues form here."
+              title="Upload Completed Form"
+              subtitle="Already completed your no-dues offline? Upload your manually signed form here."
               icon={Upload}
               onClick={() => router.push('/student/manual-entry')}
             />

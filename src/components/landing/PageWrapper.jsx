@@ -1,6 +1,5 @@
 'use client';
 
-import CustomCursor from './CustomCursor';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -13,7 +12,6 @@ export default function PageWrapper({ children, showThemeToggle = true }) {
 
   return (
     <>
-      <CustomCursor theme={currentTheme} />
       {showThemeToggle && <ThemeToggle />}
       
       <div className={`relative transition-colors duration-700 min-h-screen

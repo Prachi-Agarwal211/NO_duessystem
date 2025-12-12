@@ -4,7 +4,6 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
 import { APP_URLS } from '@/lib/urlHelper';
 
 const supabaseAdmin = createClient(
@@ -33,19 +32,6 @@ export async function PUT(request) {
 
     const body = await request.json();
     const { registration_no, student_reply_message, updated_form_data } = body;
-
-    // Input validation for reapplication data
-    const validation = await validateRequest(request, VALIDATION_SCHEMAS.REAPPLY);
-    if (!validation.isValid) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation failed',
-          errors: validation.errors
-        },
-        { status: 400 }
-      );
-    }
 
     // ==================== VALIDATION ====================
     if (!registration_no?.trim()) {

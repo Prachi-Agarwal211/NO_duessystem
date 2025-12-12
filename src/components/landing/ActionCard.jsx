@@ -37,9 +37,9 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       onClick={onClick}
       className={`
         interactive group relative
-        w-full h-[240px] sm:h-[260px] md:h-[280px]
+        w-full min-h-[280px] sm:min-h-[300px] md:min-h-[320px]
         overflow-hidden text-left
-        p-6 sm:p-7 md:p-8
+        p-7 sm:p-8 md:p-9
         flex flex-col justify-between
         transition-all duration-300 ease-out
         border backdrop-blur-md rounded-xl
@@ -130,7 +130,7 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         </h2>
         
         <p
-          className={`font-sans text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300 ${
+          className={`font-sans text-sm sm:text-base font-medium leading-relaxed transition-colors duration-300 ${
             isDark ? 'text-gray-300 group-hover:text-gray-200' : 'text-gray-700 group-hover:text-gray-800'
           }`}
           style={isDark ? {

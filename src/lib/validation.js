@@ -430,7 +430,6 @@ export const VALIDATION_SCHEMAS = {
   },
 
   REAPPLY: {
-    formId: { type: 'uuid', required: true, label: 'Form ID' },
     registration_no: { type: 'registration_no', required: true, label: 'Registration Number' },
     student_reply_message: { type: 'message', required: true, label: 'Reply Message', minLength: 20, maxLength: 1000 }
   }

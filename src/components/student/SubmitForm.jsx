@@ -11,8 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useFormConfig } from '@/hooks/useFormConfig';
 import { DropdownWithErrorBoundary } from '@/components/ui/DropdownErrorBoundary';
 import { createLogger } from '@/lib/errorLogger';
-import FireNebulaBackground from '@/components/ui/FireNebulaBackground';
-import PearlGradientOverlay from '@/components/ui/PearlGradientOverlay';
+// Removed: FireNebulaBackground and PearlGradientOverlay - animations too intense
 
 const logger = createLogger('SubmitForm');
 
@@ -593,15 +592,13 @@ export default function SubmitForm() {
   }
 
   return (
-    <FireNebulaBackground intensity="low">
-      <PearlGradientOverlay intensity="light">
-        <motion.form
-          onSubmit={handleSubmit}
-          className="space-y-6 font-futuristic"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-6 font-futuristic"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -944,9 +941,7 @@ export default function SubmitForm() {
         ) : (
           'Submit Form'
         )}
-        </motion.button>
-      </motion.form>
-    </PearlGradientOverlay>
-  </FireNebulaBackground>
+      </motion.button>
+    </motion.form>
   );
 }
