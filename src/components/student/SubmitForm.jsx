@@ -219,25 +219,33 @@ export default function SubmitForm() {
     setError('');
 
     try {
-      const { data, error: queryError } = await supabase
-        .from('no_dues_forms')
-        .select('id')
-        .eq('registration_no', formData.registration_no)
-        .single();
+      // Use API endpoint instead of direct Supabase client query
+      // This avoids RLS issues and works in all environments
+      const response = await fetch(`/api/student/can-edit?registration_number=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
+      
+      const result = await response.json();
 
-      if (queryError && queryError.code !== 'PGRST116') {
-        throw queryError;
+      if (response.status === 404 || result.error === 'Form not found') {
+        // No form exists - user can proceed
+        setError('');
+        alert('✅ No existing form found. You can proceed with submission.');
+        return;
       }
 
-      if (data) {
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to check form status');
+      }
+
+      // Form exists
+      if (result.success && result.data) {
         setError('A form already exists for this registration number. Redirecting to status page...');
         setTimeout(() => {
-          router.push(`/student/check-status?reg=${formData.registration_no}`);
+          router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
         }, 2000);
       }
     } catch (err) {
       console.error('Error checking form:', err);
-      setError('Failed to check existing form');
+      setError(err.message || 'Failed to check existing form');
     } finally {
       setChecking(false);
     }
