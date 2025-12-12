@@ -587,102 +587,126 @@ export default function SubmitForm() {
         </motion.div>
       )}
 
-      {/* Registration Number with Check Button */}
+      {/* Registration Number with Check Button AND Fetch Details Button */}
       <motion.div
-        className="flex gap-2"
+        className="space-y-2"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 100 }}
       >
-        <div className="flex-1 relative">
-          <FormInput
-            label="Registration Number"
-            name="registration_no"
-            value={formData.registration_no}
-            onChange={handleInputChange}
-            onBlur={handleRegistrationBlur}
-            required
-            placeholder="e.g., 22BCAN001"
-            disabled={loading}
-          />
-          
-          {/* Convocation Validation Status */}
-          {validatingConvocation && (
-            <div className="absolute right-3 top-11 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-              <span className="text-xs text-blue-500">Validating...</span>
-            </div>
-          )}
-          
-          {!validatingConvocation && convocationValid === true && (
-            <div className="absolute right-3 top-11 flex items-center gap-2">
-              <Check className="w-5 h-5 text-green-500" />
-              <span className="text-xs text-green-500">Eligible for convocation</span>
-            </div>
-          )}
-          
-          {!validatingConvocation && convocationValid === false && (
-            <div className="absolute right-3 top-11 flex items-center gap-2">
-              <X className="w-5 h-5 text-red-500" />
-              <span className="text-xs text-red-500">Not eligible</span>
-            </div>
-          )}
-          
-          {/* Show convocation details when validated */}
-          {convocationData && convocationValid && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mt-2 p-3 rounded-lg text-sm transition-all duration-700
-                ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
-            >
-              <div className={`font-medium mb-1 transition-colors duration-700
-                ${isDark ? 'text-green-400' : 'text-green-700'}`}>
-                ✓ Convocation Eligible
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <FormInput
+              label="Registration Number"
+              name="registration_no"
+              value={formData.registration_no}
+              onChange={handleInputChange}
+              required
+              placeholder="e.g., 22BCAN001"
+              disabled={loading}
+            />
+            
+            {/* Convocation Validation Status */}
+            {validatingConvocation && (
+              <div className="absolute right-3 top-11 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                <span className="text-xs text-blue-500">Validating...</span>
               </div>
-              <div className={`space-y-1 transition-colors duration-700
-                ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
-                <div><strong>Name:</strong> {convocationData.name}</div>
-                <div><strong>School:</strong> {convocationData.school}</div>
-                <div><strong>Year:</strong> {convocationData.admission_year}</div>
+            )}
+            
+            {!validatingConvocation && convocationValid === true && (
+              <div className="absolute right-3 top-11 flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                <span className="text-xs text-green-500">Eligible</span>
               </div>
-            </motion.div>
-          )}
+            )}
+            
+            {!validatingConvocation && convocationValid === false && (
+              <div className="absolute right-3 top-11 flex items-center gap-2">
+                <X className="w-5 h-5 text-red-500" />
+                <span className="text-xs text-red-500">Not eligible</span>
+              </div>
+            )}
+          </div>
           
-          {/* Show error message for ineligible students */}
-          {convocationError && convocationValid === false && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mt-2 p-3 rounded-lg text-sm transition-all duration-700
-                ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}
-            >
-              <div className="text-red-500 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>{convocationError}</span>
-              </div>
-            </motion.div>
-          )}
+          {/* Fetch Details Button - NEW! */}
+          <button
+            type="button"
+            onClick={() => validateConvocation(formData.registration_no)}
+            disabled={validatingConvocation || !formData.registration_no}
+            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap
+              ${isDark
+                ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
+                : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {validatingConvocation ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Fetching...
+              </>
+            ) : (
+              'Fetch Details'
+            )}
+          </button>
+          
+          {/* Check Existing Form Button */}
+          <button
+            type="button"
+            onClick={checkExistingForm}
+            disabled={checking || !formData.registration_no}
+            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap
+              ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {checking ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              'Check'
+            )}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={checkExistingForm}
-          disabled={checking || !formData.registration_no}
-          className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2
-            ${isDark
-              ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-              : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {checking ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Checking...
-            </>
-          ) : (
-            'Check'
-          )}
-        </button>
+        
+        {/* Show convocation details when validated */}
+        {convocationData && convocationValid && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`p-3 rounded-lg text-sm transition-all duration-700
+              ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
+          >
+            <div className={`font-medium mb-1 transition-colors duration-700
+              ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+              ✓ Convocation Eligible - Details Fetched
+            </div>
+            <div className={`space-y-1 transition-colors duration-700
+              ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
+              <div><strong>Name:</strong> {convocationData.name}</div>
+              <div><strong>School:</strong> {convocationData.school}</div>
+              <div><strong>Year:</strong> {convocationData.admission_year}</div>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Show error message for ineligible students */}
+        {convocationError && convocationValid === false && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`p-3 rounded-lg text-sm transition-all duration-700
+              ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}
+          >
+            <div className="text-red-500 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{convocationError}</span>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       <motion.div
