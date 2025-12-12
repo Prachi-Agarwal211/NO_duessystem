@@ -1,0 +1,71 @@
+/* Futuristic Font System - Inspired by "CREATIVE" */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&display=swap');
+
+/* Dark mode futuristic fonts */
+.dark {
+  --font-primary: 'Orbitron', monospace;
+  --font-secondary: 'Rajdhani', sans-serif;
+  --font-accent: 'Teko', sans-serif;
+}
+
+/* Light mode keeps existing fonts */
+.light {
+  --font-primary: 'Inter', system-ui, sans-serif;
+  --font-secondary: 'Inter', system-ui, sans-serif;
+  --font-accent: 'Inter', system-ui, sans-serif;
+}
+
+/* Futuristic text utilities */
+.dark .font-futuristic {
+  font-family: var(--font-primary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dark .font-futuristic-accent {
+  font-family: var(--font-accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.dark .font-futuristic-heading {
+  font-family: var(--font-secondary);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Stylized 'A' like in CREATIVE image */
+.dark .font-stylized {
+  font-family: var(--font-primary);
+  letter-spacing: 0.1em;
+}
+
+.dark .font-stylized::first-letter {
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+/* Enhanced text effects for dark mode */
+.dark .text-glow {
+  text-shadow: 0 0 20px rgba(196, 30, 58, 0.5);
+}
+
+.dark .text-neon {
+  text-shadow: 
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(196, 30, 58, 0.6),
+    0 0 30px rgba(196, 30, 58, 0.4);
+}
+
+/* Light mode utilities - no transform needed */
+.light .font-futuristic,
+.light .font-futuristic-accent,
+.light .font-futuristic-heading {
+  font-family: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}

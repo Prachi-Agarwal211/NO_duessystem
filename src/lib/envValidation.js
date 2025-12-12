@@ -9,12 +9,16 @@ const REQUIRED_ENV_VARS = [
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
     'JWT_SECRET',
-    'RESEND_API_KEY'
+    'SMTP_USER',
+    'SMTP_PASS'
 ];
 
 const OPTIONAL_ENV_VARS = [
     'NEXT_PUBLIC_BASE_URL',
-    'RESEND_FROM'
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_SECURE',
+    'SMTP_FROM'
     // REMOVED: Department emails - Not used (staff accounts handle emails via database)
 ];
 
@@ -159,34 +163,47 @@ export const validateSupabaseConfig = () => {
 };
 
 /**
- * Validates email service configuration
+ * Validates email service configuration (SMTP/Nodemailer)
  * @returns {Object} - Validation result for email config
  */
 export const validateEmailConfig = () => {
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = process.env.SMTP_PORT || '587';
+    const smtpFrom = process.env.SMTP_FROM;
 
     const issues = [];
 
-    if (!apiKey || apiKey.length < 20) {
-        issues.push('RESEND_API_KEY must be a valid Resend API key');
+    if (!smtpUser || !smtpUser.includes('@')) {
+        issues.push('SMTP_USER must be a valid email address');
     }
 
-    if (fromEmail && !fromEmail.includes('@')) {
-        issues.push('RESEND_FROM must be a valid email address');
+    if (!smtpPass || smtpPass.length < 8) {
+        issues.push('SMTP_PASS must be configured (minimum 8 characters)');
     }
 
-    // Check for default/test values
-    if (apiKey === 're_your_resend_api_key_here') {
-        issues.push('RESEND_API_KEY appears to be a default value');
+    if (smtpFrom && !smtpFrom.includes('@')) {
+        issues.push('SMTP_FROM must be a valid email address');
+    }
+
+    // Check for default/placeholder values
+    if (smtpUser && smtpUser.includes('your-email')) {
+        issues.push('SMTP_USER appears to be a placeholder value');
+    }
+
+    if (smtpPass && (smtpPass === 'your-password' || smtpPass === 'your-app-password')) {
+        issues.push('SMTP_PASS appears to be a placeholder value');
     }
 
     return {
         isValid: issues.length === 0,
         issues,
-        apiKeyConfigured: !!apiKey,
-        fromEmailConfigured: !!fromEmail,
-        fromEmail: fromEmail || 'noreply@jecrc.edu.in'
+        smtpUserConfigured: !!smtpUser,
+        smtpPassConfigured: !!smtpPass,
+        smtpHost: smtpHost,
+        smtpPort: smtpPort,
+        fromEmail: smtpFrom || 'noreply@jecrc.edu.in'
     };
 };
 
@@ -295,8 +312,11 @@ export const getEnvConfig = () => {
             length: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
         },
         email: {
-            apiKey: process.env.RESEND_API_KEY ? '✅ Configured' : '❌ Missing',
-            from: process.env.RESEND_FROM || 'default'
+            smtpUser: process.env.SMTP_USER ? '✅ Configured' : '❌ Missing',
+            smtpPass: process.env.SMTP_PASS ? '✅ Configured' : '❌ Missing',
+            smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+            smtpPort: process.env.SMTP_PORT || '587',
+            from: process.env.SMTP_FROM || 'noreply@jecrc.edu.in'
         },
         baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
     };

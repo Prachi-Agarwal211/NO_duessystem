@@ -1,5 +1,7 @@
 import "./globals.css";
 import "@/styles/performance-animations.css";
+import "@/styles/fonts.css";
+import "@/styles/animations.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { validateEnvironment } from "@/lib/envValidation";

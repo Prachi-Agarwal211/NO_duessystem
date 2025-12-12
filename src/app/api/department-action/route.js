@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, importJWK } from 'jose';
 import { NextResponse } from 'next/server';
 import { sendStatusUpdateToStudent, sendCertificateReadyNotification } from '@/lib/emailService';
+import { APP_URLS } from '@/lib/urlHelper';
 
 // Initialize Supabase Admin Client to bypass RLS for server-side actions
 const supabaseAdmin = createClient(
@@ -159,8 +160,6 @@ export async function POST(request) {
         // STEP 4: Send email notification to student
         if (formData && formData.personal_email) {
             try {
-                const statusUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/student/check-status?reg=${formData.registration_no}`;
-                
                 await sendStatusUpdateToStudent({
                     studentEmail: formData.personal_email,
                     studentName: formData.student_name,
@@ -168,7 +167,7 @@ export async function POST(request) {
                     departmentName: departmentDisplayName,
                     action: status.toLowerCase(),
                     rejectionReason: status === 'Rejected' ? reason : null,
-                    statusUrl
+                    statusUrl: APP_URLS.studentCheckStatus(formData.registration_no)
                 });
 
                 console.log(`✅ Sent ${status} notification to ${formData.personal_email}`);
@@ -194,13 +193,11 @@ export async function POST(request) {
 
                     // If ALL departments approved, send certificate ready email
                     if (approvedDepts === totalDepts && formData?.personal_email) {
-                        const certificateUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/student/check-status?reg=${formData.registration_no}`;
-                        
                         await sendCertificateReadyNotification({
                             studentEmail: formData.personal_email,
                             studentName: formData.student_name,
                             registrationNo: formData.registration_no,
-                            certificateUrl
+                            certificateUrl: APP_URLS.studentCheckStatus(formData.registration_no)
                         });
 
                         console.log(`🎓 Certificate ready email sent to ${formData.personal_email}`);

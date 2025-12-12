@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { notifyAllDepartments } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { APP_URLS } from '@/lib/urlHelper';
 
 // Create Supabase admin client for server-side operations
 const supabaseAdmin = createClient(
@@ -450,8 +451,6 @@ export async function POST(request) {
         });
 
         if (staffToNotify.length > 0) {
-          const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`;
-          
           const emailResults = await notifyAllDepartments({
             staffMembers: staffToNotify.map(staff => ({
               email: staff.email,
@@ -461,7 +460,7 @@ export async function POST(request) {
             studentName: form.student_name,
             registrationNo: form.registration_no,
             formId: form.id,
-            dashboardUrl
+            dashboardUrl: APP_URLS.staffLogin()
           });
 
           console.log(`📧 Notified ${staffToNotify.length} staff members (filtered from ${allStaff.length} total)`);
@@ -470,11 +469,10 @@ export async function POST(request) {
           // Trigger queue processing immediately after sending emails
           // This ensures any queued emails are sent without waiting for cron
           try {
-            const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
             console.log('🔄 Triggering email queue processor...');
             
             // Fire and forget - don't wait for response
-            fetch(queueUrl, {
+            fetch(APP_URLS.emailQueue(), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' }
             }).catch(err => {

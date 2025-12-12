@@ -146,10 +146,11 @@ export async function POST(request) {
       );
     }
 
-    // Verify reset token matches
+    // Verify reset token matches (the token generated in verify-otp step)
+    // Note: At this stage, otp_code contains the resetToken, not the original OTP
     if (profile.otp_code !== resetToken) {
       return NextResponse.json(
-        { success: false, error: 'Invalid reset token' },
+        { success: false, error: 'Invalid or expired reset token. Please restart the password reset process.' },
         { status: 400 }
       );
     }

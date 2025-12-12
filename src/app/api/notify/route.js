@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendDepartmentNotification } from '@/lib/emailService';
 import { createClient } from '@supabase/supabase-js';
+import { APP_URLS } from '@/lib/urlHelper';
 
 /**
  * POST /api/notify
@@ -102,15 +103,13 @@ export async function POST(request) {
 
     // ==================== SEND EMAIL ====================
 
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`;
-
     try {
       const result = await sendDepartmentNotification({
         departmentEmail: toEmail,
         studentName: escapeHtml(student_name),
         registrationNo: escapeHtml(registration_no),
         formId: form_id,
-        dashboardUrl
+        dashboardUrl: APP_URLS.staffLogin()
       });
 
       if (!result.success) {

@@ -1,0 +1,109 @@
+/* Performance optimized animations */
+@keyframes gradient-shift {
+  0%, 100% { transform: translateX(0%) translateY(0%) scale(1); }
+  25% { transform: translateX(5%) translateY(-2%) scale(1.02); }
+  50% { transform: translateX(-3%) translateY(3%) scale(0.98); }
+  75% { transform: translateX(2%) translateY(-1%) scale(1.01); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 8s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+/* Performance: GPU acceleration */
+.transform-gpu {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimized text rendering */
+.dark .font-futuristic {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-shift,
+  .animate-spin-slow,
+  .animate-pulse-slow {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .transform-gpu {
+    transform: none !important;
+    will-change: auto !important;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .fire-nebula-canvas {
+    opacity: 0.5 !important;
+  }
+  
+  .animate-gradient-shift {
+    animation-duration: 12s !important;
+  }
+}
+
+/* Button press animation */
+@keyframes button-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-button-press {
+  animation: button-press 0.3s ease-in-out;
+}
+
+/* Smooth hover effects */
+.smooth-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-hover:hover {
+  transform: translateY(-2px);
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}

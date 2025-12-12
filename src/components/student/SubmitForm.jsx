@@ -11,6 +11,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { useFormConfig } from '@/hooks/useFormConfig';
 import { DropdownWithErrorBoundary } from '@/components/ui/DropdownErrorBoundary';
 import { createLogger } from '@/lib/errorLogger';
+import FireNebulaBackground from '@/components/ui/FireNebulaBackground';
+import PearlGradientOverlay from '@/components/ui/PearlGradientOverlay';
 
 const logger = createLogger('SubmitForm');
 
@@ -591,13 +593,15 @@ export default function SubmitForm() {
   }
 
   return (
-    <motion.form
-      onSubmit={handleSubmit}
-      className="space-y-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <FireNebulaBackground intensity="low">
+      <PearlGradientOverlay intensity="light">
+        <motion.form
+          onSubmit={handleSubmit}
+          className="space-y-6 font-futuristic"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -940,7 +944,9 @@ export default function SubmitForm() {
         ) : (
           'Submit Form'
         )}
-      </motion.button>
-    </motion.form>
+        </motion.button>
+      </motion.form>
+    </PearlGradientOverlay>
+  </FireNebulaBackground>
   );
 }

@@ -97,9 +97,11 @@ export default function ChangePasswordModal({ isOpen, onClose, userEmail }) {
     try {
       const response = await fetch('/api/staff/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Important: Include cookies for authentication
         body: JSON.stringify({
-          email: userEmail,
           oldPassword: formData.oldPassword,
           newPassword: formData.newPassword,
           confirmPassword: formData.confirmPassword

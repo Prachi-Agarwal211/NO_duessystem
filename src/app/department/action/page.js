@@ -4,6 +4,8 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
@@ -141,45 +143,83 @@ function DepartmentActionContent() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full p-8 text-center">
           {status === 'success' ? (
-            <div>
-              <div className="text-green-500 text-5xl mb-4">✓</div>
-              <h2 className={`text-xl font-bold mb-2 transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
-                Action Completed
-              </h2>
-              <p className={`mb-6 transition-colors duration-700 ${
-                isDark ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                {message}
-              </p>
-              <button
-                onClick={() => router.push('/staff/dashboard')}
-                className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300"
-              >
-                Go to Dashboard
-              </button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+            >
+              <div className="text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.6, type: "spring" }}
+                  className="w-20 h-20 rounded-full bg-gradient-to-tr from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-4"
+                >
+                  <CheckCircle className="w-10 h-10 text-white" />
+                </motion.div>
+                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Action Completed
+                </h2>
+                <p className={`mb-6 transition-colors duration-700 ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  {message}
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => router.push('/staff/dashboard')}
+                  className="px-6 py-3 rounded-xl font-futuristic-accent text-lg
+                           bg-gradient-to-r from-green-500 to-emerald-500
+                           hover:from-green-500/80 hover:to-emerald-500/80
+                           text-white border-2 border-green-500/50
+                           transition-all duration-300 transform"
+                >
+                  Go to Dashboard
+                </motion.button>
+              </div>
+            </motion.div>
           ) : error ? (
-            <div>
-              <div className="text-red-500 text-5xl mb-4">✗</div>
-              <h2 className={`text-xl font-bold mb-2 transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
-                Error
-              </h2>
-              <p className={`mb-6 transition-colors duration-700 ${
-                isDark ? 'text-gray-300' : 'text-gray-600'
-              }`}>
-                {error}
-              </p>
-              <button
-                onClick={() => router.back()}
-                className="px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300"
-              >
-                Go Back
-              </button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+            >
+              <div className="text-center">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.6, type: "spring" }}
+                  className="w-20 h-20 rounded-full bg-gradient-to-tr from-red-400 to-rose-500 flex items-center justify-center mx-auto mb-4"
+                >
+                  <XCircle className="w-10 h-10 text-white" />
+                </motion.div>
+                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-colors duration-700 ${
+                  isDark ? 'text-white' : 'text-ink-black'
+                }`}>
+                  Error
+                </h2>
+                <p className={`mb-6 transition-colors duration-700 ${
+                  isDark ? 'text-gray-300' : 'text-gray-600'
+                }`}>
+                  {error}
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => router.back()}
+                  className="px-6 py-3 rounded-xl font-futuristic-accent text-lg
+                           bg-gradient-to-r from-red-500 to-rose-500
+                           hover:from-red-500/80 hover:to-rose-500/80
+                           text-white border-2 border-red-500/50
+                           transition-all duration-300 transform"
+                >
+                  Go Back
+                </motion.button>
+              </div>
+            </motion.div>
           ) : null}
         </GlassCard>
       </div>

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { validateRequest, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { APP_URLS } from '@/lib/urlHelper';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -299,18 +300,17 @@ export async function PUT(request) {
           registrationNo: form.registration_no,
           studentMessage: student_reply_message.trim(),
           reapplicationNumber: form.reapplication_count + 1,
-          dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/login`,
-          formUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/staff/student/${form.id}`
+          dashboardUrl: APP_URLS.staffLogin(),
+          formUrl: APP_URLS.staffStudentForm(form.id)
         });
 
         console.log(`📧 Reapplication notifications sent to ${staffMembers.length} staff member(s) in rejected departments`);
         
         // ==================== AUTO-PROCESS EMAIL QUEUE ====================
         try {
-          const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
           console.log('🔄 Triggering email queue processor...');
           
-          fetch(queueUrl, {
+          fetch(APP_URLS.emailQueue(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           }).catch(err => console.log('Queue processing will retry later:', err.message));

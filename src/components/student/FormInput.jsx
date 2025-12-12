@@ -22,12 +22,13 @@ export default function FormInput({
   // No border cutting needed. Label floats inside the padding.
 
   const containerClasses = `
-    relative w-full rounded-t-lg overflow-hidden transition-colors duration-300
+    relative w-full rounded-t-lg overflow-hidden transition-all duration-300
     bg-gray-50/50 dark:bg-white/5 border-b-2
     ${error ? 'border-red-500' : 'border-gray-200 dark:border-white/20'}
     focus-within:border-jecrc-red dark:focus-within:border-jecrc-red
     hover:bg-gray-100 dark:hover:bg-white/10
     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+    transform-gpu
   `;
 
   const inputClasses = `

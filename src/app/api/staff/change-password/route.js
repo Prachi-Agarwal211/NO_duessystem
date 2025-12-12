@@ -69,21 +69,49 @@ export async function POST(request) {
       );
     }
 
-    // Get current user session
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
+    // Get current user session from cookies
+    const cookieHeader = request.headers.get('cookie');
+    if (!cookieHeader) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Not authenticated. Please log in again.' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !user) {
+    // Parse Supabase auth token from cookies
+    // Supabase stores the session in cookies with the pattern: sb-<project-ref>-auth-token
+    const authTokenMatch = cookieHeader.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
+    
+    if (!authTokenMatch) {
       return NextResponse.json(
-        { success: false, error: 'Invalid authentication token' },
+        { success: false, error: 'Not authenticated. Please log in again.' },
+        { status: 401 }
+      );
+    }
+
+    let user;
+    try {
+      // Decode the auth token (it's a JSON object with access_token)
+      const authData = JSON.parse(decodeURIComponent(authTokenMatch[1]));
+      const accessToken = authData.access_token || authData;
+      
+      // Verify the token and get user
+      const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(
+        typeof accessToken === 'string' ? accessToken : accessToken.access_token
+      );
+
+      if (authError || !authUser) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid authentication. Please log in again.' },
+          { status: 401 }
+        );
+      }
+
+      user = authUser;
+    } catch (parseError) {
+      console.error('Token parsing error:', parseError);
+      return NextResponse.json(
+        { success: false, error: 'Invalid session format. Please log in again.' },
         { status: 401 }
       );
     }

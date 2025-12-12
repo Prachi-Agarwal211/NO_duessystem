@@ -426,7 +426,7 @@ export const VALIDATION_SCHEMAS = {
     formId: { type: 'uuid', required: true, label: 'Form ID' },
     departmentName: { type: 'string', required: true, label: 'Department', minLength: 2, maxLength: 100 },
     action: { type: 'action', required: true, label: 'Action' },
-    reason: { type: 'message', required: false, label: 'Reason', minLength: 10, maxLength: 500 }
+    reason: { type: 'message', required: false, label: 'Reason', minLength: 1, maxLength: 500 }
   },
 
   REAPPLY: {

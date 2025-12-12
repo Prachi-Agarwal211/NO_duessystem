@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { APP_URLS } from '@/lib/urlHelper';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -178,7 +179,7 @@ export async function PUT(request) {
       // Fire and forget - certificate generation happens in background
       // Use proper error handling with catch to prevent unhandled promise rejections
       fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || 'https://no-duessystem.vercel.app'}/api/certificate/generate`,
+        APP_URLS.certificateGenerateApi(),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -204,38 +205,81 @@ export async function PUT(request) {
         });
     }
 
-    // Send email notification to student
-    // Phase 1: Students have no authentication/profiles, so we can't send email notifications
-    // In future phases, add email field to no_dues_forms table or create student profiles
+    // ==================== SEND EMAIL NOTIFICATION TO STUDENT ====================
+    // Get student email from the form (personal_email is primary, college_email as fallback)
+    const { data: formWithEmail, error: emailFetchError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select('personal_email, college_email, student_name, registration_no')
+      .eq('id', formId)
+      .single();
 
-    // Note: Email notification currently disabled for Phase 1
-    // To enable: Add student_email field to no_dues_forms table
-    // Then uncomment and update the code below:
-
-    /*
-    if (form.student_email) {
+    if (formWithEmail && (formWithEmail.personal_email || formWithEmail.college_email)) {
       try {
         const { sendStatusUpdateToStudent } = await import('@/lib/emailService');
-        await sendStatusUpdateToStudent({
-          studentEmail: form.student_email,
-          studentName: form.student_name,
-          registrationNo: form.registration_no,
+        const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
+        
+        const emailResult = await sendStatusUpdateToStudent({
+          studentEmail: studentEmail,
+          studentName: formWithEmail.student_name,
+          registrationNo: formWithEmail.registration_no,
           departmentName: departmentName,
           action: statusValue,
           rejectionReason: action === 'reject' ? reason : null,
-          statusUrl: `${process.env.NEXT_PUBLIC_APP_URL}/student/check-status?reg=${form.registration_no}`
+          statusUrl: APP_URLS.studentCheckStatus(formWithEmail.registration_no)
         });
-        console.log(`📧 Status update email sent to student: ${form.student_email}`);
+
+        if (emailResult.success) {
+          console.log(`✅ Status update email sent to student: ${studentEmail}`);
+          
+          // Log the email notification
+          try {
+            await supabaseAdmin.rpc('log_email_notification', {
+              p_form_id: formId,
+              p_recipient_email: studentEmail,
+              p_notification_type: 'status_update',
+              p_department_name: departmentName,
+              p_status: 'sent'
+            });
+          } catch (logError) {
+            console.error('Failed to log email notification:', logError);
+          }
+        } else {
+          console.warn(`⚠️ Email ${emailResult.queued ? 'queued' : 'failed'} for student: ${studentEmail}`);
+          
+          // Log the failed/queued email
+          try {
+            await supabaseAdmin.rpc('log_email_notification', {
+              p_form_id: formId,
+              p_recipient_email: studentEmail,
+              p_notification_type: 'status_update',
+              p_department_name: departmentName,
+              p_status: emailResult.queued ? 'queued' : 'failed',
+              p_error_message: emailResult.error
+            });
+          } catch (logError) {
+            console.error('Failed to log email notification:', logError);
+          }
+        }
       } catch (emailError) {
-        console.error('Failed to send email notification to student:', emailError);
+        console.error('❌ Failed to send email notification to student:', emailError);
+        // Log the error
+        try {
+          await supabaseAdmin.rpc('log_email_notification', {
+            p_form_id: formId,
+            p_recipient_email: formWithEmail.personal_email || formWithEmail.college_email,
+            p_notification_type: 'status_update',
+            p_department_name: departmentName,
+            p_status: 'failed',
+            p_error_message: emailError.message
+          });
+        } catch (logError) {
+          console.error('Failed to log email notification:', logError);
+        }
         // Don't fail the request if email fails
       }
     } else {
       console.log('ℹ️ Student email not available - skipping email notification');
     }
-    */
-
-    console.log('ℹ️ Phase 1: Student email notifications disabled (no student_email field)');
 
     return NextResponse.json({
       success: true,
