@@ -48,13 +48,6 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    if (student_reply_message.trim().length < 20) {
-      return NextResponse.json({
-        success: false,
-        error: 'Reply message must be at least 20 characters'
-      }, { status: 400 });
-    }
-
     // ==================== GET CURRENT FORM ====================
     const { data: form, error: formError } = await supabaseAdmin
       .from('no_dues_forms')

@@ -37,11 +37,17 @@ export default function StatusTracker({ registrationNo }) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
+      // Add timestamp to prevent any caching
+      const timestamp = Date.now();
       const response = await fetch(
-        `/api/check-status?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}`,
+        `/api/check-status?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}&t=${timestamp}`,
         {
           signal: controller.signal,
-          cache: 'no-store' // Always get fresh data
+          cache: 'no-store', // Always get fresh data
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
         }
       );
 
@@ -64,6 +70,13 @@ export default function StatusTracker({ registrationNo }) {
       }
 
       // Update state with optimized data
+      console.log('📊 Fresh data received from API:', {
+        formStatus: result.data.form.status,
+        departmentStatuses: result.data.statusData.map(d => ({
+          name: d.display_name,
+          status: d.status
+        }))
+      });
       setFormData(result.data.form);
       setStatusData(result.data.statusData);
 
@@ -435,8 +448,11 @@ export default function StatusTracker({ registrationNo }) {
           onClose={() => setShowReapplyModal(false)}
           onSuccess={(result) => {
             setShowReapplyModal(false);
-            // Refresh data after successful reapplication
-            fetchData(true);
+            // Add delay to ensure database updates have fully propagated
+            // Increased to 1500ms to handle Supabase replication lag
+            setTimeout(() => {
+              fetchData(true);
+            }, 1500);
           }}
         />
       )}

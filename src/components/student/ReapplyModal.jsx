@@ -141,11 +141,6 @@ export default function ReapplyModal({
       return;
     }
 
-    if (replyMessage.trim().length < 20) {
-      setError('Reply message must be at least 20 characters');
-      return;
-    }
-
     // Validate required fields
     if (!editedData.student_name?.trim()) {
       setError('Student name is required');
@@ -222,12 +217,12 @@ export default function ReapplyModal({
 
       setSuccess(true);
       
-      // Call success callback after short delay
+      // Call success callback after delay to ensure database updates propagate
       setTimeout(() => {
         if (onSuccess) {
           onSuccess(result);
         }
-      }, 2000);
+      }, 1500);
 
     } catch (err) {
       console.error('Reapplication error:', err);
@@ -391,9 +386,9 @@ export default function ReapplyModal({
               required
             />
             <p className={`text-xs mt-1 transition-colors duration-700 ${
-              replyMessage.length < 20 ? 'text-red-400' : 'text-green-400'
+              isDark ? 'text-gray-500' : 'text-gray-400'
             }`}>
-              {replyMessage.length} / 20 characters minimum
+              {replyMessage.length} characters
             </p>
             </div>
 
@@ -546,7 +541,7 @@ export default function ReapplyModal({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !replyMessage.trim() || replyMessage.length < 20}
+              disabled={loading || !replyMessage.trim()}
               className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
