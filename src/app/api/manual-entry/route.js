@@ -151,6 +151,77 @@ export async function POST(request) {
       );
     }
 
+    // ===== SEND CONFIRMATION EMAIL TO STUDENT =====
+    try {
+      await sendEmail({
+        to: newForm.personal_email,
+        subject: `Manual Entry Submitted - ${registration_no}`,
+        html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 30px; text-align: center;">
+              <img src="https://jecrc.ac.in/wp-content/uploads/2023/06/logo-1.png" alt="JECRC" style="height: 60px; margin-bottom: 15px;"/>
+              <h1 style="margin: 0; color: white; font-size: 24px;">JECRC University</h1>
+              <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">No Dues Clearance System</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">📝 Manual Entry Submitted Successfully</h2>
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                Dear Student,
+              </p>
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                Your offline no-dues certificate has been <strong>successfully submitted</strong> to the system and is now <strong>pending admin review</strong>.
+              </p>
+              <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0 0 12px 0; color: #2563eb; font-size: 18px; font-weight: 600;">📋 Submission Details</p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>Registration No:</strong> <span style="font-family: monospace; background: white; padding: 2px 6px; border-radius: 4px;">${registration_no}</span></p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>School:</strong> ${school}</p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>Course:</strong> ${course}</p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>Branch:</strong> ${branch || 'N/A'}</p>
+                <p style="margin: 0; color: #1f2937; font-size: 15px;"><strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">PENDING ADMIN REVIEW</span></p>
+              </div>
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+                  ⚠️ <strong>What's Next?</strong><br/>
+                  The admin will review your submitted certificate and either approve or reject it. You will receive an email notification once the admin takes action.
+                </p>
+              </div>
+              <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px;">
+                Thank you for using the JECRC No Dues System!
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+        `.trim()
+      });
+      console.log(`✅ Confirmation email sent to student: ${newForm.personal_email}`);
+    } catch (emailError) {
+      console.error('Error sending student confirmation email:', emailError);
+    }
+
     // ===== CREATE DEPARTMENT STATUS - ONLY FOR "Department" =====
     // Manual entries only need Department approval (not all 11 departments)
     const { error: statusError } = await supabaseAdmin
@@ -289,6 +360,89 @@ This is an automated notification from JECRC No Dues System.
       }
     } else {
       console.warn(`⚠️ No department staff found for school: ${school}, course: ${course}`);
+    }
+
+    // ===== NOTIFY ADMIN ABOUT NEW MANUAL ENTRY =====
+    const { data: adminUsers } = await supabaseAdmin
+      .from('profiles')
+      .select('email, full_name')
+      .eq('role', 'admin')
+      .eq('is_active', true);
+
+    if (adminUsers && adminUsers.length > 0) {
+      const adminEmailPromises = adminUsers.map(admin =>
+        sendEmail({
+          to: admin.email,
+          subject: `📋 New Manual Entry Submitted - ${registration_no}`,
+          html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
+              <img src="https://jecrc.ac.in/wp-content/uploads/2023/06/logo-1.png" alt="JECRC" style="height: 60px; margin-bottom: 15px;"/>
+              <h1 style="margin: 0; color: white; font-size: 24px;">JECRC University</h1>
+              <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">No Dues Clearance System</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px;">
+              <h2 style="margin: 0 0 20px 0; color: #1f2937; font-size: 20px;">📋 New Manual Entry Submitted</h2>
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                Hello <strong>${admin.full_name || 'Admin'}</strong>,
+              </p>
+              <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+                A student has submitted an offline no-dues certificate for review and approval.
+              </p>
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <p style="margin: 0 0 12px 0; color: #92400e; font-size: 13px; font-weight: 600; text-transform: uppercase;">Entry Details</p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>Registration No:</strong> <span style="font-family: monospace; background: white; padding: 2px 6px; border-radius: 4px;">${registration_no}</span></p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>School:</strong> ${school}</p>
+                <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 15px;"><strong>Course:</strong> ${course}</p>
+                <p style="margin: 0; color: #1f2937; font-size: 15px;"><strong>Branch:</strong> ${branch || 'N/A'}</p>
+              </div>
+              <p style="margin: 20px 0; color: #6b7280; font-size: 14px;">
+                Please review and approve/reject this manual entry from your admin dashboard.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://no-duessystem.vercel.app/admin" style="display: inline-block; background: #dc2626; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Review Manual Entry</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+          `.trim()
+        })
+      );
+
+      try {
+        await Promise.all(adminEmailPromises);
+        console.log(`✅ Notified ${adminUsers.length} admin(s) about manual entry`);
+      } catch (emailError) {
+        console.error('Error sending admin notifications:', emailError);
+      }
     }
 
     return NextResponse.json({

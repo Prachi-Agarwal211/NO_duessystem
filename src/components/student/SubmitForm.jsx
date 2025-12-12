@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 import FormInput from './FormInput';
 import FileUpload from './FileUpload';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -61,6 +61,12 @@ export default function SubmitForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [formId, setFormId] = useState(null);
+  
+  // Convocation validation states
+  const [validatingConvocation, setValidatingConvocation] = useState(false);
+  const [convocationValid, setConvocationValid] = useState(null); // null = not validated, true = valid, false = invalid
+  const [convocationData, setConvocationData] = useState(null);
+  const [convocationError, setConvocationError] = useState('');
 
   // Update available courses when school changes - Use API call for fresh data
   useEffect(() => {
@@ -141,6 +147,66 @@ export default function SubmitForm() {
     }
     
     setError('');
+    
+    // Clear convocation validation when registration number changes
+    if (name === 'registration_no') {
+      setConvocationValid(null);
+      setConvocationData(null);
+      setConvocationError('');
+    }
+  };
+
+  // Validate registration number against convocation database
+  const validateConvocation = async (registration_no) => {
+    if (!registration_no || !registration_no.trim()) {
+      return;
+    }
+
+    setValidatingConvocation(true);
+    setConvocationError('');
+    
+    try {
+      const response = await fetch('/api/convocation/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registration_no: registration_no.trim().toUpperCase() })
+      });
+
+      const result = await response.json();
+
+      if (result.valid && result.student) {
+        setConvocationValid(true);
+        setConvocationData(result.student);
+        
+        // Auto-fill student name, admission year if empty
+        setFormData(prev => ({
+          ...prev,
+          student_name: prev.student_name || result.student.name,
+          admission_year: prev.admission_year || result.student.admission_year,
+          // Note: School is auto-filled but user can still change it
+          // We don't auto-select school dropdown as it requires UUID mapping
+        }));
+        
+        logger.info('Convocation validation successful', { registration_no });
+      } else {
+        setConvocationValid(false);
+        setConvocationError(result.error || 'Registration number not eligible for convocation');
+        logger.warn('Convocation validation failed', { registration_no, error: result.error });
+      }
+    } catch (error) {
+      console.error('Convocation validation error:', error);
+      setConvocationValid(false);
+      setConvocationError('Failed to validate registration number');
+    } finally {
+      setValidatingConvocation(false);
+    }
+  };
+
+  // Handle registration number blur - validate convocation
+  const handleRegistrationBlur = () => {
+    if (formData.registration_no && formData.registration_no.trim()) {
+      validateConvocation(formData.registration_no);
+    }
   };
 
   const checkExistingForm = async () => {
@@ -463,16 +529,75 @@ export default function SubmitForm() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 100 }}
       >
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <FormInput
             label="Registration Number"
             name="registration_no"
             value={formData.registration_no}
             onChange={handleInputChange}
+            onBlur={handleRegistrationBlur}
             required
-            placeholder="e.g., 2021A1234"
+            placeholder="e.g., 22BCAN001"
             disabled={loading}
           />
+          
+          {/* Convocation Validation Status */}
+          {validatingConvocation && (
+            <div className="absolute right-3 top-11 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              <span className="text-xs text-blue-500">Validating...</span>
+            </div>
+          )}
+          
+          {!validatingConvocation && convocationValid === true && (
+            <div className="absolute right-3 top-11 flex items-center gap-2">
+              <Check className="w-5 h-5 text-green-500" />
+              <span className="text-xs text-green-500">Eligible for convocation</span>
+            </div>
+          )}
+          
+          {!validatingConvocation && convocationValid === false && (
+            <div className="absolute right-3 top-11 flex items-center gap-2">
+              <X className="w-5 h-5 text-red-500" />
+              <span className="text-xs text-red-500">Not eligible</span>
+            </div>
+          )}
+          
+          {/* Show convocation details when validated */}
+          {convocationData && convocationValid && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-2 p-3 rounded-lg text-sm transition-all duration-700
+                ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
+            >
+              <div className={`font-medium mb-1 transition-colors duration-700
+                ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                ✓ Convocation Eligible
+              </div>
+              <div className={`space-y-1 transition-colors duration-700
+                ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
+                <div><strong>Name:</strong> {convocationData.name}</div>
+                <div><strong>School:</strong> {convocationData.school}</div>
+                <div><strong>Year:</strong> {convocationData.admission_year}</div>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Show error message for ineligible students */}
+          {convocationError && convocationValid === false && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-2 p-3 rounded-lg text-sm transition-all duration-700
+                ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}
+            >
+              <div className="text-red-500 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{convocationError}</span>
+              </div>
+            </motion.div>
+          )}
         </div>
         <button
           type="button"

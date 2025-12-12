@@ -335,6 +335,31 @@ CREATE TABLE public.certificate_verifications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 2.10 Convocation Eligible Students Table (9th Convocation System - Added 2025-12-11)
+CREATE TABLE public.convocation_eligible_students (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    registration_no TEXT UNIQUE NOT NULL,
+    student_name TEXT NOT NULL,
+    school TEXT NOT NULL,
+    admission_year TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'not_started' CHECK (status IN (
+        'not_started',        -- Student hasn't started form
+        'pending_online',     -- Form submitted online, waiting clearance
+        'pending_manual',     -- Form submitted via manual entry
+        'completed_online',   -- Online form fully cleared
+        'completed_manual'    -- Manual entry form fully cleared
+    )),
+    form_id UUID REFERENCES public.no_dues_forms(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Add indexes for convocation table
+CREATE INDEX idx_convocation_registration ON public.convocation_eligible_students(registration_no);
+CREATE INDEX idx_convocation_status ON public.convocation_eligible_students(status);
+CREATE INDEX idx_convocation_school ON public.convocation_eligible_students(school);
+CREATE INDEX idx_convocation_form_id ON public.convocation_eligible_students(form_id);
+
 -- ============================================================================
 -- SECTION 3: CREATE INDEXES FOR PERFORMANCE
 -- ============================================================================
@@ -447,7 +472,28 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 4.4 Function: Get form statistics (for admin dashboard)
+-- 4.4 Function: Auto-update convocation status when form is submitted or updated
+CREATE OR REPLACE FUNCTION update_convocation_status()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Update convocation status when a form is created or updated
+    UPDATE public.convocation_eligible_students
+    SET
+        form_id = NEW.id,
+        status = CASE
+            WHEN NEW.is_manual_entry = true AND NEW.status = 'completed' THEN 'completed_manual'
+            WHEN NEW.is_manual_entry = true THEN 'pending_manual'
+            WHEN NEW.status = 'completed' THEN 'completed_online'
+            ELSE 'pending_online'
+        END,
+        updated_at = NOW()
+    WHERE registration_no = NEW.registration_no;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 4.5 Function: Get form statistics (for admin dashboard)
 CREATE OR REPLACE FUNCTION get_form_statistics()
 RETURNS TABLE (
     total_requests BIGINT,
@@ -551,6 +597,12 @@ CREATE TRIGGER trigger_update_form_status
     FOR EACH ROW
     EXECUTE FUNCTION update_form_status_on_department_action();
 
+-- Trigger: Update convocation status when form is created or updated (CRITICAL FOR CONVOCATION TRACKING)
+CREATE TRIGGER trigger_update_convocation_status
+    AFTER INSERT OR UPDATE ON public.no_dues_forms
+    FOR EACH ROW
+    EXECUTE FUNCTION update_convocation_status();
+
 -- ============================================================================
 -- SECTION 6: ROW LEVEL SECURITY (RLS) POLICIES
 -- ============================================================================
@@ -570,6 +622,7 @@ ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_reapplication_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificate_verifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.convocation_eligible_students ENABLE ROW LEVEL SECURITY;
 
 -- Configuration Tables Policies (Public read, Admin write)
 CREATE POLICY "Anyone can view active schools" ON public.config_schools
@@ -671,6 +724,13 @@ CREATE POLICY "Anyone can insert certificate verifications" ON public.certificat
     FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Service role can manage certificate verifications" ON public.certificate_verifications
+    FOR ALL USING (true);
+
+-- Convocation Eligible Students Policies (Public read for validation, Service write)
+CREATE POLICY "Anyone can view convocation students" ON public.convocation_eligible_students
+    FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage convocation students" ON public.convocation_eligible_students
     FOR ALL USING (true);
 
 -- ============================================================================
@@ -1368,6 +1428,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.no_dues_reapplication_histo
 ALTER TABLE public.no_dues_forms REPLICA IDENTITY FULL;
 ALTER TABLE public.no_dues_status REPLICA IDENTITY FULL;
 ALTER TABLE public.no_dues_reapplication_history REPLICA IDENTITY FULL;
+ALTER TABLE public.convocation_eligible_students REPLICA IDENTITY FULL;
+
+-- Enable realtime for convocation table
+ALTER PUBLICATION supabase_realtime ADD TABLE public.convocation_eligible_students;
 
 -- ============================================================================
 -- SECTION 12: CREATE 5 STAFF PROFILES WITH PROPER SCOPING

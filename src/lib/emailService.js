@@ -1,64 +1,52 @@
 /**
- * Email Service using Resend
+ * Email Service using Nodemailer (Vercel Compatible)
  * Handles all email notifications for the No Dues System
- * KISS Principle: Simple, focused email notifications
+ * Features: SMTP connection pooling, email queue, retry logic
  */
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Supabase client for queue management
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Email configuration
-// Use Resend's default sender for testing, or custom verified domain in production
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'JECRC No Dues <onboarding@resend.dev>';
-const REPLY_TO = process.env.RESEND_REPLY_TO || 'onboarding@resend.dev';
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
+  pool: true, // Use connection pooling
+  maxConnections: 5,
+  maxMessages: 100,
+  rateLimit: 10 // 10 emails per second
+};
 
-/**
- * Send email using Resend
- * @param {Object} params - Email parameters
- * @param {string|string[]} params.to - Recipient email(s)
- * @param {string} params.subject - Email subject
- * @param {string} params.html - HTML content
- * @param {string} params.text - Plain text content (optional)
- * @returns {Promise<Object>} - { success: boolean, id?: string, error?: string }
- */
-async function sendEmail({ to, subject, html, text }) {
-  try {
-    // Validate inputs
-    if (!to || !subject || !html) {
-      throw new Error('Missing required email parameters');
-    }
+const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC No Dues <noreply@jecrc.ac.in>';
 
-    // Check if Resend is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('⚠️ RESEND_API_KEY not configured. Email not sent.');
-      console.log(`📧 Mock Email - To: ${to}, Subject: ${subject}`);
-      return { success: false, error: 'Resend API key not configured' };
-    }
+// Create transporter with connection pooling
+let transporter = null;
 
-    // Send email via Resend
-    const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      text: text || stripHtml(html),
-      reply_to: REPLY_TO,
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport(SMTP_CONFIG);
+    
+    // Verify connection on first use
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error('❌ SMTP connection failed:', error);
+      } else {
+        console.log('✅ SMTP server ready to send emails');
+      }
     });
-
-    if (error) {
-      console.error('❌ Email send error:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`✅ Email sent successfully - ID: ${data.id}`);
-    return { success: true, id: data.id };
-
-  } catch (error) {
-    console.error('❌ Email service error:', error);
-    return { success: false, error: error.message };
   }
+  return transporter;
 }
 
 /**
@@ -73,11 +61,203 @@ function stripHtml(html) {
     .replace(/&/g, '&')
     .replace(/</g, '<')
     .replace(/>/g, '>')
+    .replace(/"/g, '"')
     .trim();
 }
 
-// Export sendEmail as named export for compatibility
-export { sendEmail };
+/**
+ * Add email to queue for later processing
+ * @param {Object} emailData - Email data
+ * @returns {Promise<Object>} - Result with queue ID
+ */
+async function addToQueue(emailData) {
+  try {
+    const { data, error } = await supabase
+      .from('email_queue')
+      .insert([{
+        to_address: Array.isArray(emailData.to) ? emailData.to.join(',') : emailData.to,
+        subject: emailData.subject,
+        html_content: emailData.html,
+        text_content: emailData.text || stripHtml(emailData.html),
+        metadata: emailData.metadata || {},
+        scheduled_for: emailData.scheduledFor || new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log(`📥 Email added to queue: ${data.id}`);
+    return { success: true, queueId: data.id };
+  } catch (error) {
+    console.error('❌ Failed to add email to queue:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send email directly using Nodemailer
+ * @param {Object} params - Email parameters
+ * @param {string|string[]} params.to - Recipient email(s)
+ * @param {string} params.subject - Email subject
+ * @param {string} params.html - HTML content
+ * @param {string} params.text - Plain text content (optional)
+ * @param {boolean} params.queueOnFailure - Add to queue if sending fails (default: true)
+ * @returns {Promise<Object>} - { success: boolean, messageId?: string, error?: string }
+ */
+export async function sendEmail({ to, subject, html, text, queueOnFailure = true, metadata = {} }) {
+  try {
+    // Validate inputs
+    if (!to || !subject || !html) {
+      throw new Error('Missing required email parameters');
+    }
+
+    // Check if SMTP is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn('⚠️ SMTP not configured. Adding email to queue...');
+      if (queueOnFailure) {
+        return await addToQueue({ to, subject, html, text, metadata });
+      }
+      return { success: false, error: 'SMTP not configured' };
+    }
+
+    // Get transporter
+    const transport = getTransporter();
+
+    // Prepare email options
+    const mailOptions = {
+      from: FROM_EMAIL,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      html,
+      text: text || stripHtml(html)
+    };
+
+    // Send email
+    const info = await transport.sendMail(mailOptions);
+
+    console.log(`✅ Email sent successfully - ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+
+  } catch (error) {
+    console.error('❌ Email send error:', error);
+    
+    // Add to queue on failure if enabled
+    if (queueOnFailure) {
+      console.log('📥 Adding failed email to queue for retry...');
+      const queueResult = await addToQueue({ to, subject, html, text, metadata });
+      return { 
+        success: false, 
+        error: error.message, 
+        queued: queueResult.success,
+        queueId: queueResult.queueId 
+      };
+    }
+    
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send email with automatic retry logic
+ * @param {Object} params - Email parameters
+ * @param {number} maxRetries - Maximum retry attempts (default: 3)
+ * @returns {Promise<Object>} - Send result
+ */
+export async function sendEmailWithRetry(params, maxRetries = 3) {
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt < maxRetries) {
+    attempt++;
+    console.log(`📤 Email send attempt ${attempt}/${maxRetries}...`);
+    
+    const result = await sendEmail({ ...params, queueOnFailure: false });
+    
+    if (result.success) {
+      if (attempt > 1) {
+        console.log(`✅ Email sent successfully after ${attempt} attempts`);
+      }
+      return result;
+    }
+    
+    lastError = result.error;
+    
+    // Exponential backoff before retry
+    if (attempt < maxRetries) {
+      const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+      console.log(`⏳ Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  // All retries failed - add to queue
+  console.log(`❌ All ${maxRetries} attempts failed. Adding to queue...`);
+  return await addToQueue(params);
+}
+
+/**
+ * Send bulk emails in batches
+ * Compatible with Vercel's function timeout limits
+ * @param {Array} emails - Array of email objects
+ * @param {number} batchSize - Emails per batch (default: 10)
+ * @param {number} timeout - Max processing time in ms (default: 45000)
+ * @returns {Promise<Object>} - Results and statistics
+ */
+export async function sendBulkEmails(emails, batchSize = 10, timeout = 45000) {
+  const startTime = Date.now();
+  const results = {
+    sent: 0,
+    queued: 0,
+    failed: 0,
+    details: []
+  };
+
+  for (let i = 0; i < emails.length; i += batchSize) {
+    // Check timeout to avoid Vercel function limit
+    if (Date.now() - startTime > timeout) {
+      console.log(`⏰ Approaching timeout. Queueing remaining ${emails.length - i} emails...`);
+      
+      // Queue remaining emails
+      const remaining = emails.slice(i);
+      for (const email of remaining) {
+        const queueResult = await addToQueue(email);
+        if (queueResult.success) {
+          results.queued++;
+        } else {
+          results.failed++;
+        }
+      }
+      break;
+    }
+
+    // Process current batch
+    const batch = emails.slice(i, i + batchSize);
+    console.log(`📧 Processing batch ${Math.floor(i / batchSize) + 1} (${batch.length} emails)...`);
+    
+    const batchResults = await Promise.all(
+      batch.map(email => sendEmail(email))
+    );
+    
+    // Count results
+    batchResults.forEach((result, index) => {
+      if (result.success) {
+        results.sent++;
+      } else if (result.queued) {
+        results.queued++;
+      } else {
+        results.failed++;
+      }
+      results.details.push({
+        email: batch[index].to,
+        ...result
+      });
+    });
+  }
+
+  console.log(`\n📊 Bulk email results: ${results.sent} sent, ${results.queued} queued, ${results.failed} failed`);
+  return results;
+}
 
 /**
  * Generate HTML email template
@@ -103,8 +283,6 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
           <!-- Header with Logo -->
           <tr>
             <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
-              <!-- JECRC Logo -->
-              <img src="https://jecrc.ac.in/wp-content/uploads/2023/06/logo-1.png" alt="JECRC University" style="height: 60px; width: auto; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;" />
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
                 JECRC University
               </h1>
@@ -160,11 +338,6 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
 /**
  * Send notification to department when new form is submitted
  * @param {Object} params - Notification parameters
- * @param {string} params.departmentEmail - Department email address
- * @param {string} params.studentName - Student name
- * @param {string} params.registrationNo - Registration number
- * @param {string} params.formId - Form UUID
- * @param {string} params.dashboardUrl - URL to department dashboard
  * @returns {Promise<Object>} - Email send result
  */
 export async function sendDepartmentNotification({
@@ -211,22 +384,16 @@ export async function sendDepartmentNotification({
   return sendEmail({
     to: departmentEmail,
     subject: `New Application: ${studentName} (${registrationNo})`,
-    html
+    html,
+    metadata: { formId, type: 'department_notification' }
   });
 }
 
 /**
- * Send notification to all staff members of specified departments
- * UNIFIED SYSTEM: Uses staff account emails from profiles table
- * RATE LIMIT COMPLIANT: Sends emails sequentially with 1.1 second delay
- *
+ * Send notification to all staff members
+ * Uses parallel sending with queue fallback for Vercel compatibility
  * @param {Object} params - Notification parameters
- * @param {Array} params.staffMembers - Array of staff objects with email and department info
- * @param {string} params.studentName - Student name
- * @param {string} params.registrationNo - Registration number
- * @param {string} params.formId - Form UUID
- * @param {string} params.dashboardUrl - URL to department dashboard
- * @returns {Promise<Array>} - Array of email send results
+ * @returns {Promise<Object>} - Results summary
  */
 export async function notifyAllDepartments({
   staffMembers,
@@ -237,65 +404,48 @@ export async function notifyAllDepartments({
 }) {
   if (!staffMembers || staffMembers.length === 0) {
     console.warn('⚠️ No staff members to notify');
-    return [];
+    return { sent: 0, queued: 0, failed: 0 };
   }
 
   console.log(`📧 Sending notifications to ${staffMembers.length} staff member(s)...`);
-  console.log(`⏱️ Estimated time: ${Math.ceil(staffMembers.length * 1.1)} seconds (rate limit: 1 email/sec)`);
 
-  const results = [];
+  // Prepare all emails
+  const emails = staffMembers.map(staff => ({
+    to: staff.email,
+    subject: `New Application: ${studentName} (${registrationNo})`,
+    html: generateEmailTemplate({
+      title: 'New No Dues Application',
+      content: `
+        <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+          A new No Dues application has been submitted to the <strong>${staff.department}</strong> department.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <tr><td>
+            <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+              <strong>Name:</strong> ${studentName}
+            </p>
+            <p style="margin: 0; color: #1f2937; font-size: 15px;">
+              <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
+            </p>
+          </td></tr>
+        </table>
+      `,
+      actionUrl: dashboardUrl,
+      actionText: 'Review Application'
+    }),
+    metadata: { formId, type: 'department_notification', department: staff.department }
+  }));
+
+  // Send in batches with automatic queueing
+  const results = await sendBulkEmails(emails, 10, 45000);
   
-  // Send emails sequentially with delay to respect Resend's rate limit (1 email/second)
-  for (let i = 0; i < staffMembers.length; i++) {
-    const staff = staffMembers[i];
-    
-    try {
-      console.log(`📤 [${i + 1}/${staffMembers.length}] Sending to ${staff.department} (${staff.email})...`);
-      
-      const result = await sendDepartmentNotification({
-        departmentEmail: staff.email,
-        studentName,
-        registrationNo,
-        formId,
-        dashboardUrl
-      });
-      
-      results.push({ status: 'fulfilled', value: result });
-      
-      if (result.success) {
-        console.log(`   ✅ Sent successfully`);
-      } else {
-        console.log(`   ❌ Failed: ${result.error}`);
-      }
-      
-      // Wait 1.1 seconds before sending next email (Resend rate limit: 1 email/sec)
-      // Add 100ms buffer to avoid hitting rate limit exactly
-      if (i < staffMembers.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1100));
-      }
-      
-    } catch (error) {
-      console.log(`   ❌ Error: ${error.message}`);
-      results.push({ status: 'rejected', reason: error });
-    }
-  }
-
-  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`\n✅ ${successful}/${staffMembers.length} notifications sent successfully`);
-
+  console.log(`\n✅ Department notifications: ${results.sent} sent, ${results.queued} queued, ${results.failed} failed`);
   return results;
 }
 
 /**
  * Send status update notification to student
  * @param {Object} params - Notification parameters
- * @param {string} params.studentEmail - Student email (from contact_no or form)
- * @param {string} params.studentName - Student name
- * @param {string} params.registrationNo - Registration number
- * @param {string} params.departmentName - Department that took action
- * @param {string} params.action - 'approved' or 'rejected'
- * @param {string} params.rejectionReason - Reason if rejected (optional)
- * @param {string} params.statusUrl - URL to check status
  * @returns {Promise<Object>} - Email send result
  */
 export async function sendStatusUpdateToStudent({
@@ -345,40 +495,26 @@ export async function sendStatusUpdateToStudent({
         </td>
       </tr>
     </table>
-    
-    ${!isApproved ? `
-      <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-        Please contact the ${departmentName} department to resolve any outstanding issues.
-      </p>
-    ` : `
-      <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-        You can check the complete status of your application using the button below.
-      </p>
-    `}
   `;
 
   const html = generateEmailTemplate({
     title: `${actionText}: ${departmentName} Department`,
     content,
     actionUrl: statusUrl,
-    actionText: 'Check Application Status',
-    footerText: 'If you have questions, please contact the respective department directly.'
+    actionText: 'Check Application Status'
   });
 
   return sendEmail({
     to: studentEmail,
     subject: `${emoji} ${departmentName} - Application ${actionText}`,
-    html
+    html,
+    metadata: { type: 'status_update', action, department: departmentName }
   });
 }
 
 /**
  * Send certificate ready notification to student
  * @param {Object} params - Notification parameters
- * @param {string} params.studentEmail - Student email
- * @param {string} params.studentName - Student name
- * @param {string} params.registrationNo - Registration number
- * @param {string} params.certificateUrl - URL to download certificate
  * @returns {Promise<Object>} - Email send result
  */
 export async function sendCertificateReadyNotification({
@@ -408,41 +544,27 @@ export async function sendCertificateReadyNotification({
         </td>
       </tr>
     </table>
-    
-    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-      Click the button below to download your No Dues Certificate. Please keep this certificate safe for your records.
-    </p>
   `;
 
   const html = generateEmailTemplate({
     title: '🎓 No Dues Certificate Ready',
     content,
     actionUrl: certificateUrl,
-    actionText: '📥 Download Certificate',
-    footerText: 'Congratulations on your successful clearance!'
+    actionText: '📥 Download Certificate'
   });
 
   return sendEmail({
     to: studentEmail,
     subject: `🎓 Certificate Ready: ${registrationNo}`,
-    html
+    html,
+    metadata: { type: 'certificate_ready' }
   });
 }
 
 /**
  * Send reapplication notification to staff members
- * UNIFIED SYSTEM: Uses staff account emails from profiles table
- * RATE LIMIT COMPLIANT: Sends emails sequentially with 1.1 second delay
- *
  * @param {Object} params - Notification parameters
- * @param {Array} params.staffMembers - Array of staff objects with email and department info
- * @param {string} params.studentName - Student name
- * @param {string} params.registrationNo - Registration number
- * @param {string} params.studentMessage - Student's reply message
- * @param {number} params.reapplicationNumber - Reapplication count
- * @param {string} params.dashboardUrl - URL to department dashboard
- * @param {string} params.formUrl - Direct URL to form details
- * @returns {Promise<Array>} - Array of email send results
+ * @returns {Promise<Object>} - Results summary
  */
 export async function sendReapplicationNotifications({
   staffMembers,
@@ -455,101 +577,65 @@ export async function sendReapplicationNotifications({
 }) {
   if (!staffMembers || staffMembers.length === 0) {
     console.warn('⚠️ No staff members to notify for reapplication');
-    return [];
+    return { sent: 0, queued: 0, failed: 0 };
   }
 
   console.log(`📧 Sending reapplication notifications to ${staffMembers.length} staff member(s)...`);
-  console.log(`⏱️ Estimated time: ${Math.ceil(staffMembers.length * 1.1)} seconds (rate limit: 1 email/sec)`);
 
-  const content = `
-    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      A student has <strong>reapplied</strong> to their No Dues application after addressing the rejection reasons.
-    </p>
-    
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
-      <tr>
-        <td>
-          <p style="margin: 0 0 8px 0; color: #f59e0b; font-size: 16px; font-weight: 600;">
-            🔄 Reapplication #${reapplicationNumber}
+  const emails = staffMembers.map(staff => ({
+    to: staff.email,
+    subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
+    html: generateEmailTemplate({
+      title: 'Student Reapplication - Review Required',
+      content: `
+        <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+          A student has <strong>reapplied</strong> to their No Dues application.
+        </p>
+        
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+          <tr><td>
+            <p style="margin: 0 0 8px 0; color: #f59e0b; font-size: 16px; font-weight: 600;">
+              🔄 Reapplication #${reapplicationNumber}
+            </p>
+            <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+              <strong>Student:</strong> ${studentName}
+            </p>
+            <p style="margin: 0; color: #1f2937; font-size: 15px;">
+              <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
+            </p>
+          </td></tr>
+        </table>
+        
+        <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; color: #3b82f6; font-size: 13px; font-weight: 600;">
+            STUDENT'S RESPONSE
           </p>
-          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-            <strong>Student:</strong> ${studentName}
+          <p style="margin: 0; color: #1e3a8a; font-size: 14px; font-style: italic;">
+            "${studentMessage}"
           </p>
-          <p style="margin: 0; color: #1f2937; font-size: 15px;">
-            <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
-          </p>
-        </td>
-      </tr>
-    </table>
-    
-    <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
-      <p style="margin: 0 0 8px 0; color: #3b82f6; font-size: 13px; font-weight: 600; text-transform: uppercase;">
-        Student's Response
-      </p>
-      <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6; font-style: italic;">
-        "${studentMessage}"
-      </p>
-    </div>
-    
-    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-      The student has made corrections to their application. Please review the updated information and take appropriate action.
-    </p>
-  `;
+        </div>
+      `,
+      actionUrl: formUrl || dashboardUrl,
+      actionText: 'Review Reapplication'
+    }),
+    metadata: { type: 'reapplication', reapplicationNumber, department: staff.department }
+  }));
 
-  const html = generateEmailTemplate({
-    title: 'Student Reapplication - Review Required',
-    content,
-    actionUrl: formUrl || dashboardUrl,
-    actionText: 'Review Reapplication',
-    footerText: 'This is a reapplication. Previous rejection reasons should be addressed.'
-  });
-
-  const results = [];
-
-  // Send emails sequentially with delay to respect Resend's rate limit (1 email/second)
-  for (let i = 0; i < staffMembers.length; i++) {
-    const staff = staffMembers[i];
-    
-    try {
-      console.log(`📤 [${i + 1}/${staffMembers.length}] Sending reapplication to ${staff.department} (${staff.email})...`);
-      
-      const result = await sendEmail({
-        to: staff.email,
-        subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
-        html
-      });
-      
-      results.push({ status: 'fulfilled', value: result });
-      
-      if (result.success) {
-        console.log(`   ✅ Sent successfully`);
-      } else {
-        console.log(`   ❌ Failed: ${result.error}`);
-      }
-      
-      // Wait 1.1 seconds before sending next email
-      if (i < staffMembers.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1100));
-      }
-      
-    } catch (error) {
-      console.log(`   ❌ Error: ${error.message}`);
-      results.push({ status: 'rejected', reason: error });
-    }
-  }
-
-  const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-  console.log(`\n✅ ${successful}/${staffMembers.length} reapplication notifications sent successfully`);
-
+  const results = await sendBulkEmails(emails, 10, 45000);
+  
+  console.log(`\n✅ Reapplication notifications: ${results.sent} sent, ${results.queued} queued`);
   return results;
 }
 
-// Export default for compatibility
+// Export all functions as default for compatibility
 export default {
   sendEmail,
+  sendEmailWithRetry,
+  sendBulkEmails,
   sendDepartmentNotification,
   notifyAllDepartments,
   sendStatusUpdateToStudent,
   sendCertificateReadyNotification,
-  sendReapplicationNotifications
+  sendReapplicationNotifications,
+  addToQueue
 };
