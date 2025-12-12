@@ -23,37 +23,16 @@ function useEscapeKey(callback, enabled = true) {
   }, [callback, enabled]);
 }
 
-export default function ReapplyModal({ 
-  formData, 
+export default function ReapplyModal({
+  formData,
   rejectedDepartments = [],
-  onClose, 
-  onSuccess 
+  onClose,
+  onSuccess
 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
-  
-  // ESC key to close (only when not loading)
-  useEscapeKey(onClose, !loading);
-  
-  const {
-    schools,
-    courses,
-    branches,
-    collegeDomain,
-    countryCodes,
-    loading: configLoading,
-    getCoursesForSchool,
-    getBranchesForCourse
-  } = useFormConfig();
-
+  // State declarations MUST come before any usage
   const [editedData, setEditedData] = useState({
     student_name: formData.student_name || '',
     admission_year: formData.admission_year || '',
@@ -74,6 +53,28 @@ export default function ReapplyModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  
+  const {
+    schools,
+    courses,
+    branches,
+    collegeDomain,
+    countryCodes,
+    loading: configLoading,
+    getCoursesForSchool,
+    getBranchesForCourse
+  } = useFormConfig();
+  
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+  
+  // ESC key to close (only when not loading)
+  useEscapeKey(onClose, !loading);
 
   // Update available courses when school changes
   useEffect(() => {

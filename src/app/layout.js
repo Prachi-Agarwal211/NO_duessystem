@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Toaster } from "react-hot-toast";
 import GlobalBackground from "@/components/ui/GlobalBackground";
-import CustomCursor from "@/components/ui/CustomCursor";
 
 // Validate environment on startup (server-side only)
 if (typeof window === 'undefined') {
@@ -65,9 +64,6 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             {/* Global Fixed Background - stays fixed across all pages */}
             <GlobalBackground />
-            
-            {/* Custom Cursor - works on all pages */}
-            <CustomCursor />
             
             <Toaster
               position="top-right"
