@@ -221,7 +221,8 @@ export default function SubmitForm() {
     try {
       // Use API endpoint instead of direct Supabase client query
       // This avoids RLS issues and works in all environments
-      const response = await fetch(`/api/student/can-edit?registration_number=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
+      // Note: API expects 'registration_no' parameter
+      const response = await fetch(`/api/student/can-edit?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
       
       const result = await response.json();
 
