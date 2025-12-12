@@ -32,16 +32,16 @@ export default function StatusTracker({ registrationNo }) {
         throw new Error('Invalid registration number');
       }
 
-      // Add timeout to prevent hanging requests
+      // Add timeout to prevent hanging requests (increased to 30 seconds)
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
+        setTimeout(() => reject(new Error('Request timeout - please check your connection')), 30000)
       );
 
       // Fetch form with timeout
       const formPromise = supabase
         .from('no_dues_forms')
         .select('*')
-        .eq('registration_no', registrationNo.trim())
+        .eq('registration_no', registrationNo.trim().toUpperCase())
         .single();
 
       const { data: form, error: formError } = await Promise.race([formPromise, timeoutPromise]);
@@ -88,12 +88,14 @@ export default function StatusTracker({ registrationNo }) {
       console.error('Error fetching data:', err);
 
       // Provide more user-friendly error messages
-      if (err.message === 'Request timeout') {
-        setError('Request timed out. Please check your connection and try again.');
+      if (err.message.includes('timeout')) {
+        setError('Request timed out after 30 seconds. Please check your internet connection and try again.');
       } else if (err.message.includes('No form found')) {
         setError(err.message);
+      } else if (err.message.includes('Failed to fetch')) {
+        setError('Network error - unable to connect to server. Please check your internet connection.');
       } else {
-        setError(`Failed to load status: ${err.message}`);
+        setError(`Failed to load status: ${err.message || 'Unknown error'}`);
       }
     } finally {
       setLoading(false);

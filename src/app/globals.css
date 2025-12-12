@@ -155,38 +155,20 @@ body::after {
 }
 }
 
-/* JECRC Campus Watermark - Visible on ALL pages */
-body::after {
-content: '';
-position: fixed;
-inset: 0;
-background-image: url('/assets/9-1-1536x720.jpg');
-background-size: cover;
-background-position: center;
-background-repeat: no-repeat;
-z-index: 0; /* Above body, below content */
-pointer-events: none;
-transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1), filter 700ms cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* ✅ REMOVED: Campus watermark now handled by GlobalBackground component only */
+/* This prevents z-index conflicts and layer clashing */
 
-/* Light Mode - Gradient overlay on watermark */
+/* Light Mode - Clean gradient background */
 body:not(.dark) {
   background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.75) 0%,
-    rgba(255, 248, 248, 0.70) 25%,
-    rgba(255, 229, 233, 0.65) 50%,
-    rgba(255, 248, 248, 0.70) 75%,
-    rgba(255, 255, 255, 0.75) 100%);
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 248, 248, 0.92) 25%,
+    rgba(255, 229, 233, 0.90) 50%,
+    rgba(255, 248, 248, 0.92) 75%,
+    rgba(255, 255, 255, 0.95) 100%);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   color: var(--pure-black);
-}
-
-/* Light mode watermark - clearly visible */
-body:not(.dark)::after {
-  opacity: 0.35; /* 35% opacity - more visible */
-  mix-blend-mode: multiply;
-  filter: brightness(0.9) contrast(1.1); /* Enhance visibility */
 }
 
 /* Dark Mode - PURE BLACK with Subtle Red Theme */
@@ -205,13 +187,6 @@ body.dark {
     rgba(0, 0, 0, 1) 100%);
   color: var(--pure-white);
   text-shadow: 0 0 2px rgba(255, 255, 255, 0.15);
-}
-
-/* Dark mode watermark - very subtle behind pure black */
-body.dark::after {
-  opacity: 0.08; /* 8% opacity - very subtle behind darker theme */
-  mix-blend-mode: screen;
-  filter: brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px);
 }
 
 /* Dark mode - Remove black background using screen blend mode */
@@ -501,16 +476,16 @@ h1, h2, h3 {
    Pure CSS without GPU dependencies
    ======================================== */
 
-/* Simple CSS animation without GPU hints */
+/* Enhanced CSS animation for more visible aurora effect */
 @keyframes aurora-flow {
   0% {
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
   33% {
-    transform: translate(2%, -2%) rotate(120deg) scale(1.05);
+    transform: translate(3%, -3%) rotate(120deg) scale(1.08);
   }
   66% {
-    transform: translate(-2%, 2%) rotate(240deg) scale(1.03);
+    transform: translate(-3%, 3%) rotate(240deg) scale(1.05);
   }
   100% {
     transform: translate(0, 0) rotate(360deg) scale(1);
@@ -518,7 +493,7 @@ h1, h2, h3 {
 }
 
 .animate-aurora-flow {
-  animation: aurora-flow 20s ease-in-out infinite;
+  animation: aurora-flow 15s ease-in-out infinite;
 }
 
 @keyframes aurora {

@@ -130,9 +130,9 @@ export default function FireNebulaBackground({ children, intensity = 'low' }) {
   }, [intensity, isMobile, isVisible]);
 
   const opacityClasses = {
-    low: 'opacity-[0.15]',
-    medium: 'opacity-[0.25]',
-    high: 'opacity-[0.35]'
+    low: 'opacity-[0.45]',
+    medium: 'opacity-[0.55]',
+    high: 'opacity-[0.65]'
   };
 
   return (

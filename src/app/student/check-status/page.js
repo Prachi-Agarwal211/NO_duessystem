@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, memo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -13,6 +13,138 @@ import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+// Memoized student info card for performance
+const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
+  <div className="glass-card p-6 rounded-2xl border border-white/20 dark:border-gray-700/50 mb-6">
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Registration Number</p>
+        <p className="font-mono text-2xl font-bold text-jecrc-red">{formData.registration_no}</p>
+      </div>
+      <motion.button
+        onClick={onReset}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700 active:scale-95"
+      >
+        Check Another
+      </motion.button>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+      {/* Student Name */}
+      <div>
+        <p className="text-gray-500 dark:text-gray-400 mb-1">Student Name</p>
+        <p className="font-medium text-gray-900 dark:text-white">{formData.student_name}</p>
+      </div>
+      
+      {/* Parent Name */}
+      {formData.parent_name && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Parent Name</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.parent_name}</p>
+        </div>
+      )}
+      
+      {/* Contact Number */}
+      {formData.contact_no && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Contact Number</p>
+          <p className="font-medium text-gray-900 dark:text-white font-mono">{formData.contact_no}</p>
+        </div>
+      )}
+      
+      {/* Personal Email */}
+      {formData.personal_email && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Personal Email</p>
+          <p className="font-medium text-gray-900 dark:text-white text-xs break-all">{formData.personal_email}</p>
+        </div>
+      )}
+      
+      {/* College Email */}
+      {formData.college_email && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">College Email</p>
+          <p className="font-medium text-gray-900 dark:text-white text-xs break-all">{formData.college_email}</p>
+        </div>
+      )}
+      
+      {/* School */}
+      {formData.school && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">School</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.school}</p>
+        </div>
+      )}
+      
+      {/* Course */}
+      {formData.course && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Course</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.course}</p>
+        </div>
+      )}
+      
+      {/* Branch */}
+      {formData.branch && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Branch</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.branch}</p>
+        </div>
+      )}
+      
+      {/* Admission Year */}
+      {formData.admission_year && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Admission Year</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.admission_year}</p>
+        </div>
+      )}
+      
+      {/* Passing Year */}
+      {formData.passing_year && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Passing Year</p>
+          <p className="font-medium text-gray-900 dark:text-white">{formData.passing_year}</p>
+        </div>
+      )}
+      
+      {/* Submitted Date */}
+      {formData.submitted_at && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Submitted On</p>
+          <p className="font-medium text-gray-900 dark:text-white">
+            {new Date(formData.submitted_at).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            })}
+          </p>
+        </div>
+      )}
+      
+      {/* Application Status */}
+      {formData.status && (
+        <div>
+          <p className="text-gray-500 dark:text-gray-400 mb-1">Application Status</p>
+          <p className="font-medium text-gray-900 dark:text-white">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+              ${formData.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                formData.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                formData.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+              }`}>
+              {formData.status}
+            </span>
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+));
+StudentInfoCard.displayName = 'StudentInfoCard';
 
 function CheckStatusContent() {
   const searchParams = useSearchParams();
@@ -26,8 +158,8 @@ function CheckStatusContent() {
   const [formData, setFormData] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
-  // ✅ Updated to use API route instead of direct Supabase query
-  const performSearch = async (regNo) => {
+  // ✅ Optimized API call with useCallback to prevent recreation
+  const performSearch = useCallback(async (regNo) => {
     const searchRegNo = (regNo || registrationNumber).trim();
 
     // Validation
@@ -98,7 +230,7 @@ function CheckStatusContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [registrationNumber, router]);
 
   // Auto-search if registration number is in URL (for refresh persistence)
   useEffect(() => {
@@ -111,18 +243,18 @@ function CheckStatusContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const handleSearch = async (e) => {
+  const handleSearch = useCallback(async (e) => {
     e.preventDefault();
     await performSearch();
-  };
+  }, [performSearch]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setRegistrationNumber('');
     setFormData(null);
     setNotFound(false);
     setError('');
     router.replace('/student/check-status', { scroll: false });
-  };
+  }, [router]);
 
   return (
     <PageWrapper>
@@ -246,80 +378,19 @@ function CheckStatusContent() {
             </motion.div>
           )}
 
-          {/* Status Tracker */}
+          {/* Status Tracker - Optimized with memoization */}
           {formData && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7 }}
+              transition={{ duration: 0.5 }}
             >
-              {/* Student Info Card */}
-              <div className="glass-card p-6 rounded-2xl border border-white/20 dark:border-gray-700/50 mb-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Registration Number</p>
-                    <p className="font-mono text-2xl font-bold text-jecrc-red">{formData.registration_no}</p>
-                  </div>
-                  <motion.button
-                    onClick={handleReset}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg font-manrope font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-700 active:scale-95"
-                  >
-                    Check Another
-                  </motion.button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Student Name</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formData.student_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400">Contact</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formData.contact_no}</p>
-                  </div>
-                  {formData.school && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">School</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formData.school}</p>
-                    </div>
-                  )}
-                  {formData.course && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">Course</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formData.course}</p>
-                    </div>
-                  )}
-                  {formData.branch && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">Branch</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formData.branch}</p>
-                    </div>
-                  )}
-                  {formData.personal_email && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">Personal Email</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formData.personal_email}</p>
-                    </div>
-                  )}
-                  {formData.college_email && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">College Email</p>
-                      <p className="font-medium text-gray-900 dark:text-white">{formData.college_email}</p>
-                    </div>
-                  )}
-                  {formData.admission_year && formData.passing_year && (
-                    <div>
-                      <p className="text-gray-500 dark:text-gray-400">Academic Period</p>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {formData.admission_year} (Admission) - {formData.passing_year} (Passing)
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
+              <StudentInfoCard
+                formData={formData}
+                isDark={isDark}
+                onReset={handleReset}
+              />
+              
               <StatusTracker
                 formId={formData.id}
                 registrationNo={formData.registration_no}

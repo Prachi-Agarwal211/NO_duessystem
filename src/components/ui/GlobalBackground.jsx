@@ -55,9 +55,9 @@ export default function GlobalBackground() {
         />
       )}
 
-      {/* 3. Animated Gradient Mesh Blobs (Replaces AuroraBackground) */}
+      {/* 3. Animated Gradient Mesh Blobs (Replaces AuroraBackground) - ENHANCED VISIBILITY */}
       <div className={`absolute inset-0 transition-opacity duration-700 ${
-        isDark ? 'opacity-40' : 'opacity-30'
+        isDark ? 'opacity-70' : 'opacity-60'
       }`}>
         {/* Top Left Blob */}
         <div
@@ -65,11 +65,11 @@ export default function GlobalBackground() {
             absolute top-[-20%] left-[-20%] w-[60%] h-[60%]
             bg-gradient-to-br rounded-full
             ${isDark
-              ? 'from-jecrc-red/70 via-jecrc-red/40 to-transparent'
-              : 'from-red-200/60 via-rose-200/40 to-transparent'
+              ? 'from-jecrc-red/80 via-jecrc-red/50 to-transparent'
+              : 'from-red-300/70 via-rose-300/50 to-transparent'
             }
-            ${isMobile ? 'blur-[40px]' : 'blur-[80px]'}
-            ${isMobile ? '' : 'animate-blob-slow'}
+            ${isMobile ? 'blur-[60px]' : 'blur-[100px]'}
+            animate-blob-slow
           `}
           style={{
             transform: 'translateZ(0)',
@@ -83,11 +83,11 @@ export default function GlobalBackground() {
             absolute top-[-20%] right-[-20%] w-[60%] h-[60%]
             bg-gradient-to-bl rounded-full
             ${isDark
-              ? 'from-jecrc-red-bright/60 via-jecrc-red-dark/30 to-transparent'
-              : 'from-rose-300/60 via-pink-200/40 to-transparent'
+              ? 'from-jecrc-red-bright/70 via-jecrc-red-dark/40 to-transparent'
+              : 'from-rose-400/70 via-pink-300/50 to-transparent'
             }
-            ${isMobile ? 'blur-[40px]' : 'blur-[80px]'}
-            ${isMobile ? '' : 'animate-blob-slow animation-delay-2000'}
+            ${isMobile ? 'blur-[60px]' : 'blur-[100px]'}
+            animate-blob-slow animation-delay-2000
           `}
           style={{
             transform: 'translateZ(0)',
@@ -102,10 +102,10 @@ export default function GlobalBackground() {
               absolute bottom-[-20%] left-[10%] w-[50%] h-[50%]
               bg-gradient-to-tr rounded-full
               ${isDark
-                ? 'from-jecrc-red-dark/60 via-jecrc-red/30 to-transparent'
-                : 'from-blue-200/50 via-indigo-200/30 to-transparent'
+                ? 'from-jecrc-red-dark/70 via-jecrc-red/40 to-transparent'
+                : 'from-blue-300/60 via-indigo-300/40 to-transparent'
               }
-              blur-[80px]
+              blur-[100px]
               animate-blob-slow animation-delay-4000
             `}
             style={{
@@ -116,9 +116,9 @@ export default function GlobalBackground() {
         )}
       </div>
 
-      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) */}
+      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) - ENHANCED VISIBILITY */}
       <div className={`absolute inset-0 transition-opacity duration-700 ${
-        isDark ? 'opacity-25' : 'opacity-15'
+        isDark ? 'opacity-40' : 'opacity-30'
       } animate-aurora-flow`}>
         <div
           className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%]"

@@ -104,23 +104,30 @@ export async function GET(request) {
           throw error;
         }
 
-        // Success - return ONLY essential fields to reduce payload size
-        // Full details can be fetched separately if needed
+        // Success - return all necessary fields for status display
         return NextResponse.json({
           found: true,
           data: {
             id: data.id,
             registration_no: data.registration_no,
             student_name: data.student_name,
+            parent_name: data.parent_name,
             school: data.school,
             course: data.course,
             branch: data.branch,
+            contact_no: data.contact_no,
+            personal_email: data.personal_email,
+            college_email: data.college_email,
+            admission_year: data.admission_year,
+            passing_year: data.passing_year,
             status: data.status,
+            created_at: data.created_at,
             submitted_at: data.submitted_at,
             approved_at: data.approved_at,
             certificate_url: data.certificate_url,
-            // Removed: contact_no, emails, admission_year, passing_year
-            // These can be fetched via separate API if user clicks "View Full Details"
+            reapplication_count: data.reapplication_count,
+            student_reply_message: data.student_reply_message,
+            alumni_screenshot_url: data.alumni_screenshot_url,
           }
         });
 

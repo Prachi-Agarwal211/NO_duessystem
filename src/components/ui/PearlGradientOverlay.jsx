@@ -11,11 +11,11 @@ export default function PearlGradientOverlay({
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Opacity levels for performance optimization
+  // Enhanced opacity levels for better visibility (40-60% range)
   const intensities = {
-    light: isDark ? 'opacity-[0.03]' : 'opacity-[0.05]',
-    medium: isDark ? 'opacity-[0.05]' : 'opacity-[0.08]', 
-    strong: isDark ? 'opacity-[0.08]' : 'opacity-[0.12]'
+    light: isDark ? 'opacity-[0.40]' : 'opacity-[0.45]',
+    medium: isDark ? 'opacity-[0.50]' : 'opacity-[0.55]',
+    strong: isDark ? 'opacity-[0.60]' : 'opacity-[0.65]'
   };
 
   return (
@@ -32,19 +32,19 @@ export default function PearlGradientOverlay({
           // Performance: Use transform instead of position changes
           transform: 'translateZ(0)',
           willChange: 'opacity',
-          // Subtle pearl shimmer effect
-          background: isDark 
-            ? `linear-gradient(135deg, 
-                transparent 0%, 
-                rgba(255,255,255,0.1) 25%, 
-                rgba(196,30,58,0.05) 50%, 
-                rgba(255,255,255,0.1) 75%, 
+          // Enhanced pearl shimmer effect with higher visibility
+          background: isDark
+            ? `linear-gradient(135deg,
+                transparent 0%,
+                rgba(255,255,255,0.25) 25%,
+                rgba(196,30,58,0.15) 50%,
+                rgba(255,255,255,0.25) 75%,
                 transparent 100%)`
-            : `linear-gradient(135deg, 
-                transparent 0%, 
-                rgba(255,229,233,0.3) 25%, 
-                rgba(196,30,58,0.1) 50%, 
-                rgba(255,229,233,0.3) 75%, 
+            : `linear-gradient(135deg,
+                transparent 0%,
+                rgba(255,229,233,0.5) 25%,
+                rgba(196,30,58,0.25) 50%,
+                rgba(255,229,233,0.5) 75%,
                 transparent 100%)`
         }}
       />
