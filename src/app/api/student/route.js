@@ -33,11 +33,16 @@ export async function POST(request) {
     // NOTE: We use validateForm instead of validateRequest because we already parsed the body
     const validation = validateForm(formData, VALIDATION_SCHEMAS.STUDENT_FORM);
     if (!validation.isValid) {
+      // Create user-friendly error message from validation errors
+      const errorFields = Object.keys(validation.errors);
+      const firstError = validation.errors[errorFields[0]];
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Validation failed',
-          errors: validation.errors
+          error: firstError || 'Please check all required fields',
+          details: validation.errors,
+          field: errorFields[0]
         },
         { status: 400 }
       );

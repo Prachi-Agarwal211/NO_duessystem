@@ -422,11 +422,23 @@ export default function SubmitForm() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        // Handle API errors
+        // Handle API errors with specific messages
         if (response.status === 409 || result.duplicate) {
           throw new Error('A form with this registration number already exists. Redirecting to status page...');
         }
-        throw new Error(result.error || 'Failed to submit form');
+        
+        // Show specific field errors if available
+        if (result.field && result.error) {
+          throw new Error(`${result.error}`);
+        }
+        
+        // Show detailed error if available
+        if (result.details && typeof result.details === 'object') {
+          const errorMessages = Object.values(result.details).join('. ');
+          throw new Error(errorMessages || 'Please check all required fields');
+        }
+        
+        throw new Error(result.error || 'Failed to submit form. Please check all fields and try again.');
       }
 
       if (!result.data) {
