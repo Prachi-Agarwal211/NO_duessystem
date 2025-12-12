@@ -435,6 +435,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 4.3 Function: Update form status when all departments approve
+-- CRITICAL FIX (2025-12-12): Added rejection cascade - when one department rejects, ALL must reject
 CREATE OR REPLACE FUNCTION update_form_status_on_department_action()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -442,29 +443,56 @@ DECLARE
     approved_depts INTEGER;
     rejected_depts INTEGER;
 BEGIN
+    -- Count total departments for this form
     SELECT COUNT(*) INTO total_depts
     FROM public.no_dues_status
     WHERE form_id = NEW.form_id;
     
+    -- Count approved departments
     SELECT COUNT(*) INTO approved_depts
     FROM public.no_dues_status
     WHERE form_id = NEW.form_id AND status = 'approved';
     
+    -- Count rejected departments
     SELECT COUNT(*) INTO rejected_depts
     FROM public.no_dues_status
     WHERE form_id = NEW.form_id AND status = 'rejected';
     
+    -- ==================== CRITICAL: REJECTION CASCADE ====================
+    -- If ANY department rejects, mark ALL departments as rejected
+    -- This ensures students get immediate feedback and can reapply
     IF rejected_depts > 0 THEN
+        -- Update form status to rejected
         UPDATE public.no_dues_forms
-        SET status = 'rejected'
+        SET status = 'rejected',
+            updated_at = NOW()
         WHERE id = NEW.form_id;
+        
+        -- CASCADE: Mark ALL other pending departments as rejected
+        -- This is the KEY FIX for the rejection workflow
+        UPDATE public.no_dues_status
+        SET
+            status = 'rejected',
+            rejection_reason = CASE
+                WHEN rejection_reason IS NULL THEN 'Form rejected by another department. Please reapply after addressing all concerns.'
+                ELSE rejection_reason
+            END,
+            updated_at = NOW()
+        WHERE form_id = NEW.form_id
+        AND status = 'pending';  -- Only update pending ones, keep approved/already-rejected as-is
+        
+    -- ==================== ALL APPROVED - MARK AS COMPLETED ====================
     ELSIF approved_depts = total_depts THEN
         UPDATE public.no_dues_forms
-        SET status = 'completed'
+        SET status = 'completed',
+            updated_at = NOW()
         WHERE id = NEW.form_id;
+        
+    -- ==================== PARTIAL PROGRESS - KEEP AS PENDING ====================
     ELSE
         UPDATE public.no_dues_forms
-        SET status = 'pending'
+        SET status = 'pending',
+            updated_at = NOW()
         WHERE id = NEW.form_id;
     END IF;
     
