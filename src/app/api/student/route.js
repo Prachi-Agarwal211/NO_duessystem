@@ -457,6 +457,24 @@ export async function POST(request) {
           });
 
           console.log(`📧 Notified ${staffToNotify.length} staff members (filtered from ${allStaff.length} total)`);
+          
+          // ==================== AUTO-PROCESS EMAIL QUEUE ====================
+          // Trigger queue processing immediately after sending emails
+          // This ensures any queued emails are sent without waiting for cron
+          try {
+            const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
+            console.log('🔄 Triggering email queue processor...');
+            
+            // Fire and forget - don't wait for response
+            fetch(queueUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).catch(err => {
+              console.log('Queue processing will retry later:', err.message);
+            });
+          } catch (queueError) {
+            console.log('Queue trigger skipped:', queueError.message);
+          }
         } else {
           console.warn('⚠️ No staff members match the scope for this student');
         }

@@ -304,6 +304,19 @@ export async function PUT(request) {
         });
 
         console.log(`📧 Reapplication notifications sent to ${staffMembers.length} staff member(s) in rejected departments`);
+        
+        // ==================== AUTO-PROCESS EMAIL QUEUE ====================
+        try {
+          const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
+          console.log('🔄 Triggering email queue processor...');
+          
+          fetch(queueUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).catch(err => console.log('Queue processing will retry later:', err.message));
+        } catch (queueError) {
+          console.log('Queue trigger skipped:', queueError.message);
+        }
       } catch (emailError) {
         console.error('Failed to send reapplication notifications:', emailError);
         // Don't fail the request if email fails

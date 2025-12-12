@@ -354,6 +354,19 @@ This is an automated notification from JECRC No Dues System.
       try {
         await Promise.all(emailPromises);
         console.log(`✅ Notified ${matchingStaff.length} department staff members for ${school} - ${course}`);
+        
+        // ==================== AUTO-PROCESS EMAIL QUEUE ====================
+        try {
+          const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
+          console.log('🔄 Triggering email queue processor...');
+          
+          fetch(queueUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).catch(err => console.log('Queue processing will retry later:', err.message));
+        } catch (queueError) {
+          console.log('Queue trigger skipped:', queueError.message);
+        }
       } catch (emailError) {
         console.error('Error sending notification emails:', emailError);
         // Don't fail the request if email fails

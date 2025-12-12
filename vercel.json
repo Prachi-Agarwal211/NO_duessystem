@@ -5,11 +5,5 @@
       "src": "package.json",
       "use": "@vercel/next"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/email/process-queue",
-      "schedule": "*/5 * * * *"
-    }
   ]
 }
