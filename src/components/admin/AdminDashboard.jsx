@@ -6,12 +6,13 @@ import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { useDepartmentsConfig } from '@/hooks/useDepartmentsConfig';
+import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/lib/supabaseClient';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import GlassCard from '@/components/ui/GlassCard';
-import StatsCard from '@/components/admin/StatsCard';
+import StatsCard from '@/components/shared/StatsCard';
 import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformanceChart';
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
@@ -20,23 +21,6 @@ import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
 import FilterPills from '@/components/ui/FilterPills';
 import { LogOut, Shield, RefreshCw, GraduationCap } from 'lucide-react';
-
-// ✅ PERFORMANCE FIX #1: Debounce hook to prevent API spam while typing
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  
-  return debouncedValue;
-}
 
 export default function AdminDashboard() {
   const router = useRouter();

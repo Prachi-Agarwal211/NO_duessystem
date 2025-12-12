@@ -1,83 +1,160 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
+/**
+ * Optimized GlobalBackground Component
+ * Consolidates functionality from Background.jsx, AuroraBackground.jsx, and FireNebulaBackground.jsx
+ * Single, performant background system with theme-aware visuals
+ *
+ * Performance Features:
+ * - CSS-only animations (no JavaScript overhead)
+ * - GPU-accelerated transforms
+ * - Conditional rendering based on device capabilities
+ * - Optimized for mobile devices
+ */
 export default function GlobalBackground() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile devices for performance optimization
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <div className="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
       {/* 1. Base Layer - Prevents white flashes */}
-      <div className={`absolute inset-0 transition-colors duration-700 ${
-        isDark ? 'bg-black' : 'bg-white'
-      }`} />
-
-      {/* 2. JECRC Campus Image (Subtle watermark) */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
-        style={{
-          backgroundImage: "url('/assets/9-1-1536x720.jpg')",
-          opacity: isDark ? 0.08 : 0.35,
-          mixBlendMode: isDark ? 'screen' : 'multiply',
-          filter: isDark ? 'brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px)' : 'brightness(0.9) contrast(1.1)'
-        }}
-      />
-
-      {/* 3. Static Gradient Mesh (JECRC Red Theme) */}
-      <div 
-        className={`absolute inset-0 transition-opacity duration-700 ${
-          isDark ? 'opacity-40' : 'opacity-30'
+      <div
+        className={`absolute inset-0 transition-colors duration-700 ${
+          isDark ? 'bg-black' : 'bg-white'
         }`}
-        style={{
-          backgroundImage: isDark 
-            ? `
-              radial-gradient(at 0% 0%, rgba(196, 30, 58, 0.4) 0%, transparent 50%), 
-              radial-gradient(at 50% 0%, rgba(139, 0, 0, 0.3) 0%, transparent 50%), 
-              radial-gradient(at 100% 0%, rgba(196, 30, 58, 0.35) 0%, transparent 50%)
-            `
-            : `
-              radial-gradient(at 0% 0%, rgba(255, 229, 233, 0.6) 0%, transparent 50%), 
-              radial-gradient(at 50% 0%, rgba(255, 248, 248, 0.5) 0%, transparent 50%), 
-              radial-gradient(at 100% 0%, rgba(255, 209, 217, 0.6) 0%, transparent 50%)
-            `
-        }}
       />
 
-      {/* 4. Aurora Animation (GPU-accelerated CSS-only) */}
+      {/* 2. JECRC Campus Image (Subtle watermark) - Desktop only for performance */}
+      {!isMobile && (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
+          style={{
+            backgroundImage: "url('/assets/9-1-1536x720.jpg')",
+            opacity: isDark ? 0.08 : 0.35,
+            mixBlendMode: isDark ? 'screen' : 'multiply',
+            filter: isDark ? 'brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px)' : 'brightness(0.9) contrast(1.1)',
+            transform: 'translateZ(0)', // GPU acceleration
+            willChange: 'opacity'
+          }}
+        />
+      )}
+
+      {/* 3. Animated Gradient Mesh Blobs (Replaces AuroraBackground) */}
       <div className={`absolute inset-0 transition-opacity duration-700 ${
-        isDark ? 'opacity-30' : 'opacity-20'
+        isDark ? 'opacity-40' : 'opacity-30'
+      }`}>
+        {/* Top Left Blob */}
+        <div
+          className={`
+            absolute top-[-20%] left-[-20%] w-[60%] h-[60%]
+            bg-gradient-to-br rounded-full
+            ${isDark
+              ? 'from-jecrc-red/70 via-jecrc-red/40 to-transparent'
+              : 'from-red-200/60 via-rose-200/40 to-transparent'
+            }
+            ${isMobile ? 'blur-[40px]' : 'blur-[80px]'}
+            ${isMobile ? '' : 'animate-blob-slow'}
+          `}
+          style={{
+            transform: 'translateZ(0)',
+            willChange: isMobile ? 'auto' : 'transform'
+          }}
+        />
+        
+        {/* Top Right Blob */}
+        <div
+          className={`
+            absolute top-[-20%] right-[-20%] w-[60%] h-[60%]
+            bg-gradient-to-bl rounded-full
+            ${isDark
+              ? 'from-jecrc-red-bright/60 via-jecrc-red-dark/30 to-transparent'
+              : 'from-rose-300/60 via-pink-200/40 to-transparent'
+            }
+            ${isMobile ? 'blur-[40px]' : 'blur-[80px]'}
+            ${isMobile ? '' : 'animate-blob-slow animation-delay-2000'}
+          `}
+          style={{
+            transform: 'translateZ(0)',
+            willChange: isMobile ? 'auto' : 'transform'
+          }}
+        />
+        
+        {/* Bottom Blob - Desktop only */}
+        {!isMobile && (
+          <div
+            className={`
+              absolute bottom-[-20%] left-[10%] w-[50%] h-[50%]
+              bg-gradient-to-tr rounded-full
+              ${isDark
+                ? 'from-jecrc-red-dark/60 via-jecrc-red/30 to-transparent'
+                : 'from-blue-200/50 via-indigo-200/30 to-transparent'
+              }
+              blur-[80px]
+              animate-blob-slow animation-delay-4000
+            `}
+            style={{
+              transform: 'translateZ(0)',
+              willChange: 'transform'
+            }}
+          />
+        )}
+      </div>
+
+      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) */}
+      <div className={`absolute inset-0 transition-opacity duration-700 ${
+        isDark ? 'opacity-25' : 'opacity-15'
       } animate-aurora-flow`}>
-        <div 
+        <div
           className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%]"
           style={{
             background: isDark
-              ? 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(196, 30, 58, 0.15) 50%), radial-gradient(rgba(196, 30, 58, 0.2) 0%, transparent 50%)'
-              : 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(255, 229, 233, 0.3) 50%), radial-gradient(rgba(255, 209, 217, 0.3) 0%, transparent 50%)'
+              ? 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(196, 30, 58, 0.12) 50%), radial-gradient(rgba(196, 30, 58, 0.15) 0%, transparent 50%)'
+              : 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(255, 229, 233, 0.25) 50%), radial-gradient(rgba(255, 209, 217, 0.25) 0%, transparent 50%)',
+            transform: 'translateZ(0)',
+            willChange: 'transform'
           }}
         />
       </div>
 
-      {/* 5. Subtle Grid Overlay (Optional) */}
-      <div 
-        className={`absolute inset-0 bg-center transition-opacity duration-700 ${
-          isDark ? 'opacity-5' : 'opacity-10'
-        }`}
-        style={{ 
-          backgroundImage: "url('/grid.svg')",
-          backgroundSize: '30px 30px',
-          maskImage: 'linear-gradient(180deg, white, rgba(255, 255, 255, 0))'
-        }} 
-      />
+      {/* 5. Subtle Grid Overlay - Desktop only */}
+      {!isMobile && (
+        <div
+          className={`absolute inset-0 bg-center transition-opacity duration-700 ${
+            isDark ? 'opacity-5' : 'opacity-10'
+          }`}
+          style={{
+            backgroundImage: "url('/grid.svg')",
+            backgroundSize: '30px 30px',
+            maskImage: 'linear-gradient(180deg, white, rgba(255, 255, 255, 0))',
+            transform: 'translateZ(0)'
+          }}
+        />
+      )}
 
       {/* 6. Subtle grain texture for depth */}
-      <div 
+      <div
         className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
         style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
           backgroundRepeat: 'repeat',
-          backgroundSize: '128px 128px'
+          backgroundSize: '128px 128px',
+          transform: 'translateZ(0)'
         }}
       />
     </div>

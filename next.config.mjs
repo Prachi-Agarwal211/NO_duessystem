@@ -36,10 +36,17 @@ const nextConfig = {
     return config;
   },
 
-  // Simplified experimental features
+  // Enhanced experimental features for better performance
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      'chart.js',
+      'react-chartjs-2',
+      '@supabase/supabase-js'
+    ],
     webpackBuildWorker: true,
+    optimizeCss: true, // Enable CSS optimization
   },
 
   images: {

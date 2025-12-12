@@ -11,7 +11,6 @@ import PageWrapper from '@/components/landing/PageWrapper';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
-import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -27,7 +26,7 @@ function CheckStatusContent() {
   const [formData, setFormData] = useState(null);
   const [notFound, setNotFound] = useState(false);
 
-  // ✅ Define performSearch with useCallback to stabilize dependency
+  // ✅ Updated to use API route instead of direct Supabase query
   const performSearch = async (regNo) => {
     const searchRegNo = (regNo || registrationNumber).trim();
 
@@ -50,49 +49,49 @@ function CheckStatusContent() {
     setFormData(null);
 
     try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      // ✅ Call API route instead of direct Supabase query
+      const response = await fetch(
+        `/api/student/check-status?registration_no=${encodeURIComponent(searchRegNo.toUpperCase())}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
       );
 
-      const queryPromise = supabase
-        .from('no_dues_forms')
-        .select('*')
-        .eq('registration_no', searchRegNo.toUpperCase())
-        .single();
+      const result = await response.json();
 
-      const { data, error: supabaseError } = await Promise.race([queryPromise, timeoutPromise]);
-
-      if (supabaseError) {
-        if (supabaseError.code === 'PGRST116') {
-          setNotFound(true);
-        } else if (supabaseError.message === 'Request timeout') {
-          throw new Error('Request timed out. Please check your connection and try again.');
-        } else {
-          throw supabaseError;
-        }
-      } else {
-        if (!data) {
+      if (!response.ok) {
+        // Handle different error codes
+        if (response.status === 404) {
           setNotFound(true);
           return;
         }
+        
+        // Show user-friendly error message
+        throw new Error(result.error || 'Failed to fetch status');
+      }
 
-        setFormData(data);
+      // Success - check if form was found
+      if (result.found && result.data) {
+        setFormData(result.data);
         // Update URL with registration number for persistence on refresh
         router.replace(`/student/check-status?reg=${searchRegNo.toUpperCase()}`, { scroll: false });
+      } else {
+        setNotFound(true);
       }
+
     } catch (err) {
       console.error('Error fetching form:', err);
 
       // User-friendly error messages
       let errorMessage = 'Failed to fetch status. Please try again.';
 
-      if (err.message?.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection and try again.';
-      } else if (err.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your internet connection.';
-      } else if (err.code === 'PGRST301') {
-        errorMessage = 'Database connection error. Please try again later.';
+      if (err.message?.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (err.message) {
+        errorMessage = err.message;
       }
 
       setError(errorMessage);

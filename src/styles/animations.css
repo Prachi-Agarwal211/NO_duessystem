@@ -107,3 +107,73 @@
   );
   background-size: 1000px 100%;
 }
+
+/* ========================================
+   BACKGROUND BLOB ANIMATIONS
+   ======================================== */
+
+/* Smooth floating animation for background blobs */
+@keyframes blob-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) translateZ(0);
+  }
+  25% {
+    transform: translate(20px, -20px) scale(1.05) translateZ(0);
+  }
+  50% {
+    transform: translate(-15px, 15px) scale(0.95) translateZ(0);
+  }
+  75% {
+    transform: translate(15px, 10px) scale(1.02) translateZ(0);
+  }
+}
+
+.animate-blob-slow {
+  animation: blob-slow 20s ease-in-out infinite;
+}
+
+/* Animation delay utilities for staggered blob movement */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Override pulse-slow for blob breathing effect */
+@keyframes pulse-slow-blob {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1) translateZ(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05) translateZ(0);
+  }
+}
+
+.animate-pulse-slow-blob {
+  animation: pulse-slow-blob 8s ease-in-out infinite;
+}
+
+/* Reduced motion support for blobs */
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob-slow,
+  .animate-pulse-slow-blob {
+    animation: none !important;
+  }
+  
+  .animation-delay-2000,
+  .animation-delay-4000 {
+    animation-delay: 0s !important;
+  }
+}
+
+/* Mobile optimizations for blobs */
+@media (max-width: 768px) {
+  .animate-blob-slow {
+    animation: none !important;
+    transform: translate(0, 0) scale(1) translateZ(0) !important;
+  }
+}
