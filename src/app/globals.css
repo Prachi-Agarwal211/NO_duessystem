@@ -210,10 +210,10 @@ body.dark {
   50% { background-position: 100% 50%; }
 }
 
-/* Default cursor restored - CustomCursor component removed */
+/* Hide default cursor - CustomCursor component handles cursor display */
 @media (hover: hover) and (pointer: fine) {
   body {
-    cursor: default;
+    cursor: none;
   }
 }
 
@@ -255,7 +255,7 @@ input:-webkit-autofill:active {
 /* Interactive elements responsive cursor */
 @media (hover: hover) and (pointer: fine) {
   .interactive {
-    cursor: pointer;
+    cursor: none;
   }
 }
 

@@ -32,63 +32,46 @@ export default function StatusTracker({ registrationNo }) {
         throw new Error('Invalid registration number');
       }
 
-      // Add timeout to prevent hanging requests (increased to 30 seconds)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout - please check your connection')), 30000)
+      // OPTIMIZATION: Use optimized API endpoint instead of direct Supabase queries
+      // This provides better performance, caching, and timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      const response = await fetch(
+        `/api/check-status?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}`,
+        {
+          signal: controller.signal,
+          cache: 'no-store' // Always get fresh data
+        }
       );
 
-      // Fetch form with timeout
-      const formPromise = supabase
-        .from('no_dues_forms')
-        .select('*')
-        .eq('registration_no', registrationNo.trim().toUpperCase())
-        .single();
+      clearTimeout(timeoutId);
 
-      const { data: form, error: formError } = await Promise.race([formPromise, timeoutPromise]);
-
-      if (formError) {
-        if (formError.code === 'PGRST116') {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 404 || errorData.notFound) {
           throw new Error('No form found for this registration number');
         }
-        throw formError;
+        
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
-      if (!form) throw new Error('Form not found');
+      const result = await response.json();
 
-      setFormData(form);
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Invalid response from server');
+      }
 
-      // Fetch departments and statuses in parallel with timeout
-      const [deptPromise, statusPromise] = [
-        supabase.from('departments').select('*').order('display_order'),
-        supabase.from('no_dues_status').select('*').eq('form_id', form.id)
-      ];
-
-      const [{ data: departments, error: deptError }, { data: statuses, error: statusError }] =
-        await Promise.all([deptPromise, statusPromise].map(p => Promise.race([p, timeoutPromise])));
-
-      if (deptError) throw deptError;
-      if (statusError) throw statusError;
-
-      // Merge department data with status data
-      const mergedData = departments.map(dept => {
-        const status = statuses.find(s => s.department_name === dept.name);
-        return {
-          department_name: dept.name,
-          display_name: dept.display_name,
-          status: status?.status || 'pending',
-          action_at: status?.action_at || null,
-          rejection_reason: status?.rejection_reason || null,
-          action_by_user_id: status?.action_by_user_id || null,
-        };
-      });
-
-      setStatusData(mergedData);
+      // Update state with optimized data
+      setFormData(result.data.form);
+      setStatusData(result.data.statusData);
 
     } catch (err) {
       console.error('Error fetching data:', err);
 
       // Provide more user-friendly error messages
-      if (err.message.includes('timeout')) {
+      if (err.name === 'AbortError') {
         setError('Request timed out after 30 seconds. Please check your internet connection and try again.');
       } else if (err.message.includes('No form found')) {
         setError(err.message);

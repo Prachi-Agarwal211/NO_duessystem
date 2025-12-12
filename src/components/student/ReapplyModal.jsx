@@ -196,6 +196,10 @@ export default function ReapplyModal({
         }
       });
 
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch('/api/student/reapply', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -203,8 +207,11 @@ export default function ReapplyModal({
           registration_no: formData.registration_no,
           student_reply_message: replyMessage.trim(),
           updated_form_data: updatedFields
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
@@ -223,7 +230,11 @@ export default function ReapplyModal({
 
     } catch (err) {
       console.error('Reapplication error:', err);
-      setError(err.message || 'Failed to submit reapplication. Please try again.');
+      if (err.name === 'AbortError') {
+        setError('Request timed out after 30 seconds. Please check your connection and try again.');
+      } else {
+        setError(err.message || 'Failed to submit reapplication. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
