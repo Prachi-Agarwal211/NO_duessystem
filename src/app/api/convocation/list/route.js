@@ -73,7 +73,8 @@ export async function GET(request) {
     const totalPages = Math.ceil((count || 0) / limit)
 
     return NextResponse.json({
-      students: students || [],
+      success: true,
+      data: students || [],
       pagination: {
         page,
         limit,

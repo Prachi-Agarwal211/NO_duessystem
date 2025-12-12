@@ -131,7 +131,7 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         
         <p
           className={`font-sans text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300 ${
-            isDark ? 'text-gray-300 group-hover:text-gray-200' : 'text-gray-500 group-hover:text-gray-600'
+            isDark ? 'text-gray-300 group-hover:text-gray-200' : 'text-gray-700 group-hover:text-gray-800'
           }`}
           style={isDark ? {
             textShadow: '0 0 20px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(0, 0, 0, 0.6)'
@@ -146,11 +146,13 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         className={`relative z-10 flex items-center gap-3 text-xs font-bold tracking-[0.25em] uppercase transition-colors duration-500
           ${isDark
             ? 'text-gray-400 group-hover:text-jecrc-red-bright'
-            : 'text-gray-600 group-hover:text-jecrc-red'
+            : 'text-gray-800 group-hover:text-jecrc-red'
           }`}
         style={isDark ? {
           textShadow: '0 0 15px rgba(255, 255, 255, 0.2)'
-        } : {}}
+        } : {
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+        }}
         whileHover={{ x: 4 }}
         transition={springConfig}
       >

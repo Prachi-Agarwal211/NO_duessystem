@@ -161,7 +161,7 @@ export default function ConvocationDashboard() {
       student.student_name,
       student.school,
       student.admission_year,
-      student.convocation_status
+      student.status || 'not_started'
     ]);
 
     const csv = [
@@ -447,7 +447,7 @@ export default function ConvocationDashboard() {
                         {student.admission_year}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <StatusBadge status={student.convocation_status} />
+                        <StatusBadge status={student.status || 'not_started'} />
                       </td>
                     </motion.tr>
                   ))}
