@@ -1,12 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 /**
  * POST /api/convocation/validate
  * Validates if a registration number is eligible for convocation
- * 
+ *
  * Request body: { registration_no: string }
- * 
+ *
  * Response:
  * - 200: { valid: true, student: { name, school, admission_year } }
  * - 404: { valid: false, error: "Registration number not found" }
@@ -14,7 +14,6 @@ import { NextResponse } from 'next/server'
  */
 export async function POST(request) {
   try {
-    const supabase = await createClient()
     const body = await request.json()
     
     const { registration_no } = body
@@ -44,7 +43,7 @@ export async function POST(request) {
     }
 
     // Query the convocation_eligible_students table
-    const { data: student, error } = await supabase
+    const { data: student, error } = await supabaseAdmin
       .from('convocation_eligible_students')
       .select('student_name, school, admission_year, status')
       .eq('registration_no', normalizedRegNo)

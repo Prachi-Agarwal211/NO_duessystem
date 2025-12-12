@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 /**
  * GET /api/convocation/stats
  * Retrieves statistics for convocation dashboard
- * 
+ *
  * Response:
  * {
  *   total: number,
@@ -21,10 +21,8 @@ import { NextResponse } from 'next/server'
  */
 export async function GET(request) {
   try {
-    const supabase = await createClient()
-
     // Get total count
-    const { count: total, error: totalError } = await supabase
+    const { count: total, error: totalError } = await supabaseAdmin
       .from('convocation_eligible_students')
       .select('*', { count: 'exact', head: true })
 
@@ -37,7 +35,7 @@ export async function GET(request) {
     }
 
     // Get status counts
-    const { data: statusData, error: statusError } = await supabase
+    const { data: statusData, error: statusError } = await supabaseAdmin
       .from('convocation_eligible_students')
       .select('status')
 
@@ -65,7 +63,7 @@ export async function GET(request) {
     })
 
     // Get school counts
-    const { data: schoolData, error: schoolError } = await supabase
+    const { data: schoolData, error: schoolError } = await supabaseAdmin
       .from('convocation_eligible_students')
       .select('school')
 

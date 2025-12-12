@@ -1,17 +1,17 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 
 /**
  * GET /api/convocation/list
  * Retrieves paginated list of convocation-eligible students with filtering
- * 
+ *
  * Query params:
  * - page: number (default: 1)
  * - limit: number (default: 50, max: 100)
  * - status: convocation_status filter (optional)
  * - school: school name filter (optional)
  * - search: search by name or registration number (optional)
- * 
+ *
  * Response:
  * {
  *   students: Array<Student>,
@@ -20,7 +20,6 @@ import { NextResponse } from 'next/server'
  */
 export async function GET(request) {
   try {
-    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
 
     // Parse pagination params
@@ -34,7 +33,7 @@ export async function GET(request) {
     const searchQuery = searchParams.get('search')?.trim()
 
     // Build query
-    let query = supabase
+    let query = supabaseAdmin
       .from('convocation_eligible_students')
       .select('*', { count: 'exact' })
 
