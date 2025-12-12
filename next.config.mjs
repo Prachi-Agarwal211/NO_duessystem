@@ -36,7 +36,7 @@ const nextConfig = {
     return config;
   },
 
-  // Enhanced experimental features for better performance
+  // Simplified experimental features - removed options causing deployment issues
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -45,8 +45,8 @@ const nextConfig = {
       'react-chartjs-2',
       '@supabase/supabase-js'
     ],
-    webpackBuildWorker: true,
-    optimizeCss: true, // Enable CSS optimization
+    // webpackBuildWorker removed - may cause Vercel build issues
+    // optimizeCss removed - requires critters package
   },
 
   images: {
