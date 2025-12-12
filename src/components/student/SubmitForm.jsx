@@ -205,7 +205,7 @@ export default function SubmitForm() {
           // If school matched, set the UUID
           if (matchedSchool) {
             updates.school = matchedSchool.id;
-            logger.info('School auto-filled', {
+            logger.debug('School auto-filled', {
               convocationSchool: result.student.school,
               matchedSchool: matchedSchool.name,
               schoolId: matchedSchool.id
@@ -224,7 +224,7 @@ export default function SubmitForm() {
           ...updates
         }));
         
-        logger.info('Convocation validation successful - form auto-filled', {
+        logger.success('Convocation validation successful - form auto-filled', {
           registration_no,
           autoFilled: Object.keys(updates)
         });
