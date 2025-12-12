@@ -178,25 +178,69 @@ export default function SubmitForm() {
         setConvocationValid(true);
         setConvocationData(result.student);
         
-        // Auto-fill student name, admission year if empty
+        // ==================== AUTO-FILL FORM DATA ====================
+        // Auto-fill student name and admission year
+        const updates = {
+          student_name: result.student.name || formData.student_name,
+          admission_year: result.student.admission_year || formData.admission_year
+        };
+        
+        // Auto-fill school dropdown using fuzzy matching
+        if (result.student.school && schools.length > 0) {
+          const convocationSchoolName = result.student.school.toLowerCase().trim();
+          
+          // Try exact match first
+          let matchedSchool = schools.find(s =>
+            s.name.toLowerCase().trim() === convocationSchoolName
+          );
+          
+          // If no exact match, try partial match (contains)
+          if (!matchedSchool) {
+            matchedSchool = schools.find(s =>
+              s.name.toLowerCase().includes(convocationSchoolName) ||
+              convocationSchoolName.includes(s.name.toLowerCase())
+            );
+          }
+          
+          // If school matched, set the UUID
+          if (matchedSchool) {
+            updates.school = matchedSchool.id;
+            logger.info('School auto-filled', {
+              convocationSchool: result.student.school,
+              matchedSchool: matchedSchool.name,
+              schoolId: matchedSchool.id
+            });
+          } else {
+            logger.warn('Could not auto-fill school - no match found', {
+              convocationSchool: result.student.school,
+              availableSchools: schools.map(s => s.name)
+            });
+          }
+        }
+        
+        // Apply all updates at once
         setFormData(prev => ({
           ...prev,
-          student_name: prev.student_name || result.student.name,
-          admission_year: prev.admission_year || result.student.admission_year,
-          // Note: School is auto-filled but user can still change it
-          // We don't auto-select school dropdown as it requires UUID mapping
+          ...updates
         }));
         
-        logger.info('Convocation validation successful', { registration_no });
+        logger.info('Convocation validation successful - form auto-filled', {
+          registration_no,
+          autoFilled: Object.keys(updates)
+        });
       } else {
         setConvocationValid(false);
-        setConvocationError(result.error || 'Registration number not eligible for convocation');
+        setConvocationError(result.error || 'Registration number not eligible for 9th convocation. Kindly contact admin');
         logger.warn('Convocation validation failed', { registration_no, error: result.error });
       }
     } catch (error) {
       console.error('Convocation validation error:', error);
       setConvocationValid(false);
-      setConvocationError('Failed to validate registration number');
+      setConvocationError('Failed to validate registration number. Please try again.');
+      logger.error(error, {
+        action: 'validateConvocation',
+        registration_no
+      });
     } finally {
       setValidatingConvocation(false);
     }
