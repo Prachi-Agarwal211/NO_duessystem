@@ -389,22 +389,23 @@ export async function POST(request) {
     console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
+    // Note: Email failures are non-fatal - form is already created successfully
     
-    // IMPORTANT: Fetch staff based on department scope rules:
-    // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
-    // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
-    
-    const { data: allStaff, error: staffError } = await supabaseAdmin
-      .from('profiles')
-      .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
-      .eq('role', 'department')
-      .not('email', 'is', null);
+    try {
+      // IMPORTANT: Fetch staff based on department scope rules:
+      // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
+      // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
+      
+      const { data: allStaff, error: staffError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
+        .eq('role', 'department')
+        .not('email', 'is', null);
 
-    if (staffError) {
-      console.error('Failed to fetch staff members:', staffError);
-      // Continue even if email fails - form is already created
-    } else if (allStaff && allStaff.length > 0) {
-      try {
+      if (staffError) {
+        console.error('Failed to fetch staff members:', staffError);
+        // Continue even if email fails - form is already created
+      } else if (allStaff && allStaff.length > 0) {
         // Filter staff based on scope:
         // - school_hod staff: Only those matching student's school/course/branch (using UUID arrays)
         // - All other departments: No filtering, all staff get notified
@@ -475,15 +476,16 @@ export async function POST(request) {
           } catch (queueError) {
             console.log('Queue trigger skipped:', queueError.message);
           }
-        } else {
-          console.warn('⚠️ No staff members match the scope for this student');
-        }
-      } catch (emailError) {
-        console.error('Failed to send email notifications:', emailError);
-        // Continue - form submission should not fail if emails fail
+          } else {
+            console.warn('⚠️ No staff members match the scope for this student');
+          }
+      } else {
+        console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
       }
-    } else {
-      console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
+    } catch (emailError) {
+      console.error('❌ Email notification failed (non-fatal):', emailError);
+      console.log('📝 Form created successfully. Email will be queued for retry.');
+      // Continue - form submission should not fail if emails fail
     }
 
     // ==================== RETURN SUCCESS ====================
