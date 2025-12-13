@@ -66,6 +66,7 @@ export async function GET(request) {
     }
 
     // ⚡ PERFORMANCE: Optimized query - only select needed columns
+    // ✅ CRITICAL: Exclude manual entries from regular applications list
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -92,6 +93,7 @@ export async function GET(request) {
           )
         )
       `)
+      .eq('is_manual_entry', false) // ✅ Only show online submissions
       .order(sortField, { ascending: sortOrder === 'asc' });
 
     // Apply status filter
@@ -130,11 +132,13 @@ export async function GET(request) {
     query = query.range(from, to);
 
     // Execute count and data queries in parallel
+    // ✅ CRITICAL: Count only excludes manual entries
     const [applicationsResult, countResult] = await Promise.all([
       query,
       supabaseAdmin
         .from('no_dues_forms')
         .select('id', { count: 'exact', head: true })
+        .eq('is_manual_entry', false) // ✅ Count only online submissions
     ]);
 
     const { data: applications, error: applicationsError } = applicationsResult;

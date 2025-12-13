@@ -15,9 +15,8 @@ import StatsCard from '@/components/staff/StatsCard';
 import TableSkeleton from '@/components/ui/TableSkeleton';
 import CardSkeleton from '@/components/ui/CardSkeleton';
 import FilterPills from '@/components/ui/FilterPills';
-import ChangePasswordModal from '@/components/staff/ChangePasswordModal';
 import ManualEntriesView from '@/components/staff/ManualEntriesView';
-import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, KeyRound, FileCheck } from 'lucide-react';
+import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, FileCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { exportApplicationsToCSV } from '@/lib/csvExport';
@@ -31,7 +30,6 @@ function StaffDashboardContent() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rejectedLoading, setRejectedLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [showChangePassword, setShowChangePassword] = useState(false);
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -314,20 +312,6 @@ function StaffDashboardContent() {
                 >
                   <Download className="w-4 h-4" />
                   <span className="hidden sm:inline">Export</span>
-                </button>
-
-                {/* Change Password Button */}
-                <button
-                  onClick={() => setShowChangePassword(true)}
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
-                    isDark
-                      ? 'bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30'
-                      : 'bg-purple-50 hover:bg-purple-100 text-purple-600 border border-purple-200'
-                  }`}
-                  title="Change Password"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span className="hidden sm:inline">Password</span>
                 </button>
 
                 {/* Logout Button */}
@@ -686,13 +670,6 @@ function StaffDashboardContent() {
               Last updated: {lastUpdate.toLocaleString('en-IN')}
             </div>
           </GlassCard>
-
-          {/* Change Password Modal */}
-          <ChangePasswordModal
-            isOpen={showChangePassword}
-            onClose={() => setShowChangePassword(false)}
-            userEmail={user?.email}
-          />
         </div>
       </div>
     </PageWrapper>
