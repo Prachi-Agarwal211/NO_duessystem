@@ -16,7 +16,8 @@ import TableSkeleton from '@/components/ui/TableSkeleton';
 import CardSkeleton from '@/components/ui/CardSkeleton';
 import FilterPills from '@/components/ui/FilterPills';
 import ChangePasswordModal from '@/components/staff/ChangePasswordModal';
-import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, KeyRound } from 'lucide-react';
+import ManualEntriesView from '@/components/staff/ManualEntriesView';
+import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, KeyRound, FileCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { exportApplicationsToCSV } from '@/lib/csvExport';
@@ -24,7 +25,7 @@ import { exportApplicationsToCSV } from '@/lib/csvExport';
 function StaffDashboardContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('pending'); // pending, rejected, history
+  const [activeTab, setActiveTab] = useState('pending'); // pending, rejected, history, manual-entries
   const [actionHistory, setActionHistory] = useState([]);
   const [rejectedForms, setRejectedForms] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -470,12 +471,12 @@ function StaffDashboardContent() {
             )}
 
             {/* Tab Navigation */}
-            <div id="content-section" className="flex gap-4 mb-6 border-b scroll-mt-8" style={{
+            <div id="content-section" className="flex gap-4 mb-6 border-b scroll-mt-8 overflow-x-auto" style={{
               borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
             }}>
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`pb-3 px-2 font-medium transition-all duration-300 ${
+                className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
                   activeTab === 'pending'
                     ? isDark
                       ? 'border-b-2 border-blue-400 text-blue-400'
@@ -489,7 +490,7 @@ function StaffDashboardContent() {
               </button>
               <button
                 onClick={() => setActiveTab('rejected')}
-                className={`pb-3 px-2 font-medium transition-all duration-300 ${
+                className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
                   activeTab === 'rejected'
                     ? isDark
                       ? 'border-b-2 border-red-400 text-red-400'
@@ -503,7 +504,7 @@ function StaffDashboardContent() {
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`pb-3 px-2 font-medium transition-all duration-300 ${
+                className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
                   activeTab === 'history'
                     ? isDark
                       ? 'border-b-2 border-blue-400 text-blue-400'
@@ -514,6 +515,21 @@ function StaffDashboardContent() {
                 }`}
               >
                 My Action History
+              </button>
+              <button
+                onClick={() => setActiveTab('manual-entries')}
+                className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'manual-entries'
+                    ? isDark
+                      ? 'border-b-2 border-purple-400 text-purple-400'
+                      : 'border-b-2 border-purple-600 text-purple-600'
+                    : isDark
+                      ? 'text-gray-400 hover:text-gray-300'
+                      : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <FileCheck className="w-4 h-4" />
+                Manual Entries
               </button>
             </div>
 
@@ -653,6 +669,13 @@ function StaffDashboardContent() {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Manual Entries Tab */}
+            {activeTab === 'manual-entries' && (
+              <div className="mb-4">
+                <ManualEntriesView />
               </div>
             )}
 

@@ -264,158 +264,10 @@ export async function POST(request) {
       console.error('Error sending student confirmation email:', emailError);
     }
 
-    // ===== CREATE DEPARTMENT STATUS - ONLY FOR "Department" =====
-    // Manual entries only need Department approval (not all 11 departments)
-    const { error: statusError } = await supabaseAdmin
-      .from('no_dues_status')
-      .insert([{
-        form_id: newForm.id,
-        department_name: 'Department',
-        status: 'pending',
-        comment: 'Manual entry - requires certificate verification'
-      }]);
-
-    if (statusError) {
-      console.error('Error creating department status:', statusError);
-      // Continue even if status creation fails
-    }
-
-    // ===== NOTIFY ONLY MATCHING DEPARTMENT STAFF =====
-    const { data: departmentStaff, error: staffError } = await supabaseAdmin
-      .from('profiles')
-      .select('email, full_name, school_id, school_ids, course_ids, branch_ids')
-      .eq('role', 'department')  // FIXED: Changed from 'staff' to 'department'
-      .eq('department_name', 'Department');
-    
-    // Filter staff by scoping on the application side since we're using UUID arrays
-    const matchingStaff = departmentStaff?.filter(staff => {
-      // If staff has no scope, they see all students
-      const hasNoScope = !staff.school_ids && !staff.course_ids && !staff.branch_ids;
-      if (hasNoScope) return true;
-      
-      // Check if school matches
-      const schoolMatches = !staff.school_ids || staff.school_ids.includes(school_id);
-      // Check if course matches
-      const courseMatches = !staff.course_ids || staff.course_ids.includes(course_id);
-      // Check if branch matches
-      const branchMatches = !staff.branch_ids || !branch_id || staff.branch_ids.includes(branch_id);
-      
-      return schoolMatches && courseMatches && branchMatches;
-    }) || [];
-
-    if (staffError) {
-      console.error('Error fetching department staff:', staffError);
-    }
-
-    // Send email ONLY to matching department staff
-    if (matchingStaff && matchingStaff.length > 0) {
-      const emailPromises = matchingStaff.map(staff =>
-        sendEmail({
-          to: staff.email,
-          subject: `New Offline Certificate Registration - ${registration_no}`,
-          text: `
-Hello ${staff.full_name || 'Department Staff'},
-
-A student has registered their offline no-dues certificate for verification.
-
-Registration Details:
-- Registration Number: ${registration_no}
-- School: ${school}
-- Course: ${course}
-- Branch: ${branch || 'N/A'}
-
-Action Required:
-Please log in to your dashboard to review and verify the certificate.
-
-Certificate URL: ${certificate_url}
-
-This is an automated notification from JECRC No Dues System.
-          `.trim(),
-          html: `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  <div style="background: linear-gradient(135deg, #C41E3A 0%, #8B0000 100%); padding: 30px; text-align: center;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">🔔 New Offline Certificate</h1>
-  </div>
-  
-  <div style="padding: 30px; background: #f9f9f9;">
-    <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-      Hello <strong>${staff.full_name || 'Department Staff'}</strong>,
-    </p>
-    
-    <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-      A student has registered their offline no-dues certificate and needs your verification.
-    </p>
-    
-    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #C41E3A;">
-      <h3 style="color: #C41E3A; margin-top: 0;">Registration Details</h3>
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr>
-          <td style="padding: 8px 0; color: #666; font-weight: bold;">Registration Number:</td>
-          <td style="padding: 8px 0; color: #333;">${registration_no}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #666; font-weight: bold;">School:</td>
-          <td style="padding: 8px 0; color: #333;">${school}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #666; font-weight: bold;">Course:</td>
-          <td style="padding: 8px 0; color: #333;">${course}</td>
-        </tr>
-        <tr>
-          <td style="padding: 8px 0; color: #666; font-weight: bold;">Branch:</td>
-          <td style="padding: 8px 0; color: #333;">${branch || 'N/A'}</td>
-        </tr>
-      </table>
-    </div>
-    
-    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin: 20px 0;">
-      <p style="margin: 0; color: #856404; font-weight: bold;">⚠️ Action Required</p>
-      <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
-        Please log in to your dashboard to review and verify the uploaded certificate.
-      </p>
-    </div>
-    
-    <div style="margin: 20px 0; text-align: center;">
-      <a href="${certificate_url}" 
-         style="display: inline-block; background: #C41E3A; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-        View Certificate
-      </a>
-    </div>
-  </div>
-  
-  <div style="background: #333; padding: 20px; text-align: center;">
-    <p style="color: #999; font-size: 12px; margin: 0;">
-      This is an automated notification from JECRC No Dues Clearance System
-    </p>
-  </div>
-</div>
-          `.trim()
-        })
-      );
-
-      try {
-        await Promise.all(emailPromises);
-        console.log(`✅ Notified ${matchingStaff.length} department staff members for ${school} - ${course}`);
-        
-        // ==================== AUTO-PROCESS EMAIL QUEUE ====================
-        try {
-          const queueUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/email/process-queue`;
-          console.log('🔄 Triggering email queue processor...');
-          
-          fetch(queueUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          }).catch(err => console.log('Queue processing will retry later:', err.message));
-        } catch (queueError) {
-          console.log('Queue trigger skipped:', queueError.message);
-        }
-      } catch (emailError) {
-        console.error('Error sending notification emails:', emailError);
-        // Don't fail the request if email fails
-      }
-    } else {
-      console.warn(`⚠️ No department staff found for school: ${school}, course: ${course}`);
-    }
+    // ===== NO DEPARTMENT STATUS CREATION =====
+    // Manual entries are ADMIN-ONLY for verification
+    // Departments can VIEW the data but cannot approve/reject
+    console.log('ℹ️ Manual entry created - Admin approval required (no department workflow)');
 
     // ===== NOTIFY ADMIN ABOUT NEW MANUAL ENTRY =====
     const { data: adminUsers } = await supabaseAdmin
@@ -507,7 +359,7 @@ This is an automated notification from JECRC No Dues System.
         id: newForm.id,
         registration_no: newForm.registration_no,
         status: 'pending',
-        note: 'Waiting for department verification'
+        note: 'Waiting for admin verification'
       }
     }, { status: 201 });
 
@@ -522,8 +374,9 @@ This is an automated notification from JECRC No Dues System.
 
 /**
  * GET /api/manual-entry
- * Get manual entries (for department staff dashboard)
- * Filtered by staff scope
+ * Get manual entries for viewing
+ * - Admin: All manual entries
+ * - Department Staff: View-only (filtered by scope) - NO ACTION ALLOWED
  */
 export async function GET(request) {
   try {
@@ -561,31 +414,29 @@ export async function GET(request) {
       query = query.eq('status', status);
     }
 
-    // Apply staff scope filtering
+    // Apply scope filtering based on role
     if (staffId) {
       const { data: staffProfile } = await supabaseAdmin
         .from('profiles')
-        .select('department_name, school_id, school_ids, course_ids, branch_ids')
+        .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
         .eq('id', staffId)
         .single();
 
-      if (staffProfile && staffProfile.department_name === 'Department') {
-        // Apply scope filtering using UUID arrays
-        if (staffProfile.school_ids && staffProfile.school_ids.length > 0) {
-          query = query.in('school', staffProfile.school_ids);
+      if (staffProfile) {
+        // Department staff can VIEW manual entries within their scope (READ-ONLY)
+        if (staffProfile.role === 'department' || staffProfile.role === 'staff') {
+          // Apply scope filtering using UUID arrays
+          if (staffProfile.school_ids && staffProfile.school_ids.length > 0) {
+            query = query.in('school_id', staffProfile.school_ids);
+          }
+          if (staffProfile.course_ids && staffProfile.course_ids.length > 0) {
+            query = query.in('course_id', staffProfile.course_ids);
+          }
+          if (staffProfile.branch_ids && staffProfile.branch_ids.length > 0) {
+            query = query.in('branch_id', staffProfile.branch_ids);
+          }
         }
-        if (staffProfile.course_ids && staffProfile.course_ids.length > 0) {
-          query = query.in('course', staffProfile.course_ids);
-        }
-        if (staffProfile.branch_ids && staffProfile.branch_ids.length > 0) {
-          query = query.in('branch', staffProfile.branch_ids);
-        }
-      } else {
-        // Non-department staff see no manual entries
-        return NextResponse.json({
-          success: true,
-          data: []
-        });
+        // Admin sees all manual entries (no filtering needed)
       }
     }
 

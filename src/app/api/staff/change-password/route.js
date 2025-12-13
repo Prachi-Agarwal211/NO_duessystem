@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
 // Create Supabase admin client for password operations
@@ -69,49 +70,39 @@ export async function POST(request) {
       );
     }
 
-    // Get current user session from cookies
-    const cookieHeader = request.headers.get('cookie');
-    if (!cookieHeader) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated. Please log in again.' },
-        { status: 401 }
-      );
-    }
-
-    // Parse Supabase auth token from cookies
-    // Supabase stores the session in cookies with the pattern: sb-<project-ref>-auth-token
-    const authTokenMatch = cookieHeader.match(/sb-[a-z0-9]+-auth-token=([^;]+)/);
+    // Create Supabase client with cookies using Next.js 14 server-side approach
+    const cookieStore = cookies();
     
-    if (!authTokenMatch) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
+      }
+    );
+
+    // Get current user session
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error('Authentication error:', userError);
       return NextResponse.json(
         { success: false, error: 'Not authenticated. Please log in again.' },
-        { status: 401 }
-      );
-    }
-
-    let user;
-    try {
-      // Decode the auth token (it's a JSON object with access_token)
-      const authData = JSON.parse(decodeURIComponent(authTokenMatch[1]));
-      const accessToken = authData.access_token || authData;
-      
-      // Verify the token and get user
-      const { data: { user: authUser }, error: authError } = await supabaseAdmin.auth.getUser(
-        typeof accessToken === 'string' ? accessToken : accessToken.access_token
-      );
-
-      if (authError || !authUser) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid authentication. Please log in again.' },
-          { status: 401 }
-        );
-      }
-
-      user = authUser;
-    } catch (parseError) {
-      console.error('Token parsing error:', parseError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid session format. Please log in again.' },
         { status: 401 }
       );
     }
