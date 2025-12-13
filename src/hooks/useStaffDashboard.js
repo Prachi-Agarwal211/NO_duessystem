@@ -24,6 +24,14 @@ export function useStaffDashboard() {
   // Use refs to store latest functions and avoid stale closures
   const fetchDashboardDataRef = useRef(null);
   const fetchStatsRef = useRef(null);
+  
+  // ✅ REQUEST DEDUPLICATION: Prevent multiple simultaneous fetches
+  const pendingDashboardRequest = useRef(null);
+  const pendingStatsRequest = useRef(null);
+  
+  // ✅ TIMEOUT PROTECTION: Prevent infinite loading states
+  const loadingTimeoutRef = useRef(null);
+  const statsTimeoutRef = useRef(null);
 
   // Fetch user data
   useEffect(() => {
@@ -60,41 +68,62 @@ export function useStaffDashboard() {
     }
   };
 
-  // Fetch statistics
+  // Fetch statistics with deduplication and timeout protection
   const fetchStats = useCallback(async () => {
     if (!userId) return;
 
-    setStatsLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user?.id) {
-        throw new Error('Session expired. Please login again.');
-      }
-
-      // Add cache-busting to force fresh stats
-      const response = await fetch(`/api/staff/stats?_t=${Date.now()}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch stats');
-      }
-
-      if (result.success) {
-        setStats(result.stats);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setStatsLoading(false);
+    // ✅ DEDUPLICATION: If already fetching, return existing promise
+    if (pendingStatsRequest.current) {
+      console.log('⏭️ Stats fetch already in progress, reusing...');
+      return pendingStatsRequest.current;
     }
+
+    setStatsLoading(true);
+    
+    // ✅ TIMEOUT PROTECTION: Clear loading after 30 seconds max
+    if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
+    statsTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ Stats fetch timeout - clearing loading state');
+      setStatsLoading(false);
+      pendingStatsRequest.current = null;
+    }, 30000);
+
+    const fetchPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user?.id) {
+          throw new Error('Session expired. Please login again.');
+        }
+
+        // ✅ SMART CACHING: Cache for 30 seconds, then revalidate
+        const response = await fetch(`/api/staff/stats?_t=${Math.floor(Date.now() / 30000)}`, {
+          next: { revalidate: 30 },
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch stats');
+        }
+
+        if (result.success) {
+          setStats(result.stats);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
+        setStatsLoading(false);
+        pendingStatsRequest.current = null;
+      }
+    })();
+
+    pendingStatsRequest.current = fetchPromise;
+    return fetchPromise;
   }, [userId]);
 
   // Fetch stats when user is available
@@ -108,6 +137,12 @@ export function useStaffDashboard() {
     // Store search term for real-time refresh
     currentSearchRef.current = searchTerm;
 
+    // ✅ DEDUPLICATION: If already fetching, return existing promise
+    if (pendingDashboardRequest.current) {
+      console.log('⏭️ Dashboard fetch already in progress, reusing...');
+      return pendingDashboardRequest.current;
+    }
+
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -115,65 +150,81 @@ export function useStaffDashboard() {
     }
     setError('');
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user?.id) {
-        throw new Error('Session expired. Please login again.');
-      }
-
-      // Build query params with search term
-      const params = new URLSearchParams({
-        userId: session.user.id,
-        page: 1,
-        limit: 50,
-        _t: Date.now() // Cache buster to ensure fresh data
-      });
-
-      // Add search term if present
-      if (searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
-      }
-
-      const response = await fetch(`/api/staff/dashboard?${params}`, {
-        method: 'GET',
-        cache: 'no-store', // ✅ FIX: Stronger cache bypass at fetch option level
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
-      }
-
-      if (result.success) {
-        // For department staff, extract form data from status records
-        const applications = result.data.applications || [];
-
-        // Filter out applications with null forms (orphaned records)
-        const validApplications = applications.filter(item => {
-          if (!item.no_dues_forms) {
-            console.warn('⚠️ Orphaned status record found, skipping:', item.form_id);
-            return false;
-          }
-          return true;
-        });
-
-        const formattedRequests = validApplications.map(item => item.no_dues_forms);
-        setRequests(formattedRequests);
-        setLastUpdate(new Date());
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      setError(error.message);
-    } finally {
+    // ✅ TIMEOUT PROTECTION: Clear loading after 45 seconds max
+    if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+    loadingTimeoutRef.current = setTimeout(() => {
+      console.warn('⚠️ Dashboard fetch timeout - clearing loading state');
       setLoading(false);
       setRefreshing(false);
-    }
+      setError('Request timeout. Please try again.');
+      pendingDashboardRequest.current = null;
+    }, 45000);
+
+    const fetchPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user?.id) {
+          throw new Error('Session expired. Please login again.');
+        }
+
+        // Build query params with search term
+        const params = new URLSearchParams({
+          userId: session.user.id,
+          page: 1,
+          limit: 50,
+          // ✅ SMART CACHING: Round to 30-second intervals for cache hits
+          _t: Math.floor(Date.now() / 30000)
+        });
+
+        // Add search term if present
+        if (searchTerm.trim()) {
+          params.append('search', searchTerm.trim());
+        }
+
+        const response = await fetch(`/api/staff/dashboard?${params}`, {
+          method: 'GET',
+          next: { revalidate: 30 }, // ✅ Cache for 30 seconds
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch dashboard data');
+        }
+
+        if (result.success) {
+          // For department staff, extract form data from status records
+          const applications = result.data.applications || [];
+
+          // Filter out applications with null forms (orphaned records)
+          const validApplications = applications.filter(item => {
+            if (!item.no_dues_forms) {
+              console.warn('⚠️ Orphaned status record found, skipping:', item.form_id);
+              return false;
+            }
+            return true;
+          });
+
+          const formattedRequests = validApplications.map(item => item.no_dues_forms);
+          setRequests(formattedRequests);
+          setLastUpdate(new Date());
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setError(error.message);
+      } finally {
+        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+        setLoading(false);
+        setRefreshing(false);
+        pendingDashboardRequest.current = null;
+      }
+    })();
+
+    pendingDashboardRequest.current = fetchPromise;
+    return fetchPromise;
   }, []);
 
   // Store latest function in ref
@@ -259,6 +310,10 @@ export function useStaffDashboard() {
       if (unsubscribeRealtime) unsubscribeRealtime();
       if (unsubscribeDeptAction) unsubscribeDeptAction();
       if (unsubscribeGlobal) unsubscribeGlobal();
+      
+      // ✅ CLEANUP: Clear all timeouts
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+      if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
     };
   }, [userId, user?.department_name, refreshData]);
 

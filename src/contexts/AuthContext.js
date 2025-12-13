@@ -242,10 +242,25 @@ export function AuthProvider({ children }) {
     return `${minutes}m`;
   };
 
-  // Initialize auth state on mount
+  // Initialize auth state on mount with timeout protection
   useEffect(() => {
+    let authTimeoutId = null;
+    
     const initAuth = async () => {
       try {
+        // ✅ NETWORK CHECK: Don't attempt auth if offline
+        if (typeof window !== 'undefined' && !navigator.onLine) {
+          console.warn('⚠️ Device is offline - skipping auth initialization');
+          setLoading(false);
+          return;
+        }
+
+        // ✅ TIMEOUT PROTECTION: Force clear loading after 30 seconds
+        authTimeoutId = setTimeout(() => {
+          console.warn('⚠️ Auth initialization timeout - clearing loading state');
+          setLoading(false);
+        }, 30000);
+
         // Check if session has expired
         const remembered = checkRememberMe();
         setIsRemembered(remembered);
@@ -253,6 +268,7 @@ export function AuthProvider({ children }) {
         if (remembered && isSessionExpired()) {
           // Session expired, sign out
           await signOut();
+          if (authTimeoutId) clearTimeout(authTimeoutId);
           setLoading(false);
           return;
         }
@@ -273,12 +289,20 @@ export function AuthProvider({ children }) {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // ✅ ALWAYS clear loading on error
+        setLoading(false);
       } finally {
+        if (authTimeoutId) clearTimeout(authTimeoutId);
         setLoading(false);
       }
     };
 
     initAuth();
+    
+    // ✅ CLEANUP: Clear timeout on unmount
+    return () => {
+      if (authTimeoutId) clearTimeout(authTimeoutId);
+    };
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -311,8 +335,19 @@ export function AuthProvider({ children }) {
     if (!user) return;
 
     const interval = setInterval(async () => {
+      // ✅ NETWORK CHECK: Don't attempt refresh if offline
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        console.warn('⚠️ Device is offline - skipping session refresh');
+        return;
+      }
+
       if (checkRememberMe() && !isSessionExpired()) {
-        await refreshSession();
+        try {
+          await refreshSession();
+        } catch (error) {
+          console.error('Session refresh failed:', error);
+          // ✅ Don't sign out on network errors - just log and continue
+        }
       }
     }, 55 * 60 * 1000); // 55 minutes
 

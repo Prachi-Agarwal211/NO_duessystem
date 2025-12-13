@@ -18,17 +18,23 @@ export default function GlobalBackground() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [isMobile, setIsMobile] = useState(false);
+  const [isLowEnd, setIsLowEnd] = useState(false);
 
-  // Detect mobile devices for performance optimization
+  // Detect mobile devices and low-end devices for performance optimization
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const checkDevice = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // ✅ PERFORMANCE: Detect low-end devices (less than 4GB RAM or slow CPU)
+      const lowEnd = mobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
+      setIsLowEnd(lowEnd);
     };
     
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
     
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
   return (
@@ -55,7 +61,7 @@ export default function GlobalBackground() {
         />
       )}
 
-      {/* 3. Animated Gradient Mesh Blobs (Replaces AuroraBackground) - ENHANCED VISIBILITY */}
+      {/* 3. Animated Gradient Mesh Blobs - OPTIMIZED FOR PERFORMANCE */}
       <div className={`absolute inset-0 transition-opacity duration-700 ${
         isDark ? 'opacity-70' : 'opacity-60'
       }`}>
@@ -68,12 +74,12 @@ export default function GlobalBackground() {
               ? 'from-jecrc-red/80 via-jecrc-red/50 to-transparent'
               : 'from-red-300/70 via-rose-300/50 to-transparent'
             }
-            ${isMobile ? 'blur-[60px]' : 'blur-[100px]'}
-            animate-blob-slow
+            ${isLowEnd ? 'blur-[30px]' : isMobile ? 'blur-[40px]' : 'blur-[60px]'}
+            ${isLowEnd ? '' : 'animate-blob-slow'}
           `}
           style={{
             transform: 'translateZ(0)',
-            willChange: isMobile ? 'auto' : 'transform'
+            willChange: isLowEnd ? 'auto' : 'transform'
           }}
         />
         
@@ -86,17 +92,17 @@ export default function GlobalBackground() {
               ? 'from-jecrc-red-bright/70 via-jecrc-red-dark/40 to-transparent'
               : 'from-rose-400/70 via-pink-300/50 to-transparent'
             }
-            ${isMobile ? 'blur-[60px]' : 'blur-[100px]'}
-            animate-blob-slow animation-delay-2000
+            ${isLowEnd ? 'blur-[30px]' : isMobile ? 'blur-[40px]' : 'blur-[60px]'}
+            ${isLowEnd ? '' : 'animate-blob-slow animation-delay-2000'}
           `}
           style={{
             transform: 'translateZ(0)',
-            willChange: isMobile ? 'auto' : 'transform'
+            willChange: isLowEnd ? 'auto' : 'transform'
           }}
         />
         
         {/* Bottom Blob - Desktop only */}
-        {!isMobile && (
+        {!isMobile && !isLowEnd && (
           <div
             className={`
               absolute bottom-[-20%] left-[10%] w-[50%] h-[50%]
@@ -105,7 +111,7 @@ export default function GlobalBackground() {
                 ? 'from-jecrc-red-dark/70 via-jecrc-red/40 to-transparent'
                 : 'from-blue-300/60 via-indigo-300/40 to-transparent'
               }
-              blur-[100px]
+              blur-[60px]
               animate-blob-slow animation-delay-4000
             `}
             style={{
@@ -116,10 +122,10 @@ export default function GlobalBackground() {
         )}
       </div>
 
-      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) - ENHANCED VISIBILITY */}
+      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) - OPTIMIZED */}
       <div className={`absolute inset-0 transition-opacity duration-700 ${
         isDark ? 'opacity-40' : 'opacity-30'
-      } animate-aurora-flow`}>
+      } ${isLowEnd ? '' : 'animate-aurora-flow'}`}>
         <div
           className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%]"
           style={{
@@ -132,8 +138,8 @@ export default function GlobalBackground() {
         />
       </div>
 
-      {/* 5. Subtle Grid Overlay - Desktop only */}
-      {!isMobile && (
+      {/* 5. Subtle Grid Overlay - Desktop only, skip on low-end */}
+      {!isMobile && !isLowEnd && (
         <div
           className={`absolute inset-0 bg-center transition-opacity duration-700 ${
             isDark ? 'opacity-5' : 'opacity-10'

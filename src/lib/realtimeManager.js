@@ -19,7 +19,7 @@ class RealtimeManager {
     // Event aggregation
     this.eventQueue = [];
     this.batchTimeout = null;
-    this.BATCH_WINDOW = 800; // ✅ FIX: 800ms ensures database triggers fully complete (was 300ms → 500ms → 800ms)
+    this.BATCH_WINDOW = 500; // ✅ OPTIMIZED: 500ms for faster feedback (was 800ms)
 
     // Subscribers for different event types
     this.subscribers = {
@@ -38,7 +38,7 @@ class RealtimeManager {
     // Deduplication tracking
     this.pendingRefreshes = new Set();
     this.lastRefreshTime = {};
-    this.MIN_REFRESH_INTERVAL = 300; // Optimized: 300ms prevents spam while allowing rapid updates
+    this.MIN_REFRESH_INTERVAL = 2000; // ✅ OPTIMIZED: 2s prevents refresh spam and race conditions (was 300ms)
   }
 
   /**

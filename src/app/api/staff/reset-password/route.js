@@ -150,7 +150,12 @@ export async function POST(request) {
     // Note: At this stage, otp_code contains the resetToken, not the original OTP
     if (profile.otp_code !== resetToken) {
       return NextResponse.json(
-        { success: false, error: 'Invalid or expired reset token. Please restart the password reset process.' },
+        {
+          success: false,
+          error: 'Your password reset session has expired or the token is invalid. Please restart the password reset process from the beginning.',
+          code: 'TOKEN_INVALID',
+          hint: 'This can happen if you refreshed the page or took too long. Please start over.'
+        },
         { status: 400 }
       );
     }

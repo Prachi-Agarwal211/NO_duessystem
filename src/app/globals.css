@@ -658,3 +658,108 @@ select::-webkit-scrollbar-thumb:hover {
 .dark select::-webkit-scrollbar-thumb:hover {
   background: var(--jecrc-red-light);
 }
+
+/* ========================================
+   PERFORMANCE-OPTIMIZED ANIMATIONS
+   Added for CreativeRefreshButton & DataUpdateFeedback
+   Pure CSS, zero JavaScript overhead
+   ======================================== */
+
+/* Slide in from right animation for notifications */
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Progress bar shrink animation */
+@keyframes shrinkWidth {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Refresh button spin animation */
+@keyframes refreshSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success checkmark animation */
+@keyframes checkmarkPop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Subtle scale pulse for loading states */
+@keyframes subtlePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Smooth fade in/out */
+@keyframes smoothFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Animation utility classes */
+.animate-refresh-spin {
+  animation: refreshSpin 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-checkmark-pop {
+  animation: checkmarkPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-subtle-pulse {
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+.animate-smooth-fade {
+  animation: smoothFade 0.3s ease-out;
+}
+
+/* Hardware acceleration for smooth animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Remove will-change after animation completes to free GPU resources */
+.animation-complete {
+  will-change: auto;
+}

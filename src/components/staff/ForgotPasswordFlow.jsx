@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Mail, KeyRound, Lock, ArrowLeft, CheckCircle, AlertCircle, Eye, EyeOff, Loader } from 'lucide-react';
 
 export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
@@ -15,6 +15,33 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+
+  // ✅ FIX: Restore password reset session from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const savedToken = sessionStorage.getItem('pwd-reset-token');
+    const savedEmail = sessionStorage.getItem('pwd-reset-email');
+    const savedExpiry = sessionStorage.getItem('pwd-reset-expiry');
+    
+    if (savedToken && savedEmail && savedExpiry) {
+      const expiry = parseInt(savedExpiry, 10);
+      
+      if (Date.now() < expiry) {
+        // Token still valid, restore state
+        setResetToken(savedToken);
+        setEmail(savedEmail);
+        setStep(3);
+        const remainingMinutes = Math.ceil((expiry - Date.now()) / (60 * 1000));
+        setSuccess(`Session restored! You have ${remainingMinutes} minutes to complete password reset.`);
+      } else {
+        // Token expired, clear storage
+        sessionStorage.removeItem('pwd-reset-token');
+        sessionStorage.removeItem('pwd-reset-email');
+        sessionStorage.removeItem('pwd-reset-expiry');
+      }
+    }
+  }, []);
 
   // Start countdown timer
   const startResendTimer = () => {
@@ -133,6 +160,15 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
 
       if (data.success) {
         setResetToken(data.resetToken);
+        
+        // ✅ FIX: Persist resetToken to sessionStorage to survive page refresh
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('pwd-reset-token', data.resetToken);
+          sessionStorage.setItem('pwd-reset-email', email.trim().toLowerCase());
+          // Token expires in 30 minutes (set on backend)
+          sessionStorage.setItem('pwd-reset-expiry', (Date.now() + (30 * 60 * 1000)).toString());
+        }
+        
         setSuccess('OTP verified! Please set your new password.');
         setStep(3);
       } else {
@@ -186,6 +222,13 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
       if (data.success) {
         setSuccess(data.message);
         
+        // ✅ FIX: Clear sessionStorage after successful password reset
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('pwd-reset-token');
+          sessionStorage.removeItem('pwd-reset-email');
+          sessionStorage.removeItem('pwd-reset-expiry');
+        }
+        
         // Close and notify parent after 2 seconds
         setTimeout(() => {
           if (onSuccess) onSuccess();
@@ -216,6 +259,13 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
     setError('');
     setSuccess('');
     setResendTimer(0);
+    
+    // ✅ FIX: Clear sessionStorage when resetting form
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('pwd-reset-token');
+      sessionStorage.removeItem('pwd-reset-email');
+      sessionStorage.removeItem('pwd-reset-expiry');
+    }
   };
 
   const handleClose = () => {

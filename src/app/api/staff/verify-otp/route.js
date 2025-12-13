@@ -134,7 +134,7 @@ export async function POST(request) {
     // OTP is valid - generate temporary reset token
     // This token will be used for the reset-password endpoint
     const resetToken = `${profile.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // ✅ EXTENDED: 30 minutes (was 15)
 
     // Store reset token (we'll use otp_code field temporarily)
     await supabaseAdmin
