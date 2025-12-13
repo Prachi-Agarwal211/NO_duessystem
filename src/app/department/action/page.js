@@ -46,9 +46,8 @@ function DepartmentActionContent() {
 
     // In a real implementation, you would validate the token here
     // For this example, we'll proceed with the action directly
-
     handleAction(token, actionParam, formIdParam);
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   const handleAction = async (token, action, formId) => {
     try {
