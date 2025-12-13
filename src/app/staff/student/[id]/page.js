@@ -355,15 +355,20 @@ export default function StudentDetailView() {
   }
 
   // ⚡ PERFORMANCE: Memoize computed values to avoid recalculation
-  const userDepartmentStatus = useMemo(() =>
-    statusData.find(s => s.department_name === user?.department_name),
-    [statusData, user?.department_name]
-  );
+  // SAFETY: These hooks run AFTER studentData null check, so data is guaranteed to exist
+  const userDepartmentStatus = useMemo(() => {
+    if (!statusData || statusData.length === 0 || !user?.department_name) {
+      return null;
+    }
+    return statusData.find(s => s.department_name === user.department_name);
+  }, [statusData, user?.department_name]);
   
-  const canApproveOrReject = useMemo(() =>
-    user?.role === 'department' && userDepartmentStatus?.status === 'pending',
-    [user?.role, userDepartmentStatus?.status]
-  );
+  const canApproveOrReject = useMemo(() => {
+    if (!user?.role || !userDepartmentStatus) {
+      return false;
+    }
+    return user.role === 'department' && userDepartmentStatus.status === 'pending';
+  }, [user?.role, userDepartmentStatus?.status]);
 
   return (
     <PageWrapper>
