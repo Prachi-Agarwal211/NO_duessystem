@@ -322,7 +322,7 @@ export async function POST(request) {
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 30px;">
                 <tr>
                   <td align="center">
-                    <a href="https://no-duessystem.vercel.app/admin" style="display: inline-block; background: #dc2626; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Review Manual Entry</a>
+                    <a href="https://nodues.jecrcuniversity.edu.in/admin" style="display: inline-block; background: #dc2626; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Review Manual Entry</a>
                   </td>
                 </tr>
               </table>

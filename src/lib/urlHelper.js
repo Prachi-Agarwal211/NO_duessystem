@@ -32,7 +32,7 @@ export function getBaseUrl() {
 
   // Final fallback (should never reach here in production)
   console.warn('⚠️ No base URL configured. Using production domain as fallback.');
-  return 'https://no-duessystem.vercel.app';
+  return 'https://nodues.jecrcuniversity.edu.in';
 }
 
 /**

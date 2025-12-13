@@ -62,7 +62,10 @@ export async function GET(request) {
         reapplication_count,
         last_reapplied_at,
         student_reply_message,
-        certificate_url
+        certificate_url,
+        is_manual_entry,
+        manual_certificate_url,
+        rejection_reason
       `)
       .eq('registration_no', registrationNo.trim().toUpperCase())
       .single();
@@ -87,7 +90,11 @@ export async function GET(request) {
       }, { status: 404 });
     }
 
+    // ✅ Check if this is a manual entry (admin-only workflow)
+    const isManualEntry = form.is_manual_entry === true;
+
     // OPTIMIZATION: Parallel queries for departments and statuses
+    // ✅ CRITICAL: Manual entries should NOT have department statuses
     const [
       { data: departments, error: deptError },
       { data: statuses, error: statusError }
@@ -96,10 +103,14 @@ export async function GET(request) {
         .from('departments')
         .select('name, display_name, display_order')
         .order('display_order'),
-      supabaseAdmin
-        .from('no_dues_status')
-        .select('department_name, status, action_at, rejection_reason, action_by_user_id')
-        .eq('form_id', form.id)
+      // ✅ Skip fetching department statuses for manual entries
+      // Manual entries are admin-only and should never show department workflow
+      isManualEntry
+        ? Promise.resolve({ data: [], error: null })
+        : supabaseAdmin
+            .from('no_dues_status')
+            .select('department_name, status, action_at, rejection_reason, action_by_user_id')
+            .eq('form_id', form.id)
     ]);
 
     if (deptError) {

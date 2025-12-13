@@ -128,6 +128,9 @@ export async function GET(request) {
             reapplication_count: data.reapplication_count,
             student_reply_message: data.student_reply_message,
             alumni_screenshot_url: data.alumni_screenshot_url,
+            is_manual_entry: data.is_manual_entry,
+            manual_certificate_url: data.manual_certificate_url,
+            rejection_reason: data.rejection_reason,
           }
         });
 

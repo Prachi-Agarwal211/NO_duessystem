@@ -30,6 +30,10 @@ function StaffDashboardContent() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [rejectedLoading, setRejectedLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  
+  // ⚡ PERFORMANCE: Cache flags to avoid re-fetching on tab switch
+  const [historyFetched, setHistoryFetched] = useState(false);
+  const [rejectedFetched, setRejectedFetched] = useState(false);
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -65,21 +69,23 @@ function StaffDashboardContent() {
     }
   }, [user, debouncedSearchTerm, activeTab, fetchDashboardData]);
 
-  // Fetch action history
+  // Fetch action history - only once
   useEffect(() => {
-    if (user && activeTab === 'history') {
+    if (user && activeTab === 'history' && !historyFetched) {
       fetchActionHistory();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, historyFetched]);
 
-  // Fetch rejected forms
+  // Fetch rejected forms - only once
   useEffect(() => {
-    if (user && activeTab === 'rejected') {
+    if (user && activeTab === 'rejected' && !rejectedFetched) {
       fetchRejectedForms();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, rejectedFetched]);
 
   const fetchActionHistory = async () => {
+    if (historyFetched) return; // Skip if already fetched
+    
     setHistoryLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -94,6 +100,7 @@ function StaffDashboardContent() {
       const result = await response.json();
       if (result.success) {
         setActionHistory(result.data.history || []);
+        setHistoryFetched(true); // Mark as fetched
       }
     } catch (error) {
       console.error('Error fetching history:', error);
@@ -104,6 +111,8 @@ function StaffDashboardContent() {
   };
 
   const fetchRejectedForms = async () => {
+    if (rejectedFetched) return; // Skip if already fetched
+    
     setRejectedLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -118,6 +127,7 @@ function StaffDashboardContent() {
       const result = await response.json();
       if (result.success) {
         setRejectedForms(result.data.history || []);
+        setRejectedFetched(true); // Mark as fetched
       }
     } catch (error) {
       console.error('Error fetching rejected forms:', error);

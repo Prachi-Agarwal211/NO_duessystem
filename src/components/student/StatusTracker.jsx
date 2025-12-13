@@ -72,6 +72,7 @@ export default function StatusTracker({ registrationNo }) {
       // Update state with optimized data
       console.log('📊 Fresh data received from API:', {
         formStatus: result.data.form.status,
+        isManualEntry: result.data.form.is_manual_entry,
         departmentStatuses: result.data.statusData.map(d => ({
           name: d.display_name,
           status: d.status
@@ -210,11 +211,22 @@ export default function StatusTracker({ registrationNo }) {
     );
   }
 
+  // ✅ Check if this is a manual entry (admin-only workflow)
+  const isManualEntry = formData.is_manual_entry === true;
+  
   const approvedCount = statusData.filter(s => s.status === 'approved').length;
   const rejectedCount = statusData.filter(s => s.status === 'rejected').length;
   const totalCount = statusData.length;
-  const allApproved = approvedCount === totalCount;
-  const hasRejection = rejectedCount > 0;
+  
+  // ✅ For manual entries, base status on form approval, not department count
+  const allApproved = isManualEntry
+    ? formData.status === 'approved'
+    : approvedCount === totalCount;
+    
+  const hasRejection = isManualEntry
+    ? formData.status === 'rejected'
+    : rejectedCount > 0;
+    
   const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
   const canReapply = hasRejection && formData.status !== 'completed';
 
@@ -270,7 +282,34 @@ export default function StatusTracker({ registrationNo }) {
         </div>
 
         <div className="mt-6">
-          <ProgressBar current={approvedCount} total={totalCount} />
+          {isManualEntry ? (
+            // ✅ Manual entry: Show simple admin status badge
+            <div className="text-center py-4">
+              <span className={`inline-flex items-center px-6 py-3 rounded-full text-base font-bold uppercase tracking-wide transition-all duration-700 ease-smooth ${
+                formData.status === 'approved'
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-500'
+                  : formData.status === 'rejected'
+                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-2 border-red-500'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-2 border-yellow-500'
+              }`}>
+                {formData.status === 'approved' ? '✅ Admin Approved' :
+                 formData.status === 'rejected' ? '❌ Admin Rejected' :
+                 '⏳ Pending Admin Review'}
+              </span>
+              <p className={`text-sm mt-3 transition-colors duration-700 ease-smooth ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
+                {formData.status === 'approved'
+                  ? 'Your offline certificate has been verified and approved'
+                  : formData.status === 'rejected'
+                  ? 'Your offline certificate submission was rejected'
+                  : 'Your offline certificate is awaiting admin verification'}
+              </p>
+            </div>
+          ) : (
+            // ✅ Online form: Show department progress bar
+            <ProgressBar current={approvedCount} total={totalCount} />
+          )}
         </div>
       </div>
 
@@ -405,34 +444,59 @@ export default function StatusTracker({ registrationNo }) {
         </motion.div>
       )}
 
-      {/* Department Statuses */}
-      <div className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
-        ${isDark
-          ? 'bg-white/[0.02] border border-white/10'
-          : 'bg-white border border-black/10 shadow-sm'
-        }`}>
-        <h3 className={`text-lg font-serif mb-4 transition-colors duration-700 ease-smooth
-          ${isDark ? 'text-white' : 'text-ink-black'}`}>
-          Department Clearances
-        </h3>
-        <div className="space-y-3">
-          {statusData.map((item, index) => (
-            <motion.div
-              key={item.department_name}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-            >
-              <DepartmentStatus
-                departmentName={item.display_name}
-                status={item.status}
-                actionAt={item.action_at}
-                rejectionReason={item.rejection_reason}
-              />
-            </motion.div>
-          ))}
+      {/* Department Statuses - Only show for online forms */}
+      {!isManualEntry && statusData.length > 0 && (
+        <div className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
+          ${isDark
+            ? 'bg-white/[0.02] border border-white/10'
+            : 'bg-white border border-black/10 shadow-sm'
+          }`}>
+          <h3 className={`text-lg font-serif mb-4 transition-colors duration-700 ease-smooth
+            ${isDark ? 'text-white' : 'text-ink-black'}`}>
+            Department Clearances
+          </h3>
+          <div className="space-y-3">
+            {statusData.map((item, index) => (
+              <motion.div
+                key={item.department_name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+              >
+                <DepartmentStatus
+                  departmentName={item.display_name}
+                  status={item.status}
+                  actionAt={item.action_at}
+                  rejectionReason={item.rejection_reason}
+                />
+              </motion.div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Manual Entry Certificate View */}
+      {isManualEntry && formData.manual_certificate_url && (
+        <div className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
+          ${isDark
+            ? 'bg-white/[0.02] border border-white/10'
+            : 'bg-white border border-black/10 shadow-sm'
+          }`}>
+          <h3 className={`text-lg font-serif mb-4 transition-colors duration-700 ease-smooth
+            ${isDark ? 'text-white' : 'text-ink-black'}`}>
+            Submitted Certificate
+          </h3>
+          <a
+            href={formData.manual_certificate_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="interactive inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all duration-300"
+          >
+            <Download size={20} />
+            View Submitted Certificate
+          </a>
+        </div>
+      )}
 
       {/* Auto-refresh Notice */}
       <p className={`text-xs text-center transition-colors duration-700 ease-smooth
