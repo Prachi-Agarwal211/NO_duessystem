@@ -14,7 +14,11 @@ export async function middleware(request) {
     const currentPath = request.nextUrl.pathname;
     const publicRoutes = ['/', '/student/check-status', '/student/submit-form', '/staff/login', '/unauthorized'];
     
-    if (publicRoutes.includes(currentPath)) {
+    // Skip for public API routes (but allow authenticated API routes to get session refresh)
+    const publicApiRoutes = ['/api/student/', '/api/check-status', '/api/submit-form'];
+    const isPublicApi = publicApiRoutes.some(route => currentPath.startsWith(route));
+    
+    if (publicRoutes.includes(currentPath) || isPublicApi) {
       return response;
     }
 
@@ -116,9 +120,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api (API routes)
-     * - _next (Next.js internals)
+     * Note: API routes are now INCLUDED for consistent authentication
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

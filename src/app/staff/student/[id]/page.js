@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -8,6 +8,7 @@ import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { FormDetailSkeleton } from '@/components/ui/SkeletonLoader';
 import toast from 'react-hot-toast';
 
 export default function StudentDetailView() {
@@ -26,8 +27,9 @@ export default function StudentDetailView() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [error, setError] = useState('');
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Fetch data function
+  // ⚡ PERFORMANCE: Optimized fetch with parallel queries
   const fetchData = async () => {
     try {
       // Get user info
@@ -50,8 +52,10 @@ export default function StudentDetailView() {
 
       setUser(userData);
 
-      // Get student data using the API
-      const response = await fetch(`/api/staff/student/${id}?userId=${session.user.id}`);
+      // ⚡ PERFORMANCE: Add cache-busting for real-time updates
+      const response = await fetch(`/api/staff/student/${id}?userId=${session.user.id}&_t=${Date.now()}`, {
+        cache: 'no-store'
+      });
       const result = await response.json();
 
       if (result.success) {
@@ -65,6 +69,7 @@ export default function StudentDetailView() {
       setError(error.message);
     } finally {
       setLoading(false);
+      setInitialLoadComplete(true);
     }
   };
 
@@ -291,11 +296,16 @@ export default function StudentDetailView() {
     }
   };
 
-  if (loading) {
+  // ⚡ PERFORMANCE: Show skeleton on initial load, spinner on refresh
+  if (loading && !initialLoadComplete) {
     return (
       <PageWrapper>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
+        <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <GlassCard>
+              <FormDetailSkeleton />
+            </GlassCard>
+          </div>
         </div>
       </PageWrapper>
     );
@@ -344,8 +354,16 @@ export default function StudentDetailView() {
     );
   }
 
-  const userDepartmentStatus = statusData.find(s => s.department_name === user?.department_name);
-  const canApproveOrReject = user?.role === 'department' && userDepartmentStatus?.status === 'pending';
+  // ⚡ PERFORMANCE: Memoize computed values to avoid recalculation
+  const userDepartmentStatus = useMemo(() =>
+    statusData.find(s => s.department_name === user?.department_name),
+    [statusData, user?.department_name]
+  );
+  
+  const canApproveOrReject = useMemo(() =>
+    user?.role === 'department' && userDepartmentStatus?.status === 'pending',
+    [user?.role, userDepartmentStatus?.status]
+  );
 
   return (
     <PageWrapper>

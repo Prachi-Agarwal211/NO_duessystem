@@ -65,12 +65,22 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Build query with filters - Using * to get all columns (safer)
+    // ⚡ PERFORMANCE: Optimized query - only select needed columns
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
-        *,
-        no_dues_status (
+        id,
+        student_name,
+        registration_no,
+        course,
+        branch,
+        school,
+        contact_no,
+        status,
+        created_at,
+        updated_at,
+        reapplication_count,
+        no_dues_status!inner (
           id,
           department_name,
           status,
@@ -113,32 +123,48 @@ export async function GET(request) {
       );
     }
 
-    // Get total count for pagination
-    const { count: totalCount, error: countError } = await supabaseAdmin
-      .from('no_dues_forms')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      return NextResponse.json({ error: countError.message }, { status: 500 });
-    }
-
-    // Apply pagination
+    // ⚡ PERFORMANCE: Parallel queries for count and data
+    // Apply pagination to query first
     const from = (page - 1) * limit;
     const to = from + limit - 1;
     query = query.range(from, to);
 
-    const { data: applications, error: applicationsError } = await query;
+    // Execute count and data queries in parallel
+    const [applicationsResult, countResult] = await Promise.all([
+      query,
+      supabaseAdmin
+        .from('no_dues_forms')
+        .select('id', { count: 'exact', head: true })
+    ]);
+
+    const { data: applications, error: applicationsError } = applicationsResult;
+    const { count: totalCount, error: countError } = countResult;
 
     if (applicationsError) {
       throw applicationsError;
     }
 
-    // Calculate response times using helper function
+    if (countError) {
+      console.error('Count error:', countError);
+      // Don't fail request if count fails
+    }
+
+    // ⚡ PERFORMANCE: Optimized metrics calculation
     const applicationsWithMetrics = applications.map(app => {
-      const statusWithMetrics = app.no_dues_status.map(status => ({
-        ...status,
-        response_time: calculateResponseTime(app.created_at, status.created_at, status.action_at)
-      }));
+      const statuses = app.no_dues_status || [];
+      let pendingCount = 0;
+      let completedCount = 0;
+      
+      // Single pass through statuses
+      const statusWithMetrics = statuses.map(status => {
+        if (status.status === 'pending') pendingCount++;
+        if (status.status === 'approved') completedCount++;
+        
+        return {
+          ...status,
+          response_time: calculateResponseTime(app.created_at, status.created_at, status.action_at)
+        };
+      });
 
       const totalResponseTime = calculateTotalResponseTime(statusWithMetrics);
 
@@ -146,29 +172,19 @@ export async function GET(request) {
         ...app,
         no_dues_status: statusWithMetrics,
         total_response_time: totalResponseTime,
-        pending_departments: statusWithMetrics.filter(s => s.status === 'pending').length,
-        completed_departments: statusWithMetrics.filter(s => s.status === 'approved').length
+        pending_departments: pendingCount,
+        completed_departments: completedCount
       };
     });
-
-    // Get summary statistics
-    const { data: summaryStats, error: summaryError } = await supabaseAdmin
-      .rpc('get_form_statistics');
-
-    if (summaryError) {
-      console.error('Error fetching summary stats:', summaryError);
-      // Don't fail the request if summary stats fail
-    }
 
     return NextResponse.json({
       applications: applicationsWithMetrics,
       pagination: {
         page,
         limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      },
-      summaryStats: summaryStats || null
+        total: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit)
+      }
     });
 
   } catch (error) {

@@ -29,6 +29,7 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     const searchQuery = searchParams.get('search');
+    const includeStats = searchParams.get('includeStats') === 'true';
     const offset = (page - 1) * limit;
 
     // Get authenticated user from header/cookie via Supabase
@@ -229,9 +230,83 @@ export async function GET(request) {
       };
     }
 
+    // ⚡ PERFORMANCE: Include stats in same response if requested
+    let stats = null;
+    if (includeStats) {
+      try {
+        if (profile.role === 'department') {
+          // ⚡ OPTIMIZED: Parallel queries for personal + pending stats
+          const [personalResult, pendingResult, deptResult] = await Promise.all([
+            // Personal actions by this user
+            supabaseAdmin
+              .from('no_dues_status')
+              .select('status')
+              .eq('department_name', profile.department_name)
+              .eq('action_by_user_id', userId),
+            
+            // Pending items for department
+            supabaseAdmin
+              .from('no_dues_status')
+              .select('status')
+              .eq('department_name', profile.department_name)
+              .eq('status', 'pending'),
+            
+            // Department info
+            supabaseAdmin
+              .from('departments')
+              .select('display_name')
+              .eq('name', profile.department_name)
+              .single()
+          ]);
+
+          const personalActions = personalResult.data || [];
+          const pendingActions = pendingResult.data || [];
+          const deptInfo = deptResult.data;
+
+          const myApprovedCount = personalActions.filter(s => s.status === 'approved').length;
+          const myRejectedCount = personalActions.filter(s => s.status === 'rejected').length;
+          const myTotalCount = personalActions.length;
+          const pendingCount = pendingActions.length;
+
+          stats = {
+            department: deptInfo?.display_name || profile.department_name,
+            departmentName: profile.department_name,
+            pending: pendingCount,
+            approved: myApprovedCount,
+            rejected: myRejectedCount,
+            total: myTotalCount,
+            approvalRate: myTotalCount > 0 ? Math.round((myApprovedCount / myTotalCount) * 100) : 0
+          };
+
+          // Get today's activity
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const { data: todayActions } = await supabaseAdmin
+            .from('no_dues_status')
+            .select('status')
+            .eq('department_name', profile.department_name)
+            .eq('action_by_user_id', userId)
+            .gte('action_at', today.toISOString());
+
+          if (todayActions) {
+            stats.todayApproved = todayActions.filter(a => a.status === 'approved').length;
+            stats.todayRejected = todayActions.filter(a => a.status === 'rejected').length;
+            stats.todayTotal = todayActions.length;
+          }
+        }
+      } catch (statsError) {
+        console.error('Error fetching stats:', statsError);
+        // Don't fail the whole request if stats fail
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      data: dashboardData
+      data: {
+        ...dashboardData,
+        ...(stats && { stats })
+      }
     });
   } catch (error) {
     console.error('Staff Dashboard API Error:', error);
