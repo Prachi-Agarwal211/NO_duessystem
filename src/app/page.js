@@ -1,16 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FileCheck, Search, Upload } from 'lucide-react';
+import { FileCheck, Search, Upload, Headphones } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import ActionCard from '@/components/landing/ActionCard';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
+import SupportModal from '@/components/support/SupportModal';
 
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
+  const [showSupportModal, setShowSupportModal] = useState(false);
   
   // Provide default theme during SSR/initial render
   const currentTheme = theme || 'dark';
@@ -92,6 +95,24 @@ export default function Home() {
           </div>
         </main>
 
+        {/* Support Button - Floating */}
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
+          onClick={() => setShowSupportModal(true)}
+          className={`fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center
+            ${isDark
+              ? 'bg-gradient-to-br from-jecrc-red to-jecrc-red-dark hover:shadow-jecrc-red/50'
+              : 'bg-gradient-to-br from-jecrc-red to-jecrc-red-dark hover:shadow-jecrc-red/40'
+            }
+            hover:scale-110 active:scale-95 transition-all duration-300 z-40 group`}
+          title="Need Support?"
+        >
+          <Headphones className="w-6 h-6 text-white group-hover:animate-pulse" />
+          <span className={`absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500 animate-pulse`} />
+        </motion.button>
+
         {/* Minimal Footer with enhanced visibility */}
         <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-70 hover:opacity-100 transition-opacity duration-500">
           <div
@@ -105,6 +126,9 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      {/* Support Modal */}
+      <SupportModal isOpen={showSupportModal} onClose={() => setShowSupportModal(false)} />
     </PageWrapper>
   );
 }

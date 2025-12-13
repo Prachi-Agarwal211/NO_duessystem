@@ -160,8 +160,8 @@ export async function POST(request) {
           </tr>
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
-              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC UNIVERSITY NO DUES System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC UNIVERSITY. All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -273,8 +273,8 @@ export async function POST(request) {
           </tr>
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
-              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC UNIVERSITY NO DUES System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC UNIVERSITY. All rights reserved.</p>
             </td>
           </tr>
         </table>

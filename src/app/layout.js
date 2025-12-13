@@ -23,13 +23,13 @@ if (typeof window === 'undefined') {
 }
 
 export const metadata = {
-  title: "JECRC No Dues System",
+  title: "JECRC UNIVERSITY NO DUES System",
   description: "Student no-dues clearance portal for JECRC University",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "JECRC No Dues"
+    title: "JECRC NO DUES"
   },
   icons: {
     icon: "/assets/logo.png",
@@ -57,7 +57,7 @@ export default function RootLayout({ children }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="JECRC No Dues" />
+        <meta name="apple-mobile-web-app-title" content="JECRC NO DUES" />
         <link rel="apple-touch-icon" href="/assets/logo.png" />
       </head>
       <body className="antialiased font-sans">

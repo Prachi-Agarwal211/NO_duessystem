@@ -138,17 +138,20 @@ export async function POST(request) {
       branch: branchData ? branchData.name : 'N/A'
     });
 
-    // ===== INSERT INTO no_dues_forms with REAL or FALLBACK data =====
-    // Priority: 1) Convocation data, 2) User-provided data, 3) Placeholder
+    // ===== INSERT INTO no_dues_forms with REAL data (NO PLACEHOLDERS) =====
+    // Priority: 1) Convocation data, 2) User-provided data, 3) NULL (not placeholder)
     const finalStudentName = convocationStudent?.student_name || student_name || 'Manual Entry';
     const finalAdmissionYear = convocationStudent?.admission_year || admission_year || null;
-    const finalPersonalEmail = personal_email || `${registration_no.toLowerCase()}@manual.temp`;
-    const finalCollegeEmail = college_email || `${registration_no.toLowerCase()}@manual.jecrc.temp`;
-    const finalContactNo = contact_no || '0000000000';
+    
+    // ✅ Use actual data or NULL - NO placeholder emails/phone
+    const finalPersonalEmail = personal_email?.trim() || null;
+    const finalCollegeEmail = college_email?.trim() || null;
+    const finalContactNo = contact_no?.trim() || null;
     
     console.log('📝 Creating manual entry with data:', {
       registration_no,
       student_name: finalStudentName,
+      has_contact: !!finalPersonalEmail || !!finalCollegeEmail || !!finalContactNo,
       source: convocationStudent ? 'convocation' : student_name ? 'user-provided' : 'placeholder'
     });
 
@@ -193,11 +196,12 @@ export async function POST(request) {
       );
     }
 
-    // ===== SEND CONFIRMATION EMAIL TO STUDENT =====
-    try {
-      await sendEmail({
-        to: newForm.personal_email,
-        subject: `Manual Entry Submitted - ${registration_no}`,
+    // ===== SEND CONFIRMATION EMAIL TO STUDENT (if email provided) =====
+    if (newForm.personal_email) {
+      try {
+        await sendEmail({
+          to: newForm.personal_email,
+          subject: `Manual Entry Submitted - ${registration_no}`,
         html: `
 <!DOCTYPE html>
 <html>
@@ -241,14 +245,14 @@ export async function POST(request) {
                 </p>
               </div>
               <p style="margin: 20px 0 0 0; color: #6b7280; font-size: 14px;">
-                Thank you for using the JECRC No Dues System!
+                Thank you for using the JECRC UNIVERSITY NO DUES System!
               </p>
             </td>
           </tr>
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
-              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC UNIVERSITY NO DUES System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC UNIVERSITY. All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -258,10 +262,13 @@ export async function POST(request) {
 </body>
 </html>
         `.trim()
-      });
-      console.log(`✅ Confirmation email sent to student: ${newForm.personal_email}`);
-    } catch (emailError) {
-      console.error('Error sending student confirmation email:', emailError);
+        });
+        console.log(`✅ Confirmation email sent to student: ${newForm.personal_email}`);
+      } catch (emailError) {
+        console.error('Error sending student confirmation email:', emailError);
+      }
+    } else {
+      console.log('ℹ️ No email provided - skipping student confirmation email');
     }
 
     // ===== NO DEPARTMENT STATUS CREATION =====
@@ -330,8 +337,8 @@ export async function POST(request) {
           </tr>
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC No Dues System.</p>
-              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC University. All rights reserved.</p>
+              <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">This is an automated email from JECRC UNIVERSITY NO DUES System.</p>
+              <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">© ${new Date().getFullYear()} JECRC UNIVERSITY. All rights reserved.</p>
             </td>
           </tr>
         </table>

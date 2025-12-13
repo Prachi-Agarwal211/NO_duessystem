@@ -18,7 +18,10 @@ export default function ManualEntryPage() {
     registration_no: '',
     school: '',
     course: '',
-    branch: ''
+    branch: '',
+    personal_email: '',
+    college_email: '',
+    contact_no: ''
   });
 
   const [schools, setSchools] = useState([]);
@@ -260,10 +263,10 @@ export default function ManualEntryPage() {
           // Include convocation data if student is eligible
           student_name: convocationData?.name || null,
           admission_year: convocationData?.admission_year || null,
-          // Email and contact will use placeholders if not provided
-          personal_email: null,  // Could add fields for user to input
-          college_email: null,
-          contact_no: null,
+          // Include user-provided contact information (or null)
+          personal_email: formData.personal_email.trim() || null,
+          college_email: formData.college_email.trim() || null,
+          contact_no: formData.contact_no.trim() || null,
           school: formData.school,
           course: formData.course,
           branch: formData.branch || null,
@@ -490,7 +493,7 @@ export default function ManualEntryPage() {
                   required
                   className={`w-full px-4 py-3 rounded-lg border transition-all ${
                     isDark
-                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
+                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
                       : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                   }`}
                 >
@@ -516,7 +519,7 @@ export default function ManualEntryPage() {
                     required
                     className={`w-full px-4 py-3 rounded-lg border transition-all ${
                       isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
+                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
                         : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >
@@ -542,7 +545,7 @@ export default function ManualEntryPage() {
                     }}
                     className={`w-full px-4 py-3 rounded-lg border transition-all ${
                       isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red'
+                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
                         : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >
@@ -553,6 +556,78 @@ export default function ManualEntryPage() {
                   </select>
                 </div>
               )}
+
+              {/* Contact Information - Optional but Recommended */}
+              <div className={`p-4 rounded-lg border ${
+                isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+              }`}>
+                <h3 className={`font-bold mb-3 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                  Contact Information (Optional but Recommended)
+                </h3>
+                <p className={`text-sm mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Providing your contact details helps us reach you regarding your application status.
+                </p>
+                
+                <div className="space-y-4">
+                  {/* Personal Email */}
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Personal Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.personal_email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, personal_email: e.target.value }))}
+                      placeholder="your.email@example.com"
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+
+                  {/* College Email */}
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      College Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.college_email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, college_email: e.target.value }))}
+                      placeholder="registration@jecrc.ac.in"
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Contact Number */}
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Contact Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.contact_no}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData(prev => ({ ...prev, contact_no: value }));
+                      }}
+                      placeholder="10-digit mobile number"
+                      maxLength="10"
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                        isDark
+                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
 
               {/* Certificate Upload with Drag & Drop */}
               <div>

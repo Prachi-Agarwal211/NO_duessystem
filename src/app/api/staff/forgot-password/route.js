@@ -100,9 +100,9 @@ export async function POST(request) {
     // Send OTP via email
     try {
       await transporter.sendMail({
-        from: `"JECRC No Dues System" <${process.env.SMTP_USER}>`,
+        from: `"JECRC UNIVERSITY NO DUES System" <${process.env.SMTP_USER}>`,
         to: profile.email,
-        subject: 'Password Reset OTP - JECRC No Dues System',
+        subject: 'Password Reset OTP - JECRC UNIVERSITY NO DUES System',
         html: `
           <!DOCTYPE html>
           <html>
@@ -120,7 +120,7 @@ export async function POST(request) {
               <p style="font-size: 16px; margin-bottom: 20px;">Hello <strong>${profile.full_name}</strong>,</p>
               
               <p style="font-size: 16px; margin-bottom: 20px;">
-                You have requested to reset your password for the JECRC No Dues System.
+                You have requested to reset your password for the JECRC UNIVERSITY NO DUES System.
               </p>
               
               <div style="background: white; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
@@ -140,8 +140,8 @@ export async function POST(request) {
               
               <p style="font-size: 14px; color: #666; margin-top: 30px;">
                 Best regards,<br>
-                <strong>JECRC University</strong><br>
-                No Dues System
+                <strong>JECRC UNIVERSITY</strong><br>
+                NO DUES System
               </p>
             </div>
             
@@ -169,8 +169,8 @@ This code expires in 10 minutes.
 If you did not request this password reset, please ignore this email and contact your system administrator immediately.
 
 Best regards,
-JECRC University
-No Dues System
+JECRC UNIVERSITY
+NO DUES System
 
 ---
 This is an automated message. Please do not reply to this email.

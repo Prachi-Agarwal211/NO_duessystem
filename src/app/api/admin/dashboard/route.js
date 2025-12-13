@@ -16,12 +16,16 @@ const supabaseAdmin = createClient(
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          cache: 'no-store', // Bypass Next.js fetch cache
+          cache: 'no-store',
         });
       },
     },
   }
 );
+
+// ⚡ PERFORMANCE: Response cache with 30-second TTL
+const dashboardCache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
 
 export async function GET(request) {
   try {
@@ -33,6 +37,16 @@ export async function GET(request) {
     const searchQuery = searchParams.get('search');
     const sortField = searchParams.get('sortField') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    
+    // ⚡ PERFORMANCE: Generate cache key from request params
+    const cacheKey = `dashboard_${page}_${limit}_${status || 'all'}_${department || 'all'}_${searchQuery || 'none'}_${sortField}_${sortOrder}`;
+    
+    // ⚡ PERFORMANCE: Check cache first
+    const cached = dashboardCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log('📦 Returning cached dashboard data');
+      return NextResponse.json(cached.data);
+    }
 
     // Get authenticated user from header/cookie via Supabase
     const authHeader = request.headers.get('Authorization');
@@ -65,6 +79,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('⚡ Fetching fresh dashboard data...');
+    const startTime = Date.now();
+
     // ⚡ PERFORMANCE: Optimized query - only select needed columns
     // ✅ CRITICAL: Exclude manual entries from regular applications list
     let query = supabaseAdmin
@@ -93,7 +110,7 @@ export async function GET(request) {
           )
         )
       `)
-      .eq('is_manual_entry', false) // ✅ Only show online submissions
+      .eq('is_manual_entry', false)
       .order(sortField, { ascending: sortOrder === 'asc' });
 
     // Apply status filter
@@ -181,7 +198,7 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({
+    const responseData = {
       applications: applicationsWithMetrics,
       pagination: {
         page,
@@ -189,7 +206,18 @@ export async function GET(request) {
         total: totalCount || 0,
         totalPages: Math.ceil((totalCount || 0) / limit)
       }
+    };
+
+    // ⚡ PERFORMANCE: Cache the response
+    dashboardCache.set(cacheKey, {
+      data: responseData,
+      timestamp: Date.now()
     });
+
+    const queryTime = Date.now() - startTime;
+    console.log(`✅ Dashboard data fetched in ${queryTime}ms`);
+
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error('Admin dashboard API error:', error);
@@ -232,4 +260,15 @@ function calculateTotalResponseTime(statuses) {
 
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+}
+
+// ⚡ PERFORMANCE: Cache invalidation endpoint for real-time updates
+export async function DELETE(request) {
+  try {
+    dashboardCache.clear();
+    console.log('🗑️ Dashboard cache cleared');
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

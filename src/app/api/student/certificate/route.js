@@ -42,7 +42,9 @@ export async function GET(request) {
         passing_year,
         status,
         final_certificate_generated,
-        certificate_url
+        certificate_url,
+        is_manual_entry,
+        manual_certificate_url
       `);
 
     // Query by formId or registrationNo
@@ -123,8 +125,43 @@ export async function GET(request) {
 
     // ==================== CHECK CERTIFICATE EXISTS ====================
     
+    // For manual entries, use manual_certificate_url if approved
+    if (formData.is_manual_entry) {
+      if (formData.status !== 'approved' || !formData.manual_certificate_url) {
+        return NextResponse.json({
+          success: false,
+          error: formData.status === 'pending'
+            ? 'Your manual entry is pending admin approval.'
+            : formData.status === 'rejected'
+            ? 'Your manual entry was rejected. Please contact admin.'
+            : 'Certificate not available.',
+          status: formData.status,
+          certificateReady: false,
+          isManualEntry: true
+        }, { status: 404 });
+      }
+
+      // Return manual certificate URL for approved manual entries
+      return NextResponse.json({
+        success: true,
+        certificateReady: true,
+        isManualEntry: true,
+        data: {
+          certificate_url: formData.manual_certificate_url,
+          student_name: formData.student_name,
+          registration_no: formData.registration_no,
+          course: formData.course,
+          branch: formData.branch,
+          admission_year: formData.admission_year,
+          passing_year: formData.passing_year,
+          status: formData.status
+        }
+      });
+    }
+    
+    // For online forms, use system-generated certificate
     if (!formData.final_certificate_generated || !formData.certificate_url) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
         error: 'Certificate not yet generated. Please wait for all departments to approve.',
         status: formData.status,
@@ -134,9 +171,10 @@ export async function GET(request) {
 
     // ==================== RETURN CERTIFICATE INFO ====================
     
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       certificateReady: true,
+      isManualEntry: false,
       data: {
         certificate_url: formData.certificate_url,
         student_name: formData.student_name,

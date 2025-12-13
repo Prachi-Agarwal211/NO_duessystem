@@ -19,8 +19,9 @@ import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
 import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
+import SupportTicketsTable from '@/components/admin/SupportTicketsTable';
 import FilterPills from '@/components/ui/FilterPills';
-import { LogOut, Shield, RefreshCw, GraduationCap } from 'lucide-react';
+import { LogOut, Shield, RefreshCw, GraduationCap, Headphones } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -111,17 +112,22 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('new-submission', handleNewSubmission);
   }, [isDark]);
 
-  // Initial data load when userId is available
+  // ⚡ PERFORMANCE: Initial data load - fetch everything in parallel
   useEffect(() => {
     if (userId) {
-      console.log('📥 Initial admin dashboard data load');
-      fetchDashboardData({
-        status: statusFilter,
-        search: '',
-        department: departmentFilter
+      console.log('📥 Initial admin dashboard data load (parallel)');
+      // Fetch all data in parallel to minimize load time
+      Promise.all([
+        fetchDashboardData({
+          status: statusFilter,
+          search: '',
+          department: departmentFilter
+        }),
+        fetchStats(),
+        fetchManualEntriesStats()
+      ]).catch(error => {
+        console.error('Error loading dashboard data:', error);
       });
-      fetchStats();
-      fetchManualEntriesStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -226,6 +232,17 @@ export default function AdminDashboard() {
               }`}
             >
               Manual Entries
+            </button>
+            <button
+              onClick={() => setActiveTab('support')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                activeTab === 'support'
+                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              <Headphones className="w-4 h-4" />
+              Support
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -479,6 +496,10 @@ export default function AdminDashboard() {
           <GlassCard className="p-6">
             <ManualEntriesTable />
           </GlassCard>
+        </div>
+      ) : activeTab === 'support' ? (
+        <div className="animate-fade-in">
+          <SupportTicketsTable />
         </div>
       ) : (
         <GlassCard className="p-6 animate-fade-in">

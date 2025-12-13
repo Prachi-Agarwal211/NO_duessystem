@@ -1,6 +1,6 @@
 /**
  * Email Service using Nodemailer (Vercel Compatible)
- * Handles all email notifications for the No Dues System
+ * Handles all email notifications for the JECRC UNIVERSITY NO DUES System
  * Features: SMTP connection pooling, email queue, retry logic
  */
 
@@ -28,7 +28,7 @@ const SMTP_CONFIG = {
   rateLimit: 10 // 10 emails per second
 };
 
-const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC No Dues <noreply@jecrc.ac.in>';
+const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC UNIVERSITY NO DUES <noreply@jecrc.ac.in>';
 
 // Create transporter with connection pooling
 let transporter = null;
@@ -284,10 +284,10 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
           <tr>
             <td style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); padding: 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
-                JECRC University
+                JECRC UNIVERSITY
               </h1>
               <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
-                No Dues Clearance System
+                NO DUES Clearance System
               </p>
             </td>
           </tr>
@@ -318,7 +318,7 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
           <tr>
             <td style="background-color: #f9fafb; padding: 20px 30px; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
-                ${footerText || 'This is an automated email from JECRC No Dues System.'}
+                ${footerText || 'This is an automated email from JECRC UNIVERSITY NO DUES System.'}
               </p>
               <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
                 © ${new Date().getFullYear()} JECRC University. All rights reserved.

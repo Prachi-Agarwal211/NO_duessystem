@@ -216,14 +216,14 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setTextColor(0, 0, 0);
     pdf.text(`Date of Issue: ${issueDate}`, 45, footerY, { align: 'left' });
     
-    // Registrar Signature (Right)
+    // Registration Office Signature (Right)
     pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(0.5);
     pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6); // Line above text
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Registrar', pageWidth - 60, footerY, { align: 'center' });
+    pdf.text('Registration Office', pageWidth - 60, footerY, { align: 'center' });
     
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);

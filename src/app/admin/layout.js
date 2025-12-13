@@ -1,8 +1,8 @@
 import PageWrapper from '@/components/landing/PageWrapper';
 
 export const metadata = {
-  title: 'Admin Dashboard | JECRC No Dues',
-  description: 'Administrative control panel for JECRC No Dues System',
+  title: 'Admin Dashboard | JECRC UNIVERSITY NO DUES',
+  description: 'Administrative control panel for JECRC UNIVERSITY NO DUES System',
 };
 
 export default function AdminLayout({ children }) {

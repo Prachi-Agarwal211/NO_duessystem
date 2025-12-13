@@ -29,6 +29,10 @@ export function useAdminDashboard() {
   // Use refs to store latest functions and avoid stale closures
   const fetchDashboardDataRef = useRef(null);
   const fetchStatsRef = useRef(null);
+  
+  // ⚡ PERFORMANCE: Request deduplication to prevent multiple simultaneous fetches
+  const pendingDashboardRequest = useRef(null);
+  const pendingStatsRequest = useRef(null);
 
   // Fetch user data
   useEffect(() => {
@@ -66,6 +70,12 @@ export function useAdminDashboard() {
   };
 
   const fetchDashboardData = useCallback(async (filters = {}, isRefresh = false, pageOverride = null) => {
+    // ⚡ PERFORMANCE: If already fetching, return existing promise
+    if (pendingDashboardRequest.current) {
+      console.log('⏭️ Dashboard fetch already in progress, reusing...');
+      return pendingDashboardRequest.current;
+    }
+
     // Always store the latest filters for real-time refresh
     if (Object.keys(filters).length > 0) {
       currentFiltersRef.current = filters;
@@ -78,84 +88,101 @@ export function useAdminDashboard() {
     }
     setError('');
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+    const fetchPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.user?.id) {
-        throw new Error('Session expired. Please login again.');
-      }
-
-      const params = new URLSearchParams({
-        page: pageOverride !== null ? pageOverride : currentPageRef.current,
-        limit: 20,
-        ...filters,
-        _t: Date.now() // Cache buster to ensure fresh data
-      });
-
-      console.log('🔍 Fetching admin dashboard with params:', Object.fromEntries(params));
-
-      const response = await fetch(`/api/admin/dashboard?${params}`, {
-        method: 'GET',
-        cache: 'no-store', // ✅ FIX: Stronger cache bypass at fetch option level
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
+        if (!session?.user?.id) {
+          throw new Error('Session expired. Please login again.');
         }
-      });
-      const result = await response.json();
 
-      console.log('📦 API Response:', {
-        ok: response.ok,
-        status: response.status,
-        applicationsCount: result.applications?.length,
-        firstApp: result.applications?.[0]?.registration_no
-      });
+        // ⚡ PERFORMANCE: Smart caching with 30-second intervals
+        const cacheTimestamp = Math.floor(Date.now() / 30000);
+        const params = new URLSearchParams({
+          page: pageOverride !== null ? pageOverride : currentPageRef.current,
+          limit: 20,
+          ...filters,
+          _t: cacheTimestamp
+        });
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch dashboard data');
+        console.log('🔍 Fetching admin dashboard with params:', Object.fromEntries(params));
+
+        const response = await fetch(`/api/admin/dashboard?${params}`, {
+          method: 'GET',
+          next: { revalidate: 30 }, // ⚡ Cache for 30 seconds
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        const result = await response.json();
+
+        console.log('📦 API Response:', {
+          ok: response.ok,
+          status: response.status,
+          applicationsCount: result.applications?.length,
+          firstApp: result.applications?.[0]?.registration_no
+        });
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch dashboard data');
+        }
+
+        setApplications(result.applications || []);
+        setTotalItems(result.pagination?.total || 0);
+        setTotalPages(result.pagination?.totalPages || 1);
+        setLastUpdate(new Date());
+
+        console.log('✅ Admin dashboard state updated:', result.applications?.length, 'applications');
+      } catch (error) {
+        console.error('❌ Error fetching dashboard data:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        pendingDashboardRequest.current = null;
       }
+    })();
 
-      setApplications(result.applications || []);
-      setTotalItems(result.pagination?.total || 0);
-      setTotalPages(result.pagination?.totalPages || 1);
-      setLastUpdate(new Date());
-
-      console.log('✅ Admin dashboard state updated:', result.applications?.length, 'applications');
-    } catch (error) {
-      console.error('❌ Error fetching dashboard data:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []); // ✅ FIX: Empty deps - use ref instead of state
+    pendingDashboardRequest.current = fetchPromise;
+    return fetchPromise;
+  }, []);
 
   // Store latest function in ref
   fetchDashboardDataRef.current = fetchDashboardData;
 
   const fetchStats = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.user?.id) return;
-
-      // Add cache-busting timestamp to force fresh stats
-      const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${Date.now()}`, {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      const result = await response.json();
-
-      if (response.ok) {
-        setStats(result);
-        console.log('📊 Stats refreshed:', result.overallStats?.[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+    // ⚡ PERFORMANCE: If already fetching, return existing promise
+    if (pendingStatsRequest.current) {
+      console.log('⏭️ Stats fetch already in progress, reusing...');
+      return pendingStatsRequest.current;
     }
+
+    const fetchPromise = (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user?.id) return;
+
+        // ⚡ PERFORMANCE: Smart caching with 60-second intervals
+        const cacheTimestamp = Math.floor(Date.now() / 60000);
+        const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${cacheTimestamp}`, {
+          next: { revalidate: 60 } // ⚡ Cache for 60 seconds
+        });
+        const result = await response.json();
+
+        if (response.ok) {
+          setStats(result);
+          console.log('📊 Stats refreshed:', result.overallStats?.[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        pendingStatsRequest.current = null;
+      }
+    })();
+
+    pendingStatsRequest.current = fetchPromise;
+    return fetchPromise;
   };
 
   // Store latest function in ref
