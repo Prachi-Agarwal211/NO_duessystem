@@ -92,10 +92,10 @@ export async function POST(request) {
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.valid) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Password does not meet requirements',
-          details: passwordValidation.errors 
+          details: passwordValidation.errors
         },
         { status: 400 }
       );
@@ -128,7 +128,7 @@ export async function POST(request) {
     // Check if reset token has expired
     const expiresAt = new Date(profile.otp_expires_at);
     const now = new Date();
-    
+
     if (now > expiresAt) {
       // Clear expired token
       await supabaseAdmin
@@ -148,6 +148,7 @@ export async function POST(request) {
 
     // Verify reset token matches (the token generated in verify-otp step)
     // Note: At this stage, otp_code contains the resetToken, not the original OTP
+    // The otp_code field has been expanded to VARCHAR(255) to handle long tokens
     if (profile.otp_code !== resetToken) {
       return NextResponse.json(
         {
@@ -162,7 +163,7 @@ export async function POST(request) {
 
     // Get user's auth record
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-    
+
     if (usersError) {
       console.error('Error fetching users:', usersError);
       return NextResponse.json(
@@ -172,7 +173,7 @@ export async function POST(request) {
     }
 
     const user = users.find(u => u.email === normalizedEmail);
-    
+
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },

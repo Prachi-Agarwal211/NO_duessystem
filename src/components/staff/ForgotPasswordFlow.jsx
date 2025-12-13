@@ -19,14 +19,14 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
   // ✅ FIX: Restore password reset session from sessionStorage on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const savedToken = sessionStorage.getItem('pwd-reset-token');
     const savedEmail = sessionStorage.getItem('pwd-reset-email');
     const savedExpiry = sessionStorage.getItem('pwd-reset-expiry');
-    
+
     if (savedToken && savedEmail && savedExpiry) {
       const expiry = parseInt(savedExpiry, 10);
-      
+
       if (Date.now() < expiry) {
         // Token still valid, restore state
         setResetToken(savedToken);
@@ -150,7 +150,7 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
       const response = await fetch('/api/staff/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: email.trim().toLowerCase(),
           otp: otpValue
         })
@@ -160,15 +160,15 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
 
       if (data.success) {
         setResetToken(data.resetToken);
-        
+
         // ✅ FIX: Persist resetToken to sessionStorage to survive page refresh
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('pwd-reset-token', data.resetToken);
           sessionStorage.setItem('pwd-reset-email', email.trim().toLowerCase());
-          // Token expires in 30 minutes (set on backend)
+          // Token expires in 30 minutes (matches backend expiration)
           sessionStorage.setItem('pwd-reset-expiry', (Date.now() + (30 * 60 * 1000)).toString());
         }
-        
+
         setSuccess('OTP verified! Please set your new password.');
         setStep(3);
       } else {
@@ -221,14 +221,14 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
 
       if (data.success) {
         setSuccess(data.message);
-        
+
         // ✅ FIX: Clear sessionStorage after successful password reset
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('pwd-reset-token');
           sessionStorage.removeItem('pwd-reset-email');
           sessionStorage.removeItem('pwd-reset-expiry');
         }
-        
+
         // Close and notify parent after 2 seconds
         setTimeout(() => {
           if (onSuccess) onSuccess();
@@ -259,7 +259,7 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
     setError('');
     setSuccess('');
     setResendTimer(0);
-    
+
     // ✅ FIX: Clear sessionStorage when resetting form
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('pwd-reset-token');
@@ -338,7 +338,7 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Enter your email address and we'll send you a 6-digit OTP to reset your password.
               </p>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address

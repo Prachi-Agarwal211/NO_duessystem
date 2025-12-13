@@ -37,6 +37,12 @@ export default function ManualEntryPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Convocation validation states
+  const [validatingConvocation, setValidatingConvocation] = useState(false);
+  const [convocationValid, setConvocationValid] = useState(null);
+  const [convocationData, setConvocationData] = useState(null);
+  const [convocationError, setConvocationError] = useState('');
+
   // Fetch schools on mount
   useEffect(() => {
     async function fetchSchools() {
@@ -53,6 +59,57 @@ export default function ManualEntryPage() {
     }
     fetchSchools();
   }, []);
+
+  // Validate registration number against convocation database
+  const validateConvocation = async (registration_no) => {
+    if (!registration_no || !registration_no.trim()) {
+      return;
+    }
+
+    setValidatingConvocation(true);
+    setConvocationError('');
+    
+    try {
+      const response = await fetch('/api/convocation/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registration_no: registration_no.trim().toUpperCase() })
+      });
+
+      const result = await response.json();
+
+      if (result.valid && result.student) {
+        setConvocationValid(true);
+        setConvocationData(result.student);
+        setConvocationError('');
+        
+        console.log('✅ Convocation validation successful:', result.student);
+        
+        // Auto-select school if it matches
+        if (result.student.school && schools.length > 0) {
+          const matchedSchool = schools.find(s =>
+            s.name.toLowerCase().includes(result.student.school.toLowerCase()) ||
+            result.student.school.toLowerCase().includes(s.name.toLowerCase())
+          );
+          
+          if (matchedSchool) {
+            handleSchoolChange(matchedSchool.id, matchedSchool.name);
+          }
+        }
+      } else {
+        setConvocationValid(false);
+        setConvocationData(null);
+        setConvocationError(result.error || 'Registration number not eligible for convocation. You can still proceed with manual entry.');
+        console.log('ℹ️ Not in convocation list - manual entry will use provided data');
+      }
+    } catch (error) {
+      console.error('Convocation validation error:', error);
+      setConvocationValid(false);
+      setConvocationError('Failed to validate. You can still proceed with manual entry.');
+    } finally {
+      setValidatingConvocation(false);
+    }
+  };
 
   // Fetch courses when school changes
   const handleSchoolChange = async (schoolId, schoolName) => {
@@ -194,12 +251,19 @@ export default function ManualEntryPage() {
 
       setUploading(false);
 
-      // Submit to API
+      // Submit to API with convocation data if available
       const response = await fetch('/api/manual-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           registration_no: formData.registration_no,
+          // Include convocation data if student is eligible
+          student_name: convocationData?.name || null,
+          admission_year: convocationData?.admission_year || null,
+          // Email and contact will use placeholders if not provided
+          personal_email: null,  // Could add fields for user to input
+          college_email: null,
+          contact_no: null,
           school: formData.school,
           course: formData.course,
           branch: formData.branch || null,
@@ -322,23 +386,94 @@ export default function ManualEntryPage() {
             )}
 
             <div className="space-y-6">
-              {/* Registration Number */}
+              {/* Registration Number with Validation */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Registration Number <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.registration_no}
-                  onChange={(e) => setFormData(prev => ({ ...prev, registration_no: e.target.value.toUpperCase() }))}
-                  required
-                  placeholder="e.g., 21JEXXXX"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                    isDark
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
-                      : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.registration_no}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, registration_no: e.target.value.toUpperCase() }));
+                      // Clear validation when user changes registration number
+                      setConvocationValid(null);
+                      setConvocationData(null);
+                      setConvocationError('');
+                    }}
+                    onBlur={(e) => validateConvocation(e.target.value)}
+                    required
+                    placeholder="e.g., 21BCON747"
+                    className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                      isDark
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
+                    }`}
+                  />
+                  
+                  {/* Validation Status Icons */}
+                  {validatingConvocation && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs text-blue-500">Checking...</span>
+                    </div>
+                  )}
+                  
+                  {!validatingConvocation && convocationValid === true && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="text-xs text-green-500">Eligible</span>
+                    </div>
+                  )}
+                  
+                  {!validatingConvocation && convocationValid === false && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-500" />
+                      <span className="text-xs text-amber-500">Not in list</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Convocation Success Message */}
+                {convocationData && convocationValid && (
+                  <div className={`mt-3 p-3 rounded-lg ${
+                    isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className={`font-medium text-sm mb-1 ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                          ✓ Convocation Eligible - Data Retrieved
+                        </p>
+                        <div className={`text-sm space-y-1 ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
+                          <div><strong>Name:</strong> {convocationData.name}</div>
+                          <div><strong>School:</strong> {convocationData.school}</div>
+                          <div><strong>Year:</strong> {convocationData.admission_year}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Convocation Warning Message */}
+                {convocationError && convocationValid === false && (
+                  <div className={`mt-3 p-3 rounded-lg ${
+                    isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+                          {convocationError}
+                        </p>
+                        <p className={`text-xs mt-1 ${isDark ? 'text-amber-400/80' : 'text-amber-600'}`}>
+                          You can still submit for no-dues clearance, but you may not be eligible for convocation certificate.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* School */}

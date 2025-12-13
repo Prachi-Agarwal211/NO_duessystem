@@ -13,6 +13,11 @@ export async function POST(request) {
     
     const {
       registration_no,
+      student_name,      // NEW: From convocation validation
+      admission_year,    // NEW: From convocation validation
+      personal_email,    // NEW: Optional real email
+      college_email,     // NEW: Optional real email
+      contact_no,        // NEW: Optional real contact
       school,
       course,
       branch,
@@ -28,6 +33,29 @@ export async function POST(request) {
         { error: 'Missing required fields: registration_no, school_id, course_id, and certificate are required' },
         { status: 400 }
       );
+    }
+
+    // ===== VALIDATE AGAINST CONVOCATION DATABASE =====
+    let convocationStudent = null;
+    try {
+      const { data: convocationData } = await supabaseAdmin
+        .from('convocation_eligible_students')
+        .select('student_name, admission_year, school')
+        .eq('registration_no', registration_no.toUpperCase())
+        .single();
+      
+      if (convocationData) {
+        convocationStudent = convocationData;
+        console.log('✅ Student found in convocation database:', {
+          registration_no,
+          name: convocationData.student_name
+        });
+      } else {
+        console.log('ℹ️ Student not in convocation database - using provided data');
+      }
+    } catch (convocationError) {
+      // Not in convocation list - continue with provided/placeholder data
+      console.log('ℹ️ Student not eligible for convocation - proceeding with manual entry');
     }
 
     // ===== CRITICAL: Check if student already exists in system =====
@@ -110,20 +138,34 @@ export async function POST(request) {
       branch: branchData ? branchData.name : 'N/A'
     });
 
-    // ===== INSERT INTO no_dues_forms with MINIMAL data for manual entry =====
+    // ===== INSERT INTO no_dues_forms with REAL or FALLBACK data =====
+    // Priority: 1) Convocation data, 2) User-provided data, 3) Placeholder
+    const finalStudentName = convocationStudent?.student_name || student_name || 'Manual Entry';
+    const finalAdmissionYear = convocationStudent?.admission_year || admission_year || null;
+    const finalPersonalEmail = personal_email || `${registration_no.toLowerCase()}@manual.temp`;
+    const finalCollegeEmail = college_email || `${registration_no.toLowerCase()}@manual.jecrc.temp`;
+    const finalContactNo = contact_no || '0000000000';
+    
+    console.log('📝 Creating manual entry with data:', {
+      registration_no,
+      student_name: finalStudentName,
+      source: convocationStudent ? 'convocation' : student_name ? 'user-provided' : 'placeholder'
+    });
+
     const { data: newForm, error: insertError } = await supabaseAdmin
       .from('no_dues_forms')
       .insert([{
-        // ONLY registration number (what user provides)
+        // Registration number
         registration_no,
         
-        // Database required fields - use minimal placeholders
-        student_name: 'Manual Entry',
-        personal_email: `${registration_no.toLowerCase()}@manual.temp`,
-        college_email: `${registration_no.toLowerCase()}@manual.jecrc.temp`,
-        contact_no: '0000000000',
+        // Use REAL data from convocation or user input, fallback to placeholders
+        student_name: finalStudentName,
+        personal_email: finalPersonalEmail,
+        college_email: finalCollegeEmail,
+        contact_no: finalContactNo,
+        admission_year: finalAdmissionYear,
         country_code: '+91',
-        school: schoolData.name,  // Required field - use text name
+        school: schoolData.name,
         
         // Optional UUID foreign keys for filtering
         school_id: school_id || null,

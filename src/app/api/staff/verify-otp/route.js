@@ -74,7 +74,7 @@ export async function POST(request) {
     // Check if OTP has expired
     const expiresAt = new Date(profile.otp_expires_at);
     const now = new Date();
-    
+
     if (now > expiresAt) {
       // Clear expired OTP
       await supabaseAdmin
@@ -121,11 +121,11 @@ export async function POST(request) {
         .eq('id', profile.id);
 
       const remainingAttempts = 5 - (profile.otp_attempts + 1);
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
-          error: `Invalid OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.` 
+        {
+          success: false,
+          error: `Invalid OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`
         },
         { status: 400 }
       );
@@ -134,9 +134,10 @@ export async function POST(request) {
     // OTP is valid - generate temporary reset token
     // This token will be used for the reset-password endpoint
     const resetToken = `${profile.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // ✅ EXTENDED: 30 minutes (was 15)
+    const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // ✅ FIXED: 30 minutes
 
-    // Store reset token (we'll use otp_code field temporarily)
+    // Store reset token in the expanded otp_code field
+    // The field has been expanded to VARCHAR(255) to handle long tokens
     await supabaseAdmin
       .from('profiles')
       .update({
@@ -150,7 +151,7 @@ export async function POST(request) {
       success: true,
       message: 'OTP verified successfully',
       resetToken: resetToken,
-      expiresIn: 15 * 60 // seconds
+      expiresIn: 30 * 60 // ✅ FIXED: Match backend expiration time (30 minutes)
     });
 
   } catch (error) {
