@@ -296,6 +296,22 @@ export default function StudentDetailView() {
     }
   };
 
+  // ⚡ PERFORMANCE: Memoize computed values BEFORE any early returns
+  // This follows Rules of Hooks - hooks must be called in the same order every render
+  const userDepartmentStatus = useMemo(() => {
+    if (!statusData || statusData.length === 0 || !user?.department_name) {
+      return null;
+    }
+    return statusData.find(s => s.department_name === user.department_name);
+  }, [statusData, user?.department_name]);
+  
+  const canApproveOrReject = useMemo(() => {
+    if (!user?.role || !userDepartmentStatus) {
+      return false;
+    }
+    return user.role === 'department' && userDepartmentStatus?.status === 'pending';
+  }, [user?.role, userDepartmentStatus]);
+
   // ⚡ PERFORMANCE: Show skeleton on initial load, spinner on refresh
   if (loading && !initialLoadComplete) {
     return (
@@ -353,22 +369,6 @@ export default function StudentDetailView() {
       </PageWrapper>
     );
   }
-
-  // ⚡ PERFORMANCE: Memoize computed values to avoid recalculation
-  // SAFETY: These hooks run AFTER studentData null check, so data is guaranteed to exist
-  const userDepartmentStatus = useMemo(() => {
-    if (!statusData || statusData.length === 0 || !user?.department_name) {
-      return null;
-    }
-    return statusData.find(s => s.department_name === user.department_name);
-  }, [statusData, user?.department_name]);
-  
-  const canApproveOrReject = useMemo(() => {
-    if (!user?.role || !userDepartmentStatus) {
-      return false;
-    }
-    return user.role === 'department' && userDepartmentStatus.status === 'pending';
-  }, [user?.role, userDepartmentStatus?.status]);
 
   return (
     <PageWrapper>
