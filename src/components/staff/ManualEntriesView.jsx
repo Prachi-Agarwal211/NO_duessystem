@@ -56,7 +56,7 @@ export default function ManualEntriesView() {
   const getStatusBadge = (status) => {
     const badges = {
       pending: { bg: 'bg-yellow-500/20', text: 'text-yellow-500', icon: Clock },
-      completed: { bg: 'bg-green-500/20', text: 'text-green-500', icon: CheckCircle },
+      approved: { bg: 'bg-green-500/20', text: 'text-green-500', icon: CheckCircle },
       rejected: { bg: 'bg-red-500/20', text: 'text-red-500', icon: XCircle }
     };
     
@@ -110,7 +110,7 @@ export default function ManualEntriesView() {
         </div>
 
         <div className="flex gap-2">
-          {['all', 'pending', 'completed', 'rejected'].map((status) => (
+          {['all', 'pending', 'approved', 'rejected'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}

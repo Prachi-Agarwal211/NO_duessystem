@@ -403,6 +403,7 @@ export async function GET(request) {
         passing_year,
         manual_certificate_url,
         status,
+        rejection_reason,
         created_at,
         updated_at
       `)

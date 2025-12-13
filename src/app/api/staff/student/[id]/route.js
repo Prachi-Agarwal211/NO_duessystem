@@ -54,6 +54,9 @@ export async function GET(request, { params }) {
         status,
         created_at,
         updated_at,
+        reapplication_count,
+        student_reply_message,
+        last_reapplied_at,
         profiles (
           full_name,
           email
@@ -163,7 +166,10 @@ export async function GET(request, { params }) {
         status: formData.status,
         created_at: formData.created_at,
         updated_at: formData.updated_at,
-        user_email: formData.profiles?.email
+        user_email: formData.profiles?.email,
+        reapplication_count: formData.reapplication_count || 0,
+        student_reply_message: formData.student_reply_message || null,
+        last_reapplied_at: formData.last_reapplied_at || null
       },
       departmentStatuses: completeStatuses
     };

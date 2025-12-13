@@ -65,7 +65,7 @@ export async function GET(request) {
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true })
         .eq('is_manual_entry', true)
-        .eq('status', 'completed'),
+        .eq('status', 'approved'),
       supabaseAdmin
         .from('no_dues_forms')
         .select('*', { count: 'exact', head: true })

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifyToken } from '@/lib/jwtService';
+import { sendEmail } from '@/lib/emailService';
 
 /**
  * POST /api/manual-entry/action
@@ -80,11 +81,11 @@ export async function POST(request) {
     }
 
     if (action === 'approve') {
-      // Update form status to completed (admin approved)
+      // Update form status to approved (admin approved)
       const { error: updateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
-          status: 'completed',
+          status: 'approved',
           updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
@@ -181,16 +182,17 @@ export async function POST(request) {
         message: 'Manual entry approved successfully',
         data: {
           form_id: entry_id,
-          status: 'completed'
+          status: 'approved'
         }
       });
 
     } else if (action === 'reject') {
-      // Update form status to rejected
+      // Update form status to rejected with reason
       const { error: updateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
           status: 'rejected',
+          rejection_reason: rejection_reason,
           updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
