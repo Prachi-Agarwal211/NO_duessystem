@@ -70,8 +70,8 @@ export async function POST(request) {
       );
     }
 
-    // Create Supabase client with cookies using Next.js 14 server-side approach
-    const cookieStore = cookies();
+    // Create Supabase client with cookies using Next.js async cookies
+    const cookieStore = await cookies();
     
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -86,21 +86,24 @@ export async function POST(request) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               );
-            } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
+            } catch (error) {
+              // Cookie setting failed - log for debugging
+              console.error('Cookie setting error:', error);
             }
           },
         },
       }
     );
 
-    // Get current user session
+    // Get current user session with detailed error logging
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
-      console.error('Authentication error:', userError);
+      console.error('Authentication error:', {
+        error: userError,
+        hasUser: !!user,
+        cookies: cookieStore.getAll().map(c => c.name),
+      });
       return NextResponse.json(
         { success: false, error: 'Not authenticated. Please log in again.' },
         { status: 401 }
