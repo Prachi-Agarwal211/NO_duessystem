@@ -243,7 +243,8 @@ export function useStaffDashboard() {
       // Dashboard fetch will include stats, no separate call needed
       fetchDashboardData();
     }
-  }, [userId, fetchDashboardData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // Only depend on userId - fetchDashboardData is stable via useCallback
 
   // Manual refresh function - stable reference using refs to avoid stale closures
   // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
@@ -290,7 +291,10 @@ export function useStaffDashboard() {
         // ALWAYS refresh when any department action occurs
         if (analysis.formIds.length > 0) {
           console.log('🔄 Triggering staff dashboard refresh from department action...');
-          refreshData();
+          // Use ref to avoid dependency on refreshData
+          if (fetchDashboardDataRef.current) {
+            fetchDashboardDataRef.current(currentSearchRef.current, true);
+          }
         }
       });
 
@@ -305,7 +309,10 @@ export function useStaffDashboard() {
           });
 
           console.log('🚀 Executing refreshData() for staff dashboard');
-          refreshData();
+          // Use ref to avoid dependency on refreshData
+          if (fetchDashboardDataRef.current) {
+            fetchDashboardDataRef.current(currentSearchRef.current, true);
+          }
         }
       });
     };
@@ -323,7 +330,8 @@ export function useStaffDashboard() {
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
     };
-  }, [userId, user?.department_name, refreshData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, user?.department_name]); // Removed refreshData - using refs instead
 
   return {
     user,

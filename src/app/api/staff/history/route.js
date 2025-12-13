@@ -49,6 +49,7 @@ export async function GET(request) {
     }
 
     // Build query for action history
+    // CRITICAL: Exclude manual entries (is_manual_entry = true) from history
     let query = supabaseAdmin
       .from('no_dues_status')
       .select(`
@@ -69,9 +70,11 @@ export async function GET(request) {
           created_at,
           school_id,
           course_id,
-          branch_id
+          branch_id,
+          is_manual_entry
         )
-      `);
+      `)
+      .eq('no_dues_forms.is_manual_entry', false);
 
     // Filter by department if not admin
     if (profile.role === 'department') {
@@ -116,10 +119,11 @@ export async function GET(request) {
       return NextResponse.json({ error: historyError.message }, { status: 500 });
     }
 
-    // Get total count for pagination
+    // Get total count for pagination (exclude manual entries)
     let countQuery = supabaseAdmin
       .from('no_dues_status')
-      .select('*', { count: 'exact', head: true });
+      .select('no_dues_forms!inner(is_manual_entry)', { count: 'exact', head: true })
+      .eq('no_dues_forms.is_manual_entry', false);
 
     if (profile.role === 'department') {
       countQuery = countQuery

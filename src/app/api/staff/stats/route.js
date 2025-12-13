@@ -135,6 +135,7 @@ export async function GET(request) {
       // Department staff members get comprehensive stats for their department AND personal actions
       
       // 1. Get PERSONAL action counts (actions taken by THIS staff member)
+      // CRITICAL: Exclude manual entries (is_manual_entry = true) from stats
       let personalQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -142,11 +143,13 @@ export async function GET(request) {
           no_dues_forms!inner (
             school_id,
             course_id,
-            branch_id
+            branch_id,
+            is_manual_entry
           )
         `)
         .eq('department_name', profile.department_name)
-        .eq('action_by_user_id', userId); // Filter by THIS user's actions
+        .eq('action_by_user_id', userId)
+        .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
 
       // Apply scope filtering for personal actions
       if (profile.school_ids && profile.school_ids.length > 0) {
@@ -171,6 +174,7 @@ export async function GET(request) {
       }
 
       // 2. Get PENDING counts (for the whole department scope - these need action)
+      // CRITICAL: Exclude manual entries from pending count
       let pendingQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -178,11 +182,13 @@ export async function GET(request) {
           no_dues_forms!inner (
             school_id,
             course_id,
-            branch_id
+            branch_id,
+            is_manual_entry
           )
         `)
         .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
 
       // Apply scope filtering for pending
       if (profile.school_ids && profile.school_ids.length > 0) {

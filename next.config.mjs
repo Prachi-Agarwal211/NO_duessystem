@@ -77,6 +77,7 @@ const nextConfig = {
   async headers() {
     return [
       {
+        // Security headers for all routes
         source: '/(.*)',
         headers: [
           {
@@ -99,6 +100,34 @@ const nextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
           }
+        ],
+      },
+      {
+        // Specific headers for manifest.json to prevent 401 errors
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+      {
+        // Cache headers for static assets
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
         ],
       },
     ];

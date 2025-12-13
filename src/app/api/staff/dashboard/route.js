@@ -123,6 +123,8 @@ export async function GET(request) {
       };
     } else if (profile.role === 'department') {
       // Department staff gets applications pending for their department
+      // CRITICAL: Exclude manual entries (is_manual_entry = true) from pending table
+      // Manual entries are admin-only and shown in separate "Manual Entries" tab
       let query = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -143,11 +145,13 @@ export async function GET(request) {
             contact_no,
             created_at,
             updated_at,
-            status
+            status,
+            is_manual_entry
           )
         `)
         .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .eq('no_dues_forms.is_manual_entry', false);
 
       // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
       // The other 9 departments see ALL students
@@ -206,12 +210,13 @@ export async function GET(request) {
       // ✅ Search already applied at database level - no client-side filtering needed
       const filteredApplications = pendingApplications || [];
 
-      // Get total count for pagination
+      // Get total count for pagination (exclude manual entries)
       const { count: totalCount, error: countError } = await supabaseAdmin
         .from('no_dues_status')
-        .select('*', { count: 'exact', head: true })
+        .select('no_dues_forms!inner(is_manual_entry)', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .eq('no_dues_forms.is_manual_entry', false);
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });
@@ -236,20 +241,23 @@ export async function GET(request) {
       try {
         if (profile.role === 'department') {
           // ⚡ OPTIMIZED: Parallel queries for personal + pending stats
+          // CRITICAL: Exclude manual entries from all stats
           const [personalResult, pendingResult, deptResult] = await Promise.all([
-            // Personal actions by this user
+            // Personal actions by this user (exclude manual entries)
             supabaseAdmin
               .from('no_dues_status')
-              .select('status')
+              .select('status, no_dues_forms!inner(is_manual_entry)')
               .eq('department_name', profile.department_name)
-              .eq('action_by_user_id', userId),
+              .eq('action_by_user_id', userId)
+              .eq('no_dues_forms.is_manual_entry', false),
             
-            // Pending items for department
+            // Pending items for department (exclude manual entries)
             supabaseAdmin
               .from('no_dues_status')
-              .select('status')
+              .select('status, no_dues_forms!inner(is_manual_entry)')
               .eq('department_name', profile.department_name)
-              .eq('status', 'pending'),
+              .eq('status', 'pending')
+              .eq('no_dues_forms.is_manual_entry', false),
             
             // Department info
             supabaseAdmin
@@ -284,9 +292,10 @@ export async function GET(request) {
           
           const { data: todayActions } = await supabaseAdmin
             .from('no_dues_status')
-            .select('status')
+            .select('status, no_dues_forms!inner(is_manual_entry)')
             .eq('department_name', profile.department_name)
             .eq('action_by_user_id', userId)
+            .eq('no_dues_forms.is_manual_entry', false)
             .gte('action_at', today.toISOString());
 
           if (todayActions) {
