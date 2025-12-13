@@ -45,6 +45,9 @@ export default function AdminDashboard() {
     refreshData,
   } = useAdminDashboard();
 
+  // State for manual entries stats
+  const [manualEntriesStats, setManualEntriesStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+
   // Load departments for filter dropdown
   const { departments } = useDepartmentsConfig();
 
@@ -118,6 +121,7 @@ export default function AdminDashboard() {
         department: departmentFilter
       });
       fetchStats();
+      fetchManualEntriesStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -136,6 +140,30 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, statusFilter, departmentFilter, debouncedSearch]); // ✅ Removed searchTerm from deps
   // Now API is only called 500ms AFTER user stops typing, not on every keystroke!
+
+  // Fetch manual entries stats
+  const fetchManualEntriesStats = async () => {
+    if (!userId) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const response = await fetch('/api/admin/manual-entries-stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setManualEntriesStats(data.stats);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching manual entries stats:', error);
+    }
+  };
 
   const statusCounts = stats?.overallStats?.[0] || {};
 
@@ -266,21 +294,17 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
               onClick={() => {
-                setStatusFilter('');
-                // Smooth scroll to table after filter update
-                setTimeout(() => {
-                  scrollToTable();
-                }, 100);
+                setActiveTab('manual-entries');
               }}
               className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
-              title="Click to view all requests"
+              title="Click to view manual entries"
             >
               <StatsCard
-                title="Total Requests"
-                value={statusCounts.total_requests || 0}
-                change={statusCounts ? `+${(statusCounts.total_requests || 0)}` : '0'}
+                title="Manual Entries (Pending)"
+                value={manualEntriesStats.pending || 0}
+                change={`${manualEntriesStats.total || 0} total entries`}
                 trend="up"
-                color="bg-blue-500"
+                color="bg-purple-500"
               />
             </div>
             

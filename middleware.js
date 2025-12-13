@@ -12,7 +12,7 @@ export async function middleware(request) {
   try {
     // Skip middleware for public routes to improve mobile performance
     const currentPath = request.nextUrl.pathname;
-    const publicRoutes = ['/', '/student/check-status', '/student/submit-form', '/staff/login', '/unauthorized'];
+    const publicRoutes = ['/', '/student/check-status', '/student/submit-form', '/student/manual-entry', '/staff/login', '/unauthorized'];
     
     if (publicRoutes.includes(currentPath)) {
       return response;
@@ -116,9 +116,10 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - manifest.json (PWA manifest)
      * - api (API routes)
      * - _next (Next.js internals)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|.*\\.(svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
