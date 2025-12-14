@@ -16,7 +16,11 @@ import { NextResponse } from 'next/server'
  *     completed_manual: number
  *   },
  *   schoolCounts: { [school: string]: number },
- *   completionRate: number
+ *   schoolDistribution: { [school: string]: number }, // Alias for frontend compatibility
+ *   completionRate: number,
+ *   completedCount: number,
+ *   pendingCount: number,
+ *   notStartedCount: number
  * }
  */
 export async function GET(request) {
@@ -89,6 +93,7 @@ export async function GET(request) {
       total: total || 0,
       statusCounts,
       schoolCounts,
+      schoolDistribution: schoolCounts, // Add alias for frontend compatibility
       completionRate: parseFloat(completionRate),
       completedCount,
       pendingCount: statusCounts.pending_online + statusCounts.pending_manual,

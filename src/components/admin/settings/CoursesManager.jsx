@@ -226,7 +226,7 @@ export default function CoursesManager() {
               onChange={(e) => setSelectedSchool(e.target.value)}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
                 isDark
-                  ? 'bg-white/5 border-white/10 text-white'
+                  ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                   : 'bg-gray-50 border-gray-200 text-ink-black'
               }`}
             >

@@ -220,7 +220,7 @@ export default function AdminSupportModal({ isOpen, onClose }) {
                         required
                         className={`w-full px-4 py-3 rounded-lg border outline-none transition-all
                           ${isDark
-                            ? 'bg-white/5 border-white/10 text-white focus:border-amber-500 focus:bg-white/10'
+                            ? 'bg-white/5 border-white/10 text-white focus:border-amber-500 focus:bg-white/10 [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                             : 'bg-white border-gray-300 text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'
                           }`}
                       >

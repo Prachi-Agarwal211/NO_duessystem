@@ -64,7 +64,7 @@ export default function FormInput({
               }}
             >
               <option value="" disabled style={{
-                backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+                backgroundColor: isDark ? '#0f0f0f' : '#ffffff',
                 color: isDark ? '#ffffff' : '#000000'
               }}>
                 {loading ? 'Loading...' : (placeholder || '')}
@@ -74,7 +74,7 @@ export default function FormInput({
                   key={option.value}
                   value={option.value}
                   style={{
-                    backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+                    backgroundColor: isDark ? '#0f0f0f' : '#ffffff',
                     color: isDark ? '#ffffff' : '#000000',
                     padding: '8px 12px'
                   }}

@@ -463,7 +463,7 @@ export default function AdminDashboard() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none"
+                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white dark:[&>option:hover]:bg-[#1a1a1a]"
               >
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
@@ -474,7 +474,7 @@ export default function AdminDashboard() {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none"
+                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white dark:[&>option:hover]:bg-[#1a1a1a]"
               >
                 <option value="">All Departments</option>
                 {departments

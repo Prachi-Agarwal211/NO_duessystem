@@ -238,7 +238,7 @@ export default function BranchesManager() {
             }}
             className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
               isDark
-                ? 'bg-white/5 border-white/10 text-white'
+                ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                 : 'bg-white border-gray-300 text-ink-black'
             }`}
           >
@@ -258,7 +258,7 @@ export default function BranchesManager() {
               onChange={(e) => setSelectedCourse(e.target.value)}
               className={`px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
                 isDark
-                  ? 'bg-white/5 border-white/10 text-white'
+                  ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                   : 'bg-gray-50 border-gray-200 text-ink-black'
               }`}
             >

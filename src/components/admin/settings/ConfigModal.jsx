@@ -155,7 +155,7 @@ export default function ConfigModal({
             onChange={(e) => handleChange(field.name, e.target.value)}
             className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-red-500/50 transition-all duration-700 ${
               isDark
-                ? 'bg-white/5 border-white/10 text-white placeholder-white/50'
+                ? 'bg-white/5 border-white/10 text-white placeholder-white/50 [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                 : 'bg-white border-gray-300 text-ink-black'
             }`}
             disabled={field.disabled || isLoading}

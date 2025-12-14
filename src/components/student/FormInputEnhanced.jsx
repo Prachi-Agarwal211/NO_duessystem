@@ -108,7 +108,7 @@ export default function FormInputEnhanced({
                 focus:border-jecrc-red-bright
                 hover:border-white/30 hover:bg-black/90
                 disabled:opacity-50 disabled:cursor-not-allowed
-                [&>option]:bg-black [&>option]:text-white
+                [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]
               `
               : `
                 bg-white/90 text-black border-gray-300

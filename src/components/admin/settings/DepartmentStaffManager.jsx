@@ -234,7 +234,7 @@ export default function DepartmentStaffManager() {
               onChange={(e) => setFilterDepartment(e.target.value)}
               className={`w-full px-4 py-2 rounded-lg transition-all duration-700 ${
                 isDark
-                  ? 'bg-white/5 border border-white/10 text-white'
+                  ? 'bg-white/5 border border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                   : 'bg-gray-50 border border-gray-200 text-ink-black'
               }`}
             >

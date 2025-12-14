@@ -320,7 +320,7 @@ export default function ConvocationDashboard() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className={`px-4 py-2 rounded-lg border transition-all duration-700 ${
               isDark
-                ? 'bg-white/5 border-white/10 text-white'
+                ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                 : 'bg-gray-50 border-black/10 text-ink-black'
             }`}
           >
@@ -338,7 +338,7 @@ export default function ConvocationDashboard() {
             onChange={(e) => setSchoolFilter(e.target.value)}
             className={`px-4 py-2 rounded-lg border transition-all duration-700 ${
               isDark
-                ? 'bg-white/5 border-white/10 text-white'
+                ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                 : 'bg-gray-50 border-black/10 text-ink-black'
             }`}
           >

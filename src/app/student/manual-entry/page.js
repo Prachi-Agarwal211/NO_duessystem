@@ -493,7 +493,7 @@ export default function ManualEntryPage() {
                   required
                   className={`w-full px-4 py-3 rounded-lg border transition-all ${
                     isDark
-                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
+                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                       : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                   }`}
                 >
@@ -519,7 +519,7 @@ export default function ManualEntryPage() {
                     required
                     className={`w-full px-4 py-3 rounded-lg border transition-all ${
                       isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
+                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                         : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >
@@ -545,7 +545,7 @@ export default function ManualEntryPage() {
                     }}
                     className={`w-full px-4 py-3 rounded-lg border transition-all ${
                       isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-gray-900 [&>option]:text-white'
+                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                         : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
                     }`}
                   >

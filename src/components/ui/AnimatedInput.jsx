@@ -382,10 +382,11 @@ export function AnimatedSelect({
               ${error ? 'border-2 border-red-500' : 'border-2'}
               ${
                 isDark
-                  ? `bg-white/5 text-white border-white/10 
+                  ? `bg-white/5 text-white border-white/10
                      focus:border-jecrc-red focus:bg-white/10
-                     disabled:bg-white/5 disabled:text-gray-500`
-                  : `bg-white text-gray-900 border-gray-200 
+                     disabled:bg-white/5 disabled:text-gray-500
+                     [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]`
+                  : `bg-white text-gray-900 border-gray-200
                      focus:border-jecrc-red focus:bg-white
                      disabled:bg-gray-100 disabled:text-gray-400`
               }

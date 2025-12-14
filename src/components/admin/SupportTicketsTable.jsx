@@ -284,8 +284,8 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
                     value={editStatus}
                     onChange={(e) => setEditStatus(e.target.value)}
                     className={`w-full px-3 py-2 rounded-lg border outline-none
-                      ${isDark 
-                        ? 'bg-white/5 border-white/10 text-white' 
+                      ${isDark
+                        ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                         : 'bg-white border-gray-300 text-gray-900'
                       }`}
                   >
@@ -304,8 +304,8 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
                     value={editPriority}
                     onChange={(e) => setEditPriority(e.target.value)}
                     className={`w-full px-3 py-2 rounded-lg border outline-none
-                      ${isDark 
-                        ? 'bg-white/5 border-white/10 text-white' 
+                      ${isDark
+                        ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
                         : 'bg-white border-gray-300 text-gray-900'
                       }`}
                   >
@@ -452,7 +452,7 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
               setCurrentPage(1);
             }}
             className={`px-4 py-2 rounded-lg border outline-none
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+              ${isDark ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]' : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="">All Status</option>
             <option value="open">Open</option>
@@ -468,7 +468,7 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
               setCurrentPage(1);
             }}
             className={`px-4 py-2 rounded-lg border outline-none
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+              ${isDark ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]' : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="">All Types</option>
             <option value="student">Students</option>
@@ -482,7 +482,7 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
               setCurrentPage(1);
             }}
             className={`px-4 py-2 rounded-lg border outline-none
-              ${isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+              ${isDark ? 'bg-white/5 border-white/10 text-white [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]' : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="">All Priority</option>
             <option value="low">Low</option>
