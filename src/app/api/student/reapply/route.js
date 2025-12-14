@@ -201,12 +201,12 @@ export async function PUT(request) {
 
     // ==================== LOG REAPPLICATION HISTORY ====================
     const { error: historyError } = await supabaseAdmin
-    .from('no_dues_reapplication_history')
-    .insert({
-      form_id: form.id,
-      reapplication_number: form.reapplication_count + 1,
-      student_message: student_reply_message.trim(),
-      edited_fields: sanitizedData || {},
+      .from('no_dues_reapplication_history')
+      .insert({
+        form_id: form.id,
+        reapplication_number: form.reapplication_count + 1,
+        student_message: student_reply_message.trim(),
+        edited_fields: sanitizedData || {},
         rejected_departments: rejectedDepartments,
         previous_status: previousStatus
       });

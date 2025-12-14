@@ -19,7 +19,7 @@ class RealtimeManager {
     // Event aggregation
     this.eventQueue = [];
     this.batchTimeout = null;
-    this.BATCH_WINDOW = 500; // ✅ OPTIMIZED: 500ms for faster feedback (was 800ms)
+    this.BATCH_WINDOW = 300; // ⚡ OPTIMIZED: 300ms for even faster feedback (was 500ms)
 
     // Subscribers for different event types
     this.subscribers = {

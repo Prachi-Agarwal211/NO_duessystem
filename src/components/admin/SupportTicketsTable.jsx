@@ -25,7 +25,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import GlassCard from '@/components/ui/GlassCard';
 import { supabase } from '@/lib/supabaseClient';
 
-export default function SupportTicketsTable() {
+export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -33,7 +33,7 @@ export default function SupportTicketsTable() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
-  const [requesterTypeFilter, setRequesterTypeFilter] = useState('');
+  const [requesterTypeFilter, setRequesterTypeFilter] = useState(defaultRequesterTypeFilter);
   const [priorityFilter, setPriorityFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);

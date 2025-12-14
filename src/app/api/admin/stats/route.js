@@ -23,9 +23,9 @@ const supabaseAdmin = createClient(
   }
 );
 
-// ⚡ PERFORMANCE: Response cache with 5-second TTL for real-time stats
+// ⚡ PERFORMANCE: Response cache with 30-second TTL for optimal balance
 const statsCache = new Map();
-const CACHE_TTL = 5000; // 5 seconds - fast enough for real-time feel
+const CACHE_TTL = 30000; // 30 seconds - balanced caching for better performance
 
 export async function GET(request) {
   try {

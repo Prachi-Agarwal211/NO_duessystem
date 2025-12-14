@@ -45,9 +45,9 @@ export async function middleware(request) {
       }
     );
 
-    // Add timeout to prevent mobile hanging
+    // ⚡ OPTIMIZATION: Reduced timeout for faster failure detection
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 3000)
+      setTimeout(() => reject(new Error('Auth timeout')), 2000) // 2s instead of 3s
     );
 
     // Get the current user session with timeout
@@ -83,16 +83,16 @@ export async function middleware(request) {
         return NextResponse.redirect(loginUrl);
       }
 
-      // Check user role with timeout
+      // ⚡ OPTIMIZATION: Check user role with reduced timeout and specific column selection
       const profilePromise = supabase
         .from('profiles')
-        .select('role')
+        .select('role') // Only fetch role column, not all data
         .eq('id', user.id)
         .single();
 
       const { data: profile, error } = await Promise.race([
         profilePromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Profile timeout')), 2000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Profile timeout')), 1500)) // 1.5s instead of 2s
       ]);
 
       if (error || !profile || !requiredRoles.includes(profile.role)) {

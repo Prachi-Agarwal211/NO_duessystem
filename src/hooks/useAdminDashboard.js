@@ -101,6 +101,7 @@ export function useAdminDashboard() {
         const params = new URLSearchParams({
           page: pageOverride !== null ? pageOverride : currentPageRef.current,
           limit: 20,
+          includeStats: 'true', // ⚡ OPTIMIZATION: Fetch stats in same request
           ...filters,
           _t: cacheTimestamp
         });
@@ -130,6 +131,13 @@ export function useAdminDashboard() {
         setApplications(result.applications || []);
         setTotalItems(result.pagination?.total || 0);
         setTotalPages(result.pagination?.totalPages || 1);
+        
+        // ⚡ OPTIMIZATION: Set stats from combined response
+        if (result.stats) {
+          setStats(result.stats);
+          console.log('✅ Stats updated from dashboard response');
+        }
+        
         setLastUpdate(new Date());
 
         console.log('✅ Admin dashboard state updated:', result.applications?.length, 'applications');
@@ -209,24 +217,22 @@ export function useAdminDashboard() {
   // Manual refresh function - stable reference using refs to avoid stale closures
   // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
   const refreshData = useCallback(() => {
-    console.log('🔄 Refresh triggered - updating dashboard and stats');
+    console.log('🔄 Refresh triggered - updating dashboard with stats');
 
     // Force refresh by setting refreshing state
     setRefreshing(true);
 
     const promises = [];
 
-    // Use refs to get latest functions and state
+    // ⚡ OPTIMIZATION: Dashboard fetch now includes stats, no separate call needed
     if (fetchDashboardDataRef.current) {
       // ✅ FIX: For new submissions, jump to Page 1 to see them
       // If you want to stay on current page, change 1 to currentPageRef.current
       promises.push(fetchDashboardDataRef.current(currentFiltersRef.current, true, 1));
     }
 
-    // Always fetch fresh stats using ref
-    if (fetchStatsRef.current) {
-      promises.push(fetchStatsRef.current());
-    }
+    // ⚡ REMOVED: Separate stats fetch - now included in dashboard response
+    // Stats are automatically updated when dashboard is fetched with includeStats=true
 
     // Update last update timestamp to trigger re-render
     setLastUpdate(new Date());

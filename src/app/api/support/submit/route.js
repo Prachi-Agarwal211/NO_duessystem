@@ -37,15 +37,17 @@ export async function POST(request) {
       );
     }
 
-    // If student, roll number is required
-    if (requesterType === 'student' && !rollNumber) {
-      return NextResponse.json(
-        { success: false, error: 'Roll number is required for students' },
-        { status: 400 }
-      );
+    // Validate roll number based on requester type
+    if (requesterType === 'student') {
+      if (!rollNumber) {
+        return NextResponse.json(
+          { success: false, error: 'Roll number is required for students' },
+          { status: 400 }
+        );
+      }
     }
 
-    // If department, roll number should be null
+    // If department/admin, roll number should be null
     const finalRollNumber = requesterType === 'department' ? null : rollNumber;
 
     // Message length validation
@@ -63,6 +65,18 @@ export async function POST(request) {
       );
     }
 
+    // Extract priority from subject if present (for admin requests)
+    let priority = 'normal';
+    let cleanSubject = subject?.trim() || 'Support Request';
+    
+    // Check if subject contains priority tag from admin modal
+    if (cleanSubject.includes('[Priority:')) {
+      const priorityMatch = cleanSubject.match(/\[Priority:\s*(NORMAL|HIGH|URGENT)\]/i);
+      if (priorityMatch) {
+        priority = priorityMatch[1].toLowerCase();
+      }
+    }
+
     // Insert support ticket
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
@@ -71,10 +85,10 @@ export async function POST(request) {
           email: email.toLowerCase().trim(),
           roll_number: finalRollNumber?.toUpperCase().trim(),
           requester_type: requesterType,
-          subject: subject?.trim() || 'Support Request',
+          subject: cleanSubject,
           message: message.trim(),
           status: 'open',
-          priority: 'normal'
+          priority: priority
         }
       ])
       .select()

@@ -4,6 +4,7 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Bell, Menu, Moon, Sun, User } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
+import SupportButton from '@/components/support/SupportButton';
 
 export default function Header({ onMenuClick, title = "Dashboard" }) {
   const { theme, toggleTheme } = useTheme();
@@ -32,6 +33,9 @@ export default function Header({ onMenuClick, title = "Dashboard" }) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Support Button */}
+        <SupportButton variant="header" />
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}

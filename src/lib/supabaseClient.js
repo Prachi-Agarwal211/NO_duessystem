@@ -51,15 +51,15 @@ const createSafeClient = () => {
         'apikey': supabaseAnonKey
       },
       fetch: (url, options = {}) => {
-        // ✅ OPTIMIZATION: Reduced timeout for faster failures
-        const timeout = 10000; // 10 seconds (was 15s)
+        // ⚡ OPTIMIZATION: Aggressive timeout for auth operations
+        const timeout = 5000; // 5 seconds (was 10s) - faster failure detection
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         return fetch(url, {
           ...options,
           signal: controller.signal,
-          // ✅ OPTIMIZATION: Add keepalive for better connection pooling
+          // ⚡ OPTIMIZATION: Add keepalive for better connection pooling
           keepalive: true,
         }).finally(() => clearTimeout(timeoutId));
       },

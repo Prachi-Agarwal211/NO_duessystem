@@ -1,151 +1,178 @@
 -- ⚡ PERFORMANCE OPTIMIZATION: Database Indexes
--- This file contains composite indexes to dramatically improve query performance
--- Expected improvement: 60-80% faster queries on filtered/sorted operations
+-- These indexes optimize the most common dashboard queries
 
--- ==========================================
--- ENABLE REQUIRED EXTENSIONS
--- ==========================================
+-- ========================================
+-- NO_DUES_STATUS TABLE INDEXES
+-- ========================================
 
--- Enable pg_trgm for text search (optional - if this fails, skip the text search indexes below)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- Index for department dashboard filtering (most common query)
+-- Used by: Staff dashboard to filter pending items by department
+CREATE INDEX IF NOT EXISTS idx_no_dues_status_dept_status_created 
+ON no_dues_status(department_name, status, created_at DESC);
 
--- ==========================================
--- STAFF DASHBOARD PERFORMANCE INDEXES
--- ==========================================
-
--- Index for pending requests query (department staff dashboard)
--- Covers: department_name + status + created_at filtering and sorting
--- Impact: Staff dashboard "pending requests" query ~70% faster
-CREATE INDEX IF NOT EXISTS idx_status_dept_pending
-ON no_dues_status(department_name, status, created_at DESC)
-WHERE status = 'pending';
-
--- Index for action history queries (staff "My Actions" tab)
--- Covers: action_by_user_id + action_at for sorting
--- Impact: Action history tab loads ~60% faster
-CREATE INDEX IF NOT EXISTS idx_status_action_by_user 
-ON no_dues_status(action_by_user_id, action_at DESC)
+-- Index for action tracking and response time calculations
+-- Used by: Admin stats API for response time calculations
+CREATE INDEX IF NOT EXISTS idx_no_dues_status_dept_action 
+ON no_dues_status(department_name, status, action_at DESC) 
 WHERE action_at IS NOT NULL;
 
--- ==========================================
--- ADMIN DASHBOARD PERFORMANCE INDEXES
--- ==========================================
+-- Index for finding pending items older than X days (alerts)
+-- Used by: Admin dashboard alerts for stuck requests
+CREATE INDEX IF NOT EXISTS idx_no_dues_status_pending_old 
+ON no_dues_status(status, created_at) 
+WHERE status = 'pending';
 
--- Index for admin dashboard main query
--- Covers: is_manual_entry filter + created_at sorting
--- Impact: Admin dashboard loads ~50% faster
-CREATE INDEX IF NOT EXISTS idx_forms_manual_created 
+-- Index for user action history
+-- Used by: Staff stats to show personal approval/rejection counts
+CREATE INDEX IF NOT EXISTS idx_no_dues_status_user_actions 
+ON no_dues_status(action_by_user_id, department_name, status, action_at DESC) 
+WHERE action_by_user_id IS NOT NULL;
+
+-- Composite index for form lookups with status
+-- Used by: Dashboard queries joining forms with their statuses
+CREATE INDEX IF NOT EXISTS idx_no_dues_status_form_dept_status 
+ON no_dues_status(form_id, department_name, status);
+
+-- ========================================
+-- NO_DUES_FORMS TABLE INDEXES
+-- ========================================
+
+-- Index for excluding manual entries (most critical filter)
+-- Used by: All dashboard queries to separate manual from online submissions
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_manual_entry 
 ON no_dues_forms(is_manual_entry, created_at DESC);
 
--- Index for admin dashboard with status filter
--- Covers: is_manual_entry + status + created_at
--- Impact: Status-filtered queries ~60% faster
-CREATE INDEX IF NOT EXISTS idx_forms_manual_status_created 
-ON no_dues_forms(is_manual_entry, status, created_at DESC);
+-- Index for form status and date sorting
+-- Used by: Admin dashboard for filtering by overall status
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_status_created 
+ON no_dues_forms(status, created_at DESC) 
+WHERE is_manual_entry = false;
 
--- Index for department response time calculations
--- Covers: action_at + department_name for stats aggregation
--- Impact: Stats API department metrics ~50% faster
-CREATE INDEX IF NOT EXISTS idx_status_action_dept 
-ON no_dues_status(action_at, department_name)
-WHERE action_at IS NOT NULL;
+-- Index for registration number searches (exact and partial)
+-- Used by: Search functionality in dashboards
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_registration_no 
+ON no_dues_forms(registration_no) 
+WHERE is_manual_entry = false;
 
--- ==========================================
--- STATS & ANALYTICS PERFORMANCE INDEXES
--- ==========================================
+-- Index for student name searches (case-insensitive)
+-- Used by: Search functionality in dashboards
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_student_name_lower 
+ON no_dues_forms(LOWER(student_name)) 
+WHERE is_manual_entry = false;
 
--- Index for recent activity queries (last 30 days)
--- Covers: action_at range queries + sorting
--- Impact: Recent activity widget ~70% faster
-CREATE INDEX IF NOT EXISTS idx_status_recent_activity
-ON no_dues_status(action_at DESC)
-WHERE action_at IS NOT NULL;
+-- Index for school/course/branch filtering (HOD department)
+-- Used by: HOD department to filter by their assigned schools/courses
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_school_course_branch 
+ON no_dues_forms(school_id, course_id, branch_id) 
+WHERE is_manual_entry = false;
 
--- Index for pending alerts (overdue requests)
--- Covers: status + created_at for old pending items
--- Impact: Pending alerts query ~80% faster
-CREATE INDEX IF NOT EXISTS idx_status_pending_alerts
-ON no_dues_status(status, created_at)
-WHERE status = 'pending';
+-- ========================================
+-- PROFILES TABLE INDEXES
+-- ========================================
 
--- ==========================================
--- SEARCH PERFORMANCE INDEXES (OPTIONAL)
--- ==========================================
+-- ⚡ CRITICAL: Primary index for fast user profile lookups during login
+-- Used by: AuthContext.loadProfile() and middleware auth checks
+CREATE INDEX IF NOT EXISTS idx_profiles_id_fast_lookup
+ON profiles(id);
 
--- NOTE: These indexes require pg_trgm extension (enabled above)
--- If the extension is not available, these will be skipped automatically
--- Basic search will still work, just slightly slower
+-- ⚡ CRITICAL: Index for role validation (most frequent auth query)
+-- Used by: Middleware role checks on every protected route
+CREATE INDEX IF NOT EXISTS idx_profiles_id_role_fast
+ON profiles(id, role);
 
--- Text search index for student names (case-insensitive)
--- Impact: Name search ~50% faster
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm') THEN
-    CREATE INDEX IF NOT EXISTS idx_forms_student_name_trgm
-    ON no_dues_forms USING gin(student_name gin_trgm_ops);
-  END IF;
-END $$;
+-- Index for role-based access control
+-- Used by: Authentication and authorization checks
+CREATE INDEX IF NOT EXISTS idx_profiles_role
+ON profiles(role);
 
--- Text search index for registration numbers (case-insensitive)
--- Impact: Registration number search ~50% faster
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm') THEN
-    CREATE INDEX IF NOT EXISTS idx_forms_registration_no_trgm
-    ON no_dues_forms USING gin(registration_no gin_trgm_ops);
-  END IF;
-END $$;
+-- Index for department staff lookups
+-- Used by: Finding all staff members for a department
+CREATE INDEX IF NOT EXISTS idx_profiles_dept_role
+ON profiles(department_name, role)
+WHERE role IN ('department', 'admin');
 
--- ==========================================
--- REAL-TIME PERFORMANCE INDEXES
--- ==========================================
+-- Index for HOD scope filtering (school/course/branch arrays)
+-- Used by: HOD staff filtering their assigned scope
+CREATE INDEX IF NOT EXISTS idx_profiles_hod_scope
+ON profiles(department_name)
+WHERE department_name = 'school_hod'
+AND (school_ids IS NOT NULL OR course_ids IS NOT NULL OR branch_ids IS NOT NULL);
 
--- Index for form_id lookups in status table
--- Covers: form_id for joins and real-time updates
--- Impact: Real-time update queries ~40% faster
-CREATE INDEX IF NOT EXISTS idx_status_form_id 
-ON no_dues_status(form_id);
+-- ⚡ PERFORMANCE: Covering index for complete profile data in single lookup
+-- Used by: Login flow to get all profile data without table access
+CREATE INDEX IF NOT EXISTS idx_profiles_login_covering
+ON profiles(id)
+INCLUDE (role, full_name, department_name, school_ids, course_ids, branch_ids);
 
--- ==========================================
+-- ========================================
+-- COMPOSITE INDEXES FOR COMPLEX QUERIES
+-- ========================================
+
+-- Covering index for dashboard list queries (reduces table lookups)
+-- Used by: Main dashboard data fetch with all needed columns
+CREATE INDEX IF NOT EXISTS idx_no_dues_forms_dashboard_covering 
+ON no_dues_forms(is_manual_entry, status, created_at DESC) 
+INCLUDE (id, student_name, registration_no, course, branch, school, contact_no, updated_at, reapplication_count);
+
+-- ========================================
 -- VERIFICATION QUERIES
--- ==========================================
+-- ========================================
 
--- Run these queries to verify index usage:
--- 
--- 1. Check if indexes exist:
--- SELECT indexname, indexdef FROM pg_indexes WHERE tablename IN ('no_dues_forms', 'no_dues_status');
--- 
--- 2. Analyze query performance:
--- EXPLAIN ANALYZE SELECT * FROM no_dues_status WHERE department_name = 'library' AND status = 'pending';
--- 
--- 3. Check index usage stats:
--- SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read, idx_tup_fetch 
--- FROM pg_stat_user_indexes 
--- WHERE tablename IN ('no_dues_forms', 'no_dues_status')
--- ORDER BY idx_scan DESC;
+-- Run these queries to verify indexes are being used:
 
--- ==========================================
--- MAINTENANCE
--- ==========================================
+-- 1. Check index usage for staff dashboard query
+EXPLAIN ANALYZE
+SELECT * FROM no_dues_status 
+WHERE department_name = 'library' 
+AND status = 'pending' 
+AND form_id IN (SELECT id FROM no_dues_forms WHERE is_manual_entry = false)
+ORDER BY created_at DESC 
+LIMIT 50;
 
--- Analyze tables to update statistics after creating indexes
-ANALYZE no_dues_forms;
+-- 2. Check index usage for admin stats query
+EXPLAIN ANALYZE
+SELECT department_name, status, created_at, action_at 
+FROM no_dues_status 
+WHERE action_at IS NOT NULL;
+
+-- 3. Check index usage for search query
+EXPLAIN ANALYZE
+SELECT * FROM no_dues_forms 
+WHERE is_manual_entry = false 
+AND (LOWER(student_name) LIKE LOWER('%test%') OR registration_no ILIKE '%test%')
+ORDER BY created_at DESC;
+
+-- ========================================
+-- INDEX MAINTENANCE
+-- ========================================
+
+-- Run these periodically to maintain index health:
+
+-- Reindex all tables (run during low traffic periods)
+REINDEX TABLE no_dues_status;
+REINDEX TABLE no_dues_forms;
+REINDEX TABLE profiles;
+
+-- Analyze tables to update query planner statistics
 ANALYZE no_dues_status;
+ANALYZE no_dues_forms;
+ANALYZE profiles;
 
--- ==========================================
--- EXPECTED PERFORMANCE IMPROVEMENTS
--- ==========================================
+-- ========================================
+-- PERFORMANCE MONITORING
+-- ========================================
 
--- Before Indexes:
--- ├─ Staff Dashboard: 2-3 seconds
--- ├─ Admin Dashboard: 2-3 seconds  
--- └─ Stats API: 1.5-2 seconds
+-- Monitor slow queries (requires pg_stat_statements extension)
+-- SELECT * FROM pg_stat_statements 
+-- WHERE query LIKE '%no_dues%' 
+-- ORDER BY mean_exec_time DESC 
+-- LIMIT 10;
 
--- After Indexes + Code Optimizations:
--- ├─ Staff Dashboard: 400-600ms (80% faster)
--- ├─ Admin Dashboard: 300-500ms (85% faster)
--- └─ Stats API: 400-600ms (75% faster)
-
--- With Cache Hits:
--- ├─ All dashboards: <100ms (97% faster)
--- └─ Stats: <100ms (95% faster)
+-- Check index bloat
+-- SELECT 
+--   schemaname, tablename, 
+--   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size,
+--   pg_size_pretty(pg_indexes_size(schemaname||'.'||tablename)) as index_size
+-- FROM pg_tables 
+-- WHERE tablename IN ('no_dues_status', 'no_dues_forms', 'profiles')
+-- ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;

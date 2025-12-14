@@ -84,18 +84,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // ⚡ PERFORMANCE: In-memory profile cache to avoid redundant queries
+  const profileCache = new Map();
+  const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   /**
-   * Load user profile
+   * Load user profile with caching
    */
   const loadProfile = async (userId) => {
     try {
+      // ⚡ Check cache first
+      const cached = profileCache.get(userId);
+      if (cached && Date.now() - cached.timestamp < PROFILE_CACHE_TTL) {
+        setProfile(cached.data);
+        return cached.data;
+      }
+
+      // ⚡ OPTIMIZATION: Only fetch needed columns, not all (*)
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, role, full_name, department_name, school_ids, course_ids, branch_ids')
         .eq('id', userId)
         .single();
 
       if (error) throw error;
+      
+      // ⚡ Cache the result
+      profileCache.set(userId, {
+        data,
+        timestamp: Date.now()
+      });
+      
       setProfile(data);
       return data;
     } catch (error) {
@@ -255,11 +274,11 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        // ✅ TIMEOUT PROTECTION: Force clear loading after 30 seconds
+        // ⚡ OPTIMIZATION: Reduced timeout from 30s to 5s for faster failure detection
         authTimeoutId = setTimeout(() => {
           console.warn('⚠️ Auth initialization timeout - clearing loading state');
           setLoading(false);
-        }, 30000);
+        }, 5000); // 5 seconds instead of 30
 
         // Check if session has expired
         const remembered = checkRememberMe();

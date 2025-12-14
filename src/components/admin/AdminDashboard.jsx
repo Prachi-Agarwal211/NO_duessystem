@@ -19,7 +19,7 @@ import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
 import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
 import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
-import SupportTicketsTable from '@/components/admin/SupportTicketsTable';
+import TabbedSupportTickets from '@/components/admin/TabbedSupportTickets';
 import FilterPills from '@/components/ui/FilterPills';
 import { LogOut, Shield, RefreshCw, GraduationCap, Headphones } from 'lucide-react';
 
@@ -533,7 +533,7 @@ export default function AdminDashboard() {
         </div>
       ) : activeTab === 'support' ? (
         <div className="animate-fade-in">
-          <SupportTicketsTable />
+          <TabbedSupportTickets />
         </div>
       ) : (
         <GlassCard className="p-6 animate-fade-in">

@@ -37,9 +37,10 @@ export async function GET(request) {
     const searchQuery = searchParams.get('search');
     const sortField = searchParams.get('sortField') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const includeStats = searchParams.get('includeStats') === 'true';
     
     // ⚡ PERFORMANCE: Generate cache key from request params
-    const cacheKey = `dashboard_${page}_${limit}_${status || 'all'}_${department || 'all'}_${searchQuery || 'none'}_${sortField}_${sortOrder}`;
+    const cacheKey = `dashboard_${page}_${limit}_${status || 'all'}_${department || 'all'}_${searchQuery || 'none'}_${sortField}_${sortOrder}_${includeStats}`;
     
     // ⚡ PERFORMANCE: Check cache first
     const cached = dashboardCache.get(cacheKey);
@@ -208,6 +209,115 @@ export async function GET(request) {
       }
     };
 
+    // ⚡ PERFORMANCE: Include stats in same response if requested
+    if (includeStats) {
+      try {
+        console.log('📊 Including stats in dashboard response...');
+        
+        // Parallel queries for stats (same as admin/stats API)
+        const [
+          overallStatsResult,
+          departmentWorkloadResult,
+          allStatusesResult,
+          activityAndAlertsResult
+        ] = await Promise.all([
+          supabaseAdmin.rpc('get_form_statistics'),
+          supabaseAdmin.rpc('get_department_workload'),
+          supabaseAdmin
+            .from('no_dues_status')
+            .select('department_name, status, created_at, action_at')
+            .not('action_at', 'is', null),
+          Promise.all([
+            supabaseAdmin
+              .from('no_dues_status')
+              .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no)')
+              .gte('action_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+              .order('action_at', { ascending: false })
+              .limit(50),
+            supabaseAdmin
+              .from('no_dues_status')
+              .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at)')
+              .eq('status', 'pending')
+              .lt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+              .order('created_at', { ascending: true })
+              .limit(20)
+          ])
+        ]);
+
+        const { data: overallStats } = overallStatsResult;
+        const { data: departmentWorkload } = departmentWorkloadResult;
+        const { data: allStatuses } = allStatusesResult;
+        const [recentActivityResult, pendingAlertsResult] = activityAndAlertsResult;
+        const { data: recentActivity } = recentActivityResult;
+        const { data: pendingAlerts } = pendingAlertsResult;
+
+        // Calculate department performance stats
+        const departmentStatsMap = new Map();
+        if (departmentWorkload) {
+          departmentWorkload.forEach(dept => {
+            const total = Number(dept.pending_count || 0) + Number(dept.approved_count || 0) + Number(dept.rejected_count || 0);
+            const approved = Number(dept.approved_count || 0);
+            const rejected = Number(dept.rejected_count || 0);
+            
+            departmentStatsMap.set(dept.department_name, {
+              department_name: dept.department_name,
+              total_requests: total,
+              approved_requests: approved,
+              rejected_requests: rejected,
+              pending_requests: Number(dept.pending_count || 0),
+              response_times: [],
+              approval_rate: total > 0 ? ((approved / total) * 100).toFixed(2) + '%' : '0%',
+              rejection_rate: total > 0 ? ((rejected / total) * 100).toFixed(2) + '%' : '0%'
+            });
+          });
+        }
+
+        // Calculate response times
+        if (allStatuses) {
+          allStatuses.forEach(status => {
+            if (status.action_at && status.created_at) {
+              const responseTime = (new Date(status.action_at) - new Date(status.created_at)) / 1000;
+              const deptStats = departmentStatsMap.get(status.department_name);
+              if (deptStats) {
+                deptStats.response_times.push(responseTime);
+              }
+            }
+          });
+        }
+
+        // Format department stats
+        const formattedDepartmentStats = Array.from(departmentStatsMap.values()).map(dept => {
+          const avgResponseTime = dept.response_times.length > 0
+            ? dept.response_times.reduce((sum, time) => sum + time, 0) / dept.response_times.length
+            : 0;
+
+          return {
+            department_name: dept.department_name,
+            total_requests: dept.total_requests,
+            approved_requests: dept.approved_requests,
+            rejected_requests: dept.rejected_requests,
+            pending_requests: dept.pending_requests,
+            avg_response_time: formatTime(avgResponseTime),
+            avg_response_time_seconds: avgResponseTime,
+            approval_rate: dept.approval_rate,
+            rejection_rate: dept.rejection_rate
+          };
+        }).sort((a, b) => a.department_name.localeCompare(b.department_name));
+
+        responseData.stats = {
+          overallStats: overallStats || [],
+          departmentStats: formattedDepartmentStats,
+          recentActivity: recentActivity || [],
+          pendingAlerts: pendingAlerts || []
+        };
+
+        console.log('✅ Stats included in dashboard response');
+      } catch (statsError) {
+        console.error('Error fetching stats:', statsError);
+        // Don't fail the whole request if stats fail
+      }
+    }
+
     // ⚡ PERFORMANCE: Cache the response
     dashboardCache.set(cacheKey, {
       data: responseData,
@@ -260,6 +370,18 @@ function calculateTotalResponseTime(statuses) {
 
   if (hours > 0) return `${hours}h ${minutes}m`;
   return `${minutes}m`;
+}
+
+// Helper function for response time formatting (used in stats)
+function formatTime(seconds) {
+  if (!seconds) return 'N/A';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+  return `${remainingSeconds}s`;
 }
 
 // ⚡ PERFORMANCE: Cache invalidation endpoint for real-time updates
