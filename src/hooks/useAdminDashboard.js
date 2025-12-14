@@ -150,7 +150,9 @@ export function useAdminDashboard() {
   // Store latest function in ref
   fetchDashboardDataRef.current = fetchDashboardData;
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    console.log('🔄 fetchStats called, userId:', userId);
+    
     // ⚡ PERFORMANCE: If already fetching, return existing promise
     if (pendingStatsRequest.current) {
       console.log('⏭️ Stats fetch already in progress, reusing...');
@@ -161,21 +163,31 @@ export function useAdminDashboard() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        if (!session?.user?.id) return;
+        if (!session?.user?.id) {
+          console.log('❌ No session found for stats fetch');
+          return;
+        }
 
-        // ⚡ PERFORMANCE: Smart caching with 60-second intervals
-        const cacheTimestamp = Math.floor(Date.now() / 60000);
+        console.log('📡 Fetching stats from API...');
+        // ⚡ PERFORMANCE: Smart caching with 5-second intervals for real-time stats
+        const cacheTimestamp = Math.floor(Date.now() / 5000);
         const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${cacheTimestamp}`, {
-          next: { revalidate: 60 } // ⚡ Cache for 60 seconds
+          next: { revalidate: 5 } // ⚡ Cache for 5 seconds - real-time updates
         });
         const result = await response.json();
 
+        console.log('📊 Stats API response:', { ok: response.ok, status: response.status, hasData: !!result.overallStats });
+
         if (response.ok) {
           setStats(result);
-          console.log('📊 Stats refreshed:', result.overallStats?.[0]);
+          console.log('✅ Stats updated successfully:', result.overallStats?.[0]);
+        } else {
+          console.error('❌ Stats API returned error:', result);
+          setError('Failed to load statistics');
         }
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error('❌ Error fetching stats:', error);
+        setError('Failed to load statistics');
       } finally {
         pendingStatsRequest.current = null;
       }
@@ -183,7 +195,7 @@ export function useAdminDashboard() {
 
     pendingStatsRequest.current = fetchPromise;
     return fetchPromise;
-  };
+  }, [userId]);
 
   // Store latest function in ref
   fetchStatsRef.current = fetchStats;

@@ -116,18 +116,27 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (userId) {
       console.log('📥 Initial admin dashboard data load (parallel)');
+      
       // Fetch all data in parallel to minimize load time
-      Promise.all([
-        fetchDashboardData({
-          status: statusFilter,
-          search: '',
-          department: departmentFilter
-        }),
-        fetchStats(),
-        fetchManualEntriesStats()
-      ]).catch(error => {
-        console.error('Error loading dashboard data:', error);
-      });
+      const loadData = async () => {
+        try {
+          await Promise.all([
+            fetchDashboardData({
+              status: statusFilter,
+              search: '',
+              department: departmentFilter
+            }),
+            fetchStats(),
+            fetchManualEntriesStats()
+          ]);
+          console.log('✅ All dashboard data loaded successfully');
+        } catch (error) {
+          console.error('❌ Error loading dashboard data:', error);
+          toast.error('Failed to load dashboard data');
+        }
+      };
+      
+      loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -172,6 +181,18 @@ export default function AdminDashboard() {
   };
 
   const statusCounts = stats?.overallStats?.[0] || {};
+  const statsLoaded = stats !== null && stats?.overallStats?.length > 0;
+  
+  // Debug logging for stats
+  useEffect(() => {
+    console.log('📊 Stats State Updated:', {
+      stats: stats,
+      statusCounts: statusCounts,
+      statsLoaded: statsLoaded,
+      overallStats: stats?.overallStats,
+      firstStat: stats?.overallStats?.[0]
+    });
+  }, [stats, statusCounts, statsLoaded]);
 
   if (loading) {
     return (
@@ -307,6 +328,19 @@ export default function AdminDashboard() {
 
       {activeTab === 'dashboard' ? (
         <div className="space-y-8 animate-fade-in">
+          {/* Stats Loading/Error State */}
+          {!statsLoaded && !loading && (
+            <div className={`p-4 rounded-lg border ${
+              isDark
+                ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
+                : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+            }`}>
+              <p className="text-sm">
+                ⚠️ Loading statistics... If this persists, try refreshing the page.
+              </p>
+            </div>
+          )}
+          
           {/* Stats Grid - Clickable Cards with Smooth Scroll Animation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div

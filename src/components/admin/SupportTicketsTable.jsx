@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  MessageSquare, 
-  User, 
-  Mail, 
-  Calendar, 
-  AlertCircle, 
-  CheckCircle2, 
-  Clock, 
+import {
+  MessageSquare,
+  User,
+  Mail,
+  Calendar,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
   XCircle,
   Search,
   Filter,
@@ -23,6 +23,7 @@ import { toast } from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import GlassCard from '@/components/ui/GlassCard';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function SupportTicketsTable() {
   const { theme } = useTheme();
@@ -41,11 +42,7 @@ export default function SupportTicketsTable() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    fetchTickets();
-  }, [statusFilter, requesterTypeFilter, priorityFilter, searchTerm, currentPage]);
-
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -74,7 +71,41 @@ export default function SupportTicketsTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, requesterTypeFilter, priorityFilter, searchTerm, currentPage]);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
+  // 🔌 Real-time subscription for support tickets
+  useEffect(() => {
+    console.log('🔌 Setting up real-time subscription for support tickets');
+    
+    const channel = supabase
+      .channel('support_tickets_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets'
+        },
+        (payload) => {
+          console.log('📨 Support ticket real-time event:', payload.eventType);
+          
+          // Refresh tickets on any change
+          fetchTickets();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Support tickets subscription status:', status);
+      });
+
+    return () => {
+      console.log('🧹 Cleaning up support tickets subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [fetchTickets]);
 
   const updateTicketStatus = async (ticketId, newStatus, priority, adminNotes) => {
     setUpdating(true);

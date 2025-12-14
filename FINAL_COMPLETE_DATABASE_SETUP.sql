@@ -71,7 +71,11 @@ CREATE TABLE public.profiles (
     branch_ids UUID[],  -- For multiple branches filtering (array)
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    otp_code VARCHAR(6),
+    otp_expires_at TIMESTAMPTZ,
+    otp_attempts INTEGER DEFAULT 0,
+    last_password_change TIMESTAMPTZ
 );
 
 -- 2.2 Departments Table (9 JECRC clearance departments)
@@ -353,6 +357,32 @@ CREATE TABLE public.convocation_eligible_students (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_code ON public.profiles(otp_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_expires_at ON public.profiles(otp_expires_at);
+COMMENT ON COLUMN public.profiles.otp_code IS '6-digit OTP code for password reset (expires in 10 minutes)';
+COMMENT ON COLUMN public.profiles.otp_expires_at IS 'OTP expiration timestamp';
+COMMENT ON COLUMN public.profiles.otp_attempts IS 'Failed OTP verification attempts (max 5, then reset)';
+COMMENT ON COLUMN public.profiles.last_password_change IS 'Timestamp of last successful password change';
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_code ON public.profiles(otp_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_expires_at ON public.profiles(otp_expires_at);
+COMMENT ON COLUMN public.profiles.otp_code IS '6-digit OTP code for password reset (expires in 10 minutes)';
+COMMENT ON COLUMN public.profiles.otp_expires_at IS 'OTP expiration timestamp';
+COMMENT ON COLUMN public.profiles.otp_attempts IS 'Failed OTP verification attempts (max 5, then reset)';
+COMMENT ON COLUMN public.profiles.last_password_change IS 'Timestamp of last successful password change';
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_code ON public.profiles(otp_code);
+CREATE INDEX IF NOT EXISTS idx_profiles_otp_expires_at ON public.profiles(otp_expires_at);
+COMMENT ON COLUMN public.profiles.otp_code IS '6-digit OTP code for password reset (expires in 10 minutes)';
+COMMENT ON COLUMN public.profiles.otp_expires_at IS 'OTP expiration timestamp';
+COMMENT ON COLUMN public.profiles.otp_attempts IS 'Failed OTP verification attempts (max 5, then reset)';
+COMMENT ON COLUMN public.profiles.last_password_change IS 'Timestamp of last successful password change';
+COMMENT ON COLUMN public.profiles.otp_code IS '6-digit OTP code for password reset (expires in 10 minutes)';
+COMMENT ON COLUMN public.profiles.otp_expires_at IS 'OTP expiration timestamp';
+COMMENT ON COLUMN public.profiles.otp_attempts IS 'Failed OTP verification attempts (max 5, then reset)';
+COMMENT ON COLUMN public.profiles.last_password_change IS 'Timestamp of last successful password change';
+COMMENT ON COLUMN public.profiles.otp_code IS '6-digit OTP code for password reset (expires in 10 minutes)';
+COMMENT ON COLUMN public.profiles.otp_expires_at IS 'OTP expiration timestamp';
+COMMENT ON COLUMN public.profiles.otp_attempts IS 'Failed OTP verification attempts (max 5, then reset)';
+COMMENT ON COLUMN public.profiles.last_password_change IS 'Timestamp of last successful password change';
 
 -- Add indexes for convocation table
 CREATE INDEX idx_convocation_registration ON public.convocation_eligible_students(registration_no);

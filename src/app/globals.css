@@ -508,6 +508,23 @@ h1, h2, h3 {
   }
 }
 
+/* Simplified aurora animation for mid-range devices */
+@keyframes aurora-flow-simple {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(2%, -2%) rotate(180deg) scale(1.03);
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg) scale(1);
+  }
+}
+
+.animate-aurora-flow-simple {
+  animation: aurora-flow-simple 20s ease-in-out infinite;
+}
+
 @keyframes blob-slow {
   0%, 100% {
     transform: translate(0%, 0%) scale(1);
@@ -515,6 +532,20 @@ h1, h2, h3 {
   50% {
     transform: translate(10%, 10%) scale(1.1);
   }
+}
+
+/* Simplified blob animation for low-end devices */
+@keyframes blob-slow-simple {
+  0%, 100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  50% {
+    transform: translate(5%, 5%) scale(1.05);
+  }
+}
+
+.animate-blob-slow-simple {
+  animation: blob-slow-simple 25s ease-in-out infinite;
 }
 
 /* Animation delay utilities */

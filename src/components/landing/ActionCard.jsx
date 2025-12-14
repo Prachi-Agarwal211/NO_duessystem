@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -9,31 +9,59 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
-  // Spring physics configuration for bouncy feel
+  // Device capability detection for progressive animation
+  const [deviceTier, setDeviceTier] = useState('high');
+  
+  useEffect(() => {
+    const detectDevice = () => {
+      const isMobile = window.innerWidth < 768;
+      const isVeryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
+                           (navigator.connection && navigator.connection.saveData);
+      const isLowEnd = isMobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
+      
+      if (isVeryLowEnd) {
+        setDeviceTier('very-low');
+      } else if (isLowEnd) {
+        setDeviceTier('low');
+      } else {
+        setDeviceTier('high');
+      }
+    };
+    
+    detectDevice();
+    window.addEventListener('resize', detectDevice);
+    return () => window.removeEventListener('resize', detectDevice);
+  }, []);
+  
+  // Spring physics configuration - adjusted for device tier
   const springConfig = {
     type: "spring",
-    stiffness: 260,
-    damping: 20
+    stiffness: deviceTier === 'very-low' ? 200 : deviceTier === 'low' ? 230 : 260,
+    damping: deviceTier === 'very-low' ? 25 : deviceTier === 'low' ? 22 : 20
   };
+  
+  // Animation durations based on device tier
+  const animationDuration = deviceTier === 'very-low' ? 0.3 : deviceTier === 'low' ? 0.4 : 0.5;
+  const hoverDuration = deviceTier === 'very-low' ? 0.2 : deviceTier === 'low' ? 0.25 : 0.3;
   
   return (
     <motion.button
       initial={{ opacity: 0, y: 40, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
-        duration: 0.5,
-        delay: 0.05 + index * 0.08,
+        duration: animationDuration,
+        delay: 0.05 + index * (deviceTier === 'very-low' ? 0.05 : 0.08),
         ease: [0.22, 1, 0.36, 1]
       }}
-      whileHover={{
-        y: -8,
-        scale: 1.02,
-        transition: { duration: 0.3, ease: "easeOut" }
-      }}
-      whileTap={{
+      whileHover={deviceTier !== 'very-low' ? {
+        y: deviceTier === 'low' ? -6 : -8,
+        scale: deviceTier === 'low' ? 1.01 : 1.02,
+        transition: { duration: hoverDuration, ease: "easeOut" }
+      } : {}}
+      whileTap={deviceTier !== 'very-low' ? {
         scale: 0.98,
         transition: { duration: 0.15 }
-      }}
+      } : {}}
       onClick={onClick}
       className={`
         interactive group relative
@@ -53,41 +81,51 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(196, 30, 58, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
       } : {}}
     >
-      {/* Animated gradient overlays - ENHANCED */}
-      <motion.div
-        className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none ${
-          isDark
-            ? 'bg-gradient-to-br from-jecrc-red/20 via-transparent to-purple-600/10'
-            : 'bg-gradient-to-br from-transparent via-transparent to-jecrc-red/10'
-        }`}
-        initial={{ opacity: 0 }}
-        whileHover={{ opacity: 1 }}
-        transition={{ duration: 0.7 }}
-      />
+      {/* Animated gradient overlays - DEVICE-AWARE */}
+      {deviceTier !== 'very-low' && (
+        <motion.div
+          className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${
+            deviceTier === 'low' ? 'duration-500' : 'duration-700'
+          } pointer-events-none ${
+            isDark
+              ? 'bg-gradient-to-br from-jecrc-red/20 via-transparent to-purple-600/10'
+              : 'bg-gradient-to-br from-transparent via-transparent to-jecrc-red/10'
+          }`}
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: deviceTier === 'low' ? 0.5 : 0.7 }}
+        />
+      )}
       
-      {/* Top accent line - ENHANCED GLOW */}
-      <motion.div
-        className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-jecrc-red to-transparent opacity-0 group-hover:opacity-100"
-        style={isDark ? {
-          boxShadow: '0 0 20px rgba(196, 30, 58, 0.8), 0 0 40px rgba(196, 30, 58, 0.4)'
-        } : {}}
-        initial={{ scaleX: 0 }}
-        whileHover={{ scaleX: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-      />
+      {/* Top accent line - DEVICE-AWARE GLOW */}
+      {deviceTier !== 'very-low' && (
+        <motion.div
+          className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-jecrc-red to-transparent opacity-0 group-hover:opacity-100"
+          style={isDark && deviceTier === 'high' ? {
+            boxShadow: '0 0 20px rgba(196, 30, 58, 0.8), 0 0 40px rgba(196, 30, 58, 0.4)'
+          } : {}}
+          initial={{ scaleX: 0 }}
+          whileHover={{ scaleX: 1 }}
+          transition={{ duration: deviceTier === 'low' ? 0.5 : 0.6, ease: "easeOut" }}
+        />
+      )}
       
-      {/* Corner glow - ENHANCED */}
-      <motion.div
-        className={`absolute bottom-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-100 ${
-          isDark ? 'bg-jecrc-red/20' : 'bg-jecrc-red/10'
-        }`}
-        style={isDark ? {
-          boxShadow: '0 0 80px rgba(196, 30, 58, 0.4)'
-        } : {}}
-        initial={{ scale: 0.5, opacity: 0 }}
-        whileHover={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.7 }}
-      />
+      {/* Corner glow - DEVICE-AWARE */}
+      {deviceTier !== 'very-low' && (
+        <motion.div
+          className={`absolute bottom-0 right-0 w-40 h-40 rounded-full ${
+            deviceTier === 'low' ? 'blur-2xl' : 'blur-3xl'
+          } opacity-0 group-hover:opacity-100 ${
+            isDark ? 'bg-jecrc-red/20' : 'bg-jecrc-red/10'
+          }`}
+          style={isDark && deviceTier === 'high' ? {
+            boxShadow: '0 0 80px rgba(196, 30, 58, 0.4)'
+          } : {}}
+          initial={{ scale: 0.5, opacity: 0 }}
+          whileHover={{ scale: 1, opacity: 1 }}
+          transition={{ duration: deviceTier === 'low' ? 0.5 : 0.7 }}
+        />
+      )}
       
       {/* Content */}
       <div className="relative z-10">
@@ -102,19 +140,21 @@ function ActionCard({ title, subtitle, icon: Icon, onClick, index }) {
               : 'bg-black/5 text-black group-hover:bg-gradient-to-br group-hover:from-jecrc-red group-hover:to-jecrc-red-dark group-hover:text-white group-hover:shadow-lg'
             }
           `}
-          whileHover={{ 
-            scale: 1.15, 
-            rotate: 5,
+          whileHover={deviceTier !== 'very-low' ? {
+            scale: deviceTier === 'low' ? 1.1 : 1.15,
+            rotate: deviceTier === 'low' ? 3 : 5,
             transition: springConfig
-          }}
+          } : {}}
         >
-          {/* Icon shimmer effect */}
-          <motion.div 
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100"
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileHover={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          />
+          {/* Icon shimmer effect - Skip on very low-end */}
+          {deviceTier !== 'very-low' && (
+            <motion.div
+              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileHover={{ opacity: 1, scale: 1 }}
+              transition={{ duration: deviceTier === 'low' ? 0.4 : 0.5 }}
+            />
+          )}
           <Icon size={24} strokeWidth={1.5} className="relative z-10" />
         </motion.div>
         
