@@ -95,7 +95,7 @@ export async function GET(request) {
     const { data: overallStats, error: overallError } = overallStatsResult;
     const { data: departmentWorkload, error: deptWorkloadError } = departmentWorkloadResult;
     const { data: allStatuses, error: statusesError } = allStatusesResult;
-    const [[recentActivityResult, pendingAlertsResult]] = activityAndAlertsResult;
+    const [recentActivityResult, pendingAlertsResult] = activityAndAlertsResult;
 
     if (overallError) throw overallError;
     if (deptWorkloadError) console.error('Department workload error:', deptWorkloadError);
@@ -178,8 +178,16 @@ export async function GET(request) {
     return NextResponse.json(responseData);
 
   } catch (error) {
-    console.error('Admin stats API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Admin stats API error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    return NextResponse.json({
+      error: 'Failed to load statistics',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 500 });
   }
 }
 

@@ -452,14 +452,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 4.2 Function: Auto-create department statuses when form is submitted
+-- CRITICAL FIX: Only for ONLINE forms, NOT manual entries
 CREATE OR REPLACE FUNCTION create_department_statuses()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.no_dues_status (form_id, department_name, status)
-    SELECT NEW.id, name, 'pending'
-    FROM public.departments
-    WHERE is_active = true
-    ORDER BY display_order;
+    -- Only create department status records for ONLINE forms
+    -- Manual entries (is_manual_entry=true) should NOT have department status records
+    IF NEW.is_manual_entry = false OR NEW.is_manual_entry IS NULL THEN
+        INSERT INTO public.no_dues_status (form_id, department_name, status)
+        SELECT NEW.id, name, 'pending'
+        FROM public.departments
+        WHERE is_active = true
+        ORDER BY display_order;
+    ELSE
+        RAISE NOTICE 'Skipping department status creation for manual entry: %', NEW.id;
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
