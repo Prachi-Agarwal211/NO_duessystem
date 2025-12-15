@@ -1,14 +1,10 @@
 import "./globals.css";
-import "@/styles/performance-animations.css";
-import "@/styles/fonts.css";
-import "@/styles/animations.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Toaster } from "react-hot-toast";
 import GlobalBackground from "@/components/ui/GlobalBackground";
 import { Cinzel, Manrope } from 'next/font/google';
-
 // Optimize font loading with next/font
 const manrope = Manrope({
   subsets: ['latin'],
@@ -16,14 +12,12 @@ const manrope = Manrope({
   display: 'swap',
   weight: ['400', '600']
 });
-
 const cinzel = Cinzel({
   subsets: ['latin'],
   variable: '--font-cinzel',
   display: 'swap',
   weight: ['600', '800']
 });
-
 // Validate environment on startup (server-side only)
 if (typeof window === 'undefined') {
   try {
@@ -37,7 +31,6 @@ if (typeof window === 'undefined') {
     // In production, this would cause a crash
   }
 }
-
 export const metadata = {
   title: "JECRC UNIVERSITY NO DUES System",
   description: "Student no-dues clearance portal for JECRC University",
@@ -52,7 +45,6 @@ export const metadata = {
     apple: "/assets/logo.png"
   }
 };
-
 // Use Next.js 14's generateViewport function instead of metadata
 export const viewport = {
   width: 'device-width',
@@ -63,7 +55,6 @@ export const viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#000000" }
   ],
 };
-
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${manrope.variable} ${cinzel.variable}`}>
@@ -81,7 +72,6 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             {/* Global Fixed Background - stays fixed across all pages */}
             <GlobalBackground />
-            
             <Toaster
               position="top-right"
               toastOptions={{
@@ -99,7 +89,6 @@ export default function RootLayout({ children }) {
                 },
               }}
             />
-            
             {/* Content container - scrollable above background */}
             <div className="relative z-10">
               {children}
@@ -109,4 +98,4 @@ export default function RootLayout({ children }) {
       </body>
     </html>
   );
-}
+}
