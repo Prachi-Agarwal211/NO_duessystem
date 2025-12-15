@@ -7,6 +7,22 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Toaster } from "react-hot-toast";
 import GlobalBackground from "@/components/ui/GlobalBackground";
+import { Cinzel, Manrope } from 'next/font/google';
+
+// Optimize font loading with next/font
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+  display: 'swap',
+  weight: ['400', '600']
+});
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  variable: '--font-cinzel',
+  display: 'swap',
+  weight: ['600', '800']
+});
 
 // Validate environment on startup (server-side only)
 if (typeof window === 'undefined') {
@@ -50,7 +66,7 @@ export const viewport = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${manrope.variable} ${cinzel.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#C41E3A" />

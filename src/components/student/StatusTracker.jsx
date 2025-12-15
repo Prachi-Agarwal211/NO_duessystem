@@ -230,6 +230,17 @@ export default function StatusTracker({ registrationNo }) {
   const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
   const canReapply = hasRejection && formData.status !== 'completed';
 
+  // 🐛 DEBUG: Log reapply button visibility logic
+  console.log('🔍 Reapply Button Debug:', {
+    hasRejection,
+    formStatus: formData.status,
+    canReapply,
+    rejectedCount,
+    rejectedDepartments: rejectedDepartments.map(d => d.display_name),
+    isManualEntry,
+    allApproved
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

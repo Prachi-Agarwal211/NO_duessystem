@@ -1,107 +1,165 @@
 'use client';
 
-import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
-
 /**
- * ⚡ PERFORMANCE: Skeleton Loader for Instant Perceived Speed
- * Shows immediately while data loads - makes UI feel 3x faster
+ * SkeletonLoader Component
+ * Modern skeleton screens for loading states
+ * Replaces spinning loaders with content-aware placeholders
  */
-export function TableSkeleton({ rows = 5 }) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+
+// Base skeleton with shimmer effect
+export function Skeleton({ className = "", variant = "default" }) {
+  const baseStyles = "animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 bg-[length:200%_100%] animate-shimmer";
+  
+  const variants = {
+    default: "rounded-md",
+    circle: "rounded-full",
+    text: "rounded h-4",
+    card: "rounded-xl"
+  };
 
   return (
-    <div className="space-y-3 animate-pulse">
-      {Array.from({ length: rows }).map((_, idx) => (
-        <div
-          key={idx}
-          className={`h-16 rounded-lg ${
-            isDark ? 'bg-white/5' : 'bg-gray-200'
-          }`}
-          style={{
-            animationDelay: `${idx * 50}ms`,
-            animationDuration: '1.5s'
-          }}
-        />
-      ))}
-    </div>
+    <div className={`${baseStyles} ${variants[variant]} ${className}`} />
   );
 }
 
-export function StatCardSkeleton() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
+// Card skeleton (for dashboard cards, stats, etc.)
+export function SkeletonCard({ lines = 3 }) {
   return (
-    <div className={`p-6 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-200'} animate-pulse`}>
-      <div className={`h-4 w-24 rounded mb-4 ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
-      <div className={`h-8 w-16 rounded ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
-    </div>
-  );
-}
-
-export function DashboardSkeleton() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
-  return (
-    <div className="space-y-6">
-      {/* Stats Grid Skeleton */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-      </div>
-
-      {/* Search Bar Skeleton */}
-      <div className={`h-12 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-200'} animate-pulse`} />
-
-      {/* Table Skeleton */}
-      <TableSkeleton rows={8} />
-    </div>
-  );
-}
-
-export function FormDetailSkeleton() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
-  return (
-    <div className="space-y-6 animate-pulse">
+    <div className="glass p-6 rounded-xl space-y-4">
       {/* Header */}
-      <div className={`h-8 w-64 rounded ${isDark ? 'bg-white/10' : 'bg-gray-300'}`} />
-      
-      {/* Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, idx) => (
-            <div key={idx} className={`h-5 rounded ${isDark ? 'bg-white/5' : 'bg-gray-200'}`} />
-          ))}
+      <div className="flex items-center gap-4">
+        <Skeleton variant="circle" className="w-12 h-12" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-3 w-1/2" />
         </div>
-        <div className={`h-48 rounded-lg ${isDark ? 'bg-white/5' : 'bg-gray-200'}`} />
       </div>
-
-      {/* Status Table */}
-      <div className="space-y-3">
-        {Array.from({ length: 10 }).map((_, idx) => (
-          <div key={idx} className={`h-12 rounded ${isDark ? 'bg-white/5' : 'bg-gray-200'}`} />
+      
+      {/* Content lines */}
+      <div className="space-y-2">
+        {Array.from({ length: lines }).map((_, i) => (
+          <Skeleton 
+            key={i} 
+            className="h-3" 
+            style={{ width: `${100 - (i * 10)}%` }}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-export default function SkeletonLoader({ type = 'table', rows = 5 }) {
-  switch (type) {
-    case 'dashboard':
-      return <DashboardSkeleton />;
-    case 'form':
-      return <FormDetailSkeleton />;
-    case 'stats':
-      return <StatCardSkeleton />;
-    case 'table':
-    default:
-      return <TableSkeleton rows={rows} />;
-  }
+// Table skeleton (for data tables)
+export function SkeletonTable({ rows = 5, columns = 4 }) {
+  return (
+    <div className="glass rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="bg-black/5 dark:bg-white/5 p-4 border-b border-black/10 dark:border-white/10">
+        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+          {Array.from({ length: columns }).map((_, i) => (
+            <Skeleton key={i} className="h-4" />
+          ))}
+        </div>
+      </div>
+      
+      {/* Rows */}
+      <div className="divide-y divide-black/10 dark:divide-white/10">
+        {Array.from({ length: rows }).map((_, rowIndex) => (
+          <div key={rowIndex} className="p-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+              {Array.from({ length: columns }).map((_, colIndex) => (
+                <Skeleton key={colIndex} className="h-3" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
+
+// Stats grid skeleton (for dashboard stats)
+export function SkeletonStats({ count = 4 }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="glass p-6 rounded-xl">
+          <div className="flex items-center gap-4">
+            <Skeleton variant="circle" className="w-12 h-12" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Form skeleton
+export function SkeletonForm({ fields = 5 }) {
+  return (
+    <div className="space-y-6">
+      {Array.from({ length: fields }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ))}
+      
+      {/* Submit button */}
+      <div className="flex gap-4 pt-4">
+        <Skeleton className="h-12 w-32" />
+        <Skeleton className="h-12 w-24" />
+      </div>
+    </div>
+  );
+}
+
+// List skeleton (for lists of items)
+export function SkeletonList({ items = 5 }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: items }).map((_, i) => (
+        <div key={i} className="glass p-4 rounded-lg flex items-center gap-4">
+          <Skeleton variant="circle" className="w-10 h-10" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+          <Skeleton className="h-8 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Profile skeleton
+export function SkeletonProfile() {
+  return (
+    <div className="glass p-8 rounded-xl">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        {/* Avatar */}
+        <Skeleton variant="circle" className="w-24 h-24" />
+        
+        {/* Info */}
+        <div className="flex-1 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+          
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Skeleton;

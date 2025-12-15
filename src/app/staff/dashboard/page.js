@@ -16,6 +16,7 @@ import TableSkeleton from '@/components/ui/TableSkeleton';
 import CardSkeleton from '@/components/ui/CardSkeleton';
 import FilterPills from '@/components/ui/FilterPills';
 import ManualEntriesView from '@/components/staff/ManualEntriesView';
+import SupportButton from '@/components/support/SupportButton';
 import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, FileCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -289,6 +290,9 @@ function StaffDashboardContent() {
                     Live
                   </span>
                 </div>
+
+                {/* Support Button */}
+                <SupportButton variant="header" />
 
                 {/* Refresh Button */}
                 <button

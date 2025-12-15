@@ -94,23 +94,20 @@ export async function GET(request) {
     const isManualEntry = form.is_manual_entry === true;
 
     // OPTIMIZATION: Parallel queries for departments and statuses
-    // ✅ CRITICAL: Manual entries should NOT have department statuses
     const [
       { data: departments, error: deptError },
       { data: statuses, error: statusError }
     ] = await Promise.all([
       supabaseAdmin
         .from('departments')
-        .select('name, display_name, display_order')
+        .select('name, display_name, display_order, is_active')
+        .eq('is_active', true)
         .order('display_order'),
-      // ✅ Skip fetching department statuses for manual entries
-      // Manual entries are admin-only and should never show department workflow
-      isManualEntry
-        ? Promise.resolve({ data: [], error: null })
-        : supabaseAdmin
-            .from('no_dues_status')
-            .select('department_name, status, action_at, rejection_reason, action_by_user_id')
-            .eq('form_id', form.id)
+      // ALWAYS fetch department statuses - we'll filter display logic in frontend
+      supabaseAdmin
+        .from('no_dues_status')
+        .select('department_name, status, action_at, rejection_reason, action_by_user_id')
+        .eq('form_id', form.id)
     ]);
 
     if (deptError) {
@@ -123,8 +120,39 @@ export async function GET(request) {
       throw statusError;
     }
 
+    // 🔧 CRITICAL FIX: For online forms, if no department statuses exist, create them
+    if (!isManualEntry && (!statuses || statuses.length === 0)) {
+      console.warn(`⚠️ No department statuses found for online form ${form.id}. Creating them now...`);
+      
+      // Create missing department status records
+      const departmentInserts = (departments || []).map(dept => ({
+        form_id: form.id,
+        department_name: dept.name,
+        status: 'pending'
+      }));
+
+      if (departmentInserts.length > 0) {
+        const { error: insertError } = await supabaseAdmin
+          .from('no_dues_status')
+          .insert(departmentInserts);
+
+        if (insertError) {
+          console.error('Failed to create department statuses:', insertError);
+        } else {
+          console.log(`✅ Created ${departmentInserts.length} department status records`);
+          // Re-fetch the newly created statuses
+          const { data: newStatuses } = await supabaseAdmin
+            .from('no_dues_status')
+            .select('department_name, status, action_at, rejection_reason, action_by_user_id')
+            .eq('form_id', form.id);
+          statuses = newStatuses || [];
+        }
+      }
+    }
+
     // Merge department data with status data
-    const statusData = (departments || []).map(dept => {
+    // ✅ For manual entries, return empty statusData (handled by frontend)
+    const statusData = isManualEntry ? [] : (departments || []).map(dept => {
       const status = (statuses || []).find(s => s.department_name === dept.name);
       return {
         department_name: dept.name,
@@ -134,6 +162,16 @@ export async function GET(request) {
         rejection_reason: status?.rejection_reason || null,
         action_by_user_id: status?.action_by_user_id || null,
       };
+    });
+
+    // 🐛 DEBUG LOGGING - Track what's being returned
+    console.log(`📊 Check Status Debug for ${registrationNo}:`, {
+      isManualEntry,
+      formStatus: form.status,
+      departmentCount: departments?.length || 0,
+      statusRecordCount: statuses?.length || 0,
+      statusDataCount: statusData.length,
+      rejectedDepts: statusData.filter(s => s.status === 'rejected').length
     });
 
     // Return optimized response
