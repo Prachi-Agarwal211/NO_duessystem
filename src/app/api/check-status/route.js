@@ -94,7 +94,9 @@ export async function GET(request) {
     const isManualEntry = form.is_manual_entry === true;
 
     // OPTIMIZATION: Parallel queries for departments and statuses
-    const [
+    // Using let instead of const to allow reassignment of statuses in line 148
+    let departments, deptError, statuses, statusError;
+    [
       { data: departments, error: deptError },
       { data: statuses, error: statusError }
     ] = await Promise.all([
