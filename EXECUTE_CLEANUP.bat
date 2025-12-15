@@ -1,0 +1,257 @@
+@echo off
+echo =====================================
+echo JECRC No Dues System - Project Cleanup
+echo =====================================
+echo.
+echo This will DELETE 140+ obsolete documentation files
+echo and reorganize essential docs into docs/ folder
+echo.
+echo WARNING: This action CANNOT be undone!
+echo.
+pause
+
+echo.
+echo Creating new directory structure...
+mkdir docs 2>nul
+mkdir database 2>nul
+mkdir data 2>nul
+
+echo.
+echo Moving essential files to docs/...
+
+:: Move essential guides to docs/
+if exist "PRODUCTION_DEPLOYMENT_SIMPLE_GUIDE.md" move "PRODUCTION_DEPLOYMENT_SIMPLE_GUIDE.md" "docs\DEPLOYMENT.md"
+if exist "PRODUCTION_STAFF_SETUP_GUIDE.md" move "PRODUCTION_STAFF_SETUP_GUIDE.md" "docs\STAFF_SETUP.md"
+if exist "GMAIL_SMTP_SETUP_GUIDE.md" move "GMAIL_SMTP_SETUP_GUIDE.md" "docs\EMAIL_SETUP.md"
+if exist "CONVOCATION_COMPLETE_GUIDE.md" move "CONVOCATION_COMPLETE_GUIDE.md" "docs\CONVOCATION.md"
+if exist "SUPPORT_SYSTEM_COMPLETE_GUIDE.md" move "SUPPORT_SYSTEM_COMPLETE_GUIDE.md" "docs\SUPPORT_SYSTEM.md"
+if exist "COMPLETE_UI_UPGRADE_IMPLEMENTATION_GUIDE.md" move "COMPLETE_UI_UPGRADE_IMPLEMENTATION_GUIDE.md" "docs\UI_GUIDE.md"
+if exist "COMPLETE_TESTING_GUIDE.md" move "COMPLETE_TESTING_GUIDE.md" "docs\TESTING.md"
+if exist "COMPLETE_SYSTEM_FLOW_EXPLAINED.md" move "COMPLETE_SYSTEM_FLOW_EXPLAINED.md" "docs\SYSTEM_FLOW.md"
+if exist "PROJECT_OVERVIEW.md" move "PROJECT_OVERVIEW.md" "docs\PROJECT_OVERVIEW.md"
+if exist "SUPABASE_STORAGE_SETUP.md" move "SUPABASE_STORAGE_SETUP.md" "docs\SUPABASE_STORAGE.md"
+if exist "RESEND_DOMAIN_SETUP_GUIDE.md" move "RESEND_DOMAIN_SETUP_GUIDE.md" "docs\RESEND_SETUP.md"
+if exist "PRODUCTION_MANUAL_TESTING_CHECKLIST.md" move "PRODUCTION_MANUAL_TESTING_CHECKLIST.md" "docs\TESTING_CHECKLIST.md"
+
+echo.
+echo Moving database files...
+if exist "FINAL_COMPLETE_DATABASE_SETUP.sql" move "FINAL_COMPLETE_DATABASE_SETUP.sql" "database\schema.sql"
+if exist "PERFORMANCE_OPTIMIZATION_INDEXES.sql" move "PERFORMANCE_OPTIMIZATION_INDEXES.sql" "database\indexes.sql"
+if exist "DATABASE_VERIFICATION_COMMANDS.sql" move "DATABASE_VERIFICATION_COMMANDS.sql" "database\verification.sql"
+
+echo.
+echo Moving data files...
+if exist "Passout batch.xlsx" move "Passout batch.xlsx" "data\Passout_batch.xlsx"
+
+echo.
+echo =====================================
+echo DELETING OBSOLETE FILES...
+echo =====================================
+
+:: Category 1: DUPLICATE FIX DOCUMENTATION
+del /Q "ALL_CRITICAL_FIXES_COMPLETE.md" 2>nul
+del /Q "ALL_FIXES_IMPLEMENTED_COMPLETE.md" 2>nul
+del /Q "ALL_PHASES_COMPLETE_SUMMARY.md" 2>nul
+del /Q "ALL_ROLE_FIXES_COMPLETE.md" 2>nul
+del /Q "BATCH_EMAIL_FIX_COMPLETE.md" 2>nul
+del /Q "CERTIFICATE_GENERATION_FIXES.md" 2>nul
+del /Q "CHANGE_PASSWORD_401_FIX_COMPLETE.md" 2>nul
+del /Q "CHANGE_PASSWORD_REMOVED_COMPLETE.md" 2>nul
+del /Q "CHECK_STATUS_COMPLETE_OPTIMIZATION_GUIDE.md" 2>nul
+del /Q "CHECK_STATUS_DATA_LOADING_FIX_COMPLETE.md" 2>nul
+del /Q "CHECK_STATUS_TIMEOUT_FIX_COMPLETE.md" 2>nul
+del /Q "COMPLETE_FIX_STAFF_MODAL_ISSUE.md" 2>nul
+del /Q "COMPLETE_FIX_SUMMARY.md" 2>nul
+del /Q "COMPLETE_FIXES_GUIDE.md" 2>nul
+del /Q "COMPLETE_FORM_FIX_GUIDE.md" 2>nul
+del /Q "COMPLETE_FORM_LIFECYCLE_FIX.md" 2>nul
+del /Q "COMPLETE_FRONTEND_OPTIMIZATION_SUMMARY.md" 2>nul
+del /Q "COMPLETE_REAPPLY_CYCLE_EXPLANATION.md" 2>nul
+del /Q "COMPLETE_SYSTEM_ANALYSIS_AND_FIXES.md" 2>nul
+del /Q "COMPLETE_SYSTEM_CLEANUP_DEPLOYMENT.md" 2>nul
+del /Q "COMPLETE_SYSTEM_FIX_GUIDE.md" 2>nul
+del /Q "COMPREHENSIVE_SYSTEM_VERIFICATION.md" 2>nul
+del /Q "COMPREHENSIVE_UI_UX_IMPROVEMENTS.md" 2>nul
+del /Q "CRITICAL_FIXES_APPLIED.md" 2>nul
+del /Q "DASHBOARD_PERFORMANCE_FIXES_APPLIED.md" 2>nul
+del /Q "DATA_DISPLAY_AUDIT_COMPLETE.md" 2>nul
+del /Q "DEPLOYMENT_FIX_APPLIED.md" 2>nul
+del /Q "DROPDOWN_DARK_MODE_FIXES_COMPLETE.md" 2>nul
+del /Q "EMAIL_ISSUES_COMPLETE_SOLUTION.md" 2>nul
+del /Q "EMAIL_MIGRATION_DEPLOYMENT_CHECKLIST.md" 2>nul
+del /Q "FETCH_DETAILS_BUTTON_ADDED.md" 2>nul
+del /Q "FINAL_COMPLETE_FIX_GUIDE.md" 2>nul
+del /Q "FINAL_DEPLOYMENT_CHECKLIST.md" 2>nul
+del /Q "FINAL_MIGRATION_SUMMARY.md" 2>nul
+del /Q "FINAL_PRODUCTION_FIX_SUMMARY.md" 2>nul
+del /Q "FIXES_APPLIED_SUMMARY.md" 2>nul
+del /Q "FRONTEND_ANIMATIONS_DIAGNOSIS_AND_FIXES.md" 2>nul
+del /Q "FRONTEND_CACHE_FIX.md" 2>nul
+del /Q "FRONTEND_DEEP_ENHANCEMENT_ROADMAP.md" 2>nul
+del /Q "FRONTEND_FIXES_COMPLETE.md" 2>nul
+del /Q "FRONTEND_MODERNIZATION_COMPLETE.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_COMPLETE_PLAN.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_PHASE1_COMPLETE.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_PHASE1_IMPLEMENTED.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_PHASE2_COMPLETE.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_PHASE3_COMPLETE.md" 2>nul
+del /Q "FRONTEND_OPTIMIZATION_VERIFICATION_REPORT.md" 2>nul
+del /Q "FRONTEND_PERFORMANCE_AUDIT_COMPLETE.md" 2>nul
+del /Q "FRONTEND_PERFORMANCE_FIXES_COMPLETE.md" 2>nul
+del /Q "LANDING_PAGE_OPTIMIZATION_COMPLETE.md" 2>nul
+del /Q "LIGHTNING_FAST_PERFORMANCE_COMPLETE.md" 2>nul
+del /Q "LOGIN_PERFORMANCE_FIXES_APPLIED.md" 2>nul
+del /Q "MANUAL_ENTRY_ADMIN_ONLY_COMPLETE.md" 2>nul
+del /Q "MANUAL_ENTRY_AND_STORAGE_FIXES_COMPLETE.md" 2>nul
+del /Q "MANUAL_ENTRY_APPROVAL_STATUS_FIX.md" 2>nul
+del /Q "MANUAL_ENTRY_CONVOCATION_INTEGRATION_COMPLETE.md" 2>nul
+del /Q "MANUAL_ENTRY_EMAIL_NOTIFICATIONS_COMPLETE.md" 2>nul
+del /Q "MANUAL_ENTRY_SEPARATION_COMPLETE.md" 2>nul
+del /Q "MANUAL_ENTRY_SEPARATION_VERIFICATION.md" 2>nul
+del /Q "MANUAL_ENTRY_STATUS_DISPLAY_FIX_COMPLETE.md" 2>nul
+del /Q "NODEMAILER_MIGRATION_COMPLETE.md" 2>nul
+del /Q "ONLINE_FORM_CYCLE_CRITICAL_FIX.md" 2>nul
+del /Q "PASSWORD_MANAGEMENT_COMPLETE.md" 2>nul
+del /Q "PASSWORD_MANAGEMENT_FIXES_COMPLETE.md" 2>nul
+del /Q "PASSWORD_RESET_FIXES_COMPLETE.md" 2>nul
+del /Q "PHASE_2_ENHANCEMENTS_COMPLETE.md" 2>nul
+del /Q "PHASE_4A_QUICK_WINS_COMPLETE.md" 2>nul
+del /Q "PHASE_4B_UX_ENHANCEMENTS_COMPLETE.md" 2>nul
+del /Q "PHASE_4C_ADVANCED_ANIMATIONS_COMPLETE.md" 2>nul
+del /Q "PHASE_4D_MOBILE_COMPLETE.md" 2>nul
+del /Q "REACT_ERROR_310_AND_CONSOLE_FIXES_COMPLETE.md" 2>nul
+del /Q "REAL_TIME_PERFORMANCE_FIXES_COMPLETE.md" 2>nul
+del /Q "REAPPLY_AND_CHECK_STATUS_FIXES_COMPLETE.md" 2>nul
+del /Q "REAPPLY_FUNCTIONALITY_COMPLETE_FIX.md" 2>nul
+del /Q "REAPPLY_STATUS_REFRESH_FIX.md" 2>nul
+del /Q "REGISTRAR_DISPLAY_NAME_CHANGE_VERIFICATION.md" 2>nul
+del /Q "REMEMBER_ME_LOGIN_COMPLETE.md" 2>nul
+del /Q "STAFF_ACCOUNTS_COMPLETE_SETUP.md" 2>nul
+del /Q "STAFF_MIGRATION_COMPLETE.md" 2>nul
+del /Q "STAFF_MIGRATION_GUIDE.md" 2>nul
+del /Q "SUPPORT_REAPPLY_CRITICAL_FIXES_COMPLETE.md" 2>nul
+del /Q "SUPPORT_SYSTEM_OVERHAUL_COMPLETE.md" 2>nul
+del /Q "VERCEL_DEPLOYMENT_FIX_COMPLETE.md" 2>nul
+del /Q "CREATIVE_REFRESH_ANIMATIONS_COMPLETE.md" 2>nul
+del /Q "CREATIVE_REFRESH_ANIMATIONS_GUIDE.md" 2>nul
+
+:: Category 2: CONVOCATION FILES
+del /Q "CONVOCATION_AUTOFILL_COMPLETE_FIX.md" 2>nul
+del /Q "CONVOCATION_AUTOFILL_VALIDATION_FIX.md" 2>nul
+del /Q "CONVOCATION_COMPLETE_FIX_SUMMARY.md" 2>nul
+del /Q "CONVOCATION_CSV_IMPORT.sql" 2>nul
+del /Q "CONVOCATION_ERROR_42804_COMPLETELY_FIXED.md" 2>nul
+del /Q "CONVOCATION_FILTER_FIX_COMPLETE.md" 2>nul
+del /Q "CONVOCATION_FIX_COMPLETE_SUMMARY.md" 2>nul
+del /Q "CONVOCATION_INTEGRATION_COMPLETE.md" 2>nul
+del /Q "CONVOCATION_NAVIGATION_ADDED.md" 2>nul
+del /Q "CONVOCATION_SETUP_COMMANDS.md" 2>nul
+del /Q "FIX_CONVOCATION_TRIGGER_ERROR_42804.sql" 2>nul
+
+:: Category 3: SQL SCRIPTS
+del /Q "ADD_OTP_COLUMNS_SAFE.sql" 2>nul
+del /Q "ADD_OTP_COLUMNS_TO_PROFILES.sql" 2>nul
+del /Q "CHECK_AND_FIX_RLS.sql" 2>nul
+del /Q "CLEANUP_OLD_STUDENT_DATA.sql" 2>nul
+del /Q "COMPLETE_DATABASE_CLEANUP_AND_FIX.sql" 2>nul
+del /Q "COMPLETE_DATABASE_RESET.sql" 2>nul
+del /Q "CREATE_ALL_HOD_ACCOUNTS.sql" 2>nul
+del /Q "CREATE_DEPARTMENT_STAFF_ACCOUNTS.sql" 2>nul
+del /Q "CREATE_STAFF_PROFILES_SIMPLE.sql" 2>nul
+del /Q "CRITICAL_DATABASE_VERIFICATION_AND_FIX.sql" 2>nul
+del /Q "CRITICAL_FIX_CREATE_DEPARTMENT_STATUS_TRIGGER.sql" 2>nul
+del /Q "CRITICAL_REJECTION_CASCADE_FIX.sql" 2>nul
+del /Q "DIAGNOSE_MANUAL_ENTRY_DATA_ISSUE.sql" 2>nul
+del /Q "DIAGNOSE_PROFILES_AND_AUTH.sql" 2>nul
+del /Q "EMAIL_QUEUE_SCHEMA.sql" 2>nul
+del /Q "FIX_ADMIN_STATS_EXCLUDE_MANUAL_ENTRIES.sql" 2>nul
+del /Q "FIX_MANUAL_ENTRY_STATUSES_NOW.sql" 2>nul
+del /Q "FIX_PASSWORD_RESET_SCHEMA_SUPABASE.sql" 2>nul
+del /Q "FIX_PASSWORD_RESET_SCHEMA.sql" 2>nul
+del /Q "FIX_REGISTRAR_DISPLAY_NAME.sql" 2>nul
+del /Q "FIX_STATS_API_500_ERROR.sql" 2>nul
+del /Q "FIX_STORAGE_AND_MANUAL_ENTRY.sql" 2>nul
+del /Q "FIX_STUDENT_EMAIL_NOTIFICATIONS.sql" 2>nul
+del /Q "FIX_YEAR_COLUMNS_URGENT.sql" 2>nul
+del /Q "MANUAL_ENTRY_STATUS_CLEANUP.sql" 2>nul
+del /Q "PERFORMANCE_DATABASE_INDEXES.sql" 2>nul
+del /Q "REMOVE_JIC_STUDENT_COUNCIL_COMPLETE.sql" 2>nul
+del /Q "REPAIR_BROKEN_ONLINE_FORMS.sql" 2>nul
+del /Q "RUN_THIS_COMPLETE_CLEANUP_NOW.sql" 2>nul
+del /Q "SUPPORT_SYSTEM_RLS_UPDATE.sql" 2>nul
+del /Q "SUPPORT_SYSTEM_SCHEMA.sql" 2>nul
+del /Q "TEMPORARY_EMAIL_TEST_FIX.sql" 2>nul
+
+:: Category 4: DEPLOYMENT GUIDES
+del /Q "DEPLOY_MANUAL_ENTRY_FIX_NOW.md" 2>nul
+del /Q "DEPLOY_NOW.md" 2>nul
+del /Q "DEPLOYMENT_INSTRUCTIONS_FINAL.md" 2>nul
+del /Q "DEPLOYMENT_INSTRUCTIONS_URGENT.md" 2>nul
+del /Q "PRODUCTION_DEPLOYMENT_FINAL_GUIDE.md" 2>nul
+del /Q "RUN_COMPLETE_CLEANUP_NOW.md" 2>nul
+del /Q "RUN_HOD_CREATION_STEP_BY_STEP.md" 2>nul
+del /Q "RUN_HOD_VERIFICATION.md" 2>nul
+del /Q "RUN_THIS_SQL_NOW.md" 2>nul
+del /Q "STATS_API_FIX_DEPLOYMENT_GUIDE.md" 2>nul
+
+:: Category 5: ANALYSIS DOCS
+del /Q "406_ERROR_ROOT_CAUSE_AND_FIX.md" 2>nul
+del /Q "COMPLETE_CODEBASE_AUDIT_AND_FIXES.md" 2>nul
+del /Q "CRITICAL_DATABASE_CODE_INCONSISTENCIES.md" 2>nul
+del /Q "CRITICAL_DATABASE_ERROR_42804_FIXED.md" 2>nul
+del /Q "CRITICAL_ISSUES_ANALYSIS.md" 2>nul
+del /Q "CRITICAL_ISSUES_FIXED.md" 2>nul
+del /Q "CRITICAL_ROLE_MISMATCH_FIXES.md" 2>nul
+del /Q "CRITICAL_SYSTEM_ISSUES_AND_COMPLETE_FIX.md" 2>nul
+del /Q "PERFORMANCE_OPTIMIZATION_ANALYSIS.md" 2>nul
+del /Q "PERFORMANCE_OPTIMIZATION_COMPLETE_GUIDE.md" 2>nul
+
+:: Category 6: MISC
+del /Q "CACHE_CLEAR_INSTRUCTIONS.md" 2>nul
+del /Q "CLEANUP_PROJECT.bat" 2>nul
+del /Q "CLEANUP_PROJECT.sh" 2>nul
+del /Q "CLEAR_STATS_CACHE.md" 2>nul
+del /Q "COMPLETE_CLEANUP.bat" 2>nul
+del /Q "CUSTOM_DOMAIN_CONFIGURATION_COMPLETE.md" 2>nul
+del /Q "FIX_VERCEL_ENV_VARS_NOW.md" 2>nul
+del /Q "HOD_ACCOUNTS_COMPLETE_ANALYSIS_AND_VERIFICATION.md" 2>nul
+del /Q "HOW_CONVOCATION_AUTO_FILL_WORKS.md" 2>nul
+del /Q "HOW_TO_ADD_HOD_ACCOUNTS_STEP_BY_STEP.md" 2>nul
+del /Q "HOW_TO_CHECK_REALTIME_IN_SUPABASE.md" 2>nul
+del /Q "HOW_TO_FIX_OLD_DATA_APPEARING.md" 2>nul
+del /Q "STORAGE_CLEANUP_GUIDE.md" 2>nul
+del /Q "STUDENT_EMAIL_NOTIFICATIONS_MISSING.md" 2>nul
+del /Q "CREATE_ALL_HODS_NOW.md" 2>nul
+del /Q "TESTING_GUIDE_REJECTION_WORKFLOW.md" 2>nul
+
+:: Category 7: TEST FILES
+del /Q "test-supabase-detailed.ps1" 2>nul
+del /Q "test-supabase.ps1" 2>nul
+del /Q "fetch_cleaned.csv" 2>nul
+del /Q "fetch.csv" 2>nul
+
+:: Category 8: SECURITY RISK
+del /Q "jecrc-key.pem" 2>nul
+
+:: Delete accounts folder if it exists
+if exist "accounts" rmdir /S /Q "accounts"
+
+echo.
+echo =====================================
+echo CLEANUP COMPLETE!
+echo =====================================
+echo.
+echo New structure:
+echo   docs/        - All essential documentation (12 files)
+echo   database/    - Database schema and scripts (3 files)
+echo   data/        - Data files (1 file)
+echo.
+echo Deleted: ~140 obsolete files
+echo.
+echo Next steps:
+echo 1. Review docs/ folder
+echo 2. Commit changes: git add -A
+echo 3. Commit: git commit -m "Clean up project - removed 140+ obsolete files"
+echo 4. Push: git push
+echo.
+pause

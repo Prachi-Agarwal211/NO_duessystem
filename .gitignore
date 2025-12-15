@@ -53,3 +53,40 @@ render.yaml
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ============================================
+# DOCUMENTATION NOISE PREVENTION
+# ============================================
+# Prevent accumulation of temporary fix/debug documentation
+*_COMPLETE.md
+*_FIXED.md
+*_FIX_*.md
+CRITICAL_*.md
+DEPLOY_NOW.md
+RUN_THIS_*.md
+URGENT_*.md
+TEMPORARY_*.md
+TEST_*.md
+
+# Old cleanup/deployment scripts
+CLEANUP_*.bat
+CLEANUP_*.sh
+DEPLOY_*.bat
+DEPLOY_*.sh
+COMPLETE_CLEANUP.*
+
+# Test and debug files
+test-*.ps1
+test-*.sh
+*.csv
+fetch*.csv
+accounts/
+
+# Temporary analysis files
+DIAGNOSIS_*.md
+ANALYSIS_*.md
+AUDIT_*.md
+VERIFICATION_*.md
+
+# Keep only organized docs in docs/ folder
+# All essential documentation should be in docs/
