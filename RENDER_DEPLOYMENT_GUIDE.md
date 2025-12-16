@@ -62,26 +62,37 @@ After Blueprint is detected, you'll need to set environment variables:
 # ============================================================
 # SUPABASE CONFIGURATION (Required)
 # ============================================================
-NEXT_PUBLIC_SUPABASE_URL=https://ycvorjengbxcikqcwjnv.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-
-# Get these from: Supabase Dashboard → Settings → API
+NEXT_PUBLIC_SUPABASE_URL=https://jfqlpyrgkvzbmolvaycz.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcWxweXJna3Z6Ym1vbHZheWN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNzA2ODQsImV4cCI6MjA3OTY0NjY4NH0.upX6BWFJ5e3pZ32eehbgMQx7RyF6_K-m1D6aog5N-ls
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmcWxweXJna3Z6Ym1vbHZheWN6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA3MDY4NCwiZXhwIjoyMDc5NjQ2Njg0fQ.YM_BKEjpeThLFd6ZtxLV2fNww7N6mO_uz8FHZjtOBhs
 
 # ============================================================
-# EMAIL CONFIGURATION (Required for notifications)
+# JWT SECRET (Required for secure links)
 # ============================================================
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_SECURE=false
-EMAIL_USER=<your-email@gmail.com>
-EMAIL_PASSWORD=<your-app-password>
-EMAIL_FROM=JECRC No Dues <your-email@gmail.com>
+JWT_SECRET=dab703f47fc04382d7559b03f2abebfc054d0ad09943c1eb9eab95266e90fd13
+
+# ============================================================
+# EMAIL CONFIGURATION - NODEMAILER SMTP (Required for notifications)
+# ============================================================
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=<your-email@gmail.com>
+SMTP_PASS=<your-gmail-app-password>
+SMTP_FROM=JECRC No Dues <noreply@jecrc.ac.in>
 
 # How to get Gmail App Password:
 # 1. Go to: https://myaccount.google.com/apppasswords
-# 2. Generate new App Password
-# 3. Copy the 16-character password
+# 2. Enable 2-Factor Authentication if not already enabled
+# 3. Create a new App Password (select "Mail" and "Other")
+# 4. Copy the 16-character password (no spaces)
+# 5. Use this password for SMTP_PASS (NOT your regular Gmail password)
+
+# ============================================================
+# DEPARTMENT EMAILS (Optional - Configure in Database)
+# ============================================================
+LIBRARY_EMAIL=15anuragsingh2003@gmail.com
+# Other department emails are managed in the profiles table
 
 # ============================================================
 # NEXT.JS CONFIGURATION (Auto-set)
@@ -90,9 +101,10 @@ NODE_ENV=production
 NEXT_TELEMETRY_DISABLED=1
 
 # ============================================================
-# OPTIONAL: CUSTOM DOMAIN
+# APPLICATION URL (Update for Production)
 # ============================================================
-# NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_BASE_URL=https://jecrc-no-dues-system.onrender.com
+# Update this to your actual Render URL or custom domain
 ```
 
 #### How to Set in Render:
