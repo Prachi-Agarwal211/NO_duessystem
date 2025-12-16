@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
+import GlobalBackground from '@/components/ui/GlobalBackground';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Logo from '@/components/ui/Logo';
@@ -52,19 +53,23 @@ function StaffLoginContent() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
+      <GlobalBackground />
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
           <GlassCard>
             <div className="text-center mb-8">
               <div className="flex justify-center mb-6">
                 <Logo size="medium" />
               </div>
-              <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-all duration-700
+                ${isDark
+                  ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
+                  : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
                 }`}>
                 Staff Login
               </h1>
-              <p className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+              <p className={`text-sm transition-colors duration-700
+                ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Department Staff & Administrators Only
               </p>
             </div>

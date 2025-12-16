@@ -33,6 +33,37 @@ export default function ManualEntriesView() {
     fetchEntries();
   }, [filter]);
 
+  // ⚡ REAL-TIME: Subscribe to manual entries changes
+  useEffect(() => {
+    console.log('📡 ManualEntriesView: Setting up real-time subscription...');
+    
+    const channel = supabase
+      .channel('manual_entries_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'no_dues_forms',
+          filter: 'is_manual_entry=eq.true'
+        },
+        (payload) => {
+          console.log('🔔 Manual entry change detected:', payload.eventType);
+          console.log('📋 Changed record:', payload.new || payload.old);
+          
+          fetchEntries();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Manual entries subscription status:', status);
+      });
+
+    return () => {
+      console.log('🧹 ManualEntriesView: Unsubscribing from real-time');
+      supabase.removeChannel(channel);
+    };
+  }, [filter]);
+
   const fetchEntries = async () => {
     setLoading(true);
     try {

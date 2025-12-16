@@ -341,6 +341,28 @@ export default function StatusTracker({ registrationNo }) {
               <h3 className="text-red-500 font-bold text-xl mb-2 flex items-center gap-2">
                 Application Rejected by {rejectedCount} Department{rejectedCount > 1 ? 's' : ''}
               </h3>
+              
+              {/* 🔥 NEW: Show cascade context explanation */}
+              {formData.rejection_context && formData.rejection_context.cascade_count > 0 && (
+                <div className={`mb-4 p-3 rounded-lg transition-all duration-700 ease-smooth ${
+                  isDark ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'
+                }`}>
+                  <p className={`text-sm font-medium transition-colors duration-700 ease-smooth ${
+                    isDark ? 'text-yellow-400' : 'text-yellow-700'
+                  }`}>
+                    ⚠️ <strong>Cascade Rejection:</strong> {formData.rejection_context.primary_rejector} rejected your application,
+                    which automatically rejected {formData.rejection_context.cascade_count} other pending department{formData.rejection_context.cascade_count > 1 ? 's' : ''}.
+                  </p>
+                  {formData.rejection_context.cascade_departments && formData.rejection_context.cascade_departments.length > 0 && (
+                    <p className={`text-xs mt-2 transition-colors duration-700 ease-smooth ${
+                      isDark ? 'text-yellow-300/70' : 'text-yellow-600'
+                    }`}>
+                      Auto-rejected: {formData.rejection_context.cascade_departments.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
+              
               <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth ${
                 isDark ? 'text-gray-300' : 'text-gray-700'
               }`}>

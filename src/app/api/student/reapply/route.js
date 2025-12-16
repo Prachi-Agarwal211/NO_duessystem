@@ -225,7 +225,8 @@ export async function PUT(request) {
       last_reapplied_at: new Date().toISOString(),
       student_reply_message: student_reply_message.trim(),
       is_reapplication: true,
-      status: 'pending' // FORCE pending status - cannot be overridden
+      status: 'pending', // FORCE pending status - cannot be overridden
+      rejection_context: null // 🔥 NEW: Clear rejection context for fresh start
     };
 
     const { error: formUpdateError } = await supabaseAdmin

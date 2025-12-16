@@ -6,15 +6,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useStaffDashboard } from '@/hooks/useStaffDashboard';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
+import GlobalBackground from '@/components/ui/GlobalBackground';
 import GlassCard from '@/components/ui/GlassCard';
 import DataTable from '@/components/ui/DataTable';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import SearchBar from '@/components/ui/SearchBar';
 import Logo from '@/components/ui/Logo';
 import StatsCard from '@/components/staff/StatsCard';
-import TableSkeleton from '@/components/ui/TableSkeleton';
-import CardSkeleton from '@/components/ui/CardSkeleton';
-import FilterPills from '@/components/ui/FilterPills';
+import { SkeletonTable, SkeletonStats } from '@/components/ui/SkeletonLoader';
 import ManualEntriesView from '@/components/staff/ManualEntriesView';
 import SupportButton from '@/components/support/SupportButton';
 import { RefreshCw, LogOut, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Calendar, Download, FileCheck } from 'lucide-react';
@@ -258,7 +257,8 @@ function StaffDashboardContent() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <GlobalBackground />
+      <div className="relative z-10 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <GlassCard>
             {/* Logo */}
@@ -269,9 +269,11 @@ function StaffDashboardContent() {
             {/* Header with Logout */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div className="flex-1">
-                <h1 className={`text-2xl sm:text-3xl font-bold font-futuristic-heading transition-colors duration-700 ${
-                  isDark ? 'text-white text-glow' : 'text-ink-black'
-                }`}>
+                <h1 className={`text-2xl sm:text-3xl font-bold font-futuristic-heading transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
+                    : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
+                  }`}>
                   {user?.role === 'admin' ? 'Admin Dashboard' : `${stats?.department || 'Department'} Dashboard`}
                 </h1>
                 <div className={`text-sm mt-2 transition-colors duration-700 ${
@@ -298,15 +300,16 @@ function StaffDashboardContent() {
                 <button
                   onClick={refreshData}
                   disabled={refreshing}
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
+                  className={`interactive flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 min-h-[44px] min-w-[44px] ${
                     isDark
                       ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                       : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title="Refresh data"
+                  aria-label="Refresh data"
                 >
-                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                  <RefreshCw className={`w-4 h-4 flex-shrink-0 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline whitespace-nowrap">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
                 </button>
 
                 {/* Export CSV Button */}
@@ -317,30 +320,32 @@ function StaffDashboardContent() {
                     (activeTab === 'rejected' && rejectedForms.length === 0) ||
                     (activeTab === 'history' && actionHistory.length === 0)
                   }
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
+                  className={`interactive flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 min-h-[44px] min-w-[44px] ${
                     isDark
                       ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30'
                       : 'bg-green-50 hover:bg-green-100 text-green-600 border border-green-200'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title="Export to CSV"
+                  aria-label="Export to CSV"
                 >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Export</span>
+                  <Download className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline whitespace-nowrap">Export</span>
                 </button>
 
                 {/* Logout Button */}
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 ${
+                  className={`interactive flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg font-medium transition-all duration-300 active:scale-95 min-h-[44px] min-w-[44px] ${
                     isDark
                       ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
                       : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                   title="Logout"
+                  aria-label="Logout"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">{loggingOut ? 'Logging out...' : 'Logout'}</span>
+                  <LogOut className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline whitespace-nowrap">{loggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
               </div>
             </div>
@@ -348,7 +353,7 @@ function StaffDashboardContent() {
             {/* Statistics Cards - Clickable with Smooth Scroll Animation */}
             {statsLoading ? (
               <div className="mb-8">
-                <CardSkeleton count={4} />
+                <SkeletonStats count={4} />
               </div>
             ) : stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -541,26 +546,36 @@ function StaffDashboardContent() {
                     placeholder="Search by name or registration number..."
                   />
                   
-                  {/* Active Filter Pills */}
+                  {/* Active Search Filter */}
                   {searchTerm && (
-                    <FilterPills
-                      filters={{ search: searchTerm }}
-                      onRemoveFilter={() => setSearchTerm('')}
-                      onClearAll={() => setSearchTerm('')}
-                      isDark={isDark}
-                    />
+                    <div className={`flex items-center gap-2 flex-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <span className="text-sm">Active filters:</span>
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
+                          isDark
+                            ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                      >
+                        Search: {searchTerm}
+                        <span className="ml-1">×</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
                 <div className="mb-4">
-                  <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-colors duration-700 ${
-                    isDark ? 'text-white' : 'text-ink-black'
-                  }`}>
+                  <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-all duration-700
+                    ${isDark
+                      ? 'bg-gradient-to-r from-white via-pink-200 to-jecrc-red bg-clip-text text-transparent'
+                      : 'bg-gradient-to-r from-[#8B0000] to-jecrc-red bg-clip-text text-transparent'
+                    }`}>
                     Pending Applications
                   </h2>
 
                   {loading ? (
-                    <TableSkeleton rows={5} columns={5} />
+                    <SkeletonTable rows={5} columns={5} />
                   ) : requests.length > 0 ? (
                     <DataTable
                       headers={tableHeaders}
@@ -589,14 +604,16 @@ function StaffDashboardContent() {
             {/* Rejected Forms Tab */}
             {activeTab === 'rejected' && (
               <div className="mb-4">
-                <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-pink-200 to-red-400 bg-clip-text text-transparent'
+                    : 'bg-gradient-to-r from-[#8B0000] to-red-600 bg-clip-text text-transparent'
+                  }`}>
                   Forms I Rejected
                 </h2>
 
                 {rejectedLoading ? (
-                  <TableSkeleton rows={5} columns={5} />
+                  <SkeletonTable rows={5} columns={5} />
                 ) : rejectedForms.length > 0 ? (
                   <>
                     <div className={`mb-4 p-4 rounded-lg border transition-colors duration-700 ${
@@ -642,14 +659,16 @@ function StaffDashboardContent() {
             {/* Action History Tab */}
             {activeTab === 'history' && (
               <div className="mb-4">
-                <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-lg sm:text-xl font-semibold mb-4 font-futuristic-heading transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-pink-200 to-blue-400 bg-clip-text text-transparent'
+                    : 'bg-gradient-to-r from-[#8B0000] to-blue-600 bg-clip-text text-transparent'
+                  }`}>
                   My Action History
                 </h2>
 
                 {historyLoading ? (
-                  <TableSkeleton rows={5} columns={5} />
+                  <SkeletonTable rows={5} columns={5} />
                 ) : actionHistory.length > 0 ? (
                   <DataTable
                     headers={historyHeaders}

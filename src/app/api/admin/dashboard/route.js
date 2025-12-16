@@ -85,6 +85,7 @@ export async function GET(request) {
 
     // ⚡ PERFORMANCE: Optimized query - only select needed columns
     // ✅ CRITICAL: Exclude manual entries from regular applications list
+    // ✅ INCLUDES: rejection_context and manual_status for complete data display
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -99,6 +100,8 @@ export async function GET(request) {
         created_at,
         updated_at,
         reapplication_count,
+        rejection_context,
+        manual_status,
         no_dues_status!inner (
           id,
           department_name,
@@ -106,6 +109,7 @@ export async function GET(request) {
           action_at,
           created_at,
           rejection_reason,
+          rejection_context,
           profiles!no_dues_status_action_by_user_id_fkey (
             full_name
           )

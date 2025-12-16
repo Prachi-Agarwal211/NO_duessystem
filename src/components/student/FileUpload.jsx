@@ -7,7 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 export default function FileUpload({ 
   onFileSelect, 
   accept = 'image/*',
-  maxSize = 1 * 1024 * 1024, // 1MB default (updated from 5MB)
+  maxSize = 100 * 1024, // 100KB default (optimized for storage)
   currentFile = null
 }) {
   const { theme } = useTheme();
@@ -18,7 +18,7 @@ export default function FileUpload({
 
   const validateFile = (file) => {
     if (file.size > maxSize) {
-      setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
+      setError(`File size must be less than ${Math.round(maxSize / 1024)}KB`);
       return false;
     }
     
@@ -155,7 +155,7 @@ export default function FileUpload({
           
           <p className={`text-xs transition-colors duration-700 ease-smooth
             ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-            PNG, JPG, JPEG up to 1MB
+            PNG, JPG, JPEG up to 100KB (optimize/compress before upload)
           </p>
         </div>
       )}

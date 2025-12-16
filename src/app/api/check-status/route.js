@@ -65,7 +65,9 @@ export async function GET(request) {
         certificate_url,
         is_manual_entry,
         manual_certificate_url,
-        rejection_reason
+        manual_status,
+        rejection_reason,
+        rejection_context
       `)
       .eq('registration_no', registrationNo.trim().toUpperCase())
       .single();
@@ -170,6 +172,9 @@ export async function GET(request) {
     console.log(`📊 Check Status Debug for ${registrationNo}:`, {
       isManualEntry,
       formStatus: form.status,
+      manualStatus: form.manual_status,
+      hasRejectionContext: !!form.rejection_context,
+      rejectionContext: form.rejection_context,
       departmentCount: departments?.length || 0,
       statusRecordCount: statuses?.length || 0,
       statusDataCount: statusData.length,

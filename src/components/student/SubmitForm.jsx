@@ -574,8 +574,11 @@ export default function SubmitForm() {
           ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10 shadow-lg'}`}
       >
         <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-        <h2 className={`text-2xl font-serif mb-2 transition-colors duration-700
-          ${isDark ? 'text-white' : 'text-ink-black'}`}>
+        <h2 className={`text-2xl font-serif font-bold mb-2 transition-all duration-700
+          ${isDark
+            ? 'bg-gradient-to-r from-white via-green-200 to-green-400 bg-clip-text text-transparent'
+            : 'bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent'
+          }`}>
           Form Submitted Successfully!
         </h2>
         <p className={`text-sm mb-6 transition-colors duration-700
@@ -653,45 +656,47 @@ export default function SubmitForm() {
             )}
           </div>
           
-          {/* Fetch Details Button - NEW! */}
+          {/* Auto-Fill Button - Convocation Validation */}
           <button
             type="button"
             onClick={() => validateConvocation(formData.registration_no)}
             disabled={validatingConvocation || !formData.registration_no}
-            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95
+            className={`mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 text-sm
               ${isDark
                 ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
                 : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title="Auto-fill student details from convocation database"
           >
             {validatingConvocation ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Fetching...
+                Loading...
               </>
             ) : (
-              'Fetch Details'
+              'Auto-Fill from Convocation'
             )}
           </button>
           
-          {/* Check Existing Form Button */}
+          {/* Check Status Button */}
           <button
             type="button"
             onClick={checkExistingForm}
             disabled={checking || !formData.registration_no}
-            className={`mt-8 px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95
+            className={`mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 text-sm
               ${isDark
                 ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                 : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
+            title="Check if application already exists"
           >
             {checking ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Checking...
+                Verifying...
               </>
             ) : (
-              'Check'
+              'Verify Status'
             )}
           </button>
         </div>
@@ -717,17 +722,26 @@ export default function SubmitForm() {
           </motion.div>
         )}
         
-        {/* Show error message for ineligible students */}
+        {/* Show helpful message for ineligible students */}
         {convocationError && convocationValid === false && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className={`p-3 rounded-lg text-sm transition-all duration-700
-              ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}
+              ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}
           >
-            <div className="text-red-500 flex items-start gap-2">
+            <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${
+              isDark ? 'text-amber-400' : 'text-amber-700'
+            }`}>
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{convocationError}</span>
+              <div>
+                <p className="font-medium mb-1">Registration number not found in convocation list</p>
+                <p className={`text-xs transition-colors duration-700 ease-smooth ${
+                  isDark ? 'text-amber-300/70' : 'text-amber-600'
+                }`}>
+                  You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
+                </p>
+              </div>
             </div>
           </motion.div>
         )}

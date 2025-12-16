@@ -134,6 +134,37 @@ export async function POST(request) {
 
         if (error) throw error;
 
+        // 🔥 NEW: Store rejection context for cascade explanation
+        if (status === 'Rejected') {
+            try {
+                // Get all pending departments that will be cascade-rejected
+                const { data: pendingDepts } = await supabaseAdmin
+                    .from('no_dues_status')
+                    .select('department_name')
+                    .eq('form_id', form_id)
+                    .eq('status', 'pending');
+
+                // Store context in form for student visibility
+                await supabaseAdmin
+                    .from('no_dues_forms')
+                    .update({
+                        rejection_context: {
+                            primary_rejector: department,
+                            primary_reason: reason,
+                            cascade_count: pendingDepts?.length || 0,
+                            cascade_departments: pendingDepts?.map(d => d.department_name) || [],
+                            rejected_at: new Date().toISOString()
+                        }
+                    })
+                    .eq('id', form_id);
+
+                console.log(`✅ Stored rejection context: ${department} rejected, ${pendingDepts?.length || 0} departments will cascade`);
+            } catch (contextError) {
+                console.error('⚠️ Failed to store rejection context (non-fatal):', contextError);
+                // Don't fail the request if context storage fails
+            }
+        }
+
         // STEP 2 & 3: Parallelize database queries for faster response (saves ~250ms)
         const [
             { data: formData, error: formError },
@@ -145,7 +176,7 @@ export async function POST(request) {
                 .eq('id', form_id)
                 .single(),
             supabaseAdmin
-                .from('config_departments')
+                .from('departments')
                 .select('display_name')
                 .eq('name', department)
                 .single()

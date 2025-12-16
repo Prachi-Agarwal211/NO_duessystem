@@ -17,9 +17,15 @@ import { useTheme } from '@/contexts/ThemeContext';
 export default function GlobalBackground() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLowEnd, setIsLowEnd] = useState(false);
   const [isVeryLowEnd, setIsVeryLowEnd] = useState(false);
+
+  // Prevent hydration mismatch - only render animations after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Detect mobile devices and low-end devices for performance optimization
   useEffect(() => {
@@ -47,23 +53,25 @@ export default function GlobalBackground() {
   }, []);
 
   return (
-    <div className="fixed inset-0 w-full h-full pointer-events-none z-[-1] overflow-hidden">
+    <div className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
       {/* 1. Base Layer - Prevents white flashes */}
       <div
-        className={`absolute inset-0 transition-colors duration-700 ${
+        className={`absolute inset-0 transition-colors duration-700 z-0 ${
           isDark ? 'bg-black' : 'bg-white'
         }`}
       />
 
-      {/* 2. JECRC Campus Image (Subtle watermark) - Desktop only for performance */}
+      {/* 2. JECRC Campus Image (Enhanced Visibility) - Desktop only for performance */}
       {!isMobile && (
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 z-10"
           style={{
             backgroundImage: "url('/assets/9-1-1536x720.jpg')",
-            opacity: isDark ? 0.08 : 0.35,
+            opacity: isDark ? 0.15 : 0.45,
             mixBlendMode: isDark ? 'screen' : 'multiply',
-            filter: isDark ? 'brightness(0.6) contrast(0.8) saturate(0.2) blur(1.5px)' : 'brightness(0.9) contrast(1.1)',
+            filter: isDark
+              ? 'brightness(0.7) contrast(1.0) saturate(0.3) blur(1px)'
+              : 'brightness(1.0) contrast(1.15) saturate(0.9)',
             transform: 'translateZ(0)', // GPU acceleration
             willChange: 'opacity'
           }}
@@ -72,7 +80,7 @@ export default function GlobalBackground() {
 
       {/* 3. Animated Gradient Mesh Blobs - PROGRESSIVE OPTIMIZATION */}
       {!isVeryLowEnd && (
-        <div className={`absolute inset-0 transition-opacity duration-700 ${
+        <div className={`absolute inset-0 transition-opacity duration-700 z-20 ${
           isDark ? 'opacity-70' : 'opacity-60'
         }`}>
           {/* Top Left Blob */}
@@ -133,28 +141,82 @@ export default function GlobalBackground() {
         </div>
       )}
 
-      {/* 4. Aurora Flow Animation (CSS-only, GPU-accelerated) - PROGRESSIVE OPTIMIZATION */}
+      {/* 4. Premium Aurora Wave Animation - Smooth flowing ribbons */}
       {!isVeryLowEnd && (
-        <div className={`absolute inset-0 transition-opacity duration-700 ${
-          isDark ? 'opacity-40' : 'opacity-30'
-        } ${isVeryLowEnd || isLowEnd ? 'animate-aurora-flow-simple' : 'animate-aurora-flow'}`}>
+        <div className="absolute inset-0 overflow-hidden z-30" style={{ opacity: isDark ? 0.5 : 0.35 }}>
+          {/* Wave 1 - Top flowing ribbon */}
           <div
-            className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%]"
+            className={`absolute top-0 left-0 w-full h-full ${
+              isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-1-simple' : 'animate-aurora-wave-1'
+            }`}
             style={{
               background: isDark
-                ? 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(196, 30, 58, 0.12) 50%), radial-gradient(rgba(196, 30, 58, 0.15) 0%, transparent 50%)'
-                : 'conic-gradient(from 90deg at 50% 50%, #00000000 50%, rgba(255, 229, 233, 0.25) 50%), radial-gradient(rgba(255, 209, 217, 0.25) 0%, transparent 50%)',
-              transform: 'translateZ(0)',
+                ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.15) 20%, rgba(255, 105, 180, 0.12) 40%, rgba(196, 30, 58, 0.15) 60%, transparent 80%)'
+                : 'linear-gradient(90deg, transparent 0%, rgba(255, 209, 217, 0.2) 20%, rgba(255, 182, 193, 0.18) 40%, rgba(255, 209, 217, 0.2) 60%, transparent 80%)',
+              transform: 'translateZ(0) translateY(-50%) rotate(-15deg) scaleY(0.5)',
+              transformOrigin: 'center',
+              filter: 'blur(30px)',
               willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
             }}
           />
+          
+          {/* Wave 2 - Middle flowing ribbon */}
+          <div
+            className={`absolute top-1/3 left-0 w-full h-full ${
+              isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-2-simple' : 'animate-aurora-wave-2'
+            }`}
+            style={{
+              background: isDark
+                ? 'linear-gradient(90deg, transparent 0%, rgba(139, 0, 139, 0.1) 20%, rgba(196, 30, 58, 0.18) 50%, rgba(255, 105, 180, 0.1) 80%, transparent 100%)'
+                : 'linear-gradient(90deg, transparent 0%, rgba(255, 182, 193, 0.22) 20%, rgba(255, 209, 217, 0.25) 50%, rgba(255, 192, 203, 0.18) 80%, transparent 100%)',
+              transform: 'translateZ(0) translateY(-50%) rotate(10deg) scaleY(0.6)',
+              transformOrigin: 'center',
+              filter: 'blur(40px)',
+              willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
+            }}
+          />
+          
+          {/* Wave 3 - Bottom flowing ribbon (Desktop only) */}
+          {!isMobile && !isLowEnd && (
+            <div
+              className="animate-aurora-wave-3"
+              style={{
+                position: 'absolute',
+                top: '60%',
+                left: 0,
+                width: '100%',
+                height: '100%',
+                background: isDark
+                  ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.12) 30%, rgba(139, 0, 139, 0.08) 50%, rgba(196, 30, 58, 0.12) 70%, transparent 100%)'
+                  : 'linear-gradient(90deg, transparent 0%, rgba(255, 192, 203, 0.15) 30%, rgba(255, 209, 217, 0.2) 50%, rgba(255, 192, 203, 0.15) 70%, transparent 100%)',
+                transform: 'translateZ(0) translateY(-50%) rotate(-8deg) scaleY(0.4)',
+                transformOrigin: 'center',
+                filter: 'blur(35px)',
+                willChange: 'transform'
+              }}
+            />
+          )}
+          
+          {/* Radial glow accent in center */}
+          {!isLowEnd && !isVeryLowEnd && (
+            <div
+              className="absolute top-1/2 left-1/2 w-[800px] h-[800px] -translate-x-1/2 -translate-y-1/2 animate-pulse-slow"
+              style={{
+                background: isDark
+                  ? 'radial-gradient(circle, rgba(196, 30, 58, 0.15) 0%, rgba(255, 105, 180, 0.08) 30%, transparent 60%)'
+                  : 'radial-gradient(circle, rgba(255, 209, 217, 0.2) 0%, rgba(255, 182, 193, 0.12) 30%, transparent 60%)',
+                filter: 'blur(60px)',
+                transform: 'translateZ(0)'
+              }}
+            />
+          )}
         </div>
       )}
 
       {/* 5. Subtle Grid Overlay - Desktop only, skip on low-end and very low-end */}
       {!isMobile && !isLowEnd && !isVeryLowEnd && (
         <div
-          className={`absolute inset-0 bg-center transition-opacity duration-700 ${
+          className={`absolute inset-0 bg-center transition-opacity duration-700 z-40 ${
             isDark ? 'opacity-5' : 'opacity-10'
           }`}
           style={{
@@ -168,7 +230,7 @@ export default function GlobalBackground() {
 
       {/* 6. Subtle grain texture for depth */}
       <div
-        className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
+        className="absolute inset-0 opacity-[0.015] mix-blend-overlay z-50"
         style={{
           backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
           backgroundRepeat: 'repeat',

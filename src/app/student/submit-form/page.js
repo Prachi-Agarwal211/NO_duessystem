@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PageWrapper from '@/components/landing/PageWrapper';
+import GlobalBackground from '@/components/ui/GlobalBackground';
 import SubmitForm from '@/components/student/SubmitForm';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -15,7 +16,9 @@ function SubmitFormPageContent() {
   const isDark = theme === 'dark';
 
   return (
-      <div className="min-h-screen py-12 px-4 sm:px-6">
+      <>
+        <GlobalBackground />
+        <div className="relative z-10 min-h-screen py-12 px-4 sm:px-6">
         {/* Back Button */}
         <motion.button
           initial={{ opacity: 0, x: -20 }}
@@ -40,7 +43,7 @@ function SubmitFormPageContent() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className={`p-8 md:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
               ${isDark
-                ? 'bg-white/[0.02] border border-white/10 shadow-2xl shadow-black/50'
+                ? 'bg-white/[0.02] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.4)]'
                 : 'bg-white border border-black/5 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
               }`}
           >
@@ -58,8 +61,11 @@ function SubmitFormPageContent() {
                 <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-3">
                   Student Services
                 </span>
-                <h1 className={`font-serif text-4xl md:text-5xl mb-3 transition-colors duration-700 ease-smooth
-                  ${isDark ? 'text-white' : 'text-ink-black'}`}>
+                <h1 className={`font-serif text-4xl md:text-5xl font-bold mb-3 transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
+                    : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
+                  }`}>
                   Submit No Dues Form
                 </h1>
                 <p className={`text-sm font-medium transition-colors duration-700 ease-smooth
@@ -98,8 +104,11 @@ function SubmitFormPageContent() {
                 : 'bg-white border border-black/5 shadow-sm'
               }`}
           >
-            <h3 className={`font-serif text-lg mb-3 transition-colors duration-700 ease-smooth
-              ${isDark ? 'text-white' : 'text-ink-black'}`}>
+            <h3 className={`font-serif text-lg font-semibold mb-3 transition-all duration-700
+              ${isDark
+                ? 'bg-gradient-to-r from-white via-pink-200 to-jecrc-red bg-clip-text text-transparent'
+                : 'bg-gradient-to-r from-[#8B0000] to-jecrc-red bg-clip-text text-transparent'
+              }`}>
               Important Information
             </h3>
             <ul className={`space-y-2 text-sm transition-colors duration-700 ease-smooth
@@ -127,7 +136,8 @@ function SubmitFormPageContent() {
             </ul>
           </motion.div>
         </div>
-      </div>
+        </div>
+      </>
   );
 }
 

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Search, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
+import GlobalBackground from '@/components/ui/GlobalBackground';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
@@ -258,7 +259,8 @@ function CheckStatusContent() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-12 pb-16 px-4 sm:px-6 lg:px-8">
+      <GlobalBackground />
+      <div className="relative z-10 min-h-screen pt-12 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <motion.button
@@ -286,10 +288,15 @@ function CheckStatusContent() {
             <div className="flex flex-col items-center mb-6">
               <Logo size="medium" />
             </div>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className={`font-serif text-4xl md:text-5xl font-bold mb-4 transition-all duration-700
+              ${isDark
+                ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
+                : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
+              }`}>
               Check No Dues Form Status
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className={`text-lg max-w-2xl mx-auto transition-colors duration-700
+              ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
               Enter your registration number to view the current status of your No Dues application
             </p>
           </motion.div>
@@ -348,7 +355,11 @@ function CheckStatusContent() {
               <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="w-8 h-8 text-orange-500" />
               </div>
-              <h3 className="font-cinzel text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              <h3 className={`font-serif text-2xl font-bold mb-3 transition-all duration-700
+                ${isDark
+                  ? 'bg-gradient-to-r from-white via-pink-200 to-orange-400 bg-clip-text text-transparent'
+                  : 'bg-gradient-to-r from-[#8B0000] to-orange-600 bg-clip-text text-transparent'
+                }`}>
                 No Application Found
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">

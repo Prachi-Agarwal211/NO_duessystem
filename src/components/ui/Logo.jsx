@@ -49,6 +49,7 @@ export default function Logo({
                     className={`object-contain transition-all duration-300 ${
                         mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
                     }`}
+                    style={{ height: 'auto' }}
                     priority={priority}
                 />
             </div>
@@ -82,6 +83,7 @@ export function LogoIcon({ className = '' }) {
                     className={`object-contain transition-all duration-300 ${
                         mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
                     }`}
+                    style={{ height: 'auto' }}
                     priority
                 />
             </div>

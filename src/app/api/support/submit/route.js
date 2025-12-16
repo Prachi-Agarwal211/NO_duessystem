@@ -77,16 +77,19 @@ export async function POST(request) {
       }
     }
 
-    // Insert support ticket
+    // Insert support ticket with correct column names
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
       .insert([
         {
-          email: email.toLowerCase().trim(),
-          roll_number: finalRollNumber?.toUpperCase().trim(),
+          user_email: email.toLowerCase().trim(),
+          user_name: email.split('@')[0].replace(/[._-]/g, ' ').trim(),
+          user_type: requesterType,
+          roll_number: finalRollNumber?.toUpperCase().trim() || null,
           requester_type: requesterType,
           subject: cleanSubject,
           message: message.trim(),
+          category: determineCategory(cleanSubject),
           status: 'open',
           priority: priority
         }
@@ -128,6 +131,19 @@ export async function POST(request) {
       { status: 500 }
     );
   }
+}
+
+// Helper function to determine category from subject
+function determineCategory(subject) {
+  const lower = subject.toLowerCase();
+  if (lower.includes('login') || lower.includes('password') || lower.includes('access')) {
+    return 'account';
+  } else if (lower.includes('form') || lower.includes('submit') || lower.includes('reject')) {
+    return 'form_issue';
+  } else if (lower.includes('error') || lower.includes('bug') || lower.includes('not working')) {
+    return 'technical';
+  }
+  return 'other';
 }
 
 // OPTIONS for CORS preflight

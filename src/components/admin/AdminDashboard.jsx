@@ -211,7 +211,11 @@ export default function AdminDashboard() {
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <h1 className={`text-xl font-bold transition-all duration-700
+              ${isDark
+                ? 'bg-gradient-to-r from-white via-pink-200 to-jecrc-red bg-clip-text text-transparent'
+                : 'bg-gradient-to-r from-[#8B0000] to-jecrc-red bg-clip-text text-transparent'
+              }`}>
               JECRC Admin
             </h1>
             <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -220,82 +224,89 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Tab Switcher */}
-          <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'dashboard'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('convocation')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'convocation'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              <GraduationCap className="w-4 h-4" />
-              9th Convocation
-            </button>
-            <button
-              onClick={() => setActiveTab('manual-entries')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'manual-entries'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              Manual Entries
-            </button>
-            <button
-              onClick={() => setActiveTab('support')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'support'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              <Headphones className="w-4 h-4" />
-              Support
-            </button>
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                activeTab === 'settings'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-              }`}
-            >
-              Settings
-            </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          {/* Tab Switcher - Scrollable on mobile */}
+          <div className="flex p-1 rounded-lg bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
+                  activeTab === 'dashboard'
+                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('convocation')}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${
+                  activeTab === 'convocation'
+                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                <GraduationCap className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">9th</span> Convocation
+              </button>
+              <button
+                onClick={() => setActiveTab('manual-entries')}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
+                  activeTab === 'manual-entries'
+                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Manual
+              </button>
+              <button
+                onClick={() => setActiveTab('support')}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${
+                  activeTab === 'support'
+                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                <Headphones className="w-4 h-4 flex-shrink-0" />
+                Support
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
+                  activeTab === 'settings'
+                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
+                }`}
+              >
+                Settings
+              </button>
+            </div>
           </div>
 
           {/* Logout Button */}
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
           >
             {isLoggingOut ? (
               <LoadingSpinner size="sm" color="border-red-500" />
             ) : (
               <LogOut className="w-4 h-4" />
             )}
-            Logout
+            <span className="hidden sm:inline">Logout</span>
+            <span className="sm:hidden">Exit</span>
           </button>
         </div>
       </GlassCard>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+          <h2 className={`text-2xl font-bold transition-all duration-700
+            ${isDark
+              ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_20px_rgba(255,255,255,0.2)]'
+              : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 bg-clip-text text-transparent'
+            }`}>
             Overview
           </h2>
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -463,7 +474,7 @@ export default function AdminDashboard() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white dark:[&>option:hover]:bg-[#1a1a1a]"
+                className="px-4 py-2.5 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none text-sm min-h-[44px] dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white"
               >
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
@@ -474,7 +485,7 @@ export default function AdminDashboard() {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white dark:[&>option:hover]:bg-[#1a1a1a]"
+                className="px-4 py-2.5 rounded-lg bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-jecrc-red outline-none text-sm min-h-[44px] dark:[&>option]:bg-[#0f0f0f] dark:[&>option]:text-white"
               >
                 <option value="">All Departments</option>
                 {departments

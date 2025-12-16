@@ -9,6 +9,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
+import GlobalBackground from '@/components/ui/GlobalBackground';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -139,7 +140,8 @@ function DepartmentActionContent() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <GlobalBackground />
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full p-8 text-center">
           {status === 'success' ? (
             <motion.div
@@ -156,9 +158,11 @@ function DepartmentActionContent() {
                 >
                   <CheckCircle className="w-10 h-10 text-white" />
                 </motion.div>
-                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-green-200 to-green-400 bg-clip-text text-transparent'
+                    : 'bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent'
+                  }`}>
                   Action Completed
                 </h2>
                 <p className={`mb-6 transition-colors duration-700 ${
@@ -195,9 +199,11 @@ function DepartmentActionContent() {
                 >
                   <XCircle className="w-10 h-10 text-white" />
                 </motion.div>
-                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+                <h2 className={`text-xl font-bold mb-2 font-futuristic-heading transition-all duration-700
+                  ${isDark
+                    ? 'bg-gradient-to-r from-white via-red-200 to-red-400 bg-clip-text text-transparent'
+                    : 'bg-gradient-to-r from-red-700 to-red-500 bg-clip-text text-transparent'
+                  }`}>
                   Error
                 </h2>
                 <p className={`mb-6 transition-colors duration-700 ${

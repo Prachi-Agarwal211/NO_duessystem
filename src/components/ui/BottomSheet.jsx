@@ -1,14 +1,34 @@
 'use client';
-import { motion, AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import { useEffect } from 'react';
 
 /**
- * BottomSheet Component
- * Mobile-optimized drawer that slides up from bottom
- * Better UX than modals on mobile devices
+ * BottomSheet - Mobile-optimized drawer component
+ * 
+ * Features:
+ * - Slides up from bottom on mobile devices
+ * - Swipe-to-dismiss gesture support
+ * - Backdrop blur with dark overlay
+ * - Handle indicator for visual affordance
+ * - Better thumb-zone accessibility than modals
+ * - Smooth spring animations
+ * 
+ * @param {boolean} isOpen - Controls visibility
+ * @param {function} onClose - Callback when closed
+ * @param {React.ReactNode} children - Sheet content
+ * @param {string} title - Optional header title
+ * @param {boolean} isDark - Theme mode
  */
-export default function BottomSheet({ isOpen, onClose, children, title }) {
-  // Prevent body scroll when sheet is open
+export default function BottomSheet({ 
+  isOpen, 
+  onClose, 
+  children, 
+  title = "",
+  isDark = true 
+}) {
+  // Lock body scroll when sheet is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -21,14 +41,14 @@ export default function BottomSheet({ isOpen, onClose, children, title }) {
     };
   }, [isOpen]);
 
-  // Close on escape key
+  // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
-    
+
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
@@ -40,42 +60,74 @@ export default function BottomSheet({ isOpen, onClose, children, title }) {
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black z-40 backdrop-blur-sm"
+            className={`fixed inset-0 z-[100] backdrop-blur-sm
+              ${isDark ? 'bg-black/60' : 'bg-black/40'}`}
           />
-          
+
           {/* Bottom Sheet */}
           <motion.div
-            initial={{ y: "100%" }}
+            initial={{ y: '100%' }}
             animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            exit={{ y: '100%' }}
             transition={{ 
-              type: "spring", 
+              type: 'spring', 
               damping: 30, 
-              stiffness: 300,
-              mass: 0.8
+              stiffness: 300 
             }}
-            className="fixed bottom-0 left-0 right-0 z-50 max-h-[90vh] rounded-t-2xl bg-white dark:bg-deep-black border-t border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(e, { offset, velocity }) => {
+              // Close if dragged down significantly or with high velocity
+              if (offset.y > 100 || velocity.y > 500) {
+                onClose();
+              }
+            }}
+            className={`fixed bottom-0 left-0 right-0 z-[101] 
+              rounded-t-3xl shadow-2xl
+              max-h-[90vh] overflow-hidden
+              ${isDark 
+                ? 'bg-[#0A0A0A] border-t border-white/10' 
+                : 'bg-white border-t border-black/10'
+              }`}
           >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-12 h-1.5 rounded-full bg-gray-300 dark:bg-gray-700" />
+            {/* Drag Handle */}
+            <div className="sticky top-0 z-10 flex justify-center pt-4 pb-2">
+              <div className={`h-1.5 w-12 rounded-full transition-colors duration-300
+                ${isDark ? 'bg-gray-700' : 'bg-gray-300'}`} 
+              />
             </div>
-            
-            {/* Header */}
+
+            {/* Header (if title provided) */}
             {title && (
-              <div className="px-6 py-3 border-b border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-black dark:text-white">
+              <div className={`sticky top-8 z-10 flex items-center justify-between px-6 py-4 border-b
+                ${isDark 
+                  ? 'bg-[#0A0A0A]/95 backdrop-blur-md border-white/10' 
+                  : 'bg-white/95 backdrop-blur-md border-black/10'
+                }`}>
+                <h3 className={`text-xl font-semibold font-serif
+                  ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   {title}
                 </h3>
+                <button
+                  onClick={onClose}
+                  className={`p-2 rounded-full transition-colors duration-300
+                    ${isDark 
+                      ? 'hover:bg-white/10 text-gray-400 hover:text-white' 
+                      : 'hover:bg-black/5 text-gray-600 hover:text-black'
+                    }`}
+                >
+                  <X size={24} />
+                </button>
               </div>
             )}
-            
-            {/* Content - Scrollable */}
-            <div className="overflow-y-auto max-h-[calc(90vh-4rem)] px-6 py-4 scrollbar-thin">
+
+            {/* Content */}
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)] px-6 py-6">
               {children}
             </div>
           </motion.div>

@@ -27,12 +27,55 @@ export async function POST(request) {
       certificate_url
     } = body;
 
-    // Validate required fields
-    if (!registration_no || !school_id || !course_id || !certificate_url) {
+    // ✅ STRICT VALIDATION: All fields required for manual entry
+    const requiredFields = {
+      registration_no,
+      student_name,
+      school_id,
+      course_id,
+      branch_id,
+      certificate_url
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([key, value]) => !value || (typeof value === 'string' && !value.trim()))
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: 'Missing required fields: registration_no, school_id, course_id, and certificate are required' },
+        {
+          error: `Missing required fields: ${missingFields.join(', ')}`,
+          details: 'All fields are mandatory for manual entry to ensure data completeness'
+        },
         { status: 400 }
       );
+    }
+
+    // Validate email format if provided
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (personal_email && !emailPattern.test(personal_email.trim())) {
+      return NextResponse.json(
+        { error: 'Invalid personal email format' },
+        { status: 400 }
+      );
+    }
+
+    if (college_email && !emailPattern.test(college_email.trim())) {
+      return NextResponse.json(
+        { error: 'Invalid college email format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone format if provided (6-15 digits)
+    if (contact_no) {
+      const phonePattern = /^[0-9]{6,15}$/;
+      if (!phonePattern.test(contact_no.trim())) {
+        return NextResponse.json(
+          { error: 'Contact number must be 6-15 digits without country code' },
+          { status: 400 }
+        );
+      }
     }
 
     // ===== VALIDATE AGAINST CONVOCATION DATABASE =====

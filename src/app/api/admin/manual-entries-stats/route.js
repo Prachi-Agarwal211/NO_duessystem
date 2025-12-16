@@ -47,41 +47,30 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get manual entries stats
-    const [
-      { count: totalCount },
-      { count: pendingCount },
-      { count: approvedCount },
-      { count: rejectedCount }
-    ] = await Promise.all([
-      supabaseAdmin
-        .from('no_dues_forms')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_manual_entry', true),
-      supabaseAdmin
-        .from('no_dues_forms')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_manual_entry', true)
-        .eq('status', 'pending'),
-      supabaseAdmin
-        .from('no_dues_forms')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_manual_entry', true)
-        .eq('status', 'approved'),
-      supabaseAdmin
-        .from('no_dues_forms')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_manual_entry', true)
-        .eq('status', 'rejected')
-    ]);
+    // ⚡ PERFORMANCE: Use database function for efficient stats calculation
+    const { data: manualStats, error: statsError } = await supabaseAdmin
+      .rpc('get_manual_entry_statistics');
+
+    if (statsError) {
+      console.error('Manual entry stats error:', statsError);
+      throw statsError;
+    }
+
+    // Extract stats from function result
+    const stats = manualStats && manualStats.length > 0 ? manualStats[0] : {
+      total_entries: 0,
+      pending_entries: 0,
+      approved_entries: 0,
+      rejected_entries: 0
+    };
 
     return NextResponse.json({
       success: true,
       stats: {
-        total: totalCount || 0,
-        pending: pendingCount || 0,
-        approved: approvedCount || 0,
-        rejected: rejectedCount || 0,
+        total: Number(stats.total_entries) || 0,
+        pending: Number(stats.pending_entries) || 0,
+        approved: Number(stats.approved_entries) || 0,
+        rejected: Number(stats.rejected_entries) || 0,
       }
     });
 
