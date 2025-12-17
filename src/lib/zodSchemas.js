@@ -200,6 +200,7 @@ export const reapplySchema = z.object({
 /**
  * Staff Action Schema
  * Used in /api/staff/action POST
+ * ✅ SECURITY FIX: userId removed - must be extracted from auth token
  */
 export const staffActionSchema = z.object({
   formId: uuidSchema,

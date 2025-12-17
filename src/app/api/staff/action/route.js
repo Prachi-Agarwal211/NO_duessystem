@@ -21,10 +21,30 @@ export async function PUT(request) {
       );
     }
 
-    const body = await request.json();
+    // ==================== SECURE AUTHENTICATION ====================
+    // ✅ CRITICAL FIX: Get userId from auth token, NOT from request body
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { success: false, error: 'Missing Authorization header' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired session' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id; // ✅ Secure: Extracted from verified token
 
     // ==================== ZOD VALIDATION ====================
-    // Validates all fields with proper types and enum values
+    const body = await request.json();
     const validation = validateWithZod(body, staffActionSchema);
     
     if (!validation.success) {
@@ -42,7 +62,7 @@ export async function PUT(request) {
     }
 
     // All data is validated by Zod (action is enum-validated, reason required for reject)
-    const { formId, departmentName, action, reason, userId } = validation.data;
+    const { formId, departmentName, action, reason } = validation.data;
 
     // OPTIMIZATION: Parallelize all validation queries for faster response
     const [
