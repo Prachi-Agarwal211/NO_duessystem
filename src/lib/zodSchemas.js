@@ -236,10 +236,14 @@ export const manualEntryActionSchema = z.object({
 /**
  * Support Ticket Schema
  * Used in /api/support/submit POST
+ * ✅ FIX: rollNumber accepts string, null, or undefined
+ * - Student: sends "21BCON747" (string)
+ * - Department/Admin: sends null
+ * - Guest: doesn't send field (undefined)
  */
 export const supportTicketSchema = z.object({
   email: emailSchema,
-  rollNumber: z.string().optional(),
+  rollNumber: z.string().nullable().optional(), // ✅ Accepts string | null | undefined
   subject: z.string().max(100, 'Subject too long').optional().or(z.literal('')),
   message: z
     .string()

@@ -152,7 +152,17 @@ export function useStaffDashboard() {
           
           // ⚡ PERFORMANCE: Set stats from same response (if included)
           if (result.data.stats) {
+            console.log('📊 Staff dashboard stats received:', {
+              hasStats: !!result.data.stats,
+              pending: result.data.stats.pending,
+              approved: result.data.stats.approved,
+              rejected: result.data.stats.rejected,
+              total: result.data.stats.total,
+              department: result.data.stats.department
+            });
             setStats(result.data.stats);
+          } else {
+            console.warn('⚠️ No stats included in dashboard response');
           }
           
           setLastUpdate(new Date());

@@ -52,6 +52,21 @@ function StaffDashboardContent() {
     refreshData
   } = useStaffDashboard();
 
+  // Debug logging for stats
+  useEffect(() => {
+    console.log('📊 Staff Dashboard Stats State:', {
+      statsExists: !!stats,
+      statsIsNull: stats === null,
+      statsLoading: statsLoading,
+      pending: stats?.pending,
+      approved: stats?.approved,
+      rejected: stats?.rejected,
+      total: stats?.total,
+      department: stats?.department,
+      fullStats: stats
+    });
+  }, [stats, statsLoading]);
+
   // Debounce search term to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -355,7 +370,7 @@ function StaffDashboardContent() {
               <div className="mb-8">
                 <SkeletonStats count={4} />
               </div>
-            ) : stats && (
+            ) : stats ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div
                   onClick={() => {
