@@ -73,10 +73,11 @@ export async function POST(request) {
       );
     }
 
-    // ✅ CRITICAL FIX: Check manual_status for manual entries, not status
-    if (entry.manual_status && entry.manual_status !== 'pending_review') {
+    // ✅ CRITICAL FIX: Check both manual_status and status for manual entries
+    const currentStatus = entry.manual_status || entry.status;
+    if (currentStatus && !['pending_review', 'pending'].includes(currentStatus)) {
       return NextResponse.json(
-        { error: `Manual entry already ${entry.manual_status}` },
+        { error: `Manual entry already ${currentStatus}` },
         { status: 400 }
       );
     }

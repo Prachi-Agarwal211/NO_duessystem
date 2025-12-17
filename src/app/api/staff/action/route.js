@@ -47,13 +47,19 @@ export async function PUT(request) {
     // OPTIMIZATION: Parallelize all validation queries for faster response
     const [
       { data: profile, error: profileError },
+      { data: department, error: deptLookupError },
       { data: form, error: formError },
       { data: existingStatus, error: statusError }
     ] = await Promise.all([
       supabaseAdmin
         .from('profiles')
-        .select('role, department_name, full_name')
+        .select('role, assigned_department_ids, department_name, full_name')
         .eq('id', userId)
+        .single(),
+      supabaseAdmin
+        .from('departments')
+        .select('id, name, display_name')
+        .eq('name', departmentName)
         .single(),
       supabaseAdmin
         .from('no_dues_forms')
@@ -83,12 +89,43 @@ export async function PUT(request) {
       }, { status: 401 });
     }
 
-    // For department staff members, verify they can only act on their department
-    if (profile.role === 'department' && profile.department_name !== departmentName) {
+    // Verify department exists
+    if (deptLookupError || !department) {
       return NextResponse.json({
         success: false,
-        error: 'You can only take actions for your own department'
-      }, { status: 403 });
+        error: 'Invalid department'
+      }, { status: 400 });
+    }
+
+    // ✅ NEW UUID-BASED AUTHORIZATION CHECK
+    // For department staff, verify they are assigned to this department via UUID
+    if (profile.role === 'department') {
+      const isAuthorized = profile.assigned_department_ids?.includes(department.id);
+      
+      if (!isAuthorized) {
+        console.error('❌ Authorization failed:', {
+          userId,
+          userEmail: profile.email,
+          requestedDepartment: departmentName,
+          requestedDepartmentId: department.id,
+          assignedDepartmentIds: profile.assigned_department_ids
+        });
+        
+        return NextResponse.json({
+          success: false,
+          error: `You are not authorized to manage ${department.display_name}`,
+          details: {
+            requestedDepartment: department.display_name,
+            hint: 'Contact administrator to assign you to this department'
+          }
+        }, { status: 403 });
+      }
+      
+      console.log('✅ Authorization passed:', {
+        userId,
+        department: departmentName,
+        departmentId: department.id
+      });
     }
 
     if (formError || !form) {

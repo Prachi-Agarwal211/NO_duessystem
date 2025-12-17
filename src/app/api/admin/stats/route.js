@@ -61,31 +61,85 @@ export async function GET(request) {
       allStatusesResult,
       activityAndAlertsResult
     ] = await Promise.all([
-      // Batch 1: Overall statistics
-      supabaseAdmin.rpc('get_form_statistics'),
-      
-      // Batch 2: Department workload
-      supabaseAdmin.rpc('get_department_workload'),
-      
+      // Batch 1: Overall statistics - use fallback if RPC doesn't exist
+      (async () => {
+        try {
+          const result = await supabaseAdmin.rpc('get_form_statistics');
+          return result;
+        } catch (rpcError) {
+          console.log('RPC get_form_statistics not found, using fallback query');
+          // Fallback query for overall statistics
+          const { data, error } = await supabaseAdmin
+            .from('no_dues_forms')
+            .select('status');
+
+          if (error) throw error;
+
+          const total = data.length;
+          const pending = data.filter(f => f.status === 'pending').length;
+          const completed = data.filter(f => f.status === 'completed').length;
+          const rejected = data.filter(f => f.status === 'rejected').length;
+
+          return { data: [{ total, pending, completed, rejected }] };
+        }
+      })(),
+
+      // Batch 2: Department workload - use fallback if RPC doesn't exist
+      (async () => {
+        try {
+          const result = await supabaseAdmin.rpc('get_department_workload');
+          return result;
+        } catch (rpcError) {
+          console.log('RPC get_department_workload not found, using fallback query');
+          // Fallback query for department workload
+          const { data, error } = await supabaseAdmin
+            .from('no_dues_status')
+            .select('department_name, status');
+
+          if (error) throw error;
+
+          // Group by department and status
+          const departmentMap = {};
+          data.forEach(item => {
+            if (!departmentMap[item.department_name]) {
+              departmentMap[item.department_name] = { pending: 0, approved: 0, rejected: 0 };
+            }
+            departmentMap[item.department_name][item.status]++;
+          });
+
+          // Convert to array format expected by frontend
+          const result = Object.entries(departmentMap).map(([department_name, counts]) => ({
+            department_name,
+            pending_count: counts.pending,
+            approved_count: counts.approved,
+            rejected_count: counts.rejected
+          }));
+
+          return { data: result };
+        }
+      })(),
+
       // Batch 3: All statuses for response time calculation
       supabaseAdmin
         .from('no_dues_status')
         .select('department_name, status, created_at, action_at')
         .not('action_at', 'is', null),
-      
+
       // Batch 4: Activity and alerts in parallel
       Promise.all([
         supabaseAdmin
           .from('no_dues_status')
-          .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no)')
+          .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no, is_manual_entry)')
           .gte('action_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+          .eq('no_dues_forms.is_manual_entry', false)
           .order('action_at', { ascending: false })
           .limit(50),
-        
+
         supabaseAdmin
           .from('no_dues_status')
-          .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at)')
+          .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at, is_manual_entry)')
           .eq('status', 'pending')
+          .eq('no_dues_forms.is_manual_entry', false)
           .lt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: true })
           .limit(20)
@@ -113,7 +167,7 @@ export async function GET(request) {
         const total = Number(dept.pending_count || 0) + Number(dept.approved_count || 0) + Number(dept.rejected_count || 0);
         const approved = Number(dept.approved_count || 0);
         const rejected = Number(dept.rejected_count || 0);
-        
+
         departmentStatsMap.set(dept.department_name, {
           department_name: dept.department_name,
           total_requests: total,
@@ -208,7 +262,7 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-    
+
     if (userId) {
       statsCache.delete(`admin_stats_${userId}`);
       console.log('🗑️ Admin stats cache cleared for user:', userId);
@@ -216,7 +270,7 @@ export async function DELETE(request) {
       statsCache.clear();
       console.log('🗑️ All admin stats cache cleared');
     }
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

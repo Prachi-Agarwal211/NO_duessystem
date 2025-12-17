@@ -60,7 +60,7 @@ export async function GET(request) {
     // Get user profile to check role, department, and access scope
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
+      .select('role, assigned_department_ids, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
@@ -122,9 +122,28 @@ export async function GET(request) {
         }
       };
     } else if (profile.role === 'department') {
-      // Department staff gets applications pending for their department
-      // CRITICAL: Exclude manual entries (is_manual_entry = true) from pending table
-      // Manual entries are admin-only and shown in separate "Manual Entries" tab
+      // ✅ NEW: Get department names from assigned UUIDs
+      const { data: myDepartments, error: deptError } = await supabaseAdmin
+        .from('departments')
+        .select('id, name, display_name')
+        .in('id', profile.assigned_department_ids || []);
+
+      if (deptError || !myDepartments || myDepartments.length === 0) {
+        return NextResponse.json({
+          error: 'No departments assigned to your account. Contact administrator.'
+        }, { status: 403 });
+      }
+
+      const myDeptNames = myDepartments.map(d => d.name);
+      const isHOD = myDeptNames.includes('school_hod');
+
+      console.log('📊 Dashboard - User departments:', {
+        userId,
+        assignedDepartments: myDeptNames,
+        isHOD
+      });
+
+      // Department staff gets applications pending for their assigned departments
       let query = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -146,16 +165,17 @@ export async function GET(request) {
             created_at,
             updated_at,
             status,
-            is_manual_entry
+            school_id,
+            course_id,
+            branch_id
           )
         `)
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending')
-        .eq('no_dues_forms.is_manual_entry', false);
+        .in('department_name', myDeptNames)
+        .eq('status', 'pending');
 
       // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
-      // The other 9 departments see ALL students
-      if (profile.department_name === 'school_hod') {
+      // The other departments see ALL students
+      if (isHOD) {
         // CRITICAL FIX: Use UUID columns (school_id, course_id, branch_id) instead of TEXT columns
         // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
@@ -172,7 +192,7 @@ export async function GET(request) {
           query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
       }
-      // For other 9 departments: No additional filtering - they see all students
+      // For other departments: No additional filtering - they see all students
 
       // ✅ CRITICAL FIX: Apply search BEFORE pagination using !inner
       // This searches inside the database query, not client-side
@@ -210,16 +230,15 @@ export async function GET(request) {
       // ✅ Search already applied at database level - no client-side filtering needed
       const filteredApplications = pendingApplications || [];
 
-      // Get total count for pagination (exclude manual entries)
+      // Get total count for pagination
       let countQuery = supabaseAdmin
         .from('no_dues_status')
-        .select('no_dues_forms!inner(is_manual_entry, school_id, course_id, branch_id, student_name, registration_no)', { count: 'exact', head: true })
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending')
-        .eq('no_dues_forms.is_manual_entry', false);
+        .select('no_dues_forms!inner(school_id, course_id, branch_id, student_name, registration_no)', { count: 'exact', head: true })
+        .in('department_name', myDeptNames)
+        .eq('status', 'pending');
 
       // Apply the SAME scope filtering for HOD staff as the main query
-      if (profile.department_name === 'school_hod') {
+      if (isHOD) {
         // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
           countQuery = countQuery.in('no_dues_forms.school_id', profile.school_ids);
@@ -252,7 +271,11 @@ export async function GET(request) {
 
       dashboardData = {
         role: 'staff',
-        department: profile.department_name,
+        departments: myDepartments.map(d => ({
+          name: d.name,
+          displayName: d.display_name
+        })),
+        department: myDepartments[0]?.name, // Primary department for backward compatibility
         applications: filteredApplications,
         pagination: {
           page,
@@ -269,28 +292,24 @@ export async function GET(request) {
       try {
         if (profile.role === 'department') {
           // ⚡ OPTIMIZED: Parallel queries for personal + pending stats
-          // CRITICAL: Exclude manual entries from all stats
           const [personalResult, pendingResult, deptResult] = await Promise.all([
-            // Personal actions by this user (exclude manual entries)
+            // Personal actions by this user across all assigned departments
             supabaseAdmin
               .from('no_dues_status')
-              .select('status, no_dues_forms!inner(is_manual_entry)')
-              .eq('department_name', profile.department_name)
-              .eq('action_by_user_id', userId)
-              .eq('no_dues_forms.is_manual_entry', false),
+              .select('status, department_name, no_dues_forms!inner(school_id, course_id, branch_id)')
+              .in('department_name', myDeptNames)
+              .eq('action_by_user_id', userId),
             
-            // Pending items for department (exclude manual entries)
-            // CRITICAL: Apply the SAME HOD scope filtering as main query
+            // Pending items for assigned departments
             (async () => {
               let pendingQuery = supabaseAdmin
                 .from('no_dues_status')
-                .select('status, no_dues_forms!inner(is_manual_entry, school_id, course_id, branch_id)')
-                .eq('department_name', profile.department_name)
-                .eq('status', 'pending')
-                .eq('no_dues_forms.is_manual_entry', false);
+                .select('status, no_dues_forms!inner(school_id, course_id, branch_id)')
+                .in('department_name', myDeptNames)
+                .eq('status', 'pending');
               
               // Apply the SAME scope filtering for HOD staff as the main query
-              if (profile.department_name === 'school_hod') {
+              if (isHOD) {
                 if (profile.school_ids && profile.school_ids.length > 0) {
                   pendingQuery = pendingQuery.in('no_dues_forms.school_id', profile.school_ids);
                 }
@@ -305,12 +324,8 @@ export async function GET(request) {
               return pendingQuery;
             })(),
             
-            // Department info
-            supabaseAdmin
-              .from('departments')
-              .select('display_name')
-              .eq('name', profile.department_name)
-              .single()
+            // Get first department info for display
+            Promise.resolve({ data: myDepartments[0] })
           ]);
 
           const personalActions = personalResult.data || [];
@@ -323,8 +338,9 @@ export async function GET(request) {
           const pendingCount = pendingActions.length;
 
           stats = {
-            department: deptInfo?.display_name || profile.department_name,
-            departmentName: profile.department_name,
+            departments: myDepartments.map(d => d.display_name),
+            department: deptInfo?.display_name || myDepartments[0]?.display_name,
+            departmentName: myDepartments[0]?.name,
             pending: pendingCount,
             approved: myApprovedCount,
             rejected: myRejectedCount,
@@ -332,16 +348,15 @@ export async function GET(request) {
             approvalRate: myTotalCount > 0 ? Math.round((myApprovedCount / myTotalCount) * 100) : 0
           };
 
-          // Get today's activity
+          // Get today's activity across all assigned departments
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
           const { data: todayActions } = await supabaseAdmin
             .from('no_dues_status')
-            .select('status, no_dues_forms!inner(is_manual_entry)')
-            .eq('department_name', profile.department_name)
+            .select('status')
+            .in('department_name', myDeptNames)
             .eq('action_by_user_id', userId)
-            .eq('no_dues_forms.is_manual_entry', false)
             .gte('action_at', today.toISOString());
 
           if (todayActions) {

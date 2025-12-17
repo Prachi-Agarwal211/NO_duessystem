@@ -228,7 +228,7 @@ export async function POST(request) {
     // ===== SEND CONFIRMATION EMAIL TO STUDENT =====
     // All emails are now real (no placeholders), so always send
     const emailToUse = newForm.personal_email;
-    
+
     if (emailToUse) {
       try {
         await sendEmail({
@@ -451,7 +451,7 @@ export async function GET(request) {
 
     // ✅ CRITICAL FIX: Filter by manual_status for manual entries, not status
     if (status) {
-      query = query.eq('manual_status', status);
+      query = query.or('manual_status.eq.\{status\},status.eq.\{status\}');
     }
 
     // Apply scope filtering based on role

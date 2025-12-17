@@ -6,8 +6,8 @@ import { APP_URLS } from '@/lib/urlHelper';
 
 // Initialize Supabase Admin Client to bypass RLS for server-side actions
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const getJwk = () => {
@@ -31,12 +31,12 @@ async function verifyToken(token) {
             // Add a small clock tolerance for clock skew
             clockTolerance: 30, // 30 seconds
         });
-        
+
         // Validate required fields
         if (!payload.user_id || !payload.form_id || !payload.department) {
             throw new Error('Token is missing required fields');
         }
-        
+
         return payload;
     } catch (err) {
         if (err.code === 'ERR_JWT_EXPIRED') {
@@ -47,47 +47,47 @@ async function verifyToken(token) {
 }
 
 export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
-
-    if (!token) {
-      return NextResponse.json({ error: "Token is required." }, { status: 400 });
-    }
-
-    // Verify the token and get the payload
-    let payload;
     try {
-      payload = await verifyToken(token);
-    } catch (tokenError) {
-      return NextResponse.json({ error: `Token verification failed: ${tokenError.message}` }, { status: 401 });
+        const { searchParams } = new URL(request.url);
+        const token = searchParams.get("token");
+
+        if (!token) {
+            return NextResponse.json({ error: "Token is required." }, { status: 400 });
+        }
+
+        // Verify the token and get the payload
+        let payload;
+        try {
+            payload = await verifyToken(token);
+        } catch (tokenError) {
+            return NextResponse.json({ error: `Token verification failed: ${tokenError.message}` }, { status: 401 });
+        }
+
+        const { form_id, department } = payload;
+
+        if (!form_id) {
+            return NextResponse.json({ error: "Invalid token: Missing form_id" }, { status: 400 });
+        }
+
+        // Fetch form details using the admin client
+        const { data: form, error } = await supabaseAdmin
+            .from("no_dues_forms")
+            .select("student_name, registration_no, contact_no")
+            .eq("id", form_id)
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        if (!form) {
+            return NextResponse.json({ error: "Form not found." }, { status: 404 });
+        }
+
+        return NextResponse.json({ ...form, department });
+    } catch (err) {
+        return NextResponse.json({ error: err.message || "Invalid token or server error." }, { status: 500 });
     }
-
-    const { form_id, department } = payload;
-
-    if (!form_id) {
-      return NextResponse.json({ error: "Invalid token: Missing form_id" }, { status: 400 });
-    }
-
-    // Fetch form details using the admin client
-    const { data: form, error } = await supabaseAdmin
-      .from("no_dues_forms")
-      .select("student_name, registration_no, contact_no")
-      .eq("id", form_id)
-      .single();
-
-    if (error) {
-      throw error;
-    }
-    
-    if (!form) {
-      return NextResponse.json({ error: "Form not found." }, { status: 404 });
-    }
-
-    return NextResponse.json({ ...form, department });
-  } catch (err) {
-    return NextResponse.json({ error: err.message || "Invalid token or server error." }, { status: 500 });
-  }
 }
 
 export async function POST(request) {
@@ -95,14 +95,16 @@ export async function POST(request) {
         // First try to get token from URL
         const { searchParams } = new URL(request.url);
         let token = searchParams.get("token");
-        
+
         // Read the request body once
-        let status, reason;
+        let status, reason, userId, departmentName;
         try {
             const body = await request.json();
             if (!token) token = body.token;
             status = body.status;
             reason = body.reason;
+            userId = body.userId;
+            departmentName = body.departmentName;
         } catch (err) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }
@@ -117,6 +119,22 @@ export async function POST(request) {
 
         const payload = await verifyToken(token);
         const { user_id, form_id, department } = payload;
+
+        // If userId and departmentName are provided in body, use them for additional validation
+        if (userId && departmentName) {
+            // Verify the user has permission to act on this department
+            const { data: profile } = await supabaseAdmin
+                .from('profiles')
+                .select('role, department_name')
+                .eq('id', userId)
+                .single();
+
+            if (profile && (profile.role !== 'admin' && profile.department_name !== departmentName)) {
+                return NextResponse.json({
+                    error: 'You can only take actions for your own department'
+                }, { status: 403 });
+            }
+        }
 
         // STEP 1: Update the department status
         const { data, error } = await supabaseAdmin

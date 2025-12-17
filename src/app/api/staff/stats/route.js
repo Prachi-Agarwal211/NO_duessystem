@@ -50,7 +50,7 @@ export async function GET(request) {
     // Get user profile to verify role and department
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, school_id, school_ids, course_ids, branch_ids')
+      .select('role, assigned_department_ids, department_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
@@ -132,10 +132,30 @@ export async function GET(request) {
         }
       }
     } else if (profile.role === 'department') {
-      // Department staff members get comprehensive stats for their department AND personal actions
+      // ✅ NEW: Get department names from assigned UUIDs
+      const { data: myDepartments, error: deptError } = await supabaseAdmin
+        .from('departments')
+        .select('id, name, display_name')
+        .in('id', profile.assigned_department_ids || []);
+
+      if (deptError || !myDepartments || myDepartments.length === 0) {
+        return NextResponse.json({
+          error: 'No departments assigned to your account. Contact administrator.'
+        }, { status: 403 });
+      }
+
+      const myDeptNames = myDepartments.map(d => d.name);
+      const isHOD = myDeptNames.includes('school_hod');
+
+      console.log('📊 Stats API - User departments:', {
+        userId,
+        assignedDepartments: myDeptNames,
+        isHOD
+      });
+
+      // Department staff members get comprehensive stats for their assigned departments AND personal actions
       
       // 1. Get PERSONAL action counts (actions taken by THIS staff member)
-      // CRITICAL: Exclude manual entries (is_manual_entry = true) from stats
       let personalQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -143,17 +163,15 @@ export async function GET(request) {
           no_dues_forms!inner (
             school_id,
             course_id,
-            branch_id,
-            is_manual_entry
+            branch_id
           )
         `)
-        .eq('department_name', profile.department_name)
-        .eq('action_by_user_id', userId)
-        .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
+        .in('department_name', myDeptNames)
+        .eq('action_by_user_id', userId);
 
       // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
-      // The other 9 departments see ALL students (consistent with dashboard API)
-      if (profile.department_name === 'school_hod') {
+      // The other departments see ALL students (consistent with dashboard API)
+      if (isHOD) {
         // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
           personalQuery = personalQuery.in('no_dues_forms.school_id', profile.school_ids);
@@ -178,8 +196,13 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
-      // 2. Get PENDING counts (for the whole department scope - these need action)
-      // CRITICAL: Exclude manual entries from pending count
+      // 2. Get PENDING counts (for all assigned departments - these need action)
+      console.log('📊 Stats API - Building pending query for:', {
+        departments: myDeptNames,
+        userId: userId,
+        isHOD
+      });
+
       let pendingQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
@@ -187,17 +210,15 @@ export async function GET(request) {
           no_dues_forms!inner (
             school_id,
             course_id,
-            branch_id,
-            is_manual_entry
+            branch_id
           )
         `)
-        .eq('department_name', profile.department_name)
-        .eq('status', 'pending')
-        .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
+        .in('department_name', myDeptNames)
+        .eq('status', 'pending');
 
       // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
-      // The other 9 departments see ALL students (consistent with dashboard API)
-      if (profile.department_name === 'school_hod') {
+      // The other departments see ALL students (consistent with dashboard API)
+      if (isHOD) {
         // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
           pendingQuery = pendingQuery.in('no_dues_forms.school_id', profile.school_ids);
@@ -217,6 +238,14 @@ export async function GET(request) {
 
       const { data: pendingActions, error: pendingError } = await pendingQuery;
 
+      // DEBUG: Log what we got
+      console.log('📊 Stats API - Pending query result:', {
+        department: profile.department_name,
+        count: pendingActions?.length || 0,
+        sample: pendingActions?.[0] || null,
+        error: pendingError
+      });
+
       if (pendingError) {
         console.error('Error fetching pending stats:', pendingError);
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
@@ -228,31 +257,25 @@ export async function GET(request) {
       const myTotalCount = personalActions?.length || 0;
       const pendingCount = pendingActions?.length || 0;
 
-      // Get department display name
-      const { data: deptInfo, error: deptError } = await supabaseAdmin
-        .from('departments')
-        .select('display_name')
-        .eq('name', profile.department_name)
-        .single();
-
       stats = {
-        department: deptInfo?.display_name || profile.department_name,
-        departmentName: profile.department_name,
-        pending: pendingCount, // Department pending (need action)
+        departments: myDepartments.map(d => d.display_name),
+        department: myDepartments[0]?.display_name || profile.department_name,
+        departmentName: myDepartments[0]?.name || profile.department_name,
+        pending: pendingCount, // Departments pending (need action)
         approved: myApprovedCount, // MY approved count
         rejected: myRejectedCount, // MY rejected count
         total: myTotalCount, // MY total actions
         approvalRate: myTotalCount > 0 ? Math.round((myApprovedCount / myTotalCount) * 100) : 0
       };
 
-      // Get today's activity (MY actions today)
+      // Get today's activity (MY actions today across all assigned departments)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       const { data: todayActions, error: todayError } = await supabaseAdmin
         .from('no_dues_status')
         .select('status')
-        .eq('department_name', profile.department_name)
+        .in('department_name', myDeptNames)
         .eq('action_by_user_id', userId) // Only MY actions
         .gte('action_at', today.toISOString());
 
