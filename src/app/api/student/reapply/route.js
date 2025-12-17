@@ -239,7 +239,9 @@ export async function PUT(request) {
       throw new Error('Failed to update form');
     }
 
-    // ==================== RESET REJECTED DEPARTMENT STATUSES ====================
+    // ==================== RESET ALL 7 DEPARTMENT STATUSES ====================
+    // ✅ MASTER CYCLE FIX: Reset ALL departments, not just rejected ones
+    // This ensures the student reappears in EVERY department's dashboard
     const { error: statusResetError } = await supabaseAdmin
       .from('no_dues_status')
       .update({
@@ -248,43 +250,59 @@ export async function PUT(request) {
         action_at: null,
         action_by_user_id: null
       })
-      .eq('form_id', form.id)
-      .in('department_name', rejectedDeptNames);
+      .eq('form_id', form.id); // No .in() filter - reset ALL departments
 
     if (statusResetError) {
       console.error('Error resetting department statuses:', statusResetError);
-      throw new Error('Failed to reset department statuses');
+      throw new Error('Failed to reset all department statuses');
     }
+    
+    console.log(`♻️ Reset all 7 department statuses to pending for form ${form.id}`);
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // UNIFIED SYSTEM: Get all active staff members for rejected departments
+    // ✅ MASTER CYCLE FIX: Notify ALL department staff, not just rejected ones
     const { data: staffMembers, error: staffError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, full_name, department_name')
+      .select('id, email, full_name, department_name, school_ids, course_ids, branch_ids')
       .eq('role', 'department')
-      .in('department_name', rejectedDeptNames)
       .not('email', 'is', null);
 
     if (!staffError && staffMembers && staffMembers.length > 0) {
       try {
-        // Import email service
-        const { sendReapplicationNotifications } = await import('@/lib/emailService');
-        
-        await sendReapplicationNotifications({
-          staffMembers: staffMembers.map(staff => ({
-            email: staff.email,
-            name: staff.full_name,
-            department: staff.department_name
-          })),
-          studentName: form.student_name,
-          registrationNo: form.registration_no,
-          studentMessage: student_reply_message.trim(),
-          reapplicationNumber: form.reapplication_count + 1,
-          dashboardUrl: APP_URLS.staffLogin(),
-          formUrl: APP_URLS.staffStudentForm(form.id)
+        // ✅ Filter staff based on HOD scope (school_hod only sees their students)
+        const staffToNotify = staffMembers.filter(staff => {
+          if (staff.department_name === 'school_hod') {
+            // Check if this HOD manages this student's school/course
+            if (staff.school_ids && !staff.school_ids.includes(form.school_id)) {
+              return false;
+            }
+            if (staff.course_ids && staff.course_ids.length > 0 && !staff.course_ids.includes(form.course_id)) {
+              return false;
+            }
+          }
+          return true; // All other departments see all students
         });
+        
+        if (staffToNotify.length > 0) {
+          // Import email service
+          const { sendReapplicationNotifications } = await import('@/lib/emailService');
+          
+          await sendReapplicationNotifications({
+            staffMembers: staffToNotify.map(staff => ({
+              email: staff.email,
+              name: staff.full_name,
+              department: staff.department_name
+            })),
+            studentName: form.student_name,
+            registrationNo: form.registration_no,
+            studentMessage: student_reply_message.trim(),
+            reapplicationNumber: form.reapplication_count + 1,
+            dashboardUrl: APP_URLS.staffLogin(),
+            formUrl: APP_URLS.staffStudentForm(form.id)
+          });
 
-        console.log(`📧 Reapplication notifications sent to ${staffMembers.length} staff member(s) in rejected departments`);
+          console.log(`📧 Reapplication notifications sent to ${staffToNotify.length} staff member(s) across all departments`);
+        }
         
         // ==================== AUTO-PROCESS EMAIL QUEUE ====================
         try {
@@ -310,10 +328,10 @@ export async function PUT(request) {
     
     return NextResponse.json({
       success: true,
-      message: 'Reapplication submitted successfully',
+      message: 'Reapplication submitted successfully. All departments will review your updated application.',
       data: {
         reapplication_number: form.reapplication_count + 1,
-        reset_departments: rejectedDeptNames.length,
+        reset_departments: 7, // ✅ MASTER CYCLE FIX: Always 7 departments
         form_status: 'pending'
       }
     }, { status: 200 });

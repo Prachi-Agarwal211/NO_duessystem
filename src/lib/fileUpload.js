@@ -19,8 +19,8 @@ const supabase = createClient(
  */
 export const validateFile = (file, options = {}) => {
     const {
-        maxSize = 1 * 1024 * 1024, // 1MB default (updated from 5MB)
-        allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+        maxSize = 200 * 1024, // DEFAULT: 200KB strict limit
+        allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'application/pdf']
     } = options;
 
     // Check if file exists
@@ -28,9 +28,10 @@ export const validateFile = (file, options = {}) => {
         throw new Error('No file provided');
     }
 
-    // Check file size
+    // Check file size - STRICT enforcement
     if (file.size > maxSize) {
-        throw new Error(`File size too large. Maximum allowed size is ${Math.round(maxSize / (1024 * 1024))}MB`);
+        const sizeKB = (maxSize / 1024).toFixed(0);
+        throw new Error(`File too large. Maximum allowed is ${sizeKB}KB to save storage space.`);
     }
 
     // Check file type
@@ -205,9 +206,9 @@ export const deleteFromSupabase = async (filePath, bucket = 'no-dues-files') => 
  * @returns {Promise<Object>} - Upload result
  */
 export const validateAndUploadAlumniScreenshot = async (file, userId, formId) => {
-    // Specific validation for alumni screenshot
+    // ✅ ALUMNI SPECIFIC: 100KB STRICT LIMIT
     const validation = validateFile(file, {
-        maxSize: 1 * 1024 * 1024, // 1MB limit (updated from 5MB)
+        maxSize: 100 * 1024, // 100KB limit for Alumni
         allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
     });
 
@@ -233,12 +234,14 @@ export const validateAndUploadAlumniScreenshot = async (file, userId, formId) =>
  */
 export const getUploadConfig = () => {
     return {
-        maxFileSize: 1 * 1024 * 1024, // 1MB (updated from 5MB)
-        allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-        allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+        maxFileSize: 200 * 1024, // 200KB Global
+        alumniLimit: 100 * 1024, // 100KB Alumni
+        allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+        allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.pdf'],
         bucket: 'no-dues-files',
         // For display purposes
-        maxFileSizeDisplay: '1MB',
-        allowedTypesDisplay: 'JPEG, PNG, WebP images'
+        maxFileSizeDisplay: '200KB',
+        alumniMaxSizeDisplay: '100KB',
+        allowedTypesDisplay: 'JPEG, PNG, WebP images, PDF documents'
     };
 };

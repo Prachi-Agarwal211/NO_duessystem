@@ -84,8 +84,7 @@ export async function GET(request) {
     const startTime = Date.now();
 
     // ⚡ PERFORMANCE: Optimized query - only select needed columns
-    // ✅ CRITICAL: Exclude manual entries from regular applications list
-    // ✅ INCLUDES: rejection_context and manual_status for complete data display
+    // ✅ FIXED: Table now only contains online forms (manual entries in separate table)
     let query = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -101,7 +100,6 @@ export async function GET(request) {
         updated_at,
         reapplication_count,
         rejection_context,
-        manual_status,
         no_dues_status!inner (
           id,
           department_name,
@@ -114,7 +112,6 @@ export async function GET(request) {
           )
         )
       `)
-      .eq('is_manual_entry', false)
       .order(sortField, { ascending: sortOrder === 'asc' });
 
     // Apply status filter
@@ -153,13 +150,12 @@ export async function GET(request) {
     query = query.range(from, to);
 
     // Execute count and data queries in parallel
-    // ✅ CRITICAL: Count only excludes manual entries
+    // ✅ FIXED: Table now only contains online forms
     const [applicationsResult, countResult] = await Promise.all([
       query,
       supabaseAdmin
         .from('no_dues_forms')
         .select('id', { count: 'exact', head: true })
-        .eq('is_manual_entry', false) // ✅ Count only online submissions
     ]);
 
     const { data: applications, error: applicationsError } = applicationsResult;

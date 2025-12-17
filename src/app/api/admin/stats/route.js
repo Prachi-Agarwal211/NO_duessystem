@@ -126,20 +126,19 @@ export async function GET(request) {
         .not('action_at', 'is', null),
 
       // Batch 4: Activity and alerts in parallel
+      // ✅ FIXED: Removed is_manual_entry filter (table now only has online forms)
       Promise.all([
         supabaseAdmin
           .from('no_dues_status')
-          .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no, is_manual_entry)')
+          .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no)')
           .gte('action_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-          .eq('no_dues_forms.is_manual_entry', false)
           .order('action_at', { ascending: false })
           .limit(50),
 
         supabaseAdmin
           .from('no_dues_status')
-          .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at, is_manual_entry)')
+          .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at)')
           .eq('status', 'pending')
-          .eq('no_dues_forms.is_manual_entry', false)
           .lt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: true })
           .limit(20)

@@ -8,9 +8,13 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Supabase Storage limits (increased to handle complex PDFs)
-const SUPABASE_MAX_SIZE = 200 * 1024; // 200KB - Increased limit for complex PDFs
-const USER_MAX_SIZE = 5 * 1024 * 1024; // 5MB - User-facing limit (we'll compress if needed)
+// ✅ STRICT STORAGE LIMITS (enforced at API level)
+const LIMITS = {
+  'alumni-screenshots': 100 * 1024, // 100 KB for Alumni
+  'no-dues-files': 200 * 1024,      // 200 KB for Manual entries
+  'certificates': 200 * 1024,       // 200 KB for Certificates
+  'default': 200 * 1024             // 200 KB default
+};
 
 /**
  * POST /api/upload
@@ -56,12 +60,15 @@ export async function POST(request) {
       );
     }
 
-    // Validate file size (max 5MB user-facing)
-    if (file.size > USER_MAX_SIZE) {
+    // ✅ VALIDATE FILE SIZE - Bucket-specific limits
+    const maxLimit = LIMITS[bucket] || LIMITS['default'];
+    
+    // For non-PDF files, reject immediately if over limit
+    if (file.type !== 'application/pdf' && file.size > maxLimit) {
       return NextResponse.json(
         {
           success: false,
-          error: 'File size exceeds 5MB limit. Please compress your file before uploading.'
+          error: `File too large! Maximum size for this upload is ${(maxLimit/1024).toFixed(0)}KB. Please compress your file.`
         },
         { status: 400 }
       );
@@ -97,9 +104,9 @@ export async function POST(request) {
     let fileBuffer = Buffer.from(arrayBuffer);
     let finalContentType = file.type;
 
-    // Compress PDF if it exceeds Supabase limit (200KB)
-    if (file.type === 'application/pdf' && fileBuffer.length > SUPABASE_MAX_SIZE) {
-      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <200KB`);
+    // ✅ COMPRESS PDF if it exceeds bucket limit
+    if (file.type === 'application/pdf' && fileBuffer.length > maxLimit) {
+      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <${(maxLimit/1024).toFixed(0)}KB`);
 
       try {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
@@ -120,7 +127,7 @@ export async function POST(request) {
         console.log(`  Pass ${compressionAttempt}: ${(currentSize / 1024).toFixed(2)}KB`);
 
         // Second pass: If still too large, reload and recompress with aggressive settings
-        if (currentSize > SUPABASE_MAX_SIZE && compressionAttempt < maxAttempts) {
+        if (currentSize > maxLimit && compressionAttempt < maxAttempts) {
           compressionAttempt++;
           const reloadedDoc = await PDFDocument.load(compressedPdfBytes);
           
@@ -142,7 +149,7 @@ export async function POST(request) {
         }
 
         // Third pass: If STILL too large, try one final compression
-        if (currentSize > SUPABASE_MAX_SIZE && compressionAttempt < maxAttempts) {
+        if (currentSize > maxLimit && compressionAttempt < maxAttempts) {
           compressionAttempt++;
           const finalDoc = await PDFDocument.load(compressedPdfBytes);
           
@@ -160,19 +167,21 @@ export async function POST(request) {
         const finalSizeKB = (fileBuffer.length / 1024).toFixed(2);
         console.log(`✅ Final compressed size: ${finalSizeKB}KB after ${compressionAttempt} passes`);
 
-        // If still too large after all attempts, provide detailed error
-        if (fileBuffer.length > SUPABASE_MAX_SIZE) {
+        // ✅ If still too large after all attempts, provide detailed error
+        if (fileBuffer.length > maxLimit) {
           const originalSizeKB = (file.size / 1024).toFixed(2);
           const compressedSizeKB = (fileBuffer.length / 1024).toFixed(2);
+          const targetSizeKB = (maxLimit / 1024).toFixed(0);
           const reductionPercent = ((1 - (fileBuffer.length / file.size)) * 100).toFixed(1);
 
           return NextResponse.json(
             {
               success: false,
-              error: `File is too complex to compress below 200KB (current: ${compressedSizeKB}KB). Please use a simpler PDF or reduce image quality.`,
+              error: `PDF is too large even after compression (${compressedSizeKB}KB). Maximum allowed: ${targetSizeKB}KB. Please use a smaller file.`,
               suggestion: 'Try these solutions:\n1. Use ilovepdf.com or smallpdf.com to compress\n2. Convert scanned images to black & white\n3. Reduce image quality/DPI (try 150 DPI instead of 300)\n4. Remove unnecessary pages\n5. Save as "Reduced Size PDF" in Adobe Acrobat',
               originalSize: originalSizeKB,
               compressedSize: compressedSizeKB,
+              targetSize: targetSizeKB,
               reductionPercent: reductionPercent,
               compressionPasses: compressionAttempt
             },
