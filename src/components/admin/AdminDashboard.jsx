@@ -180,17 +180,36 @@ export default function AdminDashboard() {
     }
   };
 
-  const statusCounts = stats?.overallStats?.[0] || {};
-  const statsLoaded = stats !== null && stats?.overallStats?.length > 0;
+  // ✅ FIX: Properly extract stats data
+  const statusCounts = stats?.overallStats?.[0] || {
+    total_requests: 0,
+    pending_requests: 0,
+    completed_requests: 0,
+    rejected_requests: 0
+  };
+  
+  // ✅ FIX: Check if stats object exists and has valid data
+  const statsLoaded = Boolean(
+    stats &&
+    stats.overallStats &&
+    Array.isArray(stats.overallStats) &&
+    stats.overallStats.length > 0 &&
+    stats.overallStats[0] &&
+    typeof stats.overallStats[0].total_requests !== 'undefined'
+  );
   
   // Debug logging for stats
   useEffect(() => {
     console.log('📊 Stats State Updated:', {
-      stats: stats,
+      statsExists: !!stats,
+      statsIsNull: stats === null,
+      hasOverallStats: !!stats?.overallStats,
+      overallStatsIsArray: Array.isArray(stats?.overallStats),
+      overallStatsLength: stats?.overallStats?.length,
+      firstStatData: stats?.overallStats?.[0],
       statusCounts: statusCounts,
       statsLoaded: statsLoaded,
-      overallStats: stats?.overallStats,
-      firstStat: stats?.overallStats?.[0]
+      fullStats: stats
     });
   }, [stats, statusCounts, statsLoaded]);
 

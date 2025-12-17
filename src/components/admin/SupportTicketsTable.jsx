@@ -55,7 +55,20 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
       if (priorityFilter) params.append('priority', priorityFilter);
       if (searchTerm) params.append('search', searchTerm);
 
-      const response = await fetch(`/api/support?${params.toString()}`);
+      // Get the user's session to include the authentication token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        toast.error('Unauthorized: Please log in again');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`/api/support?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -80,7 +93,7 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
   // 🔌 Real-time subscription for support tickets
   useEffect(() => {
     console.log('🔌 Setting up real-time subscription for support tickets');
-    
+
     const channel = supabase
       .channel('support_tickets_realtime')
       .on(
@@ -92,7 +105,7 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
         },
         (payload) => {
           console.log('📨 Support ticket real-time event:', payload.eventType);
-          
+
           // Refresh tickets on any change
           fetchTickets();
         }
@@ -327,8 +340,8 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
                   rows={4}
                   placeholder="Add internal notes about this ticket..."
                   className={`w-full px-3 py-2 rounded-lg border outline-none resize-none
-                    ${isDark 
-                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                    ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                     }`}
                 />
@@ -437,8 +450,8 @@ export default function SupportTicketsTable({ defaultRequesterTypeFilter = '' })
                 }}
                 placeholder="Search tickets..."
                 className={`w-full pl-10 pr-4 py-2 rounded-lg border outline-none
-                  ${isDark 
-                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500' 
+                  ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
                     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                   }`}
               />

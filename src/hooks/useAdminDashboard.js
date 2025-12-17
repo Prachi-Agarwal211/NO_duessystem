@@ -297,16 +297,9 @@ export function useAdminDashboard() {
   const memoizedStats = useMemo(() => {
     if (!stats) return null;
     
-    // Pre-calculate percentages and formatted values
-    return {
-      ...stats,
-      completionRate: stats?.overallStats?.[0]?.total_requests > 0
-        ? Math.round((stats.overallStats[0].completed / stats.overallStats[0].total_requests) * 100)
-        : 0,
-      pendingRate: stats?.overallStats?.[0]?.total_requests > 0
-        ? Math.round((stats.overallStats[0].pending / stats.overallStats[0].total_requests) * 100)
-        : 0
-    };
+    // Return stats as-is - let component handle the display logic
+    // The memoization just prevents unnecessary re-renders
+    return stats;
   }, [stats]); // Only recalculate when stats change
 
   // ✅ SAFE: Memoize pagination info
