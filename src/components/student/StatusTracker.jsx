@@ -218,9 +218,9 @@ export default function StatusTracker({ registrationNo }) {
   const rejectedCount = statusData.filter(s => s.status === 'rejected').length;
   const totalCount = statusData.length;
   
-  // ✅ For manual entries, base status on form approval, not department count
+  // ✅ For manual entries, base status on form completion/approval, not department count
   const allApproved = isManualEntry
-    ? formData.status === 'approved'
+    ? (formData.status === 'completed' || formData.status === 'approved')
     : approvedCount === totalCount;
     
   const hasRejection = isManualEntry
@@ -297,20 +297,20 @@ export default function StatusTracker({ registrationNo }) {
             // ✅ Manual entry: Show simple admin status badge
             <div className="text-center py-4">
               <span className={`inline-flex items-center px-6 py-3 rounded-full text-base font-bold uppercase tracking-wide transition-all duration-700 ease-smooth ${
-                formData.status === 'approved'
+                (formData.status === 'completed' || formData.status === 'approved')
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-500'
                   : formData.status === 'rejected'
                   ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-2 border-red-500'
                   : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-2 border-yellow-500'
               }`}>
-                {formData.status === 'approved' ? '✅ Admin Approved' :
+                {(formData.status === 'completed' || formData.status === 'approved') ? '✅ Completed' :
                  formData.status === 'rejected' ? '❌ Admin Rejected' :
                  '⏳ Pending Admin Review'}
               </span>
               <p className={`text-sm mt-3 transition-colors duration-700 ease-smooth ${
                 isDark ? 'text-gray-400' : 'text-gray-600'
               }`}>
-                {formData.status === 'approved'
+                {(formData.status === 'completed' || formData.status === 'approved')
                   ? 'Your offline certificate has been verified and approved'
                   : formData.status === 'rejected'
                   ? 'Your offline certificate submission was rejected'
@@ -457,15 +457,16 @@ export default function StatusTracker({ registrationNo }) {
             }`}
         >
           <h3 className="text-green-500 font-bold text-lg mb-2">
-            ✅ All Departments Approved!
+            {isManualEntry ? '✅ Certificate Approved!' : '✅ All Departments Approved!'}
           </h3>
           <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth
             ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Your certificate is ready for download
           </p>
-          {formData.certificate_url && (
+          {/* For manual entries, use manual_certificate_url; for online forms, use certificate_url */}
+          {(isManualEntry ? formData.manual_certificate_url : formData.certificate_url) && (
             <a
-              href={formData.certificate_url}
+              href={isManualEntry ? formData.manual_certificate_url : formData.certificate_url}
               target="_blank"
               rel="noopener noreferrer"
               className="interactive inline-flex items-center gap-2 px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40"

@@ -171,9 +171,9 @@ export const manualEntrySchema = z.object({
   student_name: nameSchema.optional().nullable(),
   admission_year: z.string().optional().nullable(),
   passing_year: z.string().min(4, 'Passing year is required'),
-  personal_email: emailSchema.optional().or(z.literal('')).nullable(),
-  college_email: emailSchema.optional().or(z.literal('')).nullable(),
-  contact_no: phoneSchema.optional().or(z.literal('')).nullable(),
+  personal_email: emailSchema, // ✅ NOW MANDATORY - no optional, no nullable
+  college_email: emailSchema, // ✅ NOW MANDATORY - no optional, no nullable
+  contact_no: phoneSchema,     // ✅ NOW MANDATORY - no optional, no nullable
   school: z.string().min(1, 'School is required'),
   school_id: uuidSchema,
   course: z.string().min(1, 'Course is required'),

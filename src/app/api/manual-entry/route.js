@@ -151,22 +151,30 @@ export async function POST(request) {
     });
 
     // ===== INSERT INTO no_dues_forms with REAL data (NO PLACEHOLDERS) =====
-    // Priority: 1) Convocation data, 2) User-provided data, 3) NULL (not placeholder)
+    // Priority: 1) Convocation data, 2) User-provided data
     const finalStudentName = convocationStudent?.student_name || student_name;
     const finalAdmissionYear = convocationStudent?.admission_year || admission_year;
 
-    // ✅ Use actual data or generate placeholder for required fields
-    // personal_email and college_email are required by database NOT NULL constraint
-    const finalPersonalEmail = personal_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
-    const finalCollegeEmail = college_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
-    const finalContactNo = contact_no || '0000000000';
-    const finalPassingYear = passing_year; // Required field, must be provided by user
+    // ✅ ALL CONTACT FIELDS ARE NOW MANDATORY - validated by Zod schema
+    // No placeholders generated - if missing, Zod validation will reject
+    const finalPersonalEmail = personal_email;
+    const finalCollegeEmail = college_email;
+    const finalContactNo = contact_no;
+    const finalPassingYear = passing_year;
+
+    // Additional validation check (belt and suspenders approach)
+    if (!finalPersonalEmail || !finalCollegeEmail || !finalContactNo) {
+      return NextResponse.json(
+        { error: 'Contact information (personal email, college email, contact number) is mandatory for manual entry submission' },
+        { status: 400 }
+      );
+    }
 
     console.log('📝 Creating manual entry with data:', {
       registration_no,
       student_name: finalStudentName,
-      has_contact: !!finalPersonalEmail || !!finalCollegeEmail || !!finalContactNo,
-      source: convocationStudent ? 'convocation' : student_name ? 'user-provided' : 'placeholder'
+      has_real_contact: true,
+      source: convocationStudent ? 'convocation' : student_name ? 'user-provided' : 'minimal'
     });
 
     // Debug the insert data before sending
@@ -217,12 +225,11 @@ export async function POST(request) {
       );
     }
 
-    // ===== SEND CONFIRMATION EMAIL TO STUDENT (if real email provided) =====
-    const hasRealEmail = newForm.personal_email && !newForm.personal_email.includes('@placeholder.jecrc.ac.in');
-    const hasRealCollegeEmail = newForm.college_email && !newForm.college_email.includes('@placeholder.jecrc.ac.in');
-
-    if (hasRealEmail || hasRealCollegeEmail) {
-      const emailToUse = hasRealEmail ? newForm.personal_email : newForm.college_email;
+    // ===== SEND CONFIRMATION EMAIL TO STUDENT =====
+    // All emails are now real (no placeholders), so always send
+    const emailToUse = newForm.personal_email;
+    
+    if (emailToUse) {
       try {
         await sendEmail({
           to: emailToUse,
@@ -291,10 +298,8 @@ export async function POST(request) {
         console.log(`✅ Confirmation email sent to student: ${emailToUse}`);
       } catch (emailError) {
         console.error('Error sending student confirmation email:', emailError);
+        // Don't fail the request if email fails - form is still created
       }
-    } else {
-      console.log('ℹ️ No real email provided - skipping student confirmation email');
-    }
 
     // ===== NO DEPARTMENT STATUS CREATION =====
     // Manual entries are ADMIN-ONLY for verification

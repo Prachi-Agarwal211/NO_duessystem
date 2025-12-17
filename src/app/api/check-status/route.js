@@ -5,6 +5,36 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
+// ✅ OPTIMIZATION: Simple in-memory cache to reduce repeated database calls
+const statusCache = new Map();
+const CACHE_TTL = 5000; // 5 seconds
+
+function getCachedStatus(registrationNo) {
+  const cached = statusCache.get(registrationNo);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('📋 Using cached status for:', registrationNo);
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedStatus(registrationNo, data) {
+  statusCache.set(registrationNo, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // Clean up old cache entries periodically
+  if (statusCache.size > 100) {
+    const now = Date.now();
+    for (const [key, value] of statusCache.entries()) {
+      if (now - value.timestamp > CACHE_TTL * 2) {
+        statusCache.delete(key);
+      }
+    }
+  }
+}
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -57,6 +87,12 @@ export async function GET(request) {
         success: false,
         error: 'Invalid registration number'
       }, { status: 400 });
+    }
+
+    // ✅ CACHE CHECK: Return cached result if available and fresh
+    const cachedResult = getCachedStatus(registrationNo);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult);
     }
 
     // OPTIMIZATION: Single optimized query with proper indexing
@@ -205,14 +241,20 @@ export async function GET(request) {
       rejectedDepts: statusData.filter(s => s.status === 'rejected').length
     });
 
-    // Return optimized response
-    return NextResponse.json({
+    // Prepare response data
+    const responseData = {
       success: true,
       data: {
         form,
         statusData
       }
-    }, { 
+    };
+
+    // ✅ CACHE RESULT: Store in memory cache for future requests
+    setCachedStatus(registrationNo, responseData);
+
+    // Return optimized response
+    return NextResponse.json(responseData, { 
       status: 200,
       headers: {
         'Cache-Control': 'no-store, must-revalidate',

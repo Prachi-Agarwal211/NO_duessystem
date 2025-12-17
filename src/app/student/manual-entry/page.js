@@ -222,9 +222,15 @@ export default function ManualEntryPage() {
     setLoading(true);
 
     try {
-      // Validate required fields
-      if (!formData.registration_no || !formData.school || !formData.course || !formData.passing_year) {
-        throw new Error('Please fill all required fields');
+      // Validate required fields including contact information
+      if (!formData.registration_no || !formData.school || !formData.course || !formData.passing_year ||
+          !formData.personal_email || !formData.college_email || !formData.contact_no) {
+        throw new Error('Please fill all required fields including contact information');
+      }
+
+      // Validate contact number is exactly 10 digits
+      if (formData.contact_no.length !== 10) {
+        throw new Error('Contact number must be exactly 10 digits');
       }
 
       if (!certificateFile) {
@@ -275,10 +281,10 @@ export default function ManualEntryPage() {
           student_name: convocationData?.name || null,
           admission_year: convocationData?.admission_year || null,
           passing_year: formData.passing_year || null,
-          // Include user-provided contact information (or null)
-          personal_email: formData.personal_email.trim() || null,
-          college_email: formData.college_email.trim() || null,
-          contact_no: formData.contact_no.trim() || null,
+          // Include user-provided contact information (NOW REQUIRED)
+          personal_email: formData.personal_email.trim(),
+          college_email: formData.college_email.trim(),
+          contact_no: formData.contact_no.trim(),
           school: formData.school,
           course: formData.course,
           branch: formData.branch || null,
@@ -297,10 +303,15 @@ export default function ManualEntryPage() {
 
       setSubmitSuccess(true);
 
-      // Redirect after 3 seconds
+      // Store registration number for status tracking
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('lastSubmittedRegistration', formData.registration_no);
+      }
+
+      // Redirect to status page after 2 seconds
       setTimeout(() => {
-        router.push('/');
-      }, 3000);
+        router.push(`/check-status?registration_no=${formData.registration_no}`);
+      }, 2000);
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -328,10 +339,10 @@ export default function ManualEntryPage() {
               Submission Successful!
             </h2>
             <p className={`mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Your offline certificate has been registered successfully.
+              Your offline certificate has been registered successfully and is pending admin review.
             </p>
             <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-              The department will verify your certificate shortly.
+              Redirecting to status page to track admin approval...
             </p>
           </motion.div>
         </div>
@@ -580,55 +591,57 @@ export default function ManualEntryPage() {
                 </div>
               )}
 
-              {/* Contact Information - Optional but Recommended */}
-              <div className={`p-4 rounded-lg border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+              {/* Contact Information - NOW MANDATORY */}
+              <div className={`p-4 rounded-lg border ${isDark ? 'bg-red-50/10 border-red-500/30' : 'bg-red-50 border-red-200'
                 }`}>
-                <h3 className={`font-bold mb-3 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                  Contact Information (Optional but Recommended)
+                <h3 className={`font-bold mb-3 ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                  Contact Information <span className="text-red-500">*</span>
                 </h3>
                 <p className={`text-sm mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  Providing your contact details helps us reach you regarding your application status.
+                  All contact details are mandatory for communication about your application.
                 </p>
 
                 <div className="space-y-4">
-                  {/* Personal Email */}
+                  {/* Personal Email - NOW REQUIRED */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Personal Email
+                      Personal Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       value={formData.personal_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, personal_email: e.target.value }))}
                       placeholder="your.email@example.com"
+                      required
                       className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
-                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-red-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-red-500'
                         }`}
                     />
                   </div>
 
-                  {/* College Email */}
+                  {/* College Email - NOW REQUIRED */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      College Email
+                      College Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
                       value={formData.college_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, college_email: e.target.value }))}
                       placeholder="registration@jecrc.ac.in"
+                      required
                       className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
-                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-red-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-red-500'
                         }`}
                     />
                   </div>
 
-                  {/* Contact Number */}
+                  {/* Contact Number - NOW REQUIRED */}
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Contact Number
+                      Contact Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -638,10 +651,13 @@ export default function ManualEntryPage() {
                         setFormData(prev => ({ ...prev, contact_no: value }));
                       }}
                       placeholder="10-digit mobile number"
+                      pattern="[0-9]{10}"
+                      minLength="10"
                       maxLength="10"
+                      required
                       className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
-                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-red-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-red-500'
                         }`}
                     />
                   </div>

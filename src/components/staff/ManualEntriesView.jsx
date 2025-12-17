@@ -14,7 +14,8 @@ import {
   Phone,
   User,
   GraduationCap,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -25,8 +26,10 @@ export default function ManualEntriesView() {
   const isDark = theme === 'dark';
 
   const [entries, setEntries] = useState([]);
+  const [filteredEntries, setFilteredEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedEntry, setSelectedEntry] = useState(null);
 
   useEffect(() => {
@@ -83,6 +86,20 @@ export default function ManualEntriesView() {
       setLoading(false);
     }
   };
+
+  // Filter entries based on search term (roll number)
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredEntries(entries);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const filtered = entries.filter(entry =>
+      entry.registration_no?.toLowerCase().includes(searchLower)
+    );
+    setFilteredEntries(filtered);
+  }, [entries, searchTerm]);
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -159,24 +176,69 @@ export default function ManualEntriesView() {
         </div>
       </div>
 
+      {/* Search Bar for Roll Number */}
+      <div className="relative">
+        <div className="relative">
+          <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+            isDark ? 'text-gray-500' : 'text-gray-400'
+          }`} />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by Roll Number / Registration Number..."
+            className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-all ${
+              isDark
+                ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:bg-white/10 focus:border-jecrc-red'
+                : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+            } outline-none`}
+          />
+        </div>
+        
+        {/* Active Search Filter Indicator */}
+        {searchTerm && (
+          <div className="mt-2 flex items-center gap-2">
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Searching:
+            </span>
+            <button
+              onClick={() => setSearchTerm('')}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
+                isDark
+                  ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
+              {searchTerm}
+              <span className="ml-1">×</span>
+            </button>
+            <span className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              ({filteredEntries.length} result{filteredEntries.length !== 1 ? 's' : ''})
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Entries List */}
-      {entries.length === 0 ? (
+      {filteredEntries.length === 0 ? (
         <div className={`p-12 rounded-xl text-center ${
           isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-200'
         }`}>
           <FileCheck className={`w-16 h-16 mx-auto mb-4 ${isDark ? 'text-gray-600' : 'text-gray-400'}`} />
           <p className={`text-lg font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            No manual entries found
+            {searchTerm ? 'No matching entries found' : 'No manual entries found'}
           </p>
           <p className={`text-sm mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-            {filter === 'all' 
-              ? 'No students have submitted offline certificates yet'
-              : `No ${filter} manual entries in your scope`}
+            {searchTerm
+              ? `No entries found matching "${searchTerm}". Try a different roll number.`
+              : filter === 'all'
+                ? 'No students have submitted offline certificates yet'
+                : `No ${filter} manual entries in your scope`}
           </p>
         </div>
       ) : (
         <div className="grid gap-4">
-          {entries.map((entry, index) => (
+          {filteredEntries.map((entry, index) => (
             <motion.div
               key={entry.id}
               initial={{ opacity: 0, y: 20 }}

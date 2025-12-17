@@ -59,10 +59,10 @@ export async function PUT(request) {
         .single(),
       supabaseAdmin
         .from('no_dues_status')
-        .select('id, status')
+        .select('id, status, department_name')
         .eq('form_id', formId)
         .eq('department_name', departmentName)
-        .single()
+        .maybeSingle()
     ]);
 
     if (profileError || !profile) {
@@ -95,10 +95,38 @@ export async function PUT(request) {
       }, { status: 404 });
     }
 
-    if (statusError || !existingStatus) {
+    if (statusError) {
+      console.error('❌ Status query error:', statusError);
       return NextResponse.json({
         success: false,
-        error: 'Department status not found for this form'
+        error: 'Error querying department status',
+        details: statusError.message
+      }, { status: 500 });
+    }
+
+    if (!existingStatus) {
+      // Get all statuses for this form to help diagnose the issue
+      const { data: allStatuses } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('department_name')
+        .eq('form_id', formId);
+
+      console.error('❌ Department status not found:', {
+        formId,
+        requestedDepartment: departmentName,
+        availableStatuses: allStatuses?.map(s => s.department_name) || [],
+        profileDepartment: profile.department_name
+      });
+
+      return NextResponse.json({
+        success: false,
+        error: 'Department status not found for this form',
+        details: {
+          formId,
+          requestedDepartment: departmentName,
+          availableDepartments: allStatuses?.map(s => s.department_name) || [],
+          hint: 'The department name in the request may not match any status records for this form'
+        }
       }, { status: 404 });
     }
 

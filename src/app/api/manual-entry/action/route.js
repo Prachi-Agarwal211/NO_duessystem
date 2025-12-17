@@ -81,11 +81,13 @@ export async function POST(request) {
     }
 
     if (action === 'approve') {
-      // Update form status to approved (admin approved)
+      // ✅ CRITICAL FIX: Update form status to 'completed' for manual entries
+      // Manual entries don't go through department workflow, so when admin approves, it's completed
       const { error: updateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
-          status: 'approved',
+          status: 'completed',
+          manual_status: 'approved',
           updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
@@ -98,20 +100,10 @@ export async function POST(request) {
         );
       }
 
-      // Update department status to approved
-      const { error: statusError } = await supabaseAdmin
-        .from('no_dues_status')
-        .update({
-          status: 'approved',
-          action_by_user_id: user.id,
-          action_at: new Date().toISOString()
-        })
-        .eq('form_id', entry_id)
-        .eq('department_name', 'Department');
+      console.log(`✅ Manual entry ${entry_id} status updated to 'completed'`);
 
-      if (statusError) {
-        console.error('Error updating department status:', statusError);
-      }
+      // Note: Manual entries don't have department statuses to update
+      // They are admin-only approval workflow
 
       // ===== SEND APPROVAL EMAIL TO STUDENT =====
       try {
@@ -182,7 +174,8 @@ export async function POST(request) {
         message: 'Manual entry approved successfully',
         data: {
           form_id: entry_id,
-          status: 'approved'
+          status: 'completed',
+          certificate_url: entry.manual_certificate_url // Return the uploaded certificate URL
         }
       });
 
@@ -192,6 +185,7 @@ export async function POST(request) {
         .from('no_dues_forms')
         .update({
           status: 'rejected',
+          manual_status: 'rejected',
           rejection_reason: rejection_reason,
           updated_at: new Date().toISOString()
         })
@@ -205,21 +199,10 @@ export async function POST(request) {
         );
       }
 
-      // Update department status to rejected
-      const { error: statusError } = await supabaseAdmin
-        .from('no_dues_status')
-        .update({
-          status: 'rejected',
-          rejection_reason,
-          action_by_user_id: user.id,
-          action_at: new Date().toISOString()
-        })
-        .eq('form_id', entry_id)
-        .eq('department_name', 'Department');
+      console.log(`✅ Manual entry ${entry_id} status updated to 'rejected'`);
 
-      if (statusError) {
-        console.error('Error updating department status:', statusError);
-      }
+      // Note: Manual entries don't have department statuses to update
+      // They are admin-only approval workflow
 
       // ===== SEND REJECTION EMAIL TO STUDENT =====
       try {
