@@ -96,7 +96,7 @@ export async function GET(request) {
     }
 
     // OPTIMIZATION: Single optimized query with proper indexing
-    // Instead of multiple separate queries, we do one query with joins
+    // ✅ FIXED: Removed manual entry fields (now in separate table)
     const { data: form, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -123,9 +123,6 @@ export async function GET(request) {
         last_reapplied_at,
         student_reply_message,
         certificate_url,
-        is_manual_entry,
-        manual_certificate_url,
-        manual_status,
         rejection_reason,
         rejection_context
       `)
@@ -152,11 +149,8 @@ export async function GET(request) {
       }, { status: 404 });
     }
 
-    // ✅ Check if this is a manual entry (admin-only workflow)
-    const isManualEntry = form.is_manual_entry === true;
-
+    // ✅ FIXED: All forms are now online-only (manual entries in separate table)
     // OPTIMIZATION: Parallel queries for departments and statuses
-    // Using let instead of const to allow reassignment of statuses in line 148
     let departments, deptError, statuses, statusError;
     [
       { data: departments, error: deptError },
@@ -167,7 +161,6 @@ export async function GET(request) {
         .select('name, display_name, display_order, is_active')
         .eq('is_active', true)
         .order('display_order'),
-      // ALWAYS fetch department statuses - we'll filter display logic in frontend
       supabaseAdmin
         .from('no_dues_status')
         .select('department_name, status, action_at, rejection_reason, action_by_user_id')
@@ -184,9 +177,9 @@ export async function GET(request) {
       throw statusError;
     }
 
-    // 🔧 CRITICAL FIX: For online forms, if no department statuses exist, create them
-    if (!isManualEntry && (!statuses || statuses.length === 0)) {
-      console.warn(`⚠️ No department statuses found for online form ${form.id}. Creating them now...`);
+    // 🔧 CRITICAL FIX: If no department statuses exist, create them
+    if (!statuses || statuses.length === 0) {
+      console.warn(`⚠️ No department statuses found for form ${form.id}. Creating them now...`);
       
       // Create missing department status records
       const departmentInserts = (departments || []).map(dept => ({
@@ -215,8 +208,7 @@ export async function GET(request) {
     }
 
     // Merge department data with status data
-    // ✅ For manual entries, return empty statusData (handled by frontend)
-    const statusData = isManualEntry ? [] : (departments || []).map(dept => {
+    const statusData = (departments || []).map(dept => {
       const status = (statuses || []).find(s => s.department_name === dept.name);
       return {
         department_name: dept.name,
@@ -230,32 +222,24 @@ export async function GET(request) {
 
     // 🐛 DEBUG LOGGING - Track what's being returned
     console.log(`📊 Check Status Debug for ${registrationNo}:`, {
-      isManualEntry,
       formStatus: form.status,
-      manualStatus: form.manual_status,
       hasRejectionContext: !!form.rejection_context,
       rejectionContext: form.rejection_context,
       departmentCount: departments?.length || 0,
       statusRecordCount: statuses?.length || 0,
       statusDataCount: statusData.length,
-      rejectedDepts: statusData.filter(s => s.status === 'rejected').length,
-      displayStatus: isManualEntry ? form.manual_status : form.status
+      rejectedDepts: statusData.filter(s => s.status === 'rejected').length
     });
 
-    // Prepare response data with explicit status handling
+    // Prepare response data
     const responseData = {
       success: true,
       data: {
         form: {
           ...form,
-          // ✅ CRITICAL: Add display_status field for easier frontend handling
-          display_status: isManualEntry ? form.manual_status : form.status,
-          // Include both for transparency
-          is_manual_entry: isManualEntry
+          display_status: form.status
         },
-        statusData,
-        // ✅ Helper field to indicate which status to display
-        statusField: isManualEntry ? 'manual_status' : 'status'
+        statusData
       }
     };
 
