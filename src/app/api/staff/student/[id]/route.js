@@ -9,19 +9,27 @@ const supabaseAdmin = createClient(
 export async function GET(request, { params }) {
   try {
     const { id } = params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    console.log('🔍 Student Detail API Called - Form ID:', id, 'User ID:', userId);
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    
+    // ✅ SECURE AUTH: Get userId from Authorization header token
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Missing Authorization header' }, { status: 401 });
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
+    }
+
+    const userId = user.id; // ✅ From verified token
+    console.log('🔍 Student Detail API Called - Form ID:', id, 'User ID:', userId);
 
     // Get user profile to check role and department using admin client
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name')
+      .select('role, assigned_department_ids, department_name')
       .eq('id', userId)
       .single();
 
@@ -67,15 +75,22 @@ export async function GET(request, { params }) {
     // If user is staff member, verify they can access this form
     // ✅ All forms are now online-only, so always check department authorization
     if (profile.role === 'department') {
-      // Check if this form has a status entry for the user's department
+      // Get department names from assigned UUIDs
+      const { data: myDepartments } = await supabaseAdmin
+        .from('departments')
+        .select('name')
+        .in('id', profile.assigned_department_ids || []);
+      
+      const myDeptNames = myDepartments?.map(d => d.name) || [];
+      
+      // Check if this form has a status entry for ANY of the user's departments
       const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')
         .select('form_id')
         .eq('form_id', id)
-        .eq('department_name', profile.department_name)
-        .single();
+        .in('department_name', myDeptNames);
 
-      if (statusError || !departmentStatus) {
+      if (statusError || !departmentStatus || departmentStatus.length === 0) {
         return NextResponse.json({ error: 'Unauthorized to access this student' }, { status: 403 });
       }
     }
