@@ -75,11 +75,11 @@ async function addToQueue(emailData) {
     const { data, error } = await supabase
       .from('email_queue')
       .insert([{
-        to_address: Array.isArray(emailData.to) ? emailData.to.join(',') : emailData.to,
+        recipient_email: Array.isArray(emailData.to) ? emailData.to.join(',') : emailData.to,
         subject: emailData.subject,
-        html_content: emailData.html,
-        text_content: emailData.text || stripHtml(emailData.html),
-        metadata: emailData.metadata || {},
+        html_body: emailData.html,
+        text_body: emailData.text || stripHtml(emailData.html),
+        template_data: emailData.metadata || {},
         scheduled_for: emailData.scheduledFor || new Date().toISOString()
       }])
       .select()

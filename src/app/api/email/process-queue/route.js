@@ -46,12 +46,12 @@ function getTransporter() {
  */
 async function processEmail(email) {
   try {
-    // Update status to processing
+    // Update status to sending
     await supabase
       .from('email_queue')
-      .update({ 
-        status: 'processing',
-        last_attempt_at: new Date().toISOString()
+      .update({
+        status: 'sending',
+        updated_at: new Date().toISOString()
       })
       .eq('id', email.id);
 
@@ -59,19 +59,19 @@ async function processEmail(email) {
     const transport = getTransporter();
     const info = await transport.sendMail({
       from: FROM_EMAIL,
-      to: email.to_address,
+      to: email.recipient_email,
       subject: email.subject,
-      html: email.html_content,
-      text: email.text_content
+      html: email.html_body,
+      text: email.text_body
     });
 
-    // Mark as completed
+    // Mark as sent
     await supabase
       .from('email_queue')
       .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        error_message: null
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        last_error: null
       })
       .eq('id', email.id);
 
@@ -92,7 +92,7 @@ async function processEmail(email) {
         .update({
           status: 'failed',
           attempts: newAttempts,
-          error_message: error.message
+          last_error: error.message
         })
         .eq('id', email.id);
       
@@ -107,7 +107,7 @@ async function processEmail(email) {
         .update({
           status: 'pending',
           attempts: newAttempts,
-          error_message: error.message,
+          last_error: error.message,
           scheduled_for: scheduledFor
         })
         .eq('id', email.id);
@@ -203,7 +203,7 @@ export async function GET(request) {
 
       results.details.push({
         id: email.id,
-        to: email.to_address,
+        to: email.recipient_email,
         ...result
       });
     }
