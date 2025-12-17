@@ -14,8 +14,11 @@ export async function PUT(request) {
   try {
     // Rate limiting: Prevent spam actions
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.ACTION);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        { error: rateLimitCheck.error || 'Rate limit exceeded' },
+        { status: 429 }
+      );
     }
 
     const body = await request.json();

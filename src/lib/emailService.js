@@ -25,7 +25,10 @@ const SMTP_CONFIG = {
   pool: true, // Use connection pooling
   maxConnections: 5,
   maxMessages: 100,
-  rateLimit: 10 // 10 emails per second
+  rateLimit: 10, // 10 emails per second
+  connectionTimeout: 10000, // 10 seconds (default: 2 minutes)
+  greetingTimeout: 10000,   // 10 seconds (default: 30 seconds)
+  socketTimeout: 10000       // 10 seconds (default: unlimited)
 };
 
 const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC UNIVERSITY NO DUES <noreply@jecrc.ac.in>';
@@ -141,16 +144,21 @@ export async function sendEmail({ to, subject, html, text, queueOnFailure = true
 
   } catch (error) {
     console.error('❌ Email send error:', error);
+    console.error('   SMTP Host:', process.env.SMTP_HOST || 'smtp.gmail.com');
+    console.error('   SMTP Port:', process.env.SMTP_PORT || '587');
+    console.error('   SMTP User:', process.env.SMTP_USER ? 'SET' : 'NOT SET');
+    console.error('   Error Code:', error.code);
+    console.error('   Error Command:', error.command);
     
     // Add to queue on failure if enabled
     if (queueOnFailure) {
       console.log('📥 Adding failed email to queue for retry...');
       const queueResult = await addToQueue({ to, subject, html, text, metadata });
-      return { 
-        success: false, 
-        error: error.message, 
+      return {
+        success: false,
+        error: error.message,
         queued: queueResult.success,
-        queueId: queueResult.queueId 
+        queueId: queueResult.queueId
       };
     }
     
