@@ -195,7 +195,7 @@ export default function AdminDashboard() {
     Array.isArray(stats.overallStats) &&
     stats.overallStats.length > 0 &&
     stats.overallStats[0] &&
-    typeof stats.overallStats[0].total_requests !== 'undefined'
+    typeof stats.overallStats[0].total_forms !== 'undefined'
   );
   
   // Debug logging for stats

@@ -370,7 +370,7 @@ function StaffDashboardContent() {
               <div className="mb-8">
                 <SkeletonStats count={4} />
               </div>
-            ) : stats ? (
+            ) : (stats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <div
                   onClick={() => {
@@ -468,7 +468,7 @@ function StaffDashboardContent() {
                   />
                 </div>
               </div>
-            )}
+            ))}
 
             {/* Today's Activity (if available) */}
             {stats?.todayTotal > 0 && (
