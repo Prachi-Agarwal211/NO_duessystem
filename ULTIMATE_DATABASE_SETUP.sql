@@ -257,6 +257,7 @@ CREATE TABLE public.email_queue (
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sending', 'sent', 'failed', 'cancelled')),
     retry_count INTEGER DEFAULT 0,
     max_retries INTEGER DEFAULT 3,
+    attempts INTEGER DEFAULT 0,
     last_error TEXT,
     scheduled_for TIMESTAMPTZ DEFAULT NOW(),
     sent_at TIMESTAMPTZ,
@@ -400,6 +401,7 @@ CREATE INDEX idx_status_department_action ON public.no_dues_status(department_na
 -- Email queue indexes
 CREATE INDEX idx_email_queue_pending ON public.email_queue(status, priority DESC, created_at ASC);
 CREATE INDEX idx_email_queue_retry ON public.email_queue(status, retry_count, created_at ASC);
+CREATE INDEX idx_email_queue_attempts ON public.email_queue(attempts);
 
 -- Support system indexes
 CREATE INDEX idx_support_tickets_status ON public.support_tickets(status, created_at DESC);
@@ -791,20 +793,34 @@ USING (
 );
 
 -- 🔐 STORAGE BUCKET: 'alumni-screenshots' (Alumni portal screenshots)
+-- CRITICAL: Students upload files here during form submission
 -- Policy for anyone to upload screenshots (students)
-CREATE POLICY "Anyone can upload to alumni-screenshots"
+CREATE POLICY "Public can upload alumni screenshots"
 ON storage.objects FOR INSERT
 TO public
 WITH CHECK (bucket_id = 'alumni-screenshots');
 
 -- Policy for public to read screenshots
-CREATE POLICY "Public can view alumni-screenshots"
+CREATE POLICY "Public can view alumni screenshots"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'alumni-screenshots');
 
+-- Policy for public to update screenshots
+CREATE POLICY "Public can update alumni screenshots"
+ON storage.objects FOR UPDATE
+TO public
+USING (bucket_id = 'alumni-screenshots')
+WITH CHECK (bucket_id = 'alumni-screenshots');
+
+-- Policy for public to delete screenshots
+CREATE POLICY "Public can delete alumni screenshots"
+ON storage.objects FOR DELETE
+TO public
+USING (bucket_id = 'alumni-screenshots');
+
 -- Policy for service role to manage screenshots
-CREATE POLICY "Service role can manage alumni-screenshots"
+CREATE POLICY "Service can manage alumni screenshots"
 ON storage.objects FOR ALL
 TO service_role
 USING (bucket_id = 'alumni-screenshots');

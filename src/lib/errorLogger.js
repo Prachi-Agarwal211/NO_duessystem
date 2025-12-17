@@ -184,6 +184,17 @@ export function createLogger(componentName) {
     error: (error, context) => logDropdownError(componentName, error, context),
     apiError: (endpoint, error, context) => logApiError(endpoint, error, { ...context, component: componentName }),
     validation: (field, error, value, context) => logValidationError(field, error, value, { ...context, component: componentName }),
+    warn: (message, context) => {
+      const warningLog = {
+        level: LOG_LEVELS.WARN,
+        component: componentName,
+        message,
+        context,
+        timestamp: new Date().toISOString()
+      };
+      console.warn(`[WARN] ${componentName}:`, warningLog);
+      return warningLog;
+    },
     success: (message, context) => logSuccess(componentName, message, context),
     debug: (message, data) => logDebug(componentName, message, data),
     performance: (metric, value, threshold, context) => logPerformanceWarning(componentName, metric, value, threshold, context)

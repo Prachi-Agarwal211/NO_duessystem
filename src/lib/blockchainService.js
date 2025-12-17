@@ -148,11 +148,82 @@ export async function verifyQRData(qrData, supabase) {
 }
 
 /**
+ * Generate certificate hash for blockchain
+ * @param {Object} certificateData - Certificate data
+ * @returns {string} SHA-256 hash
+ */
+export function generateCertificateHash(certificateData) {
+  const dataString = JSON.stringify({
+    student_id: certificateData.student_id,
+    registration_no: certificateData.registration_no,
+    full_name: certificateData.full_name,
+    course: certificateData.course,
+    branch: certificateData.branch,
+    status: certificateData.status,
+    completed_at: certificateData.completed_at
+  });
+  
+  return crypto.createHash('sha256').update(dataString).digest('hex');
+}
+
+/**
+ * Generate blockchain transaction ID
+ * @returns {string} Unique transaction ID
+ */
+export function generateTransactionId() {
+  const timestamp = Date.now();
+  const randomBytes = crypto.randomBytes(16).toString('hex');
+  return `JECRC-TX-${timestamp}-${randomBytes}`;
+}
+
+/**
+ * Create blockchain record for certificate
+ * @param {Object} certificateData - Certificate data
+ * @returns {Promise<Object>} Blockchain record
+ */
+export async function createBlockchainRecord(certificateData) {
+  try {
+    // Generate certificate hash
+    const certificateHash = generateCertificateHash(certificateData);
+    
+    // Generate transaction ID
+    const transactionId = generateTransactionId();
+    
+    // Generate block number (simulated)
+    const blockNumber = Math.floor(Date.now() / 1000);
+    
+    // Create blockchain record
+    const blockchainRecord = {
+      success: true,
+      certificateHash,
+      transactionId,
+      blockNumber,
+      timestamp: new Date().toISOString(),
+      studentData: {
+        student_id: certificateData.student_id,
+        registration_no: certificateData.registration_no,
+        full_name: certificateData.full_name,
+        course: certificateData.course,
+        branch: certificateData.branch
+      },
+      department_statuses: certificateData.department_statuses || []
+    };
+    
+    console.log('[blockchainService] Blockchain record created:', transactionId);
+    
+    return blockchainRecord;
+  } catch (error) {
+    console.error('[blockchainService] Error creating blockchain record:', error);
+    throw new Error('Failed to create blockchain record');
+  }
+}
+
+/**
  * Future: Store certificate hash on blockchain
  * Currently a placeholder for future blockchain integration
  */
 export async function storeOnBlockchain(certificateData) {
-  // TODO: Implement blockchain storage
+  // TODO: Implement actual blockchain storage
   // For now, just log for future implementation
   console.log('[blockchainService] Blockchain storage not yet implemented for:', certificateData.id);
   return { success: true, txHash: 'mock-tx-hash' };
