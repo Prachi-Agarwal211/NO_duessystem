@@ -53,7 +53,11 @@ export default function StudentDetailView() {
       setUser(userData);
 
       // ⚡ PERFORMANCE: Add cache-busting for real-time updates
-      const response = await fetch(`/api/staff/student/${id}?userId=${session.user.id}&_t=${Date.now()}`, {
+      // ✅ CRITICAL FIX: Send Authorization header
+      const response = await fetch(`/api/staff/student/${id}?_t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
         cache: 'no-store'
       });
       const result = await response.json();
@@ -195,16 +199,18 @@ export default function StudentDetailView() {
 
     // Send request in background (will complete after navigation)
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch('/api/staff/action', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // ✅ CRITICAL FIX
         },
         body: JSON.stringify({
           formId: id,
           departmentName: user.department_name,
-          action: 'approve',
-          userId: user.id
+          action: 'approve'
         })
       });
 
@@ -260,17 +266,19 @@ export default function StudentDetailView() {
 
     // Send request in background (will complete after navigation)
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const response = await fetch('/api/staff/action', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}` // ✅ CRITICAL FIX
         },
         body: JSON.stringify({
           formId: id,
           departmentName: user.department_name,
           action: 'reject',
-          reason: rejectionReason,
-          userId: user.id
+          reason: rejectionReason
         })
       });
 
