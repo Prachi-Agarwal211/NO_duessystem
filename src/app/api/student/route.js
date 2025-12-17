@@ -24,8 +24,20 @@ export async function POST(request) {
   try {
     // Rate limiting: Prevent spam form submissions
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: rateLimitCheck.error || 'Too many requests',
+          retryAfter: rateLimitCheck.retryAfter
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitCheck.retryAfter?.toString() || '60'
+          }
+        }
+      );
     }
 
     const body = await request.json();

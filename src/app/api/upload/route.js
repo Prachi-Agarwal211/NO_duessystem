@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { PDFDocument } from 'pdf-lib';
 
 // Admin client bypasses RLS policies
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Supabase Storage limits (free tier has 100KB per file limit)
+const SUPABASE_MAX_SIZE = 100 * 1024; // 100KB - Supabase free tier limit
+const USER_MAX_SIZE = 5 * 1024 * 1024; // 5MB - User-facing limit (we'll compress if needed)
 
 /**
  * POST /api/upload
@@ -51,13 +56,12 @@ export async function POST(request) {
       );
     }
 
-    // Validate file size (max 10MB)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-    if (file.size > MAX_FILE_SIZE) {
+    // Validate file size (max 5MB user-facing)
+    if (file.size > USER_MAX_SIZE) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'File size exceeds 10MB limit' 
+          error: 'File size exceeds 5MB limit. Please compress your file before uploading.'
         },
         { status: 400 }
       );
@@ -88,15 +92,55 @@ export async function POST(request) {
 
     console.log(`📤 Uploading file: ${filePath} to bucket: ${bucket}`);
 
-    // Convert File to ArrayBuffer for Supabase
+    // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuffer);
+    let fileBuffer = Buffer.from(arrayBuffer);
+    let finalContentType = file.type;
+
+    // Compress PDF if it exceeds Supabase limit (100KB)
+    if (file.type === 'application/pdf' && fileBuffer.length > SUPABASE_MAX_SIZE) {
+      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <100KB`);
+      
+      try {
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        
+        // Aggressive compression settings
+        const compressedPdfBytes = await pdfDoc.save({
+          useObjectStreams: false, // Better compatibility
+          addDefaultPage: false,
+          objectsPerTick: 50, // Faster processing
+        });
+        
+        fileBuffer = Buffer.from(compressedPdfBytes);
+        console.log(`✅ Compressed to: ${(fileBuffer.length / 1024).toFixed(2)}KB`);
+        
+        // If still too large, reject
+        if (fileBuffer.length > SUPABASE_MAX_SIZE) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `File is too complex to compress below 100KB (current: ${(fileBuffer.length / 1024).toFixed(2)}KB). Please use a simpler PDF or reduce image quality.`
+            },
+            { status: 400 }
+          );
+        }
+      } catch (compressionError) {
+        console.error('❌ PDF compression failed:', compressionError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to compress PDF. Please try a different file or compress it manually.'
+          },
+          { status: 500 }
+        );
+      }
+    }
 
     // Upload using admin client (bypasses RLS)
     const { data, error } = await supabaseAdmin.storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
-        contentType: file.type,
+        contentType: finalContentType,
         cacheControl: '3600',
         upsert: false
       });

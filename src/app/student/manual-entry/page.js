@@ -187,9 +187,9 @@ export default function ManualEntryPage() {
       return;
     }
 
-    // Validate file size (max 1MB)
-    if (file.size > 1 * 1024 * 1024) {
-      setError('File size must be less than 1MB');
+    // Validate file size (max 5MB - will be auto-compressed if needed)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
       return;
     }
 
@@ -637,7 +637,7 @@ export default function ManualEntryPage() {
                   No-Dues Certificate <span className="text-red-500">*</span>
                 </label>
                 <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Upload your offline certificate (PDF only, max 1MB)
+                  Upload your offline certificate (PDF only, max 5MB - auto-compressed if needed)
                 </p>
                 
                 {!certificateFile ? (
