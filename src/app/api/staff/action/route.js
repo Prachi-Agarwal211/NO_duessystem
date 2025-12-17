@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
 
 const supabaseAdmin = createClient(
@@ -20,37 +20,26 @@ export async function PUT(request) {
 
     const body = await request.json();
 
-    // Input validation using centralized validation library
-    // Note: validateRequest reads the body, but we already read it above
-    // So we'll validate the body directly instead
-    const validation = validateForm(body, VALIDATION_SCHEMAS.STAFF_ACTION);
-    if (!validation.isValid) {
+    // ==================== ZOD VALIDATION ====================
+    // Validates all fields with proper types and enum values
+    const validation = validateWithZod(body, staffActionSchema);
+    
+    if (!validation.success) {
+      const errorFields = Object.keys(validation.errors);
+      const firstError = validation.errors[errorFields[0]];
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Validation failed',
-          errors: validation.errors
+          error: firstError || 'Validation failed',
+          details: validation.errors
         },
         { status: 400 }
       );
     }
-    const { formId, departmentName, action, reason, userId } = body;
 
-    // Validate required fields
-    if (!formId || !departmentName || !action || !userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Missing required fields: formId, departmentName, action, userId'
-      }, { status: 400 });
-    }
-
-    // Validate action value
-    if (!['approve', 'reject'].includes(action)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid action. Must be "approve" or "reject"'
-      }, { status: 400 });
-    }
+    // All data is validated by Zod (action is enum-validated, reason required for reject)
+    const { formId, departmentName, action, reason, userId } = validation.data;
 
     // OPTIMIZATION: Parallelize all validation queries for faster response
     const [

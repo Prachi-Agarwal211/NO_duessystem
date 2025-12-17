@@ -230,28 +230,30 @@ export default function ManualEntryPage() {
         throw new Error('Please upload your no-dues certificate');
       }
 
-      // Upload certificate file
+      // Upload certificate file using API route (bypasses RLS)
       setUploading(true);
       const fileExt = certificateFile.name.split('.').pop();
       const fileName = `${formData.registration_no}_${Date.now()}.${fileExt}`;
-      const filePath = `manual-entries/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('no-dues-files')
-        .upload(filePath, certificateFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Create FormData for file upload
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', certificateFile);
+      uploadFormData.append('bucket', 'no-dues-files');
+      uploadFormData.append('path', 'manual-entries');
+      uploadFormData.append('fileName', fileName);
 
-      if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData
+      });
+
+      const uploadResult = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadResult.error || 'Upload failed');
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('no-dues-files')
-        .getPublicUrl(filePath);
-
+      const publicUrl = uploadResult.url;
       setUploading(false);
 
       // Submit to API with convocation data if available

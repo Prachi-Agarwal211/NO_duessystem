@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { notifyAllDepartments } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import { validateForm, VALIDATION_SCHEMAS } from '@/lib/validation';
+import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
 
 // Create Supabase admin client for server-side operations
@@ -28,13 +28,13 @@ export async function POST(request) {
       return rateLimitCheck.response;
     }
 
-    const formData = await request.json();
+    const body = await request.json();
 
-    // Input validation using centralized validation library
-    // NOTE: We use validateForm instead of validateRequest because we already parsed the body
-    const validation = validateForm(formData, VALIDATION_SCHEMAS.STUDENT_FORM);
-    if (!validation.isValid) {
-      // Create user-friendly error message from validation errors
+    // ==================== ZOD VALIDATION ====================
+    // Replaces 200+ lines of manual validation with type-safe Zod schemas
+    const validation = validateWithZod(body, studentFormSchema);
+    
+    if (!validation.success) {
       const errorFields = Object.keys(validation.errors);
       const firstError = validation.errors[errorFields[0]];
       
@@ -49,198 +49,12 @@ export async function POST(request) {
       );
     }
 
-    // ==================== FETCH VALIDATION RULES FROM DATABASE ====================
-    const { data: validationRules, error: rulesError } = await supabaseAdmin
-      .from('config_validation_rules')
-      .select('*')
-      .eq('is_active', true);
-
-    if (rulesError) {
-      console.error('Error fetching validation rules:', rulesError);
-    }
-
-    // Create validation rules map with fallback to hardcoded patterns
-    const rules = {};
-    if (validationRules && validationRules.length > 0) {
-      validationRules.forEach(rule => {
-        try {
-          rules[rule.rule_name] = {
-            pattern: new RegExp(rule.rule_pattern, 'i'),
-            error: rule.error_message
-          };
-        } catch (err) {
-          console.error(`Invalid regex for ${rule.rule_name}:`, err);
-        }
-      });
-    }
-
-    // Fallback validation rules if database fetch fails
-    if (Object.keys(rules).length === 0) {
-      rules.registration_number = {
-        pattern: /^[A-Z0-9]{6,15}$/i,
-        error: 'Invalid registration number format. Use alphanumeric characters (6-15 characters)'
-      };
-      rules.student_name = {
-        pattern: /^[A-Za-z\s.\-']+$/,
-        error: 'Name should only contain letters, spaces, dots, hyphens, and apostrophes'
-      };
-      rules.phone_number = {
-        pattern: /^[0-9]{6,15}$/,
-        error: 'Phone number must be 6-15 digits'
-      };
-      rules.session_year = {
-        pattern: /^\d{4}$/,
-        error: 'Year must be in YYYY format'
-      };
-    }
-
-    // ==================== SERVER-SIDE VALIDATION ====================
-    
-    // Required fields validation
-    if (!formData.registration_no?.trim()) {
-      return NextResponse.json(
-        { success: false, error: 'Registration number is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!formData.student_name?.trim()) {
-      return NextResponse.json(
-        { success: false, error: 'Student name is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!formData.contact_no?.trim()) {
-      return NextResponse.json(
-        { success: false, error: 'Contact number is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!formData.school) {
-      return NextResponse.json(
-        { success: false, error: 'School selection is required' },
-        { status: 400 }
-      );
-    }
-    
-    if (!formData.personal_email?.trim()) {
-      return NextResponse.json(
-        { success: false, error: 'Personal email is required' },
-        { status: 400 }
-      );
-    }
-    
-    if (!formData.college_email?.trim()) {
-      return NextResponse.json(
-        { success: false, error: 'College email is required' },
-        { status: 400 }
-      );
-    }
-
-    // ==================== CONFIGURABLE FORMAT VALIDATION ====================
-
-    // Validate registration number using database rule
-    if (rules.registration_number &&
-        !rules.registration_number.pattern.test(formData.registration_no.trim())) {
-      return NextResponse.json(
-        { success: false, error: rules.registration_number.error },
-        { status: 400 }
-      );
-    }
-
-    // Validate contact number using database rule (without country code)
-    if (rules.phone_number &&
-        !rules.phone_number.pattern.test(formData.contact_no.trim())) {
-      return NextResponse.json(
-        { success: false, error: rules.phone_number.error },
-        { status: 400 }
-      );
-    }
-
-    // Validate student name using database rule
-    if (rules.student_name &&
-        !rules.student_name.pattern.test(formData.student_name.trim())) {
-      return NextResponse.json(
-        { success: false, error: rules.student_name.error },
-        { status: 400 }
-      );
-    }
-
-    // Validate parent name if provided (only if it has actual content)
-    if (formData.parent_name && formData.parent_name.trim() && rules.student_name &&
-        !rules.student_name.pattern.test(formData.parent_name.trim())) {
-      return NextResponse.json(
-        { success: false, error: `Parent name - ${rules.student_name.error}` },
-        { status: 400 }
-      );
-    }
-
-    // Validate years if provided using database rule
-    // Only validate if field has actual content (not empty string or null)
-    if (formData.admission_year && formData.admission_year.trim() && rules.session_year) {
-      if (!rules.session_year.pattern.test(formData.admission_year)) {
-        return NextResponse.json(
-          { success: false, error: `Session from - ${rules.session_year.error}` },
-          { status: 400 }
-        );
-      }
-      const fromYear = parseInt(formData.admission_year);
-      if (fromYear < 1900 || fromYear > new Date().getFullYear() + 10) {
-        return NextResponse.json(
-          { success: false, error: 'Session from year is invalid' },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (formData.passing_year && formData.passing_year.trim() && rules.session_year) {
-      if (!rules.session_year.pattern.test(formData.passing_year)) {
-        return NextResponse.json(
-          { success: false, error: `Session to - ${rules.session_year.error}` },
-          { status: 400 }
-        );
-      }
-      const toYear = parseInt(formData.passing_year);
-      if (toYear < 1900 || toYear > new Date().getFullYear() + 10) {
-        return NextResponse.json(
-          { success: false, error: 'Session to year is invalid' },
-          { status: 400 }
-        );
-      }
-      
-      // Validate session range (only if both fields have values)
-      if (formData.admission_year && formData.admission_year.trim() && toYear < parseInt(formData.admission_year)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Session to year must be greater than or equal to session from year'
-          },
-          { status: 400 }
-        );
-      }
-    }
-    
-    // Validate email formats (basic pattern check)
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(formData.personal_email.trim())) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid personal email format' },
-        { status: 400 }
-      );
-    }
-    
-    if (!emailPattern.test(formData.college_email.trim())) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid college email format' },
-        { status: 400 }
-      );
-    }
+    // All data is now validated, sanitized, and transformed by Zod
+    const formData = validation.data;
 
     // ==================== CHECK FOR DUPLICATES ====================
-    
-    const registrationNo = formData.registration_no.trim().toUpperCase();
+    // registration_no is already uppercase from Zod transformation
+    const registrationNo = formData.registration_no;
     
     const { data: existingForm, error: duplicateError } = await supabaseAdmin
       .from('no_dues_forms')
@@ -336,25 +150,26 @@ export async function POST(request) {
     });
     
     // ==================== PREPARE SANITIZED DATA ====================
+    // All data is already sanitized by Zod (trimmed, cased, validated)
     const sanitizedData = {
-      registration_no: registrationNo,
-      student_name: formData.student_name.trim(),
-      admission_year: formData.admission_year?.trim() ? formData.admission_year.trim() : null,
-      passing_year: formData.passing_year?.trim() ? formData.passing_year.trim() : null,
-      parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
-      school_id: school_id, // Store UUID for foreign key
-      school: schoolData.name, // Store validated name
-      course_id: course_id, // Store UUID for foreign key
-      course: courseData.name, // Store validated name
-      branch_id: branch_id, // Store UUID for foreign key
-      branch: branchData.name, // Store validated name
-      country_code: formData.country_code || '+91',
-      contact_no: formData.contact_no.trim(),
-      personal_email: formData.personal_email.trim().toLowerCase(),
-      college_email: formData.college_email.trim().toLowerCase(),
-      alumni_screenshot_url: formData.alumni_screenshot_url || null,
+      registration_no: formData.registration_no,
+      student_name: formData.student_name,
+      admission_year: formData.admission_year,
+      passing_year: formData.passing_year,
+      parent_name: formData.parent_name,
+      school_id: school_id,
+      school: schoolData.name,
+      course_id: course_id,
+      course: courseData.name,
+      branch_id: branch_id,
+      branch: branchData.name,
+      country_code: formData.country_code,
+      contact_no: formData.contact_no,
+      personal_email: formData.personal_email,
+      college_email: formData.college_email,
+      alumni_screenshot_url: formData.alumni_screenshot_url,
       status: 'pending',
-      user_id: null // Phase 1: Students don't have authentication
+      user_id: null
     };
 
     // ==================== INSERT FORM ====================
@@ -481,9 +296,9 @@ export async function POST(request) {
           } catch (queueError) {
             console.log('Queue trigger skipped:', queueError.message);
           }
-          } else {
-            console.warn('⚠️ No staff members match the scope for this student');
-          }
+        } else {
+          console.warn('⚠️ No staff members match the scope for this student');
+        }
       } else {
         console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
       }

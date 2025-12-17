@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { sendEmail } from '@/lib/emailService';
+import { manualEntrySchema, validateWithZod } from '@/lib/zodSchemas';
 
 /**
  * POST /api/manual-entry
@@ -11,13 +12,31 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
+    // ==================== ZOD VALIDATION ====================
+    // Validates all required fields with proper types and formats
+    const validation = validateWithZod(body, manualEntrySchema);
+    
+    if (!validation.success) {
+      const errorFields = Object.keys(validation.errors);
+      const firstError = validation.errors[errorFields[0]];
+      
+      return NextResponse.json(
+        {
+          error: firstError || 'Validation failed',
+          details: validation.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    // All data is validated, sanitized, and transformed by Zod
     const {
       registration_no,
-      student_name,      // NEW: From convocation validation
-      admission_year,    // NEW: From convocation validation
-      personal_email,    // NEW: Optional real email
-      college_email,     // NEW: Optional real email
-      contact_no,        // NEW: Optional real contact
+      student_name,
+      admission_year,
+      personal_email,
+      college_email,
+      contact_no,
       school,
       course,
       branch,
@@ -25,58 +44,7 @@ export async function POST(request) {
       course_id,
       branch_id,
       certificate_url
-    } = body;
-
-    // ✅ STRICT VALIDATION: All fields required for manual entry
-    const requiredFields = {
-      registration_no,
-      student_name,
-      school_id,
-      course_id,
-      branch_id,
-      certificate_url
-    };
-
-    const missingFields = Object.entries(requiredFields)
-      .filter(([key, value]) => !value || (typeof value === 'string' && !value.trim()))
-      .map(([key]) => key);
-
-    if (missingFields.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Missing required fields: ${missingFields.join(', ')}`,
-          details: 'All fields are mandatory for manual entry to ensure data completeness'
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate email format if provided
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (personal_email && !emailPattern.test(personal_email.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid personal email format' },
-        { status: 400 }
-      );
-    }
-
-    if (college_email && !emailPattern.test(college_email.trim())) {
-      return NextResponse.json(
-        { error: 'Invalid college email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate phone format if provided (6-15 digits)
-    if (contact_no) {
-      const phonePattern = /^[0-9]{6,15}$/;
-      if (!phonePattern.test(contact_no.trim())) {
-        return NextResponse.json(
-          { error: 'Contact number must be 6-15 digits without country code' },
-          { status: 400 }
-        );
-      }
-    }
+    } = validation.data;
 
     // ===== VALIDATE AGAINST CONVOCATION DATABASE =====
     let convocationStudent = null;
@@ -183,13 +151,13 @@ export async function POST(request) {
 
     // ===== INSERT INTO no_dues_forms with REAL data (NO PLACEHOLDERS) =====
     // Priority: 1) Convocation data, 2) User-provided data, 3) NULL (not placeholder)
-    const finalStudentName = convocationStudent?.student_name || student_name || 'Manual Entry';
-    const finalAdmissionYear = convocationStudent?.admission_year || admission_year || null;
+    const finalStudentName = convocationStudent?.student_name || student_name;
+    const finalAdmissionYear = convocationStudent?.admission_year || admission_year;
     
-    // ✅ Use actual data or NULL - NO placeholder emails/phone
-    const finalPersonalEmail = personal_email?.trim() || null;
-    const finalCollegeEmail = college_email?.trim() || null;
-    const finalContactNo = contact_no?.trim() || null;
+    // ✅ Use actual data or NULL - NO placeholder emails/phone (already validated by Zod)
+    const finalPersonalEmail = personal_email || null;
+    const finalCollegeEmail = college_email || null;
+    const finalContactNo = contact_no || null;
     
     console.log('📝 Creating manual entry with data:', {
       registration_no,

@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
+import { convocationValidateSchema, validateWithZod } from '@/lib/zodSchemas'
 
 /**
  * POST /api/convocation/validate
@@ -16,31 +17,22 @@ export async function POST(request) {
   try {
     const body = await request.json()
     
-    const { registration_no } = body
-
-    // Validate input
-    if (!registration_no || typeof registration_no !== 'string') {
+    // ==================== ZOD VALIDATION ====================
+    // Validates, trims, and uppercases registration number
+    const validation = validateWithZod(body, convocationValidateSchema)
+    
+    if (!validation.success) {
       return NextResponse.json(
-        { 
-          valid: false, 
-          error: 'Registration number is required' 
+        {
+          valid: false,
+          error: validation.errors.registration_no || 'Invalid registration number'
         },
         { status: 400 }
       )
     }
 
-    // Normalize registration number (trim whitespace, uppercase)
-    const normalizedRegNo = registration_no.trim().toUpperCase()
-
-    if (!normalizedRegNo) {
-      return NextResponse.json(
-        { 
-          valid: false, 
-          error: 'Registration number cannot be empty' 
-        },
-        { status: 400 }
-      )
-    }
+    // Registration number is already normalized by Zod
+    const normalizedRegNo = validation.data.registration_no
 
     // Query the convocation_eligible_students table
     const { data: student, error } = await supabaseAdmin

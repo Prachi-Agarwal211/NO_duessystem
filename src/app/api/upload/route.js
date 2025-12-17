@@ -1,103 +1,210 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
-import { validateAndUploadAlumniScreenshot } from '@/lib/fileUpload';
-import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import { createClient } from '@supabase/supabase-js';
 
-// Centralized error response helper
-const createErrorResponse = (message, status = 500, context = '') => {
-  console.error(`Upload API Error ${context}:`, message);
-  return NextResponse.json({
-    success: false,
-    error: message,
-    timestamp: new Date().toISOString()
-  }, { status });
-};
+// Admin client bypasses RLS policies
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
+/**
+ * POST /api/upload
+ * Upload files to Supabase Storage using admin client (bypasses RLS)
+ * 
+ * FormData fields:
+ * - file: File to upload (required)
+ * - bucket: Target bucket name (default: 'no-dues-files')
+ * - folder: Folder within bucket (default: 'manual-entries')
+ * 
+ * Returns:
+ * - success: boolean
+ * - url: Public URL of uploaded file
+ * - path: Storage path of file
+ */
 export async function POST(request) {
   try {
-    // Rate limiting: Prevent spam file uploads
-    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.UPLOAD);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
-    }
-
-    // Parse form data for file upload
     const formData = await request.formData();
     const file = formData.get('file');
-    const formId = formData.get('formId');
-    const registrationNo = formData.get('registrationNo'); // Phase 1: Use registration number instead of auth
-
-    if (!file || !formId || !registrationNo) {
-      return createErrorResponse('File, form ID, and registration number are required', 400, 'validation');
+    const bucket = formData.get('bucket') || 'no-dues-files';
+    const folder = formData.get('folder') || 'manual-entries';
+    
+    // Validation
+    if (!file) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'No file provided' 
+        },
+        { status: 400 }
+      );
     }
 
-    // Phase 1: Verify form exists and matches registration number
-    // In Phase 1, students don't have authentication, so we verify via registration number
-    const { data: form, error: formError } = await supabase
-      .from('no_dues_forms')
-      .select('id, registration_no')
-      .eq('id', formId)
-      .eq('registration_no', registrationNo)
-      .single();
-
-    if (formError || !form) {
-      return createErrorResponse('Form not found or registration number mismatch', 404, 'authorization');
+    // Validate bucket name (security check)
+    const allowedBuckets = ['no-dues-files', 'alumni-screenshots', 'certificates'];
+    if (!allowedBuckets.includes(bucket)) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid bucket name' 
+        },
+        { status: 400 }
+      );
     }
 
-    // Use secure file upload service
-    const uploadResult = await validateAndUploadAlumniScreenshot(file, registrationNo, formId);
-
-    // Update the form with the screenshot URL
-    const { error: updateError } = await supabase
-      .from('no_dues_forms')
-      .update({
-        alumni_screenshot_url: uploadResult.url,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', formId);
-
-    if (updateError) {
-      console.error('Database update error:', updateError);
-      return createErrorResponse('Failed to update form with file URL', 500, 'database');
+    // Validate file size (max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'File size exceeds 10MB limit' 
+        },
+        { status: 400 }
+      );
     }
+
+    // Validate file type (PDFs and images only)
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp'
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid file type. Only PDF and images (JPEG, PNG, WebP) are allowed' 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filePath = `${folder}/${sanitizedName.substring(0, 100)}_${timestamp}`;
+
+    console.log(`📤 Uploading file: ${filePath} to bucket: ${bucket}`);
+
+    // Convert File to ArrayBuffer for Supabase
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    // Upload using admin client (bypasses RLS)
+    const { data, error } = await supabaseAdmin.storage
+      .from(bucket)
+      .upload(filePath, fileBuffer, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('❌ Upload error:', error);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `Upload failed: ${error.message}` 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from(bucket)
+      .getPublicUrl(data.path);
+
+    console.log(`✅ File uploaded successfully: ${urlData.publicUrl}`);
 
     return NextResponse.json({
       success: true,
-      message: 'File uploaded successfully',
-      url: uploadResult.url,
-      filename: uploadResult.filename,
-      size: uploadResult.size,
-      type: uploadResult.type,
-      uploadDate: uploadResult.uploadDate,
-      formId: formId,
-      timestamp: new Date().toISOString()
+      url: urlData.publicUrl,
+      path: data.path,
+      bucket: bucket
     });
 
   } catch (error) {
-    // Handle specific validation errors
-    if (error.message.includes('File size too large')) {
-      return createErrorResponse('File size too large. Maximum allowed size is 5MB', 400, 'validation');
+    console.error('❌ Upload API error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error',
+        details: error.message 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/upload?path=xxx&bucket=xxx
+ * Delete a file from storage (admin only)
+ */
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const path = searchParams.get('path');
+    const bucket = searchParams.get('bucket') || 'no-dues-files';
+
+    if (!path) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'File path is required' 
+        },
+        { status: 400 }
+      );
     }
 
-    if (error.message.includes('File type not allowed')) {
-      return createErrorResponse('File type not allowed. Only JPEG, PNG, and WebP images are supported', 400, 'validation');
+    // Validate bucket name
+    const allowedBuckets = ['no-dues-files', 'alumni-screenshots', 'certificates'];
+    if (!allowedBuckets.includes(bucket)) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Invalid bucket name' 
+        },
+        { status: 400 }
+      );
     }
 
-    if (error.message.includes('Invalid file name')) {
-      return createErrorResponse('Invalid file name detected', 400, 'validation');
+    console.log(`🗑️ Deleting file: ${path} from bucket: ${bucket}`);
+
+    // Delete using admin client
+    const { error } = await supabaseAdmin.storage
+      .from(bucket)
+      .remove([path]);
+
+    if (error) {
+      console.error('❌ Delete error:', error);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `Delete failed: ${error.message}` 
+        },
+        { status: 500 }
+      );
     }
 
-    if (error.message.includes('Potentially dangerous file detected')) {
-      return createErrorResponse('File contains potentially dangerous content', 400, 'security');
-    }
+    console.log(`✅ File deleted successfully: ${path}`);
 
-    // Generic upload errors
-    if (error.message.includes('upload failed')) {
-      return createErrorResponse('File upload failed. Please try again', 500, 'upload');
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'File deleted successfully'
+    });
 
-    // Fallback for unknown errors
-    console.error('Unknown upload error:', error);
-    return createErrorResponse('Internal server error during file upload', 500, 'general');
+  } catch (error) {
+    console.error('❌ Delete API error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Internal server error',
+        details: error.message 
+      },
+      { status: 500 }
+    );
   }
 }

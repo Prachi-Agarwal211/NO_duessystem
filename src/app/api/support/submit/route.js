@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { supportTicketSchema, validateWithZod } from '@/lib/zodSchemas';
 
 // Create Supabase client with service role for bypassing RLS on insert
 const supabaseAdmin = createClient(
@@ -10,60 +11,26 @@ const supabaseAdmin = createClient(
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, rollNumber, message, requesterType, subject } = body;
 
-    // Validation
-    if (!email || !message || !requesterType) {
+    // ==================== ZOD VALIDATION ====================
+    // Validates email, message length, requester type, and roll number rules
+    const validation = validateWithZod(body, supportTicketSchema);
+    
+    if (!validation.success) {
+      const errorFields = Object.keys(validation.errors);
+      const firstError = validation.errors[errorFields[0]];
+      
       return NextResponse.json(
-        { success: false, error: 'Email, message, and requester type are required' },
+        { success: false, error: firstError || 'Validation failed' },
         { status: 400 }
       );
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate requester type
-    if (!['student', 'department'].includes(requesterType)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid requester type' },
-        { status: 400 }
-      );
-    }
-
-    // Validate roll number based on requester type
-    if (requesterType === 'student') {
-      if (!rollNumber) {
-        return NextResponse.json(
-          { success: false, error: 'Roll number is required for students' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // If department/admin, roll number should be null
-    const finalRollNumber = requesterType === 'department' ? null : rollNumber;
-
-    // Message length validation
-    if (message.length < 10) {
-      return NextResponse.json(
-        { success: false, error: 'Message must be at least 10 characters long' },
-        { status: 400 }
-      );
-    }
-
-    if (message.length > 5000) {
-      return NextResponse.json(
-        { success: false, error: 'Message must not exceed 5000 characters' },
-        { status: 400 }
-      );
-    }
+    // All data is validated and sanitized by Zod
+    const { email, rollNumber, message, requesterType, subject } = validation.data;
+    
+    // Roll number is already handled by Zod (null for department, required for student)
+    const finalRollNumber = rollNumber;
 
     // Extract priority from subject if present (for admin requests)
     let priority = 'normal';

@@ -15,10 +15,20 @@ const requestStore = new Map();
  */
 export const RATE_LIMITS = {
   // Student endpoints - moderate limits
-  STUDENT_SUBMIT: {
+  SUBMIT: {  // Used in /api/student route
     maxRequests: 5,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many form submissions. Please try again in 1 minute.'
+  },
+  STUDENT_SUBMIT: {  // Alias for consistency
+    maxRequests: 5,
+    windowMs: 60 * 1000, // 1 minute
+    message: 'Too many form submissions. Please try again in 1 minute.'
+  },
+  READ: {  // Used in /api/student GET route
+    maxRequests: 30,
+    windowMs: 60 * 1000, // 1 minute
+    message: 'Too many requests. Please try again in 1 minute.'
   },
   STUDENT_REAPPLY: {
     maxRequests: 3,
