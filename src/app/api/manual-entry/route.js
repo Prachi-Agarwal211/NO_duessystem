@@ -300,6 +300,7 @@ export async function POST(request) {
         console.error('Error sending student confirmation email:', emailError);
         // Don't fail the request if email fails - form is still created
       }
+    }
 
     // ===== NO DEPARTMENT STATUS CREATION =====
     // Manual entries are ADMIN-ONLY for verification
