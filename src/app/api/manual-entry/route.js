@@ -11,15 +11,15 @@ import { manualEntrySchema, validateWithZod } from '@/lib/zodSchemas';
 export async function POST(request) {
   try {
     const body = await request.json();
-    
+
     // ==================== ZOD VALIDATION ====================
     // Validates all required fields with proper types and formats
     const validation = validateWithZod(body, manualEntrySchema);
-    
+
     if (!validation.success) {
       const errorFields = Object.keys(validation.errors);
       const firstError = validation.errors[errorFields[0]];
-      
+
       return NextResponse.json(
         {
           error: firstError || 'Validation failed',
@@ -54,7 +54,7 @@ export async function POST(request) {
         .select('student_name, admission_year, school')
         .eq('registration_no', registration_no.toUpperCase())
         .single();
-      
+
       if (convocationData) {
         convocationStudent = convocationData;
         console.log('✅ Student found in convocation database:', {
@@ -88,7 +88,7 @@ export async function POST(request) {
     }
 
     // ===== VALIDATE FOREIGN KEY RELATIONSHIPS (same as /api/student) =====
-    
+
     // Validate school exists and is active
     const { data: schoolData, error: schoolError } = await supabaseAdmin
       .from('config_schools')
@@ -96,7 +96,7 @@ export async function POST(request) {
       .eq('id', school_id)
       .eq('is_active', true)
       .single();
-    
+
     if (schoolError || !schoolData) {
       console.error('Invalid school ID:', school_id, schoolError);
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     // Validate course exists, is active, and belongs to selected school
     const { data: courseData, error: courseError } = await supabaseAdmin
       .from('config_courses')
@@ -113,7 +113,7 @@ export async function POST(request) {
       .eq('school_id', school_id)
       .eq('is_active', true)
       .single();
-    
+
     if (courseError || !courseData) {
       console.error('Invalid course ID or school mismatch:', course_id, courseError);
       return NextResponse.json(
@@ -121,7 +121,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     // Validate branch (if provided) - branch is optional for some courses
     let branchData = null;
     if (branch_id) {
@@ -132,7 +132,7 @@ export async function POST(request) {
         .eq('course_id', course_id)
         .eq('is_active', true)
         .single();
-      
+
       if (branchError || !branchResult) {
         console.error('Invalid branch ID or course mismatch:', branch_id, branchError);
         return NextResponse.json(
@@ -142,7 +142,7 @@ export async function POST(request) {
       }
       branchData = branchResult;
     }
-    
+
     console.log('✅ Validated:', {
       school: schoolData.name,
       course: courseData.name,
@@ -153,12 +153,13 @@ export async function POST(request) {
     // Priority: 1) Convocation data, 2) User-provided data, 3) NULL (not placeholder)
     const finalStudentName = convocationStudent?.student_name || student_name;
     const finalAdmissionYear = convocationStudent?.admission_year || admission_year;
-    
-    // ✅ Use actual data or NULL - NO placeholder emails/phone (already validated by Zod)
-    const finalPersonalEmail = personal_email || null;
-    const finalCollegeEmail = college_email || null;
-    const finalContactNo = contact_no || null;
-    
+
+    // ✅ Use actual data or generate placeholder for required fields
+    // personal_email and college_email are required by database NOT NULL constraint
+    const finalPersonalEmail = personal_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
+    const finalCollegeEmail = college_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
+    const finalContactNo = contact_no || '0000000000';
+
     console.log('📝 Creating manual entry with data:', {
       registration_no,
       student_name: finalStudentName,
@@ -171,7 +172,7 @@ export async function POST(request) {
       .insert([{
         // Registration number
         registration_no,
-        
+
         // Use REAL data from convocation or user input, fallback to placeholders
         student_name: finalStudentName,
         personal_email: finalPersonalEmail,
@@ -180,16 +181,16 @@ export async function POST(request) {
         admission_year: finalAdmissionYear,
         country_code: '+91',
         school: schoolData.name,
-        
+
         // Optional UUID foreign keys for filtering
         school_id: school_id || null,
         course_id: course_id || null,
         branch_id: branch_id || null,
-        
+
         // Optional text fields
         course: courseData ? courseData.name : null,
         branch: branchData ? branchData.name : null,
-        
+
         // Manual entry specific fields
         is_manual_entry: true,
         manual_certificate_url: certificate_url,
@@ -207,13 +208,17 @@ export async function POST(request) {
       );
     }
 
-    // ===== SEND CONFIRMATION EMAIL TO STUDENT (if email provided) =====
-    if (newForm.personal_email) {
+    // ===== SEND CONFIRMATION EMAIL TO STUDENT (if real email provided) =====
+    const hasRealEmail = newForm.personal_email && !newForm.personal_email.includes('@placeholder.jecrc.ac.in');
+    const hasRealCollegeEmail = newForm.college_email && !newForm.college_email.includes('@placeholder.jecrc.ac.in');
+
+    if (hasRealEmail || hasRealCollegeEmail) {
+      const emailToUse = hasRealEmail ? newForm.personal_email : newForm.college_email;
       try {
         await sendEmail({
-          to: newForm.personal_email,
+          to: emailToUse,
           subject: `Manual Entry Submitted - ${registration_no}`,
-        html: `
+          html: `
 <!DOCTYPE html>
 <html>
 <head>
@@ -274,12 +279,12 @@ export async function POST(request) {
 </html>
         `.trim()
         });
-        console.log(`✅ Confirmation email sent to student: ${newForm.personal_email}`);
+        console.log(`✅ Confirmation email sent to student: ${emailToUse}`);
       } catch (emailError) {
         console.error('Error sending student confirmation email:', emailError);
       }
     } else {
-      console.log('ℹ️ No email provided - skipping student confirmation email');
+      console.log('ℹ️ No real email provided - skipping student confirmation email');
     }
 
     // ===== NO DEPARTMENT STATUS CREATION =====

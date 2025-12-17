@@ -7,7 +7,13 @@ import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 );
 
 /**
@@ -18,10 +24,28 @@ const supabaseAdmin = createClient(
  */
 export async function GET(request) {
   try {
+    // Verify environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ Missing Supabase environment variables');
+      return NextResponse.json({
+        success: false,
+        error: 'Server configuration error'
+      }, { status: 500 });
+    }
+
     // Rate limiting
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
+    if (!rateLimitCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.error || 'Too many requests',
+        retryAfter: rateLimitCheck.retryAfter
+      }, {
+        status: 429,
+        headers: {
+          'Retry-After': (rateLimitCheck.retryAfter || 60).toString()
+        }
+      });
     }
 
     const { searchParams } = new URL(request.url);
@@ -197,11 +221,18 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Check Status API Error:', error);
+    console.error('❌ Check Status API Error:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      details: error.details
+    });
+    
     return NextResponse.json({
       success: false,
       error: 'Internal server error',
-      details: error.message
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
   }
 }
