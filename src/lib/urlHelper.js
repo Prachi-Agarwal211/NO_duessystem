@@ -46,9 +46,11 @@ export const APP_URLS = {
   
   // Staff pages
   STAFF_LOGIN: '/staff/login',
+  staffLogin: () => getFullUrl('/staff/login'), // Function version for email templates
   STAFF_DASHBOARD: '/staff/dashboard',
   STAFF_FORGOT_PASSWORD: '/staff/forgot-password',
   STAFF_RESET_PASSWORD: (token) => `/staff/reset-password?token=${token}`,
+  staffStudentForm: (formId) => getFullUrl(`/staff/student/${formId}`), // Staff student detail page
   
   // Admin pages
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -76,7 +78,11 @@ export const APP_URLS = {
     MANUAL_ENTRY_ACTION: '/api/manual-entry/action',
     SUPPORT_SUBMIT: '/api/support/submit',
     CONVOCATION_STUDENTS: '/api/convocation/students',
-  }
+  },
+  
+  // Helper functions for API URLs (full URLs needed for fetch)
+  emailQueue: () => getFullUrl('/api/email/process-queue'),
+  certificateGenerateApi: () => getFullUrl('/api/certificate/generate'),
 };
 
 /**
