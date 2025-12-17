@@ -310,7 +310,7 @@ export default function ManualEntryPage() {
 
       // Redirect to status page after 2 seconds
       setTimeout(() => {
-        router.push(`/check-status?registration_no=${formData.registration_no}`);
+        router.push(`/student/check-status?registration_no=${formData.registration_no}`);
       }, 2000);
 
     } catch (err) {
