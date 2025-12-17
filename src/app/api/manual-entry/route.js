@@ -194,7 +194,8 @@ export async function POST(request) {
         // Manual entry specific fields
         is_manual_entry: true,
         manual_certificate_url: certificate_url,
-        status: 'pending',
+        manual_status: 'pending_review',  // ✅ CRITICAL: Use manual_status for manual entries
+        status: 'pending',                 // Keep for compatibility
         user_id: null
       }])
       .select()
