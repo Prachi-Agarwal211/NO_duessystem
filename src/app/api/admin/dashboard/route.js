@@ -109,7 +109,6 @@ export async function GET(request) {
           action_at,
           created_at,
           rejection_reason,
-          rejection_context,
           profiles!no_dues_status_action_by_user_id_fkey (
             full_name
           )

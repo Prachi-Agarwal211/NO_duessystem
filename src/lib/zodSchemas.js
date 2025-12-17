@@ -156,12 +156,9 @@ export const studentFormSchema = z.object({
   country_code: z.string().default('+91'),
   admission_year: yearSchema.optional().or(z.literal('')),
   passing_year: yearSchema.optional().or(z.literal('')),
-  school: uuidSchema,
-  school_id: uuidSchema,
-  course: uuidSchema,
-  course_id: uuidSchema,
-  branch: uuidSchema,
-  branch_id: uuidSchema,
+  school: uuidSchema, // UUID from dropdown selection
+  course: uuidSchema, // UUID from dropdown selection
+  branch: uuidSchema, // UUID from dropdown selection
   alumni_screenshot_url: urlSchema.optional().nullable()
 });
 
