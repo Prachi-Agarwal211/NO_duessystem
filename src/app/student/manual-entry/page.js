@@ -27,7 +27,7 @@ export default function ManualEntryPage() {
   const [schools, setSchools] = useState([]);
   const [courses, setCourses] = useState([]);
   const [branches, setBranches] = useState([]);
-  
+
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -71,7 +71,7 @@ export default function ManualEntryPage() {
 
     setValidatingConvocation(true);
     setConvocationError('');
-    
+
     try {
       const response = await fetch('/api/convocation/validate', {
         method: 'POST',
@@ -85,16 +85,16 @@ export default function ManualEntryPage() {
         setConvocationValid(true);
         setConvocationData(result.student);
         setConvocationError('');
-        
+
         console.log('✅ Convocation validation successful:', result.student);
-        
+
         // Auto-select school if it matches
         if (result.student.school && schools.length > 0) {
           const matchedSchool = schools.find(s =>
             s.name.toLowerCase().includes(result.student.school.toLowerCase()) ||
             result.student.school.toLowerCase().includes(s.name.toLowerCase())
           );
-          
+
           if (matchedSchool) {
             handleSchoolChange(matchedSchool.id, matchedSchool.name);
           }
@@ -121,7 +121,7 @@ export default function ManualEntryPage() {
     setSelectedBranchId('');
     setCourses([]);
     setBranches([]);
-    
+
     setFormData(prev => ({
       ...prev,
       school: schoolName,
@@ -145,7 +145,7 @@ export default function ManualEntryPage() {
     setSelectedCourseId(courseId);
     setSelectedBranchId('');
     setBranches([]);
-    
+
     setFormData(prev => ({
       ...prev,
       course: courseName,
@@ -250,7 +250,15 @@ export default function ManualEntryPage() {
       const uploadResult = await uploadResponse.json();
 
       if (!uploadResponse.ok) {
-        throw new Error(uploadResult.error || 'Upload failed');
+        // Extract more detailed error information if available
+        let errorMessage = uploadResult.error || 'Upload failed';
+        if (uploadResult.suggestion) {
+          errorMessage += '\n\n' + uploadResult.suggestion;
+        }
+        if (uploadResult.originalSize && uploadResult.compressedSize) {
+          errorMessage += `\n\nCompression details: ${uploadResult.originalSize}KB -> ${uploadResult.compressedSize}KB (${uploadResult.reductionPercent}% reduction)`;
+        }
+        throw new Error(errorMessage);
       }
 
       const publicUrl = uploadResult.url;
@@ -286,7 +294,7 @@ export default function ManualEntryPage() {
       }
 
       setSubmitSuccess(true);
-      
+
       // Redirect after 3 seconds
       setTimeout(() => {
         router.push('/');
@@ -308,9 +316,8 @@ export default function ManualEntryPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`max-w-md w-full p-8 rounded-2xl text-center ${
-              isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10'
-            }`}
+            className={`max-w-md w-full p-8 rounded-2xl text-center ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10'
+              }`}
           >
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-500" />
@@ -356,9 +363,8 @@ export default function ManualEntryPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className={`p-4 rounded-lg mb-6 ${
-              isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
-            }`}
+            className={`p-4 rounded-lg mb-6 ${isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+              }`}
           >
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
@@ -379,9 +385,8 @@ export default function ManualEntryPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             onSubmit={handleSubmit}
-            className={`p-6 md:p-8 rounded-2xl ${
-              isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10'
-            }`}
+            className={`p-6 md:p-8 rounded-2xl ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10'
+              }`}
           >
             {error && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 flex items-start gap-2">
@@ -410,13 +415,12 @@ export default function ManualEntryPage() {
                     onBlur={(e) => validateConvocation(e.target.value)}
                     required
                     placeholder="e.g., 21BCON747"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                      isDark
-                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
-                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
-                    }`}
+                    className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
+                      : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
+                      }`}
                   />
-                  
+
                   {/* Validation Status Icons */}
                   {validatingConvocation && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -424,14 +428,14 @@ export default function ManualEntryPage() {
                       <span className="text-xs text-blue-500">Checking...</span>
                     </div>
                   )}
-                  
+
                   {!validatingConvocation && convocationValid === true && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500" />
                       <span className="text-xs text-green-500">Eligible</span>
                     </div>
                   )}
-                  
+
                   {!validatingConvocation && convocationValid === false && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-500" />
@@ -439,12 +443,11 @@ export default function ManualEntryPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Convocation Success Message */}
                 {convocationData && convocationValid && (
-                  <div className={`mt-3 p-3 rounded-lg ${
-                    isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'
-                  }`}>
+                  <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'
+                    }`}>
                     <div className="flex items-start gap-2">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -460,12 +463,11 @@ export default function ManualEntryPage() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Convocation Warning Message */}
                 {convocationError && convocationValid === false && (
-                  <div className={`mt-3 p-3 rounded-lg ${
-                    isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
-                  }`}>
+                  <div className={`mt-3 p-3 rounded-lg ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
+                    }`}>
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
@@ -493,11 +495,10 @@ export default function ManualEntryPage() {
                     handleSchoolChange(e.target.value, school?.name || '');
                   }}
                   required
-                  className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                    isDark
-                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
-                      : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
-                  }`}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                    ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
+                    : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
+                    }`}
                 >
                   <option value="">Select School</option>
                   {schools.map(school => (
@@ -519,11 +520,10 @@ export default function ManualEntryPage() {
                       handleCourseChange(e.target.value, course?.name || '');
                     }}
                     required
-                    className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                      isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
-                        : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
-                    }`}
+                    className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
+                      : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
+                      }`}
                   >
                     <option value="">Select Course</option>
                     {courses.map(course => (
@@ -545,11 +545,10 @@ export default function ManualEntryPage() {
                       const branch = branches.find(b => b.id === e.target.value);
                       handleBranchChange(e.target.value, branch?.name || '');
                     }}
-                    className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                      isDark
-                        ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
-                        : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
-                    }`}
+                    className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                      ? 'bg-white/5 border-white/10 text-white focus:border-jecrc-red [&>option]:bg-[#0f0f0f] [&>option]:text-white [&>option:hover]:bg-[#1a1a1a]'
+                      : 'bg-white border-black/10 text-ink-black focus:border-jecrc-red'
+                      }`}
                   >
                     <option value="">Select Branch (Optional)</option>
                     {branches.map(branch => (
@@ -560,16 +559,15 @@ export default function ManualEntryPage() {
               )}
 
               {/* Contact Information - Optional but Recommended */}
-              <div className={`p-4 rounded-lg border ${
-                isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
-              }`}>
+              <div className={`p-4 rounded-lg border ${isDark ? 'bg-blue-500/10 border-blue-500/30' : 'bg-blue-50 border-blue-200'
+                }`}>
                 <h3 className={`font-bold mb-3 ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                   Contact Information (Optional but Recommended)
                 </h3>
                 <p className={`text-sm mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   Providing your contact details helps us reach you regarding your application status.
                 </p>
-                
+
                 <div className="space-y-4">
                   {/* Personal Email */}
                   <div>
@@ -581,11 +579,10 @@ export default function ManualEntryPage() {
                       value={formData.personal_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, personal_email: e.target.value }))}
                       placeholder="your.email@example.com"
-                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        }`}
                     />
                   </div>
 
@@ -599,11 +596,10 @@ export default function ManualEntryPage() {
                       value={formData.college_email}
                       onChange={(e) => setFormData(prev => ({ ...prev, college_email: e.target.value }))}
                       placeholder="registration@jecrc.ac.in"
-                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        }`}
                     />
                   </div>
 
@@ -621,11 +617,10 @@ export default function ManualEntryPage() {
                       }}
                       placeholder="10-digit mobile number"
                       maxLength="10"
-                      className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                        isDark
-                          ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
-                          : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
-                      }`}
+                      className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-blue-500'
+                        : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-blue-500'
+                        }`}
                     />
                   </div>
                 </div>
@@ -636,19 +631,22 @@ export default function ManualEntryPage() {
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   No-Dues Certificate <span className="text-red-500">*</span>
                 </label>
-                <p className={`text-sm mb-3 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Upload your offline certificate (PDF only, max 5MB - auto-compressed if needed)
-                </p>
-                
+                <div className={`text-sm mb-3 space-y-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p>Upload your offline certificate (PDF only, max 5MB - auto-compressed if needed)</p>
+                  <p className="text-xs italic">
+                    <strong>Tip:</strong> For best results, use text-based PDFs. Scanned PDFs with images may fail compression.
+                    If you have a scanned certificate, try compressing it first using online tools like ilovepdf.com
+                  </p>
+                </div>
+
                 {!certificateFile ? (
                   <div
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
-                      isDark
-                        ? 'border-white/20 hover:border-jecrc-red bg-white/5'
-                        : 'border-gray-300 hover:border-jecrc-red bg-gray-50'
-                    }`}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${isDark
+                      ? 'border-white/20 hover:border-jecrc-red bg-white/5'
+                      : 'border-gray-300 hover:border-jecrc-red bg-gray-50'
+                      }`}
                     onClick={() => document.getElementById('certificate-input').click()}
                   >
                     <Upload className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />

@@ -32,14 +32,14 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
         Check Another
       </motion.button>
     </div>
-    
+
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
       {/* Student Name */}
       <div>
         <p className="text-gray-500 dark:text-gray-400 mb-1">Student Name</p>
         <p className="font-medium text-gray-900 dark:text-white">{formData.student_name}</p>
       </div>
-      
+
       {/* Parent Name */}
       {formData.parent_name && (
         <div>
@@ -47,7 +47,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.parent_name}</p>
         </div>
       )}
-      
+
       {/* Contact Number */}
       {formData.contact_no && (
         <div>
@@ -55,7 +55,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white font-mono">{formData.contact_no}</p>
         </div>
       )}
-      
+
       {/* Personal Email */}
       {formData.personal_email && (
         <div>
@@ -63,7 +63,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white text-xs break-all">{formData.personal_email}</p>
         </div>
       )}
-      
+
       {/* College Email */}
       {formData.college_email && (
         <div>
@@ -71,7 +71,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white text-xs break-all">{formData.college_email}</p>
         </div>
       )}
-      
+
       {/* School */}
       {formData.school && (
         <div>
@@ -79,7 +79,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.school}</p>
         </div>
       )}
-      
+
       {/* Course */}
       {formData.course && (
         <div>
@@ -87,7 +87,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.course}</p>
         </div>
       )}
-      
+
       {/* Branch */}
       {formData.branch && (
         <div>
@@ -95,7 +95,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.branch}</p>
         </div>
       )}
-      
+
       {/* Admission Year */}
       {formData.admission_year && (
         <div>
@@ -103,7 +103,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.admission_year}</p>
         </div>
       )}
-      
+
       {/* Passing Year */}
       {formData.passing_year && (
         <div>
@@ -111,7 +111,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           <p className="font-medium text-gray-900 dark:text-white">{formData.passing_year}</p>
         </div>
       )}
-      
+
       {/* Submitted Date */}
       {formData.submitted_at && (
         <div>
@@ -125,7 +125,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
           </p>
         </div>
       )}
-      
+
       {/* Application Status */}
       {formData.status && (
         <div>
@@ -134,8 +134,8 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
               ${formData.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                 formData.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                formData.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                  formData.status === 'rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                    'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
               }`}>
               {formData.status}
             </span>
@@ -184,7 +184,7 @@ function CheckStatusContent() {
     try {
       // ✅ Call API route instead of direct Supabase query
       const response = await fetch(
-        `/api/student/check-status?registration_no=${encodeURIComponent(searchRegNo.toUpperCase())}`,
+        `/api/check-status?registration_no=${encodeURIComponent(searchRegNo.toUpperCase())}`,
         {
           method: 'GET',
           headers: {
@@ -201,7 +201,7 @@ function CheckStatusContent() {
           setNotFound(true);
           return;
         }
-        
+
         // Show user-friendly error message
         throw new Error(result.error || 'Failed to fetch status');
       }
@@ -401,7 +401,7 @@ function CheckStatusContent() {
                 isDark={isDark}
                 onReset={handleReset}
               />
-              
+
               <StatusTracker
                 formId={formData.id}
                 registrationNo={formData.registration_no}

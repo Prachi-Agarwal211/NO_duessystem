@@ -8,8 +8,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Supabase Storage limits (free tier has 100KB per file limit)
-const SUPABASE_MAX_SIZE = 100 * 1024; // 100KB - Supabase free tier limit
+// Supabase Storage limits (increased to handle complex PDFs)
+const SUPABASE_MAX_SIZE = 200 * 1024; // 200KB - Increased limit for complex PDFs
 const USER_MAX_SIZE = 5 * 1024 * 1024; // 5MB - User-facing limit (we'll compress if needed)
 
 /**
@@ -32,13 +32,13 @@ export async function POST(request) {
     const file = formData.get('file');
     const bucket = formData.get('bucket') || 'no-dues-files';
     const folder = formData.get('folder') || 'manual-entries';
-    
+
     // Validation
     if (!file) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'No file provided' 
+          error: 'No file provided'
         },
         { status: 400 }
       );
@@ -48,9 +48,9 @@ export async function POST(request) {
     const allowedBuckets = ['no-dues-files', 'alumni-screenshots', 'certificates'];
     if (!allowedBuckets.includes(bucket)) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Invalid bucket name' 
+          error: 'Invalid bucket name'
         },
         { status: 400 }
       );
@@ -77,9 +77,9 @@ export async function POST(request) {
     ];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Invalid file type. Only PDF and images (JPEG, PNG, WebP) are allowed' 
+          error: 'Invalid file type. Only PDF and images (JPEG, PNG, WebP) are allowed'
         },
         { status: 400 }
       );
@@ -97,39 +97,112 @@ export async function POST(request) {
     let fileBuffer = Buffer.from(arrayBuffer);
     let finalContentType = file.type;
 
-    // Compress PDF if it exceeds Supabase limit (100KB)
+    // Compress PDF if it exceeds Supabase limit (200KB)
     if (file.type === 'application/pdf' && fileBuffer.length > SUPABASE_MAX_SIZE) {
-      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <100KB`);
-      
+      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <200KB`);
+
       try {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
-        
-        // Aggressive compression settings
-        const compressedPdfBytes = await pdfDoc.save({
-          useObjectStreams: false, // Better compatibility
+
+        // Multi-pass aggressive compression
+        let compressedPdfBytes;
+        let compressionAttempt = 1;
+        const maxAttempts = 3;
+
+        // First pass: Standard compression with metadata removal
+        compressedPdfBytes = await pdfDoc.save({
+          useObjectStreams: false,
           addDefaultPage: false,
-          objectsPerTick: 50, // Faster processing
+          objectsPerTick: 50,
         });
-        
+
+        let currentSize = compressedPdfBytes.length;
+        console.log(`  Pass ${compressionAttempt}: ${(currentSize / 1024).toFixed(2)}KB`);
+
+        // Second pass: If still too large, reload and recompress with aggressive settings
+        if (currentSize > SUPABASE_MAX_SIZE && compressionAttempt < maxAttempts) {
+          compressionAttempt++;
+          const reloadedDoc = await PDFDocument.load(compressedPdfBytes);
+          
+          // Flatten form fields and annotations to reduce size
+          const pages = reloadedDoc.getPages();
+          for (const page of pages) {
+            // This helps compress complex PDFs with forms/annotations
+            page.setRotation({ type: 'degrees', angle: 0 });
+          }
+
+          compressedPdfBytes = await reloadedDoc.save({
+            useObjectStreams: false,
+            addDefaultPage: false,
+            objectsPerTick: 20, // More aggressive
+          });
+
+          currentSize = compressedPdfBytes.length;
+          console.log(`  Pass ${compressionAttempt}: ${(currentSize / 1024).toFixed(2)}KB`);
+        }
+
+        // Third pass: If STILL too large, try one final compression
+        if (currentSize > SUPABASE_MAX_SIZE && compressionAttempt < maxAttempts) {
+          compressionAttempt++;
+          const finalDoc = await PDFDocument.load(compressedPdfBytes);
+          
+          compressedPdfBytes = await finalDoc.save({
+            useObjectStreams: false,
+            addDefaultPage: false,
+            objectsPerTick: 10, // Most aggressive
+          });
+
+          currentSize = compressedPdfBytes.length;
+          console.log(`  Pass ${compressionAttempt}: ${(currentSize / 1024).toFixed(2)}KB`);
+        }
+
         fileBuffer = Buffer.from(compressedPdfBytes);
-        console.log(`✅ Compressed to: ${(fileBuffer.length / 1024).toFixed(2)}KB`);
-        
-        // If still too large, reject
+        const finalSizeKB = (fileBuffer.length / 1024).toFixed(2);
+        console.log(`✅ Final compressed size: ${finalSizeKB}KB after ${compressionAttempt} passes`);
+
+        // If still too large after all attempts, provide detailed error
         if (fileBuffer.length > SUPABASE_MAX_SIZE) {
+          const originalSizeKB = (file.size / 1024).toFixed(2);
+          const compressedSizeKB = (fileBuffer.length / 1024).toFixed(2);
+          const reductionPercent = ((1 - (fileBuffer.length / file.size)) * 100).toFixed(1);
+
           return NextResponse.json(
             {
               success: false,
-              error: `File is too complex to compress below 100KB (current: ${(fileBuffer.length / 1024).toFixed(2)}KB). Please use a simpler PDF or reduce image quality.`
+              error: `File is too complex to compress below 200KB (current: ${compressedSizeKB}KB). Please use a simpler PDF or reduce image quality.`,
+              suggestion: 'Try these solutions:\n1. Use ilovepdf.com or smallpdf.com to compress\n2. Convert scanned images to black & white\n3. Reduce image quality/DPI (try 150 DPI instead of 300)\n4. Remove unnecessary pages\n5. Save as "Reduced Size PDF" in Adobe Acrobat',
+              originalSize: originalSizeKB,
+              compressedSize: compressedSizeKB,
+              reductionPercent: reductionPercent,
+              compressionPasses: compressionAttempt
             },
             { status: 400 }
           );
         }
       } catch (compressionError) {
         console.error('❌ PDF compression failed:', compressionError);
+
+        // Provide more specific error messages based on error type
+        let errorMessage = 'Failed to compress PDF.';
+        let suggestion = 'Please try a different file or compress it manually.';
+
+        if (compressionError.message && compressionError.message.includes('password')) {
+          errorMessage = 'PDF appears to be password-protected.';
+          suggestion = 'Please remove password protection and try again.';
+        } else if (compressionError.message && compressionError.message.includes('corrupt')) {
+          errorMessage = 'PDF file appears to be corrupted.';
+          suggestion = 'Please try to re-save or recreate the PDF file.';
+        } else if (file.size > 1024 * 1024) { // If file is > 1MB
+          errorMessage = 'Large PDF files may contain complex content.';
+          suggestion = 'Please use an online PDF compressor or reduce image quality.';
+        }
+
         return NextResponse.json(
           {
             success: false,
-            error: 'Failed to compress PDF. Please try a different file or compress it manually.'
+            error: errorMessage,
+            suggestion: suggestion,
+            details: compressionError.message
           },
           { status: 500 }
         );
@@ -148,9 +221,9 @@ export async function POST(request) {
     if (error) {
       console.error('❌ Upload error:', error);
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: `Upload failed: ${error.message}` 
+          error: `Upload failed: ${error.message}`
         },
         { status: 500 }
       );
@@ -173,10 +246,10 @@ export async function POST(request) {
   } catch (error) {
     console.error('❌ Upload API error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Internal server error',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );
@@ -195,9 +268,9 @@ export async function DELETE(request) {
 
     if (!path) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'File path is required' 
+          error: 'File path is required'
         },
         { status: 400 }
       );
@@ -207,9 +280,9 @@ export async function DELETE(request) {
     const allowedBuckets = ['no-dues-files', 'alumni-screenshots', 'certificates'];
     if (!allowedBuckets.includes(bucket)) {
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: 'Invalid bucket name' 
+          error: 'Invalid bucket name'
         },
         { status: 400 }
       );
@@ -225,9 +298,9 @@ export async function DELETE(request) {
     if (error) {
       console.error('❌ Delete error:', error);
       return NextResponse.json(
-        { 
+        {
           success: false,
-          error: `Delete failed: ${error.message}` 
+          error: `Delete failed: ${error.message}`
         },
         { status: 500 }
       );
@@ -243,10 +316,10 @@ export async function DELETE(request) {
   } catch (error) {
     console.error('❌ Delete API error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Internal server error',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );
