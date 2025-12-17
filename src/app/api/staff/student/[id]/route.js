@@ -34,7 +34,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get the student's no dues form
+    // Get the student's no dues form (✅ removed manual entry fields)
     let formQuery = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -52,9 +52,6 @@ export async function GET(request, { params }) {
         alumni_screenshot_url,
         certificate_url,
         status,
-        is_manual_entry,
-        manual_status,
-        manual_certificate_url,
         created_at,
         updated_at,
         reapplication_count,
@@ -68,27 +65,18 @@ export async function GET(request, { params }) {
       .eq('id', id);
 
     // If user is staff member, verify they can access this form
+    // ✅ All forms are now online-only, so always check department authorization
     if (profile.role === 'department') {
-      // First get the form to check if it's a manual entry
-      const { data: formCheck } = await supabaseAdmin
-        .from('no_dues_forms')
-        .select('is_manual_entry')
-        .eq('id', id)
+      // Check if this form has a status entry for the user's department
+      const { data: departmentStatus, error: statusError } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('form_id')
+        .eq('form_id', id)
+        .eq('department_name', profile.department_name)
         .single();
 
-      // Manual entries don't have department statuses, skip authorization check for them
-      if (!formCheck?.is_manual_entry) {
-        // Check if this form has a status entry for the user's department
-        const { data: departmentStatus, error: statusError } = await supabaseAdmin
-          .from('no_dues_status')
-          .select('form_id')
-          .eq('form_id', id)
-          .eq('department_name', profile.department_name)
-          .single();
-
-        if (statusError || !departmentStatus) {
-          return NextResponse.json({ error: 'Unauthorized to access this student' }, { status: 403 });
-        }
+      if (statusError || !departmentStatus) {
+        return NextResponse.json({ error: 'Unauthorized to access this student' }, { status: 403 });
       }
     }
 
@@ -115,57 +103,51 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Student form not found' }, { status: 404 });
     }
 
-    console.log('✅ Form found:', formData.student_name, formData.registration_no,
-      'Is Manual Entry:', formData.is_manual_entry);
+    console.log('✅ Form found:', formData.student_name, formData.registration_no);
 
-    let completeStatuses = [];
+    // Get all department statuses for this form (✅ all forms are online-only now)
+    const { data: departmentStatuses, error: statusError } = await supabaseAdmin
+      .from('no_dues_status')
+      .select(`
+        id,
+        department_name,
+        status,
+        rejection_reason,
+        action_at,
+        action_by_user_id,
+        profiles (
+          full_name
+        )
+      `)
+      .eq('form_id', id)
+      .order('department_name');
 
-    // Only fetch department statuses for regular forms, not manual entries
-    if (!formData.is_manual_entry) {
-      // Get all department statuses for this form
-      const { data: departmentStatuses, error: statusError } = await supabaseAdmin
-        .from('no_dues_status')
-        .select(`
-          id,
-          department_name,
-          status,
-          rejection_reason,
-          action_at,
-          action_by_user_id,
-          profiles (
-            full_name
-          )
-        `)
-        .eq('form_id', id)
-        .order('department_name');
-
-      if (statusError) {
-        return NextResponse.json({ error: statusError.message }, { status: 500 });
-      }
-
-      // Get department information for all departments
-      const { data: departments, error: deptError } = await supabaseAdmin
-        .from('departments')
-        .select('name, display_name')
-        .order('display_order');
-
-      if (deptError) {
-        return NextResponse.json({ error: deptError.message }, { status: 500 });
-      }
-
-      // Create a complete status list with all departments
-      completeStatuses = departments.map(dept => {
-        const status = departmentStatuses.find(s => s.department_name === dept.name);
-        return {
-          department_name: dept.name,
-          display_name: dept.display_name,
-          status: status ? status.status : 'pending',
-          rejection_reason: status ? status.rejection_reason : null,
-          action_at: status ? status.action_at : null,
-          action_by: status ? status.profiles?.full_name : null
-        };
-      });
+    if (statusError) {
+      return NextResponse.json({ error: statusError.message }, { status: 500 });
     }
+
+    // Get department information for all departments
+    const { data: departments, error: deptError } = await supabaseAdmin
+      .from('departments')
+      .select('name, display_name')
+      .order('display_order');
+
+    if (deptError) {
+      return NextResponse.json({ error: deptError.message }, { status: 500 });
+    }
+
+    // Create a complete status list with all departments
+    const completeStatuses = departments.map(dept => {
+      const status = departmentStatuses.find(s => s.department_name === dept.name);
+      return {
+        department_name: dept.name,
+        display_name: dept.display_name,
+        status: status ? status.status : 'pending',
+        rejection_reason: status ? status.rejection_reason : null,
+        action_at: status ? status.action_at : null,
+        action_by: status ? status.profiles?.full_name : null
+      };
+    });
 
     // Format the response
     const studentData = {
@@ -183,9 +165,6 @@ export async function GET(request, { params }) {
         alumni_screenshot_url: formData.alumni_screenshot_url,
         certificate_url: formData.certificate_url,
         status: formData.status,
-        is_manual_entry: formData.is_manual_entry || false,
-        manual_status: formData.manual_status || null,
-        manual_certificate_url: formData.manual_certificate_url || null,
         created_at: formData.created_at,
         updated_at: formData.updated_at,
         user_email: formData.profiles?.email,
