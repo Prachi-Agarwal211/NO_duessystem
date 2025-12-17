@@ -441,6 +441,7 @@ export async function GET(request) {
         passing_year,
         manual_certificate_url,
         status,
+        manual_status,
         rejection_reason,
         created_at,
         updated_at
@@ -448,9 +449,9 @@ export async function GET(request) {
       .eq('is_manual_entry', true)
       .order('created_at', { ascending: false });
 
-    // Filter by status if provided
+    // ✅ CRITICAL FIX: Filter by manual_status for manual entries, not status
     if (status) {
-      query = query.eq('status', status);
+      query = query.eq('manual_status', status);
     }
 
     // Apply scope filtering based on role

@@ -212,7 +212,7 @@ export const staffActionSchema = z.object({
   }),
   reason: z
     .string()
-    .min(10, 'Reason must be at least 10 characters')
+    .min(1, 'Reason must be at least 1 character')
     .max(500, 'Reason must be at most 500 characters')
     .optional()
     .or(z.literal(''))
@@ -229,7 +229,7 @@ export const manualEntryActionSchema = z.object({
   }),
   reason: z
     .string()
-    .min(10, 'Rejection reason must be at least 10 characters')
+    .min(1, 'Rejection reason must be at least 1 character')
     .max(500, 'Reason must be at most 500 characters')
     .optional()
 });

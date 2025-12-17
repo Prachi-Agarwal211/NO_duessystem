@@ -238,15 +238,24 @@ export async function GET(request) {
       departmentCount: departments?.length || 0,
       statusRecordCount: statuses?.length || 0,
       statusDataCount: statusData.length,
-      rejectedDepts: statusData.filter(s => s.status === 'rejected').length
+      rejectedDepts: statusData.filter(s => s.status === 'rejected').length,
+      displayStatus: isManualEntry ? form.manual_status : form.status
     });
 
-    // Prepare response data
+    // Prepare response data with explicit status handling
     const responseData = {
       success: true,
       data: {
-        form,
-        statusData
+        form: {
+          ...form,
+          // ✅ CRITICAL: Add display_status field for easier frontend handling
+          display_status: isManualEntry ? form.manual_status : form.status,
+          // Include both for transparency
+          is_manual_entry: isManualEntry
+        },
+        statusData,
+        // ✅ Helper field to indicate which status to display
+        statusField: isManualEntry ? 'manual_status' : 'status'
       }
     };
 

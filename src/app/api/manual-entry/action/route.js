@@ -73,21 +73,25 @@ export async function POST(request) {
       );
     }
 
-    if (entry.status !== 'pending') {
+    // ✅ CRITICAL FIX: Check manual_status for manual entries, not status
+    if (entry.manual_status && entry.manual_status !== 'pending_review') {
       return NextResponse.json(
-        { error: `Manual entry already ${entry.status}` },
+        { error: `Manual entry already ${entry.manual_status}` },
         { status: 400 }
       );
     }
 
     if (action === 'approve') {
-      // ✅ CRITICAL FIX: Update form status to 'completed' for manual entries
-      // Manual entries don't go through department workflow, so when admin approves, it's completed
+      // ✅ CRITICAL FIX: For manual entries, set both status fields properly
+      // - status: 'completed' (for general queries and check-status compatibility)
+      // - manual_status: 'approved' (for manual entry specific filtering)
       const { error: updateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
           status: 'completed',
           manual_status: 'approved',
+          manual_entry_approved_by: user.id,
+          manual_entry_approved_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
@@ -175,18 +179,23 @@ export async function POST(request) {
         data: {
           form_id: entry_id,
           status: 'completed',
+          manual_status: 'approved',
           certificate_url: entry.manual_certificate_url // Return the uploaded certificate URL
         }
       });
 
     } else if (action === 'reject') {
-      // Update form status to rejected with reason
+      // ✅ CRITICAL FIX: For manual entries, set both status fields properly
+      // - status: 'rejected' (for general queries)
+      // - manual_status: 'rejected' (for manual entry specific filtering)
+      // - manual_entry_rejection_reason: Separate field for manual rejection
       const { error: updateError } = await supabaseAdmin
         .from('no_dues_forms')
         .update({
           status: 'rejected',
           manual_status: 'rejected',
           rejection_reason: rejection_reason,
+          manual_entry_rejection_reason: rejection_reason,
           updated_at: new Date().toISOString()
         })
         .eq('id', entry_id);
@@ -278,6 +287,8 @@ export async function POST(request) {
         message: 'Manual entry rejected',
         data: {
           form_id: entry_id,
+          status: 'rejected',
+          manual_status: 'rejected',
           rejection_reason
         }
       });
