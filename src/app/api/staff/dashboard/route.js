@@ -74,6 +74,9 @@ export async function GET(request) {
     }
 
     let dashboardData = {};
+    let myDeptNames = []; // ✅ Declare at function scope for stats access
+    let myDepartments = [];
+    let isHOD = false;
 
     if (profile.role === 'admin') {
       // Admin gets all applications across all departments
@@ -123,19 +126,20 @@ export async function GET(request) {
       };
     } else if (profile.role === 'department') {
       // ✅ NEW: Get department names from assigned UUIDs
-      const { data: myDepartments, error: deptError } = await supabaseAdmin
+      const { data: deptData, error: deptError } = await supabaseAdmin
         .from('departments')
         .select('id, name, display_name')
         .in('id', profile.assigned_department_ids || []);
 
-      if (deptError || !myDepartments || myDepartments.length === 0) {
+      if (deptError || !deptData || deptData.length === 0) {
         return NextResponse.json({
           error: 'No departments assigned to your account. Contact administrator.'
         }, { status: 403 });
       }
 
-      const myDeptNames = myDepartments.map(d => d.name);
-      const isHOD = myDeptNames.includes('school_hod');
+      myDepartments = deptData; // ✅ Assign to function-scoped variable
+      myDeptNames = myDepartments.map(d => d.name);
+      isHOD = myDeptNames.includes('school_hod');
 
       console.log('📊 Dashboard - User departments:', {
         userId,
