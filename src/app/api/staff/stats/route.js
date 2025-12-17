@@ -151,20 +151,25 @@ export async function GET(request) {
         .eq('action_by_user_id', userId)
         .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
 
-      // Apply scope filtering for personal actions
-      if (profile.school_ids && profile.school_ids.length > 0) {
-        personalQuery = personalQuery.in('no_dues_forms.school_id', profile.school_ids);
-      } else if (profile.department_name === 'school_hod' && profile.school_id) {
-        personalQuery = personalQuery.eq('no_dues_forms.school_id', profile.school_id);
+      // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
+      // The other 9 departments see ALL students (consistent with dashboard API)
+      if (profile.department_name === 'school_hod') {
+        // Apply school filtering for HOD staff using UUID arrays
+        if (profile.school_ids && profile.school_ids.length > 0) {
+          personalQuery = personalQuery.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        // Apply course filtering for HOD staff using UUID arrays
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          personalQuery = personalQuery.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        
+        // Apply branch filtering for HOD staff using UUID arrays
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          personalQuery = personalQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+        }
       }
-
-      if (profile.course_ids && profile.course_ids.length > 0) {
-        personalQuery = personalQuery.in('no_dues_forms.course_id', profile.course_ids);
-      }
-
-      if (profile.branch_ids && profile.branch_ids.length > 0) {
-        personalQuery = personalQuery.in('no_dues_forms.branch_id', profile.branch_ids);
-      }
+      // For other 9 departments: No additional filtering - they see all students
 
       const { data: personalActions, error: personalError } = await personalQuery;
 
@@ -190,20 +195,25 @@ export async function GET(request) {
         .eq('status', 'pending')
         .eq('no_dues_forms.is_manual_entry', false); // Exclude manual entries
 
-      // Apply scope filtering for pending
-      if (profile.school_ids && profile.school_ids.length > 0) {
-        pendingQuery = pendingQuery.in('no_dues_forms.school_id', profile.school_ids);
-      } else if (profile.department_name === 'school_hod' && profile.school_id) {
-        pendingQuery = pendingQuery.eq('no_dues_forms.school_id', profile.school_id);
+      // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
+      // The other 9 departments see ALL students (consistent with dashboard API)
+      if (profile.department_name === 'school_hod') {
+        // Apply school filtering for HOD staff using UUID arrays
+        if (profile.school_ids && profile.school_ids.length > 0) {
+          pendingQuery = pendingQuery.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        // Apply course filtering for HOD staff using UUID arrays
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          pendingQuery = pendingQuery.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        
+        // Apply branch filtering for HOD staff using UUID arrays
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          pendingQuery = pendingQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+        }
       }
-
-      if (profile.course_ids && profile.course_ids.length > 0) {
-        pendingQuery = pendingQuery.in('no_dues_forms.course_id', profile.course_ids);
-      }
-
-      if (profile.branch_ids && profile.branch_ids.length > 0) {
-        pendingQuery = pendingQuery.in('no_dues_forms.branch_id', profile.branch_ids);
-      }
+      // For other 9 departments: No additional filtering - they see all students
 
       const { data: pendingActions, error: pendingError } = await pendingQuery;
 
