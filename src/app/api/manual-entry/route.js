@@ -34,6 +34,7 @@ export async function POST(request) {
       registration_no,
       student_name,
       admission_year,
+      passing_year,
       personal_email,
       college_email,
       contact_no,
@@ -159,6 +160,7 @@ export async function POST(request) {
     const finalPersonalEmail = personal_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
     const finalCollegeEmail = college_email || `noemail.${registration_no.toLowerCase()}@placeholder.jecrc.ac.in`;
     const finalContactNo = contact_no || '0000000000';
+    const finalPassingYear = passing_year; // Required field, must be provided by user
 
     console.log('📝 Creating manual entry with data:', {
       registration_no,
@@ -167,37 +169,43 @@ export async function POST(request) {
       source: convocationStudent ? 'convocation' : student_name ? 'user-provided' : 'placeholder'
     });
 
+    // Debug the insert data before sending
+    const insertData = {
+      // Registration number
+      registration_no,
+
+      // Use REAL data from convocation or user input, fallback to placeholders
+      student_name: finalStudentName,
+      personal_email: finalPersonalEmail,
+      college_email: finalCollegeEmail,
+      contact_no: finalContactNo,
+      admission_year: finalAdmissionYear,
+      passing_year: finalPassingYear,
+      country_code: '+91',
+      school: schoolData.name,
+
+      // Optional UUID foreign keys for filtering
+      school_id: school_id || null,
+      course_id: course_id || null,
+      branch_id: branch_id || null,
+
+      // Optional text fields
+      course: courseData ? courseData.name : null,
+      branch: branchData ? branchData.name : null,
+
+      // Manual entry specific fields
+      is_manual_entry: true,
+      manual_certificate_url: certificate_url,
+      manual_status: 'pending_review',  // ✅ CRITICAL: Use manual_status for manual entries
+      status: 'pending',                 // Keep for compatibility
+      user_id: null
+    };
+
+    console.log('🔍 DEBUG: Insert data being sent to database:', JSON.stringify(insertData, null, 2));
+
     const { data: newForm, error: insertError } = await supabaseAdmin
       .from('no_dues_forms')
-      .insert([{
-        // Registration number
-        registration_no,
-
-        // Use REAL data from convocation or user input, fallback to placeholders
-        student_name: finalStudentName,
-        personal_email: finalPersonalEmail,
-        college_email: finalCollegeEmail,
-        contact_no: finalContactNo,
-        admission_year: finalAdmissionYear,
-        country_code: '+91',
-        school: schoolData.name,
-
-        // Optional UUID foreign keys for filtering
-        school_id: school_id || null,
-        course_id: course_id || null,
-        branch_id: branch_id || null,
-
-        // Optional text fields
-        course: courseData ? courseData.name : null,
-        branch: branchData ? branchData.name : null,
-
-        // Manual entry specific fields
-        is_manual_entry: true,
-        manual_certificate_url: certificate_url,
-        manual_status: 'pending_review',  // ✅ CRITICAL: Use manual_status for manual entries
-        status: 'pending',                 // Keep for compatibility
-        user_id: null
-      }])
+      .insert([insertData])
       .select()
       .single();
 

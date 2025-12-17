@@ -19,6 +19,7 @@ export default function ManualEntryPage() {
     school: '',
     course: '',
     branch: '',
+    passing_year: '',
     personal_email: '',
     college_email: '',
     contact_no: ''
@@ -222,7 +223,7 @@ export default function ManualEntryPage() {
 
     try {
       // Validate required fields
-      if (!formData.registration_no || !formData.school || !formData.course) {
+      if (!formData.registration_no || !formData.school || !formData.course || !formData.passing_year) {
         throw new Error('Please fill all required fields');
       }
 
@@ -273,6 +274,7 @@ export default function ManualEntryPage() {
           // Include convocation data if student is eligible
           student_name: convocationData?.name || null,
           admission_year: convocationData?.admission_year || null,
+          passing_year: formData.passing_year || null,
           // Include user-provided contact information (or null)
           personal_email: formData.personal_email.trim() || null,
           college_email: formData.college_email.trim() || null,
@@ -481,6 +483,26 @@ export default function ManualEntryPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Passing Year */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Passing Year <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.passing_year}
+                  onChange={(e) => setFormData(prev => ({ ...prev, passing_year: e.target.value }))}
+                  placeholder="e.g., 2024"
+                  required
+                  pattern="\d{4}"
+                  title="Please enter a valid 4-digit year (e.g., 2024)"
+                  className={`w-full px-4 py-3 rounded-lg border transition-all ${isDark
+                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red'
+                    : 'bg-white border-black/10 text-ink-black placeholder-gray-400 focus:border-jecrc-red'
+                    }`}
+                />
               </div>
 
               {/* School */}

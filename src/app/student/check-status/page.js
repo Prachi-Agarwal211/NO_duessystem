@@ -207,8 +207,8 @@ function CheckStatusContent() {
       }
 
       // Success - check if form was found
-      if (result.found && result.data) {
-        setFormData(result.data);
+      if (result.success && result.data) {
+        setFormData(result.data.form);
         // Update URL with registration number for persistence on refresh
         router.replace(`/student/check-status?reg=${searchRegNo.toUpperCase()}`, { scroll: false });
       } else {

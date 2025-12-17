@@ -211,12 +211,40 @@ export async function GET(request) {
       const filteredApplications = pendingApplications || [];
 
       // Get total count for pagination (exclude manual entries)
-      const { count: totalCount, error: countError } = await supabaseAdmin
+      let countQuery = supabaseAdmin
         .from('no_dues_status')
-        .select('no_dues_forms!inner(is_manual_entry)', { count: 'exact', head: true })
+        .select('no_dues_forms!inner(is_manual_entry, school_id, course_id, branch_id, student_name, registration_no)', { count: 'exact', head: true })
         .eq('department_name', profile.department_name)
         .eq('status', 'pending')
         .eq('no_dues_forms.is_manual_entry', false);
+
+      // Apply the SAME scope filtering for HOD staff as the main query
+      if (profile.department_name === 'school_hod') {
+        // Apply school filtering for HOD staff using UUID arrays
+        if (profile.school_ids && profile.school_ids.length > 0) {
+          countQuery = countQuery.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        // Apply course filtering for HOD staff using UUID arrays
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          countQuery = countQuery.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        
+        // Apply branch filtering for HOD staff using UUID arrays
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          countQuery = countQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+        }
+      }
+
+      // Apply search to count query as well
+      if (searchQuery) {
+        countQuery = countQuery.or(
+          `student_name.ilike.%${searchQuery}%,registration_no.ilike.%${searchQuery}%`,
+          { foreignTable: 'no_dues_forms' }
+        );
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
 
       if (countError) {
         return NextResponse.json({ error: countError.message }, { status: 500 });

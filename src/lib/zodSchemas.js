@@ -170,6 +170,7 @@ export const manualEntrySchema = z.object({
   registration_no: registrationNoSchema,
   student_name: nameSchema.optional().nullable(),
   admission_year: z.string().optional().nullable(),
+  passing_year: z.string().min(4, 'Passing year is required'),
   personal_email: emailSchema.optional().or(z.literal('')).nullable(),
   college_email: emailSchema.optional().or(z.literal('')).nullable(),
   contact_no: phoneSchema.optional().or(z.literal('')).nullable(),
@@ -346,14 +347,14 @@ export function validateWithZod(data, schema) {
         const field = err.path.join('.');
         formattedErrors[field] = err.message;
       });
-      
+
       return {
         success: false,
         data: null,
         errors: formattedErrors
       };
     }
-    
+
     // Unexpected error
     return {
       success: false,
@@ -422,7 +423,7 @@ export default {
   uuidSchema,
   urlSchema,
   fileSizeSchema,
-  
+
   // Form schemas
   studentFormSchema,
   manualEntrySchema,
@@ -436,7 +437,7 @@ export default {
   resetPasswordSchema,
   certificateGenerateSchema,
   certificateVerifySchema,
-  
+
   // Helper functions
   validateWithZod,
   validateOrThrow,
