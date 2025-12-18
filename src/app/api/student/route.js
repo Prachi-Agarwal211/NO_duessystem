@@ -349,8 +349,12 @@ export async function GET(request) {
   try {
     // Rate limiting for status check queries
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
+    if (!rateLimitCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.error || 'Too many requests',
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 });
     }
 
     const { searchParams } = new URL(request.url);

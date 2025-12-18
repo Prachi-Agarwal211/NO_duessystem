@@ -22,8 +22,12 @@ export async function PUT(request) {
   try {
     // Rate limiting: Prevent spam edit requests
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
-    if (!rateLimitCheck.allowed) {
-      return rateLimitCheck.response;
+    if (!rateLimitCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.error || 'Too many requests',
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 });
     }
 
     const body = await request.json();
