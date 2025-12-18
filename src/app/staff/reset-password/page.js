@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Lock, Eye, EyeOff, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
@@ -278,5 +278,22 @@ export default function ResetPasswordPage() {
                 </GlassCard>
             </div>
         </PageWrapper>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <PageWrapper>
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+                    </div>
+                </div>
+            </PageWrapper>
+        }>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }
