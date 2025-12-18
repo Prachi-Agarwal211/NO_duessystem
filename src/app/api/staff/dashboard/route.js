@@ -73,8 +73,9 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // ✅ CRITICAL FIX: Declare at function scope so stats section can access
     let dashboardData = {};
-    let myDeptNames = []; // ✅ Declare at function scope for stats access
+    let myDeptNames = [];
     let myDepartments = [];
     let isHOD = false;
 

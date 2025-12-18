@@ -24,7 +24,6 @@ export async function GET(request, { params }) {
     }
 
     const userId = user.id; // ✅ From verified token
-    console.log('🔍 Student Detail API Called - Form ID:', id, 'User ID:', userId);
 
     // Get user profile to check role and department using admin client
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -97,15 +96,7 @@ export async function GET(request, { params }) {
 
     const { data: formData, error: formError } = await formQuery.single();
 
-    console.log('📝 Form Query Result:', {
-      found: !!formData,
-      error: formError?.message || formError?.code,
-      formId: id,
-      department: profile.department_name
-    });
-
     if (formError) {
-      console.error('❌ Form Error Details:', formError);
       return NextResponse.json({
         error: 'Student form not found',
         details: formError.message,
@@ -114,11 +105,8 @@ export async function GET(request, { params }) {
     }
 
     if (!formData) {
-      console.error('❌ No form data returned for ID:', id);
       return NextResponse.json({ error: 'Student form not found' }, { status: 404 });
     }
-
-    console.log('✅ Form found:', formData.student_name, formData.registration_no);
 
     // Get all department statuses for this form (✅ all forms are online-only now)
     const { data: departmentStatuses, error: statusError } = await supabaseAdmin
