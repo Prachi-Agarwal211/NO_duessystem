@@ -293,6 +293,7 @@ export async function PUT(request) {
     if (formWithEmail && (formWithEmail.personal_email || formWithEmail.college_email)) {
       try {
         const { sendStatusUpdateToStudent } = await import('@/lib/emailService');
+        const { EMAIL_URLS } = await import('@/lib/urlHelper');
         const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
         
         const emailResult = await sendStatusUpdateToStudent({
@@ -302,7 +303,7 @@ export async function PUT(request) {
           departmentName: departmentName,
           action: statusValue,
           rejectionReason: action === 'reject' ? reason : null,
-          statusUrl: APP_URLS.studentCheckStatus(formWithEmail.registration_no)
+          statusUrl: EMAIL_URLS.studentCheckStatus(formWithEmail.registration_no)
         });
 
         if (emailResult.success) {

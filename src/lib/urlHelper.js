@@ -103,7 +103,7 @@ export function getFullUrl(path) {
 export const EMAIL_URLS = {
   // Student email links
   studentDashboard: () => getFullUrl(APP_URLS.STUDENT_DASHBOARD),
-  studentCheckStatus: () => getFullUrl(APP_URLS.STUDENT_CHECK_STATUS),
+  studentCheckStatus: (registrationNo) => getFullUrl(`${APP_URLS.STUDENT_CHECK_STATUS}?registration_no=${registrationNo}`),
   studentSubmitForm: () => getFullUrl(APP_URLS.STUDENT_SUBMIT_FORM),
   
   // Staff email links

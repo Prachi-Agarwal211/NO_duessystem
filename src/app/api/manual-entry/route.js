@@ -70,19 +70,35 @@ export async function POST(request) {
       console.log('ℹ️ Student not eligible for convocation - proceeding with manual entry');
     }
 
-    // ===== CRITICAL: Check if student already exists in system =====
-    const { data: existingForm } = await supabaseAdmin
-      .from('no_dues_forms')
-      .select('id, status, is_manual_entry')
+    // ===== CRITICAL: Check if student already exists in manual_no_dues table =====
+    const { data: existingManual } = await supabaseAdmin
+      .from('manual_no_dues')
+      .select('id, status')
       .eq('registration_no', registration_no)
       .single();
 
-    if (existingForm) {
-      const entryType = existingForm.is_manual_entry ? 'manual' : 'online';
+    if (existingManual) {
       return NextResponse.json(
         {
           error: 'Registration number already exists',
-          details: `A ${entryType} form with registration number ${registration_no} already exists with status: ${existingForm.status}`
+          details: `A manual entry with registration number ${registration_no} already exists with status: ${existingManual.status}`
+        },
+        { status: 409 }
+      );
+    }
+
+    // Also check online forms table
+    const { data: existingOnline } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select('id, status')
+      .eq('registration_no', registration_no)
+      .single();
+
+    if (existingOnline) {
+      return NextResponse.json(
+        {
+          error: 'Registration number already exists',
+          details: `An online form with registration number ${registration_no} already exists with status: ${existingOnline.status}`
         },
         { status: 409 }
       );
@@ -150,7 +166,7 @@ export async function POST(request) {
       branch: branchData ? branchData.name : 'N/A'
     });
 
-    // ===== INSERT INTO no_dues_forms with REAL data (NO PLACEHOLDERS) =====
+    // ===== INSERT INTO manual_no_dues table (SEPARATE from online forms) =====
     // Priority: 1) Convocation data, 2) User-provided data
     const finalStudentName = convocationStudent?.student_name || student_name;
     const finalAdmissionYear = convocationStudent?.admission_year || admission_year;
@@ -179,40 +195,20 @@ export async function POST(request) {
 
     // Debug the insert data before sending
     const insertData = {
-      // Registration number
       registration_no,
-
-      // Use REAL data from convocation or user input, fallback to placeholders
       student_name: finalStudentName,
       personal_email: finalPersonalEmail,
-      college_email: finalCollegeEmail,
-      contact_no: finalContactNo,
-      admission_year: finalAdmissionYear,
-      passing_year: finalPassingYear,
-      country_code: '+91',
-      school: schoolData.name,
-
-      // Optional UUID foreign keys for filtering
       school_id: school_id || null,
       course_id: course_id || null,
       branch_id: branch_id || null,
-
-      // Optional text fields
-      course: courseData ? courseData.name : null,
-      branch: branchData ? branchData.name : null,
-
-      // Manual entry specific fields
-      is_manual_entry: true,
-      manual_certificate_url: certificate_url,
-      manual_status: 'pending_review',  // ✅ CRITICAL: Use manual_status for manual entries
-      status: 'pending',                 // Keep for compatibility
-      user_id: null
+      certificate_url: certificate_url,
+      status: 'pending_review'
     };
 
-    console.log('🔍 DEBUG: Insert data being sent to database:', JSON.stringify(insertData, null, 2));
+    console.log('🔍 DEBUG: Insert data being sent to manual_no_dues:', JSON.stringify(insertData, null, 2));
 
     const { data: newForm, error: insertError } = await supabaseAdmin
-      .from('no_dues_forms')
+      .from('manual_no_dues')
       .insert([insertData])
       .select()
       .single();
@@ -302,10 +298,7 @@ export async function POST(request) {
       }
     }
 
-    // ===== NO DEPARTMENT STATUS CREATION =====
-    // Manual entries are ADMIN-ONLY for verification
-    // Departments can VIEW the data but cannot approve/reject
-    console.log('ℹ️ Manual entry created - Admin approval required (no department workflow)');
+    console.log('ℹ️ Manual entry created in separate table - Admin approval required');
 
     // ===== NOTIFY ADMIN ABOUT NEW MANUAL ENTRY =====
     const { data: adminUsers } = await supabaseAdmin
@@ -422,36 +415,29 @@ export async function GET(request) {
     const status = searchParams.get('status');
     const staffId = searchParams.get('staff_id');
 
-    // Query only manual entries from no_dues_forms with all needed fields
+    // Query manual_no_dues table (separate from online forms)
     let query = supabaseAdmin
-      .from('no_dues_forms')
+      .from('manual_no_dues')
       .select(`
         id,
         registration_no,
         student_name,
         personal_email,
-        college_email,
-        contact_no,
-        country_code,
-        parent_name,
-        school,
-        course,
-        branch,
-        admission_year,
-        passing_year,
-        manual_certificate_url,
+        school_id,
+        course_id,
+        branch_id,
+        certificate_url,
         status,
-        manual_status,
+        approved_by,
+        approved_at,
         rejection_reason,
         created_at,
         updated_at
       `)
-      .eq('is_manual_entry', true)
       .order('created_at', { ascending: false });
 
-    // ✅ CRITICAL FIX: Filter by manual_status for manual entries, not status
     if (status) {
-      query = query.or('manual_status.eq.\{status\},status.eq.\{status\}');
+      query = query.eq('status', status);
     }
 
     // Apply scope filtering based on role
