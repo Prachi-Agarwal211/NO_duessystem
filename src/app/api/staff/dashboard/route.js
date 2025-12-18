@@ -1,125 +1,99 @@
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ OPTIMIZED: Admin client with no-cache enforcement
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: { persistSession: false },
-    global: {
-      fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
-    }
-  }
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function GET(request) {
   try {
-    // 1. Secure Auth
     const authHeader = request.headers.get('Authorization');
-    if (!authHeader) return NextResponse.json({ error: 'No Auth Token' }, { status: 401 });
-    
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (!user) return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
 
-    // 2. Get Profile & Assigned Departments
+    // 1. Get Profile with Scopes
     const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
-      .eq('id', user.id)
-      .single();
+        .from('profiles')
+        .select('role, assigned_department_ids, school_ids')
+        .eq('id', user.id)
+        .single();
 
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-    // 3. Resolve Department Names
-    const { data: departments } = await supabaseAdmin
-      .from('departments')
-      .select('name, display_name')
-      .in('id', profile.assigned_department_ids || []);
+    // 2. Resolve Department Names
+    const { data: depts } = await supabaseAdmin
+        .from('departments')
+        .select('name')
+        .in('id', profile.assigned_department_ids || []);
     
-    const myDeptNames = departments?.map(d => d.name) || [];
-    const isHOD = myDeptNames.includes('school_hod');
+    const myDeptNames = depts?.map(d => d.name) || [];
 
-    // Admin Override (See everything - handled elsewhere)
-    if (profile.role === 'admin' && myDeptNames.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] }
-      });
+    if (myDeptNames.length === 0 && profile.role !== 'admin') {
+        return NextResponse.json({ 
+            success: true, 
+            data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] } 
+        });
     }
 
-    // 4. Empty Department Check
-    if (myDeptNames.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] }
-      });
-    }
-
-    // 5. Parallel Fetching (Stats + Applications)
-    const [statsResult, applicationsResult] = await Promise.all([
-      // Query A: Status Counts (Lightweight - only status column)
-      supabaseAdmin
+    // 3. BASE QUERY - Get all pending applications for this staff member
+    let query = supabaseAdmin
         .from('no_dues_status')
-        .select('status')
-        .in('department_name', myDeptNames),
-        
-      // Query B: Applications (Specific Columns Only - No Images/Blobs)
-      (async () => {
-        let query = supabaseAdmin
-          .from('no_dues_status')
-          .select(`
-            id,
-            status,
-            updated_at,
-            department_name,
+        .select(`
+            *,
             no_dues_forms!inner (
-              id, registration_no, student_name, course, branch, contact_no, status, school_id, course_id, branch_id
+                id, registration_no, student_name, course, branch, created_at, status, school_id
             )
-          `)
-          .in('department_name', myDeptNames)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(50); // Pagination Limit for Speed
+        `)
+        .in('department_name', myDeptNames)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-        // HOD Scoping
-        if (isHOD) {
-          if (profile.school_ids?.length) query = query.in('no_dues_forms.school_id', profile.school_ids);
-          if (profile.course_ids?.length) query = query.in('no_dues_forms.course_id', profile.course_ids);
-          if (profile.branch_ids?.length) query = query.in('no_dues_forms.branch_id', profile.branch_ids);
-        }
+    // 4. HOD SCOPE ENFORCEMENT (Critical for School-level filtering)
+    // If the staff is an HOD (school_hod), they must ONLY see students from their assigned school
+    if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+        query = query.in('no_dues_forms.school_id', profile.school_ids);
+    }
 
-        return query;
-      })()
-    ]);
+    const { data: applications } = await query;
 
-    // 6. Process Stats in Memory (Fast)
-    const statsData = statsResult.data || [];
-    const stats = {
-      pending: statsData.filter(s => s.status === 'pending').length,
-      approved: statsData.filter(s => s.status === 'approved').length,
-      rejected: statsData.filter(s => s.status === 'rejected').length,
-      total: statsData.length
-    };
+    // 5. STATS CALCULATION (Based on staff's departments)
+    const { count: pendingCount } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('id', { count: 'exact', head: true })
+        .in('department_name', myDeptNames)
+        .eq('status', 'pending');
+
+    const { count: approvedCount } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('id', { count: 'exact', head: true })
+        .in('department_name', myDeptNames)
+        .eq('status', 'approved');
+
+    const { count: rejectedCount } = await supabaseAdmin
+        .from('no_dues_status')
+        .select('id', { count: 'exact', head: true })
+        .in('department_name', myDeptNames)
+        .eq('status', 'rejected');
 
     return NextResponse.json({
-      success: true,
-      data: {
-        stats,
-        applications: applicationsResult.data || [],
-        departments: departments?.map(d => ({ name: d.name, displayName: d.display_name })) || []
-      }
+        success: true,
+        data: {
+            stats: {
+                pending: pendingCount || 0,
+                approved: approvedCount || 0,
+                rejected: rejectedCount || 0,
+                total: (pendingCount || 0) + (approvedCount || 0) + (rejectedCount || 0)
+            },
+            applications: applications || []
+        }
     });
 
   } catch (error) {
-    console.error('Staff Dashboard Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error.message,
-      data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] }
-    }, { status: 500 });
+    console.error('Staff Dashboard API Error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
