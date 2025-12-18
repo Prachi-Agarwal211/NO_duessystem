@@ -388,7 +388,7 @@ function StaffDashboardContent() {
                 >
                   <StatsCard
                     title="Pending Requests"
-                    value={stats.pending || 0}
+                    value={stats?.pending || 0}
                     subtitle="Awaiting your action"
                     icon={Clock}
                     color="yellow"
@@ -412,7 +412,7 @@ function StaffDashboardContent() {
                 >
                   <StatsCard
                     title="My Approved"
-                    value={stats.approved || 0}
+                    value={stats?.approved || 0}
                     subtitle="Applications you approved"
                     icon={CheckCircle}
                     color="green"
@@ -436,7 +436,7 @@ function StaffDashboardContent() {
                 >
                   <StatsCard
                     title="My Rejected"
-                    value={stats.rejected || 0}
+                    value={stats?.rejected || 0}
                     subtitle="Applications you rejected"
                     icon={XCircle}
                     color="red"
@@ -460,8 +460,8 @@ function StaffDashboardContent() {
                 >
                   <StatsCard
                     title="My Total Actions"
-                    value={stats.total || 0}
-                    subtitle={stats.approvalRate ? `${stats.approvalRate}% your approval rate` : 'Your all time actions'}
+                    value={stats?.total || 0}
+                    subtitle={stats?.approvalRate ? `${stats.approvalRate}% your approval rate` : 'Your all time actions'}
                     icon={TrendingUp}
                     color="blue"
                     loading={statsLoading}
