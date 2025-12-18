@@ -111,8 +111,8 @@ export function useStaffDashboard() {
           limit: 50,
           // ⚡ PERFORMANCE: Include stats in dashboard request to reduce round trips
           includeStats: 'true',
-          // ✅ SMART CACHING: Round to 30-second intervals for cache hits
-          _t: Math.floor(Date.now() / 30000)
+          // ✅ REAL-TIME: Use actual timestamp for immediate updates
+          _t: Date.now()
         });
 
         // Add search term if present
@@ -120,10 +120,10 @@ export function useStaffDashboard() {
           params.append('search', searchTerm.trim());
         }
 
-        // ⚡ CRITICAL: Single combined request for dashboard + stats
+        // ⚡ CRITICAL: Single combined request for dashboard + stats (NO CACHE for real-time updates)
         const response = await fetch(`/api/staff/dashboard?${params}`, {
           method: 'GET',
-          next: { revalidate: 30 }, // ✅ Cache for 30 seconds
+          cache: 'no-store', // ✅ Disable cache for real-time stats
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -214,9 +214,9 @@ export function useStaffDashboard() {
           throw new Error('Session expired. Please login again.');
         }
 
-        // ✅ SMART CACHING: Cache for 30 seconds, then revalidate
-        const response = await fetch(`/api/staff/stats?_t=${Math.floor(Date.now() / 30000)}`, {
-          next: { revalidate: 30 },
+        // ✅ REAL-TIME: No caching for immediate stats updates
+        const response = await fetch(`/api/staff/stats?_t=${Date.now()}`, {
+          cache: 'no-store',
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }

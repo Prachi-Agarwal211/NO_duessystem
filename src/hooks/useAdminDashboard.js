@@ -96,21 +96,20 @@ export function useAdminDashboard() {
           throw new Error('Session expired. Please login again.');
         }
 
-        // ⚡ PERFORMANCE: Smart caching with 30-second intervals
-        const cacheTimestamp = Math.floor(Date.now() / 30000);
+        // ✅ REAL-TIME: Use actual timestamp for immediate updates
         const params = new URLSearchParams({
           page: pageOverride !== null ? pageOverride : currentPageRef.current,
           limit: 20,
           includeStats: 'true', // ⚡ OPTIMIZATION: Fetch stats in same request
           ...filters,
-          _t: cacheTimestamp
+          _t: Date.now()
         });
 
         console.log('🔍 Fetching admin dashboard with params:', Object.fromEntries(params));
 
         const response = await fetch(`/api/admin/dashboard?${params}`, {
           method: 'GET',
-          next: { revalidate: 30 }, // ⚡ Cache for 30 seconds
+          cache: 'no-store', // ✅ Disable cache for real-time stats
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -177,10 +176,9 @@ export function useAdminDashboard() {
         }
 
         console.log('📡 Fetching stats from API...');
-        // ⚡ PERFORMANCE: Smart caching with 5-second intervals for real-time stats
-        const cacheTimestamp = Math.floor(Date.now() / 5000);
-        const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${cacheTimestamp}`, {
-          next: { revalidate: 5 } // ⚡ Cache for 5 seconds - real-time updates
+        // ✅ REAL-TIME: No caching for immediate stats updates
+        const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${Date.now()}`, {
+          cache: 'no-store'
         });
         const result = await response.json();
 
