@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 
 // Performance Chart Component
 const PerformanceBar = ({ label, pending, approved, timeTaken }) => (
-  <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-blue-500/30 transition-all">
+  <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-jecrc-red/30 transition-all">
     <div className="flex justify-between items-center mb-2">
       <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{label.replace(/_/g, ' ')}</h4>
       <div className="flex items-center gap-1 text-xs font-mono text-gray-500 dark:text-gray-400">
@@ -165,24 +165,24 @@ export default function EnhancedAdminDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
             <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-2 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+              <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+                <span className="text-xs font-medium text-green-700 dark:text-green-400">Live</span>
               </div>
               <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
             </div>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => router.push('/admin/settings')} className="p-2 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group">
+            <button onClick={() => router.push('/admin/settings')} className="p-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group">
               <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             </button>
-            <button 
+            <button
               onClick={() => {
-                setLoading(true); 
-                fetchStats(); 
+                setLoading(true);
+                fetchStats();
                 fetchApplications();
-              }} 
-              className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-lg shadow-blue-600/20"
+              }}
+              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -219,12 +219,12 @@ export default function EnhancedAdminDashboard() {
 
           {/* 3. QUICK ACTIONS */}
           <div className="space-y-4">
-            <GlassCard className="p-6 cursor-pointer group hover:border-blue-500/50 transition-all" onClick={() => router.push('/admin/convocation')}>
+            <GlassCard className="p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all" onClick={() => router.push('/admin/convocation')}>
               <div className="flex justify-between items-start">
-                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
                   <GraduationCap className="w-6 h-6" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-jecrc-red transition-colors" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Convocation 2024</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
@@ -251,8 +251,8 @@ export default function EnhancedAdminDashboard() {
               <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search students..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Search by name or registration number..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -262,7 +262,7 @@ export default function EnhancedAdminDashboard() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -276,7 +276,7 @@ export default function EnhancedAdminDashboard() {
                 exportStatsToCSV(data);
                 toast.success("Stats exported!");
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all font-medium"
+              className="flex items-center gap-2 px-4 py-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all font-medium shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red"
             >
               <Download className="w-4 h-4" />
               Export Stats
@@ -287,7 +287,7 @@ export default function EnhancedAdminDashboard() {
                 exportApplicationsToCSV(applications);
                 toast.success("Data exported!");
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all font-medium"
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg shadow-green-600/20"
             >
               <Download className="w-4 h-4" />
               Export Data

@@ -24,13 +24,14 @@ export async function GET(request) {
 
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-    // 2. Resolve Department Names
+    // 2. Resolve Department Names and Display Names
     const { data: depts } = await supabaseAdmin
         .from('departments')
-        .select('name')
+        .select('name, display_name')
         .in('id', profile.assigned_department_ids || []);
     
     const myDeptNames = depts?.map(d => d.name) || [];
+    const deptInfo = depts?.map(d => ({ name: d.name, displayName: d.display_name })) || [];
 
     if (myDeptNames.length === 0 && profile.role !== 'admin') {
         return NextResponse.json({ 
@@ -60,24 +61,27 @@ export async function GET(request) {
 
     const { data: applications } = await query;
 
-    // 5. STATS CALCULATION (Based on staff's departments)
+    // 5. STATS CALCULATION - Pending (dept-wide) + Personal (approved/rejected by ME)
     const { count: pendingCount } = await supabaseAdmin
         .from('no_dues_status')
         .select('id', { count: 'exact', head: true })
         .in('department_name', myDeptNames)
         .eq('status', 'pending');
 
+    // ✅ FIXED: Count only MY approvals/rejections
     const { count: approvedCount } = await supabaseAdmin
         .from('no_dues_status')
         .select('id', { count: 'exact', head: true })
         .in('department_name', myDeptNames)
-        .eq('status', 'approved');
+        .eq('status', 'approved')
+        .eq('action_by_user_id', user.id); // Only actions by ME
 
     const { count: rejectedCount } = await supabaseAdmin
         .from('no_dues_status')
         .select('id', { count: 'exact', head: true })
         .in('department_name', myDeptNames)
-        .eq('status', 'rejected');
+        .eq('status', 'rejected')
+        .eq('action_by_user_id', user.id); // Only actions by ME
 
     return NextResponse.json({
         success: true,
@@ -86,9 +90,10 @@ export async function GET(request) {
                 pending: pendingCount || 0,
                 approved: approvedCount || 0,
                 rejected: rejectedCount || 0,
-                total: (pendingCount || 0) + (approvedCount || 0) + (rejectedCount || 0)
+                total: (approvedCount || 0) + (rejectedCount || 0) // Total = MY actions only
             },
-            applications: applications || []
+            applications: applications || [],
+            departments: deptInfo // Include department display names
         }
     });
 

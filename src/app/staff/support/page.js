@@ -78,9 +78,9 @@ export default function StaffSupportPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Department Support</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your support tickets and queries.</p>
           </div>
-          <button 
+          <button
             onClick={fetchTickets}
-            className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+            className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red transition-all"
           >
             <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -88,43 +88,43 @@ export default function StaffSupportPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-yellow-400">
+           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-yellow-500">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Open</p>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{stats.open_tickets}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Open</p>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.open_tickets}</h2>
               </div>
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl">
-                <Inbox className="w-6 h-6 text-yellow-500" />
+              <div className="p-3 bg-yellow-100 dark:bg-yellow-500/20 rounded-xl">
+                <Inbox className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
            </GlassCard>
            
-           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-blue-400">
+           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-jecrc-red">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">In Progress</p>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{stats.in_progress_tickets}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">In Progress</p>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.in_progress_tickets}</h2>
               </div>
-              <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-blue-500" />
+              <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-jecrc-red dark:text-jecrc-red-bright" />
               </div>
            </GlassCard>
 
-           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-green-400">
+           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-green-500">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Resolved</p>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{stats.resolved_tickets}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Resolved</p>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.resolved_tickets}</h2>
               </div>
-              <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-green-500" />
+              <div className="p-3 bg-green-100 dark:bg-green-500/20 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
            </GlassCard>
 
-           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-purple-400">
+           <GlassCard className="p-6 flex items-center justify-between border-l-4 border-l-purple-500">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Total</p>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total_tickets}</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Total</p>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.total_tickets}</h2>
               </div>
-              <div className="p-3 bg-purple-50 dark:bg-purple-500/10 rounded-xl">
-                <Archive className="w-6 h-6 text-purple-500" />
+              <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
+                <Archive className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
            </GlassCard>
         </div>
@@ -138,10 +138,10 @@ export default function StaffSupportPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                    : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10'
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-blue-600'
+                    : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10'
                 }`}
               >
                 {tab.icon}
@@ -154,11 +154,11 @@ export default function StaffSupportPage() {
           <div className="flex-1">
             <GlassCard className="p-4 min-h-[500px]">
                <div className="mb-4 relative">
-                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Search tickets..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search tickets by subject, message, or number..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />

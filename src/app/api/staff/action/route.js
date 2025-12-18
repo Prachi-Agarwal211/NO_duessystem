@@ -202,11 +202,12 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    // Update the status (✅ SIMPLIFIED: No user tracking needed)
+    // Update the status with user tracking
     const statusValue = action === 'approve' ? 'approved' : 'rejected';
     const updateData = {
       status: statusValue,
-      action_at: new Date().toISOString()
+      action_at: new Date().toISOString(),
+      action_by_user_id: userId // ✅ CRITICAL: Track who performed the action
     };
 
     // Add rejection reason if rejecting

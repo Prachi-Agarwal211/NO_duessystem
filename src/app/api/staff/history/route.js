@@ -40,13 +40,21 @@ export async function GET(request) {
     // Get user profile to verify role and department
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('role, department_name, full_name, school_id, school_ids, course_ids, branch_ids')
+      .select('role, assigned_department_ids, full_name, school_id, school_ids, course_ids, branch_ids')
       .eq('id', userId)
       .single();
 
     if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // ✅ FIXED: Resolve department names from UUID array
+    const { data: depts } = await supabaseAdmin
+      .from('departments')
+      .select('name, display_name')
+      .in('id', profile.assigned_department_ids || []);
+    
+    const myDeptNames = depts?.map(d => d.name) || [];
 
     // Build query for action history (Online forms only)
     let query = supabaseAdmin
@@ -75,7 +83,7 @@ export async function GET(request) {
 
     // Filter by department if not admin
     if (profile.role === 'department') {
-      query = query.eq('department_name', profile.department_name);
+      query = query.in('department_name', myDeptNames); // ✅ FIXED: Use UUID-resolved names
 
       // Apply scope filtering
       if (profile.school_ids && profile.school_ids.length > 0) {
@@ -123,7 +131,7 @@ export async function GET(request) {
 
     if (profile.role === 'department') {
       countQuery = countQuery
-        .eq('department_name', profile.department_name)
+        .in('department_name', myDeptNames) // ✅ FIXED: Use UUID-resolved names
         .eq('action_by_user_id', userId);
     }
 
@@ -150,7 +158,7 @@ export async function GET(request) {
           totalPages: Math.ceil((totalCount || 0) / limit)
         },
         staffName: profile.full_name,
-        department: profile.department_name
+        department: depts?.[0]?.display_name || myDeptNames[0] || 'Department'
       }
     });
   } catch (error) {

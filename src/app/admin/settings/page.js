@@ -259,10 +259,10 @@ export default function AdminSettings() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap border ${
                 activeTab === tab.id
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                  : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/10'
+                  ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red border-jecrc-red'
+                  : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -281,31 +281,31 @@ export default function AdminSettings() {
                   {editingDept?.name === dept.name ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                        type="text"
-                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
-                        value={editingDept.display_name}
-                        onChange={(e) => setEditingDept({ ...editingDept, display_name: e.target.value })}
-                      />
-                      <input
-                        type="email"
-                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
-                        value={editingDept.email || ''}
-                        onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
-                        placeholder="Email (optional)"
-                      />
-                      <button
-                        onClick={() => updateDepartment(editingDept)}
-                        disabled={loading}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
-                      >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => setEditingDept(null)}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
-                      >
-                        Cancel
-                      </button>
+                       type="text"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       value={editingDept.display_name}
+                       onChange={(e) => setEditingDept({ ...editingDept, display_name: e.target.value })}
+                     />
+                     <input
+                       type="email"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       value={editingDept.email || ''}
+                       onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
+                       placeholder="Email (optional)"
+                     />
+                     <button
+                       onClick={() => updateDepartment(editingDept)}
+                       disabled={loading}
+                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                     >
+                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                     </button>
+                     <button
+                       onClick={() => setEditingDept(null)}
+                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                     >
+                       Cancel
+                     </button>
                     </div>
                   ) : (
                     <>
@@ -324,7 +324,7 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingDept({ ...dept })}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -346,24 +346,24 @@ export default function AdminSettings() {
                   {editingSchool?.id === school.id ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                        type="text"
-                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
-                        value={editingSchool.name}
-                        onChange={(e) => setEditingSchool({ ...editingSchool, name: e.target.value })}
-                      />
-                      <button
-                        onClick={() => updateSchool(editingSchool)}
-                        disabled={loading}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
-                      >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => setEditingSchool(null)}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
-                      >
-                        Cancel
-                      </button>
+                       type="text"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       value={editingSchool.name}
+                       onChange={(e) => setEditingSchool({ ...editingSchool, name: e.target.value })}
+                     />
+                     <button
+                       onClick={() => updateSchool(editingSchool)}
+                       disabled={loading}
+                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                     >
+                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                     </button>
+                     <button
+                       onClick={() => setEditingSchool(null)}
+                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                     >
+                       Cancel
+                     </button>
                     </div>
                   ) : (
                     <>
@@ -380,7 +380,7 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingSchool({ ...school })}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -402,24 +402,24 @@ export default function AdminSettings() {
                   {editingEmail?.key === config.key ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                        type="text"
-                        className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
-                        value={editingEmail.value}
-                        onChange={(e) => setEditingEmail({ ...editingEmail, value: e.target.value })}
-                      />
-                      <button
-                        onClick={() => updateEmailConfig(editingEmail)}
-                        disabled={loading}
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
-                      >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => setEditingEmail(null)}
-                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
-                      >
-                        Cancel
-                      </button>
+                       type="text"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       value={editingEmail.value}
+                       onChange={(e) => setEditingEmail({ ...editingEmail, value: e.target.value })}
+                     />
+                     <button
+                       onClick={() => updateEmailConfig(editingEmail)}
+                       disabled={loading}
+                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                     >
+                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                     </button>
+                     <button
+                       onClick={() => setEditingEmail(null)}
+                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                     >
+                       Cancel
+                     </button>
                     </div>
                   ) : (
                     <>
@@ -432,7 +432,7 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingEmail({ ...config })}
-                        className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -454,26 +454,26 @@ export default function AdminSettings() {
                 <input
                   type="email"
                   placeholder="Email"
-                  className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={newStaff.email}
                   onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
                 />
                 <input
                   type="password"
                   placeholder="Password (min 6 chars)"
-                  className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={newStaff.password}
                   onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
                 />
                 <input
                   type="text"
                   placeholder="Full Name"
-                  className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={newStaff.full_name}
                   onChange={(e) => setNewStaff({ ...newStaff, full_name: e.target.value })}
                 />
                 <select
-                  className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={newStaff.department_name}
                   onChange={(e) => setNewStaff({ ...newStaff, department_name: e.target.value })}
                 >
@@ -486,7 +486,7 @@ export default function AdminSettings() {
               <button
                 onClick={createStaff}
                 disabled={loading}
-                className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 disabled:opacity-50 font-medium"
+                className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 font-medium shadow-lg shadow-blue-600/20"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 Create Staff Account
@@ -509,7 +509,7 @@ export default function AdminSettings() {
                     <button
                       onClick={() => deleteStaff(staff.id)}
                       disabled={loading}
-                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 border border-transparent hover:border-red-200 dark:hover:border-red-500/30"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

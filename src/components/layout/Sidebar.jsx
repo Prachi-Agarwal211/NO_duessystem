@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100 dark:border-white/5">
-          <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="font-bold text-xl bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-white dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white bg-clip-text text-transparent">
             NoDues
           </span>
           <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500">
@@ -72,13 +72,13 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium
-                  ${isActive 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                  ${isActive
+                    ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                   }
                 `}

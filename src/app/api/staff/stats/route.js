@@ -153,14 +153,15 @@ export async function GET(request) {
         isHOD
       });
 
-      // ✅ SIMPLIFIED: Just count ALL statuses for this department
-      // No complex user tracking - just show department workload
+      // ✅ FIXED: Get BOTH department-wide AND personal stats
       
-      // 1. Get ALL statuses for my departments (not filtered by user)
+      // 1. Get ALL statuses for my departments (for pending count - department-wide)
       let allStatusesQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
           status,
+          action_by_user_id,
+          action_at,
           no_dues_forms!inner (
             school_id,
             course_id,
@@ -236,11 +237,11 @@ export async function GET(request) {
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
-      // ✅ SIMPLIFIED: Count all statuses (not just personal actions)
-      const approvedCount = allStatuses?.filter(s => s.status === 'approved').length || 0;
-      const rejectedCount = allStatuses?.filter(s => s.status === 'rejected').length || 0;
-      const totalCount = allStatuses?.length || 0;
-      const pendingCount = pendingActions?.length || 0;
+      // ✅ FIXED: Count PERSONAL actions (approved/rejected by ME) + DEPARTMENT pending
+      const approvedCount = allStatuses?.filter(s => s.status === 'approved' && s.action_by_user_id === userId).length || 0;
+      const rejectedCount = allStatuses?.filter(s => s.status === 'rejected' && s.action_by_user_id === userId).length || 0;
+      const totalCount = approvedCount + rejectedCount; // Total personal actions
+      const pendingCount = pendingActions?.length || 0; // Department-wide pending
 
       stats = {
         departments: myDepartments.map(d => d.display_name),
@@ -253,12 +254,14 @@ export async function GET(request) {
         approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
       };
 
-      // ✅ SIMPLIFIED: Today's activity - just show today's actions for department
+      // ✅ FIXED: Today's activity - show MY actions today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       const todayStatuses = allStatuses?.filter(s => {
-        return s.action_at && new Date(s.action_at) >= today;
+        return s.action_at &&
+               new Date(s.action_at) >= today &&
+               s.action_by_user_id === userId; // Only MY actions
       }) || [];
 
       stats.todayApproved = todayStatuses.filter(s => s.status === 'approved').length;

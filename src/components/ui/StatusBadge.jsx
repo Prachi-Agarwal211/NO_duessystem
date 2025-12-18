@@ -4,8 +4,7 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /**
- * StatusBadge - Glossy, glass-morphic status indicator
- * Features backdrop blur, gradient overlays, and theme-aware colors
+ * StatusBadge - Consistent status indicator with proper theming
  *
  * @param {string} status - Status type (pending, approved, rejected, etc.)
  * @param {string} className - Additional classes
@@ -14,71 +13,84 @@ function StatusBadge({ status, className = "" }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Status color configurations with gradients
+  // Unified status color configurations
   const statusConfig = {
     pending: {
-      bg: 'from-yellow-500/80 to-yellow-600/90',
-      border: 'border-yellow-400/30',
-      glow: 'shadow-[0_0_15px_rgba(234,179,8,0.3)]',
+      lightBg: 'bg-yellow-100',
+      lightText: 'text-yellow-800',
+      lightBorder: 'border-yellow-200',
+      darkBg: 'bg-yellow-500/20',
+      darkText: 'text-yellow-400',
+      darkBorder: 'border-yellow-500/30',
     },
     approved: {
-      bg: 'from-green-500/80 to-green-600/90',
-      border: 'border-green-400/30',
-      glow: 'shadow-[0_0_15px_rgba(34,197,94,0.3)]',
+      lightBg: 'bg-green-100',
+      lightText: 'text-green-800',
+      lightBorder: 'border-green-200',
+      darkBg: 'bg-green-500/20',
+      darkText: 'text-green-400',
+      darkBorder: 'border-green-500/30',
     },
     rejected: {
-      bg: 'from-red-500/80 to-red-600/90',
-      border: 'border-red-400/30',
-      glow: 'shadow-[0_0_15px_rgba(239,68,68,0.3)]',
+      lightBg: 'bg-red-100',
+      lightText: 'text-red-800',
+      lightBorder: 'border-red-200',
+      darkBg: 'bg-red-500/20',
+      darkText: 'text-red-400',
+      darkBorder: 'border-red-500/30',
     },
     in_progress: {
-      bg: 'from-blue-500/80 to-blue-600/90',
-      border: 'border-blue-400/30',
-      glow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]',
+      lightBg: 'bg-blue-100',
+      lightText: 'text-blue-800',
+      lightBorder: 'border-blue-200',
+      darkBg: 'bg-blue-500/20',
+      darkText: 'text-blue-400',
+      darkBorder: 'border-blue-500/30',
     },
     completed: {
-      bg: 'from-purple-500/80 to-purple-600/90',
-      border: 'border-purple-400/30',
-      glow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+      lightBg: 'bg-purple-100',
+      lightText: 'text-purple-800',
+      lightBorder: 'border-purple-200',
+      darkBg: 'bg-purple-500/20',
+      darkText: 'text-purple-400',
+      darkBorder: 'border-purple-500/30',
     },
     screenshot_uploaded: {
-      bg: 'from-orange-500/80 to-orange-600/90',
-      border: 'border-orange-400/30',
-      glow: 'shadow-[0_0_15px_rgba(249,115,22,0.3)]',
+      lightBg: 'bg-orange-100',
+      lightText: 'text-orange-800',
+      lightBorder: 'border-orange-200',
+      darkBg: 'bg-orange-500/20',
+      darkText: 'text-orange-400',
+      darkBorder: 'border-orange-500/30',
     },
   };
 
   const config = statusConfig[status] || {
-    bg: 'from-gray-500/80 to-gray-600/90',
-    border: 'border-gray-400/30',
-    glow: 'shadow-[0_0_15px_rgba(107,114,128,0.3)]',
+    lightBg: 'bg-gray-100',
+    lightText: 'text-gray-800',
+    lightBorder: 'border-gray-200',
+    darkBg: 'bg-gray-500/20',
+    darkText: 'text-gray-400',
+    darkBorder: 'border-gray-500/30',
   };
 
   return (
     <span
       className={`
         inline-flex items-center justify-center
-        rounded-full px-3 py-1
-        text-xs font-semibold text-white
-        backdrop-blur-sm
-        bg-gradient-to-r ${config.bg}
-        border ${config.border}
-        ${isDark ? config.glow : 'shadow-sm'}
-        transition-all duration-300
-        hover:scale-105 hover:brightness-110
+        rounded-full px-3 py-1 border
+        text-xs font-semibold
+        transition-all duration-200
+        ${isDark
+          ? `${config.darkBg} ${config.darkText} ${config.darkBorder}`
+          : `${config.lightBg} ${config.lightText} ${config.lightBorder}`
+        }
         ${className}
       `}
     >
-      {/* Glossy overlay effect */}
-      <span className="absolute inset-0 rounded-full bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
-      
-      {/* Text content */}
-      <span className="relative z-10">
-        {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
-      </span>
+      {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
     </span>
   );
 }
 
-// Memoize to prevent unnecessary re-renders
 export default React.memo(StatusBadge);

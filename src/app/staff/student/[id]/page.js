@@ -517,28 +517,29 @@ export default function StudentDetailView() {
                 }`}>
                 Department Status
               </h2>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="min-w-full">
+              <div className={`overflow-x-auto rounded-lg border transition-colors duration-700 ${isDark ? 'border-gray-700' : 'border-gray-200'
+                }`}>
+                <table className="min-w-[800px] w-full">
                   <thead>
-                    <tr className={`transition-colors duration-700 ${isDark ? 'border-b border-gray-700' : 'border-b border-gray-200'
+                    <tr className={`transition-colors duration-700 ${isDark ? 'border-b border-gray-700 bg-gray-800' : 'border-b border-gray-200 bg-gray-50'
                       }`}>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
                         Department
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
                         Status
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
                         Updated
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
                         Action By
                       </th>
-                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700'
+                      <th className={`px-4 sm:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider min-w-[250px] transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                         }`}>
                         Notes
                       </th>
@@ -547,9 +548,9 @@ export default function StudentDetailView() {
                   <tbody className={`transition-colors duration-700 ${isDark ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'
                     }`}>
                     {statusData.map((status, index) => (
-                      <tr key={index} className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-900'
+                      <tr key={index} className={`transition-colors duration-700 ${isDark ? 'text-gray-300 hover:bg-gray-800/50' : 'text-gray-900 hover:bg-gray-50'
                         }`}>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">{status.display_name}</td>
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">{status.display_name}</td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={status.status} />
                         </td>
@@ -561,10 +562,12 @@ export default function StudentDetailView() {
                         </td>
                         <td className="px-4 sm:px-6 py-4 text-sm">
                           {status.status === 'rejected' && status.rejection_reason ? (
-                            <div>
-                              <p className="text-red-400">{status.rejection_reason}</p>
+                            <div className="max-w-xs">
+                              <p className={`font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                                {status.rejection_reason}
+                              </p>
                               {studentData.reapplication_count > 0 && (
-                                <p className="text-xs text-orange-400 mt-1">
+                                <p className={`text-xs mt-1 ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
                                   ⚠️ Student has reapplied - please review updates
                                 </p>
                               )}

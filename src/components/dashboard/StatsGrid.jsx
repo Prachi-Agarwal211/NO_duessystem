@@ -14,51 +14,67 @@ export default function StatsGrid({ stats, loading = false }) {
     {
       title: "Pending Review",
       value: safeStats.pending,
-      icon: <Clock className="w-5 h-5 text-yellow-400" />,
-      color: "text-yellow-400",
-      bg: "bg-yellow-500/10",
-      border: "border-yellow-500/20"
+      icon: <Clock className="w-5 h-5" />,
+      lightIconBg: "bg-yellow-100",
+      darkIconBg: "dark:bg-yellow-500/20",
+      iconColor: "text-yellow-600 dark:text-yellow-400",
+      lightBg: "bg-white",
+      darkBg: "dark:bg-white/5",
+      borderColor: "border-gray-200 dark:border-white/10",
+      borderLeft: "border-l-4 border-l-yellow-500"
     },
     {
       title: "Approved",
       value: safeStats.approved,
-      icon: <CheckCircle className="w-5 h-5 text-green-400" />,
-      color: "text-green-400",
-      bg: "bg-green-500/10",
-      border: "border-green-500/20"
+      icon: <CheckCircle className="w-5 h-5" />,
+      lightIconBg: "bg-green-100",
+      darkIconBg: "dark:bg-green-500/20",
+      iconColor: "text-green-600 dark:text-green-400",
+      lightBg: "bg-white",
+      darkBg: "dark:bg-white/5",
+      borderColor: "border-gray-200 dark:border-white/10",
+      borderLeft: "border-l-4 border-l-green-500"
     },
     {
       title: "Rejected",
       value: safeStats.rejected,
-      icon: <XCircle className="w-5 h-5 text-red-400" />,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
-      border: "border-red-500/20"
+      icon: <XCircle className="w-5 h-5" />,
+      lightIconBg: "bg-red-100",
+      darkIconBg: "dark:bg-red-500/20",
+      iconColor: "text-red-600 dark:text-red-400",
+      lightBg: "bg-white",
+      darkBg: "dark:bg-white/5",
+      borderColor: "border-gray-200 dark:border-white/10",
+      borderLeft: "border-l-4 border-l-red-500"
     },
     {
       title: "Total Requests",
       value: safeStats.total,
-      icon: <Users className="w-5 h-5 text-blue-400" />,
-      color: "text-blue-400",
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/20"
+      icon: <Users className="w-5 h-5" />,
+      lightIconBg: "bg-red-100",
+      darkIconBg: "dark:bg-jecrc-red/20",
+      iconColor: "text-jecrc-red dark:text-red-400",
+      lightBg: "bg-white",
+      darkBg: "dark:bg-white/5",
+      borderColor: "border-gray-200 dark:border-white/10",
+      borderLeft: "border-l-4 border-l-jecrc-red"
     }
   ];
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       {cards.map((card, idx) => (
-        <div key={idx} className={`p-5 rounded-2xl border backdrop-blur-xl ${card.bg} ${card.border} transition-all hover:scale-[1.02]`}>
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">{card.title}</p>
-            <div className={`p-2 rounded-lg bg-white/5 ${card.color}`}>
+        <div key={idx} className={`p-6 rounded-xl border ${card.lightBg} ${card.darkBg} ${card.borderColor} ${card.borderLeft} transition-all hover:shadow-lg`}>
+          <div className="flex justify-between items-start mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{card.title}</p>
+            <div className={`p-2.5 rounded-xl ${card.lightIconBg} ${card.darkIconBg} ${card.iconColor}`}>
               {card.icon}
             </div>
           </div>
           {loading ? (
-            <div className="h-8 w-16 bg-white/10 rounded animate-pulse" />
+            <div className="h-9 w-20 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
           ) : (
-            <h3 className={`text-3xl font-bold ${card.color}`}>
+            <h3 className="text-3xl font-bold text-gray-900 dark:text-white">
               {card.value}
             </h3>
           )}
