@@ -281,6 +281,7 @@ export function useStaffDashboard() {
     let unsubscribeDeptAction;
     let unsubscribeGlobal;
     let retryTimeout;
+    let debounceTimer = null; // ⚡ DEBOUNCE: Prevent rapid refreshes
 
     const setupRealtime = async () => {
       console.log('🔌 Staff dashboard setting up PUBLIC realtime for', user.department_name);
@@ -288,6 +289,17 @@ export function useStaffDashboard() {
 
       // Subscribe to PUBLIC global realtime service
       unsubscribeRealtime = await subscribeToRealtime();
+
+      // ⚡ DEBOUNCED REFRESH: Wait 1 second before refreshing to batch updates
+      const debouncedRefresh = () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          console.log('⚡ Soft Refreshing after debounce...');
+          if (fetchDashboardDataRef.current) {
+            fetchDashboardDataRef.current(currentSearchRef.current, true);
+          }
+        }, 1000); // Wait 1 second to batch rapid updates
+      };
 
       // Subscribe to specific events via RealtimeManager
       unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
@@ -298,13 +310,10 @@ export function useStaffDashboard() {
           match: analysis.departmentActions.has(user.department_name)
         });
 
-        // ALWAYS refresh when any department action occurs
+        // ALWAYS refresh when any department action occurs (with debounce)
         if (analysis.formIds.length > 0) {
-          console.log('🔄 Triggering staff dashboard refresh from department action...');
-          // Use ref to avoid dependency on refreshData
-          if (fetchDashboardDataRef.current) {
-            fetchDashboardDataRef.current(currentSearchRef.current, true);
-          }
+          console.log('🔄 Scheduling debounced refresh from department action...');
+          debouncedRefresh();
         }
       });
 
@@ -318,11 +327,8 @@ export function useStaffDashboard() {
             affectedForms: analysis.formIds.length
           });
 
-          console.log('🚀 Executing refreshData() for staff dashboard');
-          // Use ref to avoid dependency on refreshData
-          if (fetchDashboardDataRef.current) {
-            fetchDashboardDataRef.current(currentSearchRef.current, true);
-          }
+          console.log('🚀 Scheduling debounced refresh from global update');
+          debouncedRefresh();
         }
       });
     };
@@ -332,6 +338,7 @@ export function useStaffDashboard() {
     return () => {
       console.log('🧹 Staff dashboard unsubscribing from realtime');
       if (retryTimeout) clearTimeout(retryTimeout);
+      if (debounceTimer) clearTimeout(debounceTimer);
       if (unsubscribeRealtime) unsubscribeRealtime();
       if (unsubscribeDeptAction) unsubscribeDeptAction();
       if (unsubscribeGlobal) unsubscribeGlobal();

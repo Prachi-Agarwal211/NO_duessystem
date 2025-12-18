@@ -4,43 +4,24 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ CRITICAL FIX: Force Supabase to bypass Next.js server-side caching
+// ✅ OPTIMIZED: Admin client with no-cache enforcement
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
   {
-    auth: {
-      persistSession: false,
-    },
+    auth: { persistSession: false },
     global: {
-      fetch: (url, options) => {
-        return fetch(url, {
-          ...options,
-          cache: 'no-store',
-        });
-      },
-    },
+      fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' })
+    }
   }
 );
-
-// ⚡ PERFORMANCE: Response cache with 30-second TTL for optimal balance
-const statsCache = new Map();
-const CACHE_TTL = 30000; // 30 seconds - balanced caching for better performance
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-    const cacheKey = `admin_stats_${userId}`;
 
-    // ⚡ PERFORMANCE: Check cache first
-    const cached = statsCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log('📊 Returning cached admin stats');
-      return NextResponse.json(cached.data);
-    }
-
-    // Verify user is admin
+    // 1. Verify admin authorization
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -51,118 +32,45 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('⚡ Fetching fresh admin stats with parallel queries...');
-    const startTime = Date.now();
+    console.log('⚡ Fetching admin stats via optimized RPC functions...');
 
-    // ⚡ PERFORMANCE: Execute all queries in parallel
-    const [
-      overallStatsResult,
-      departmentWorkloadResult,
-      allStatusesResult,
-      activityAndAlertsResult
-    ] = await Promise.all([
-      // Batch 1: Overall statistics - use fallback if RPC doesn't exist
-      (async () => {
-        try {
-          const result = await supabaseAdmin.rpc('get_form_statistics');
-          return result;
-        } catch (rpcError) {
-          console.log('RPC get_form_statistics not found, using fallback query');
-          // Fallback query for overall statistics
-          const { data, error } = await supabaseAdmin
-            .from('no_dues_forms')
-            .select('status');
-
-          if (error) throw error;
-
-          const total = data.length;
-          const pending = data.filter(f => f.status === 'pending').length;
-          const completed = data.filter(f => f.status === 'completed').length;
-          const rejected = data.filter(f => f.status === 'rejected').length;
-
-          return { data: [{ total, pending, completed, rejected }] };
-        }
-      })(),
-
-      // Batch 2: Department workload - use fallback if RPC doesn't exist
-      (async () => {
-        try {
-          const result = await supabaseAdmin.rpc('get_department_workload');
-          return result;
-        } catch (rpcError) {
-          console.log('RPC get_department_workload not found, using fallback query');
-          // Fallback query for department workload
-          const { data, error } = await supabaseAdmin
-            .from('no_dues_status')
-            .select('department_name, status');
-
-          if (error) throw error;
-
-          // Group by department and status
-          const departmentMap = {};
-          data.forEach(item => {
-            if (!departmentMap[item.department_name]) {
-              departmentMap[item.department_name] = { pending: 0, approved: 0, rejected: 0 };
-            }
-            departmentMap[item.department_name][item.status]++;
-          });
-
-          // Convert to array format expected by frontend
-          const result = Object.entries(departmentMap).map(([department_name, counts]) => ({
-            department_name,
-            pending_count: counts.pending,
-            approved_count: counts.approved,
-            rejected_count: counts.rejected
-          }));
-
-          return { data: result };
-        }
-      })(),
-
-      // Batch 3: All statuses for response time calculation
-      supabaseAdmin
-        .from('no_dues_status')
-        .select('department_name, status, created_at, action_at')
-        .not('action_at', 'is', null),
-
-      // Batch 4: Activity and alerts in parallel
-      // ✅ FIXED: Removed is_manual_entry filter (table now only has online forms)
-      Promise.all([
-        supabaseAdmin
-          .from('no_dues_status')
-          .select('id, action_at, department_name, status, no_dues_forms!inner(student_name, registration_no)')
-          .gte('action_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-          .order('action_at', { ascending: false })
-          .limit(50),
-
-        supabaseAdmin
-          .from('no_dues_status')
-          .select('id, created_at, department_name, no_dues_forms!inner(student_name, registration_no, created_at)')
-          .eq('status', 'pending')
-          .lt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-          .order('created_at', { ascending: true })
-          .limit(20)
-      ])
-    ]);
-
-    const { data: overallStats, error: overallError } = overallStatsResult;
-    const { data: departmentWorkload, error: deptWorkloadError } = departmentWorkloadResult;
-    const { data: allStatuses, error: statusesError } = allStatusesResult;
-    const [recentActivityResult, pendingAlertsResult] = activityAndAlertsResult;
-
+    // 2. Fetch Global Stats via RPC (uses new optimized function)
+    const { data: overall, error: overallError } = await supabaseAdmin.rpc('get_form_statistics');
     if (overallError) throw overallError;
-    if (deptWorkloadError) console.error('Department workload error:', deptWorkloadError);
-    if (statusesError) console.error('Statuses error:', statusesError);
 
-    const { data: recentActivity } = recentActivityResult;
-    const { data: pendingAlerts } = pendingAlertsResult;
+    // 3. Fetch Department Breakdown via RPC (uses new optimized function)
+    const { data: workload, error: workloadError } = await supabaseAdmin.rpc('get_department_workload');
+    if (workloadError) throw workloadError;
 
-    // Calculate department performance stats with response times
+    // 4. Fetch Recent Activity (only completed actions)
+    const { data: recent } = await supabaseAdmin
+      .from('no_dues_status')
+      .select('id, department_name, status, action_at, no_dues_forms(student_name, registration_no)')
+      .neq('status', 'pending') // Only show actions taken
+      .order('action_at', { ascending: false })
+      .limit(10);
+
+    // 5. Fetch Pending Alerts (old pending applications)
+    const { data: alerts } = await supabaseAdmin
+      .from('no_dues_status')
+      .select('id, created_at, department_name, no_dues_forms(student_name, registration_no, created_at)')
+      .eq('status', 'pending')
+      .lt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .order('created_at', { ascending: true })
+      .limit(20);
+
+    // 6. Calculate Response Times for Department Stats
+    const { data: allStatuses } = await supabaseAdmin
+      .from('no_dues_status')
+      .select('department_name, status, created_at, action_at')
+      .not('action_at', 'is', null);
+
+    // 7. Enhance Department Stats with Response Times
     const departmentStatsMap = new Map();
 
-    // Initialize with department workload data
-    if (departmentWorkload) {
-      departmentWorkload.forEach(dept => {
+    // Initialize from RPC data
+    if (workload) {
+      workload.forEach(dept => {
         const total = Number(dept.pending_count || 0) + Number(dept.approved_count || 0) + Number(dept.rejected_count || 0);
         const approved = Number(dept.approved_count || 0);
         const rejected = Number(dept.rejected_count || 0);
@@ -180,7 +88,7 @@ export async function GET(request) {
       });
     }
 
-    // Calculate response times
+    // Add response time data
     if (allStatuses) {
       allStatuses.forEach(status => {
         if (status.action_at && status.created_at) {
@@ -193,7 +101,14 @@ export async function GET(request) {
       });
     }
 
-    // Format department stats with calculated metrics
+    // 8. Format Final Response
+    const statsObj = overall?.[0] || {
+      total_applications: 0,
+      pending_applications: 0,
+      approved_applications: 0,
+      rejected_applications: 0
+    };
+
     const formattedDepartmentStats = Array.from(departmentStatsMap.values()).map(dept => {
       const avgResponseTime = dept.response_times.length > 0
         ? dept.response_times.reduce((sum, time) => sum + time, 0) / dept.response_times.length
@@ -212,39 +127,36 @@ export async function GET(request) {
       };
     }).sort((a, b) => a.department_name.localeCompare(b.department_name));
 
-    const responseData = {
-      overallStats: overallStats || [],
+    return NextResponse.json({
+      overallStats: {
+        totalApplications: Number(statsObj.total_applications),
+        pendingApplications: Number(statsObj.pending_applications),
+        approvedApplications: Number(statsObj.approved_applications),
+        rejectedApplications: Number(statsObj.rejected_applications)
+      },
       departmentStats: formattedDepartmentStats,
-      recentActivity: recentActivity || [],
-      pendingAlerts: pendingAlerts || []
-    };
-
-    // ⚡ PERFORMANCE: Cache the response
-    statsCache.set(cacheKey, {
-      data: responseData,
-      timestamp: Date.now()
+      recentActivity: recent || [],
+      pendingAlerts: alerts || []
     });
-
-    const queryTime = Date.now() - startTime;
-    console.log(`✅ Admin stats fetched in ${queryTime}ms (was ~1500ms)`);
-
-    return NextResponse.json(responseData);
 
   } catch (error) {
-    console.error('❌ Admin stats API error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    console.error('❌ Admin Stats API Error:', error);
     return NextResponse.json({
-      error: 'Failed to load statistics',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: error.message,
+      overallStats: {
+        totalApplications: 0,
+        pendingApplications: 0,
+        approvedApplications: 0,
+        rejectedApplications: 0
+      },
+      departmentStats: [],
+      recentActivity: [],
+      pendingAlerts: []
     }, { status: 500 });
   }
 }
 
-// Helper function for response time calculation
+// Helper function for response time formatting
 function formatTime(seconds) {
   if (!seconds) return 'N/A';
   const hours = Math.floor(seconds / 3600);
@@ -254,24 +166,4 @@ function formatTime(seconds) {
   if (hours > 0) return `${hours}h ${minutes}m`;
   if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
   return `${remainingSeconds}s`;
-}
-
-// ⚡ PERFORMANCE: Cache invalidation endpoint for real-time updates
-export async function DELETE(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (userId) {
-      statsCache.delete(`admin_stats_${userId}`);
-      console.log('🗑️ Admin stats cache cleared for user:', userId);
-    } else {
-      statsCache.clear();
-      console.log('🗑️ All admin stats cache cleared');
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 }
