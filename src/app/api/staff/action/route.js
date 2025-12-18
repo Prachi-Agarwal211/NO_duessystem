@@ -41,7 +41,7 @@ export async function PUT(request) {
       );
     }
 
-    const userId = user.id; // ✅ Secure: Extracted from verified token
+    const authUserId = user.id; // Auth user ID from Supabase Auth
 
     // ==================== ZOD VALIDATION ====================
     const body = await request.json();
@@ -73,8 +73,8 @@ export async function PUT(request) {
     ] = await Promise.all([
       supabaseAdmin
         .from('profiles')
-        .select('role, assigned_department_ids, department_name, full_name')
-        .eq('id', userId)
+        .select('id, role, assigned_department_ids, department_name, full_name')
+        .eq('id', authUserId)
         .single(),
       supabaseAdmin
         .from('departments')
@@ -101,6 +101,9 @@ export async function PUT(request) {
       }, { status: 404 });
     }
 
+    // ✅ CRITICAL FIX: Use profile.id (not auth user id) for tracking actions
+    const userId = profile.id;
+
     // Verify user has department staff or admin role
     if (profile.role !== 'department' && profile.role !== 'admin') {
       return NextResponse.json({
@@ -124,8 +127,8 @@ export async function PUT(request) {
       
       if (!isAuthorized) {
         console.error('❌ Authorization failed:', {
-          userId,
-          userEmail: profile.email,
+          authUserId,
+          profileId: userId,
           requestedDepartment: departmentName,
           requestedDepartmentId: department.id,
           assignedDepartmentIds: profile.assigned_department_ids
@@ -142,7 +145,8 @@ export async function PUT(request) {
       }
       
       console.log('✅ Authorization passed:', {
-        userId,
+        authUserId,
+        profileId: userId,
         department: departmentName,
         departmentId: department.id
       });
