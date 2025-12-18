@@ -160,6 +160,12 @@ export async function GET(request) {
         staffName: profile.full_name,
         department: depts?.[0]?.display_name || myDeptNames[0] || 'Department'
       }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error('Staff History API Error:', error);

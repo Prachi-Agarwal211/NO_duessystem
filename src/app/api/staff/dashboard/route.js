@@ -114,6 +114,12 @@ export async function GET(request) {
             applications: applications || [],
             departments: deptInfo // Include department display names
         }
+    }, {
+        headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
     });
 
   } catch (error) {

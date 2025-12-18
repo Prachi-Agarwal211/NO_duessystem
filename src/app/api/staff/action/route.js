@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendStatusUpdateNotification } from '@/lib/emailService';
@@ -361,6 +364,12 @@ export async function PUT(request) {
         status: updatedStatus,
         form: currentForm || form,
         message: `Successfully ${action}d the no dues request for ${form.student_name}`
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     });
   } catch (error) {

@@ -27,8 +27,12 @@ export default function StaffDashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.push('/staff/login'); return; }
 
-      const res = await fetch('/api/staff/dashboard', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      const res = await fetch(`/api/staff/dashboard?t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
         cache: 'no-store'
       });
       const json = await res.json();
@@ -45,8 +49,12 @@ export default function StaffDashboard() {
     setRejectedLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/staff/history?status=rejected&limit=100', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      const res = await fetch(`/api/staff/history?status=rejected&limit=100&t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache'
+        },
+        cache: 'no-store'
       });
       const json = await res.json();
       if (json.success) {
@@ -65,8 +73,12 @@ export default function StaffDashboard() {
     setHistoryLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/staff/history?limit=100', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      const res = await fetch(`/api/staff/history?limit=100&t=${Date.now()}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Cache-Control': 'no-cache'
+        },
+        cache: 'no-store'
       });
       const json = await res.json();
       if (json.success) {
