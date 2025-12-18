@@ -12,8 +12,18 @@ export async function middleware(request) {
   try {
     // Skip middleware for public routes to improve mobile performance
     const currentPath = request.nextUrl.pathname;
-    const publicRoutes = ['/', '/student/check-status', '/student/submit-form', '/student/manual-entry', '/staff/login', '/unauthorized'];
-    
+    const publicRoutes = [
+      '/',
+      '/student/check-status',
+      '/student/submit-form',
+      '/student/manual-entry',
+      '/staff/login',
+      '/staff/forgot-password',
+      '/staff/verify-otp',
+      '/staff/reset-password',
+      '/unauthorized'
+    ];
+
     if (publicRoutes.includes(currentPath)) {
       return response;
     }

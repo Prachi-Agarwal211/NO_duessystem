@@ -69,9 +69,10 @@ export async function GET(request) {
       }, { status: 400 });
     }
 
-    // ✅ NO CACHING: Always fetch fresh data from database
+    // ✅ NO CACHING: Always fetch fresh data from database with explicit cache headers
     // OPTIMIZATION: Single optimized query with proper indexing
     // ✅ FIXED: Removed manual entry fields (now in separate table)
+    // 🛡️ DEFENSIVE: Force fresh query to prevent stale data issues
     const { data: form, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -102,6 +103,8 @@ export async function GET(request) {
         rejection_context
       `)
       .eq('registration_no', registrationNo.trim().toUpperCase())
+      .order('created_at', { ascending: false }) // Get most recent form if duplicates exist
+      .limit(1)
       .single();
 
     if (formError) {
@@ -197,13 +200,15 @@ export async function GET(request) {
 
     // 🐛 DEBUG LOGGING - Track what's being returned
     console.log(`📊 Check Status Debug for ${registrationNo}:`, {
+      formId: form.id, // Log form ID for tracking
       formStatus: form.status,
       hasRejectionContext: !!form.rejection_context,
       rejectionContext: form.rejection_context,
       departmentCount: departments?.length || 0,
       statusRecordCount: statuses?.length || 0,
       statusDataCount: statusData.length,
-      rejectedDepts: statusData.filter(s => s.status === 'rejected').length
+      rejectedDepts: statusData.filter(s => s.status === 'rejected').length,
+      timestamp: new Date().toISOString()
     });
 
     // Prepare response data

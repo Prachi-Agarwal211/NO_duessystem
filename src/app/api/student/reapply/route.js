@@ -203,11 +203,43 @@ export async function PUT(request) {
 
     const rejectedDeptNames = rejectedDepartments.map(d => d.department_name);
 
+    // ==================== VALIDATE FORM EXISTS (DEFENSIVE CODING) ====================
+    // 🛡️ SAFETY CHECK: Verify form.id exists before inserting history
+    // This prevents foreign key violations if form was deleted/recreated
+    const { data: formExists, error: validateError } = await supabaseAdmin
+      .from('no_dues_forms')
+      .select('id')
+      .eq('id', form.id)
+      .single();
+
+    if (validateError || !formExists) {
+      console.error(`❌ Form ID validation failed for ${form.id}:`, validateError);
+      
+      // Try to find the current form by registration number
+      const { data: freshForm, error: freshError } = await supabaseAdmin
+        .from('no_dues_forms')
+        .select('id, reapplication_count')
+        .eq('registration_no', registration_no.trim().toUpperCase())
+        .single();
+
+      if (freshError || !freshForm) {
+        return NextResponse.json({
+          success: false,
+          error: 'Form record not found. Please try checking your status again.'
+        }, { status: 404 });
+      }
+
+      // Update to use the fresh form ID
+      console.log(`✅ Using fresh form ID: ${freshForm.id} (old ID was ${form.id})`);
+      form.id = freshForm.id;
+      form.reapplication_count = freshForm.reapplication_count;
+    }
+
     // ==================== LOG REAPPLICATION HISTORY ====================
     const { error: historyError } = await supabaseAdmin
       .from('no_dues_reapplication_history')
       .insert({
-        form_id: form.id,
+        form_id: form.id, // Now guaranteed to be valid
         reapplication_number: form.reapplication_count + 1,
         student_message: student_reply_message.trim(),
         edited_fields: sanitizedData || {},

@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, importJWK } from 'jose';
 import { NextResponse } from 'next/server';
-import { sendStatusUpdateToStudent, sendCertificateReadyNotification } from '@/lib/emailService';
+import { sendRejectionNotification, sendCertificateReadyNotification } from '@/lib/emailService';
 import { APP_URLS } from '@/lib/urlHelper';
 
 // Initialize Supabase Admin Client to bypass RLS for server-side actions
@@ -206,20 +206,19 @@ export async function POST(request) {
 
         const departmentDisplayName = deptData?.display_name || department;
 
-        // STEP 4: Send email notification to student
-        if (formData && formData.personal_email) {
+        // STEP 4: Send email notification to student (only for rejections)
+        if (formData && formData.personal_email && status === 'Rejected') {
             try {
-                await sendStatusUpdateToStudent({
+                await sendRejectionNotification({
                     studentEmail: formData.personal_email,
                     studentName: formData.student_name,
                     registrationNo: formData.registration_no,
                     departmentName: departmentDisplayName,
-                    action: status.toLowerCase(),
-                    rejectionReason: status === 'Rejected' ? reason : null,
+                    rejectionReason: reason,
                     statusUrl: APP_URLS.studentCheckStatus(formData.registration_no)
                 });
 
-                console.log(`✅ Sent ${status} notification to ${formData.personal_email}`);
+                console.log(`✅ Sent rejection notification to ${formData.personal_email}`);
             } catch (emailError) {
                 console.error('❌ Failed to send student notification (non-fatal):', emailError);
                 // Don't fail the request if email fails

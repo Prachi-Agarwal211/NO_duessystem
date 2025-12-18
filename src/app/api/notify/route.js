@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { sendDepartmentNotification } from '@/lib/emailService';
+import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 import { createClient } from '@supabase/supabase-js';
 import { APP_URLS } from '@/lib/urlHelper';
 
 /**
  * POST /api/notify
- * Send email notification to staff based on department
- * CLEANED UP - Removed hardcoded fallback emails
- * Now uses staff accounts from database (primary) with NO fallbacks
+ * Send combined email notification to ALL available staff
+ * Uses sendCombinedDepartmentNotification to send ONE email with all staff in CC
  */
 
 const supabase = createClient(
@@ -16,26 +15,25 @@ const supabase = createClient(
 );
 
 /**
- * Get staff email for department from database
+ * Get all staff emails from database
  */
-async function getStaffEmailForDepartment(departmentName) {
+async function getAllStaffEmails() {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('email')
-      .eq('department_name', departmentName)
+      .select('email, full_name, department_name')
       .eq('role', 'department')
-      .single();
+      .not('email', 'is', null);
     
-    if (error || !data) {
-      console.warn(`No staff account found for department: ${departmentName}`);
-      return null;
+    if (error) {
+      console.error('Error fetching staff emails:', error);
+      return [];
     }
     
-    return data.email;
+    return data || [];
   } catch (err) {
-    console.error('Error fetching staff email:', err);
-    return null;
+    console.error('Error fetching staff emails:', err);
+    return [];
   }
 }
 
@@ -69,7 +67,9 @@ export async function POST(request) {
     const {
       student_name = "",
       registration_no = "",
-      department = "",
+      school = "",
+      course = "",
+      branch = "",
       form_id,
     } = body || {};
 
@@ -83,31 +83,31 @@ export async function POST(request) {
       return createErrorResponse("Student name and registration number are required", 400, 'validation');
     }
 
-    if (!department) {
-      return createErrorResponse("Department is required", 400, 'validation');
-    }
-
-    // Get staff email from database
-    const toEmail = await getStaffEmailForDepartment(department);
+    // Get all staff emails from database
+    const allStaff = await getAllStaffEmails();
     
-    if (!toEmail) {
-      console.warn(`No staff email found for ${department}, skipping notification`);
+    if (allStaff.length === 0) {
+      console.warn('No staff accounts found in database');
       return NextResponse.json({
         success: true,
-        message: "No staff assigned to this department yet",
-        department,
+        message: "No staff accounts available yet",
         skipped: true,
         timestamp: new Date().toISOString()
       });
     }
 
-    // ==================== SEND EMAIL ====================
+    const allStaffEmails = allStaff.map(s => s.email);
+
+    // ==================== SEND COMBINED EMAIL ====================
 
     try {
-      const result = await sendDepartmentNotification({
-        departmentEmail: toEmail,
+      const result = await sendCombinedDepartmentNotification({
+        allStaffEmails,
         studentName: escapeHtml(student_name),
         registrationNo: escapeHtml(registration_no),
+        school: escapeHtml(school),
+        course: escapeHtml(course),
+        branch: escapeHtml(branch),
         formId: form_id,
         dashboardUrl: APP_URLS.staffLogin()
       });
@@ -122,8 +122,8 @@ export async function POST(request) {
 
       return NextResponse.json({
         success: true,
-        message: "Notification sent successfully",
-        department,
+        message: "Combined notification sent successfully",
+        recipientCount: allStaffEmails.length,
         timestamp: new Date().toISOString()
       });
 

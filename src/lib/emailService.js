@@ -107,13 +107,15 @@ async function addToQueue(emailData) {
  * Send email directly using Nodemailer
  * @param {Object} params - Email parameters
  * @param {string|string[]} params.to - Recipient email(s)
+ * @param {string|string[]} params.cc - CC recipient email(s) (optional)
+ * @param {string|string[]} params.bcc - BCC recipient email(s) (optional)
  * @param {string} params.subject - Email subject
  * @param {string} params.html - HTML content
  * @param {string} params.text - Plain text content (optional)
  * @param {boolean} params.queueOnFailure - Add to queue if sending fails (default: true)
  * @returns {Promise<Object>} - { success: boolean, messageId?: string, error?: string }
  */
-export async function sendEmail({ to, subject, html, text, queueOnFailure = true, metadata = {} }) {
+export async function sendEmail({ to, cc, bcc, subject, html, text, queueOnFailure = true, metadata = {} }) {
   try {
     // Validate inputs
     if (!to || !subject || !html) {
@@ -141,10 +143,24 @@ export async function sendEmail({ to, subject, html, text, queueOnFailure = true
       text: text || stripHtml(html)
     };
 
+    // Add CC if provided
+    if (cc) {
+      mailOptions.cc = Array.isArray(cc) ? cc.join(', ') : cc;
+    }
+
+    // Add BCC if provided
+    if (bcc) {
+      mailOptions.bcc = Array.isArray(bcc) ? bcc.join(', ') : bcc;
+    }
+
     // Send email
     const info = await transport.sendMail(mailOptions);
 
     console.log(`✅ Email sent successfully - ID: ${info.messageId}`);
+    console.log(`   TO: ${mailOptions.to}`);
+    if (cc) console.log(`   CC: ${mailOptions.cc}`);
+    if (bcc) console.log(`   BCC: ${mailOptions.bcc}`);
+    
     return { success: true, messageId: info.messageId };
 
   } catch (error) {
@@ -319,10 +335,10 @@ export async function sendCombinedDepartmentNotification({
     footerText: 'This is a combined notification sent to all department staff. Please do not reply to this email.'
   });
 
-  // Send ONE email with all staff in BCC for privacy
+  // Send ONE email with all staff in CC (visible to all)
   return sendEmail({
     to: allStaffEmails[0], // Primary recipient (first staff)
-    bcc: allStaffEmails.slice(1), // BCC others for privacy
+    cc: allStaffEmails.slice(1), // CC all others (visible to everyone)
     subject: `🔔 New Application: ${studentName} (${registrationNo}) - All Departments`,
     html,
     metadata: { formId, type: 'combined_department_notification', recipientCount: allStaffEmails.length }
@@ -530,7 +546,7 @@ export async function sendReapplicationNotification({
 
   return sendEmail({
     to: allStaffEmails[0],
-    bcc: allStaffEmails.slice(1),
+    cc: allStaffEmails.slice(1), // CC all others (visible to everyone)
     subject: `🔄 Reapplication #${reapplicationNumber}: ${studentName} (${registrationNo})`,
     html,
     metadata: { type: 'reapplication', reapplicationNumber, recipientCount: allStaffEmails.length }
