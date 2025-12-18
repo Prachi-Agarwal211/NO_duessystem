@@ -75,23 +75,52 @@ export async function GET(request, { params }) {
     // ✅ All forms are now online-only, so always check department authorization
     if (profile.role === 'department') {
       // Get department names from assigned UUIDs
-      const { data: myDepartments } = await supabaseAdmin
+      const { data: myDepartments, error: deptLookupError } = await supabaseAdmin
         .from('departments')
         .select('name')
         .in('id', profile.assigned_department_ids || []);
       
+      console.log('🔒 Auth Check - Form ID:', id);
+      console.log('🔒 Auth Check - User ID:', userId);
+      console.log('🔒 Auth Check - Assigned Dept IDs:', profile.assigned_department_ids);
+      console.log('🔒 Auth Check - Dept Lookup Error:', deptLookupError);
+      console.log('🔒 Auth Check - My Departments:', myDepartments);
+      
       const myDeptNames = myDepartments?.map(d => d.name) || [];
+      console.log('🔒 Auth Check - My Dept Names:', myDeptNames);
       
       // Check if this form has a status entry for ANY of the user's departments
       const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')
-        .select('form_id')
+        .select('form_id, department_name')
         .eq('form_id', id)
         .in('department_name', myDeptNames);
 
+      console.log('🔒 Auth Check - Status Query Error:', statusError);
+      console.log('🔒 Auth Check - Department Status Found:', departmentStatus);
+      console.log('🔒 Auth Check - Status Count:', departmentStatus?.length || 0);
+
       if (statusError || !departmentStatus || departmentStatus.length === 0) {
-        return NextResponse.json({ error: 'Unauthorized to access this student' }, { status: 403 });
+        console.log('❌ Auth FAILED - Returning 403');
+        console.log('❌ Reason:', {
+          hasError: !!statusError,
+          isNull: !departmentStatus,
+          isEmpty: departmentStatus?.length === 0,
+          formId: id,
+          myDeptNames,
+          assignedIds: profile.assigned_department_ids
+        });
+        return NextResponse.json({
+          error: 'Unauthorized to access this student',
+          debug: {
+            formId: id,
+            myDepartments: myDeptNames,
+            statusFound: departmentStatus?.length || 0
+          }
+        }, { status: 403 });
       }
+      
+      console.log('✅ Auth PASSED - User can access this form');
     }
 
     const { data: formData, error: formError } = await formQuery.single();

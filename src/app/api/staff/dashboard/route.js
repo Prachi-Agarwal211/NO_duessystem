@@ -16,27 +16,38 @@ export async function GET(request) {
     if (!user) return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
 
     // 1. Get Profile with Scopes
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('role, assigned_department_ids, school_ids')
         .eq('id', user.id)
         .single();
 
+    console.log('📊 Dashboard Debug - User ID:', user.id);
+    console.log('📊 Dashboard Debug - Profile:', profile);
+    console.log('📊 Dashboard Debug - Profile Error:', profileError);
+
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
     // 2. Resolve Department Names and Display Names
-    const { data: depts } = await supabaseAdmin
+    const { data: depts, error: deptError } = await supabaseAdmin
         .from('departments')
         .select('name, display_name')
         .in('id', profile.assigned_department_ids || []);
     
+    console.log('📊 Dashboard Debug - Assigned Dept IDs:', profile.assigned_department_ids);
+    console.log('📊 Dashboard Debug - Resolved Depts:', depts);
+    console.log('📊 Dashboard Debug - Dept Error:', deptError);
+
     const myDeptNames = depts?.map(d => d.name) || [];
     const deptInfo = depts?.map(d => ({ name: d.name, displayName: d.display_name })) || [];
 
+    console.log('📊 Dashboard Debug - My Dept Names:', myDeptNames);
+
     if (myDeptNames.length === 0 && profile.role !== 'admin') {
-        return NextResponse.json({ 
-            success: true, 
-            data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] } 
+        console.log('⚠️ Dashboard Debug - No departments found, returning empty');
+        return NextResponse.json({
+            success: true,
+            data: { stats: { pending: 0, approved: 0, rejected: 0, total: 0 }, applications: [] }
         });
     }
 
@@ -50,16 +61,24 @@ export async function GET(request) {
             )
         `)
         .in('department_name', myDeptNames)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .eq('status', 'pending');
+
+    console.log('📊 Dashboard Debug - Query filtering by dept_names:', myDeptNames);
 
     // 4. HOD SCOPE ENFORCEMENT (Critical for School-level filtering)
     // If the staff is an HOD (school_hod), they must ONLY see students from their assigned school
     if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+        console.log('📊 Dashboard Debug - Applying HOD scope filter for schools:', profile.school_ids);
         query = query.in('no_dues_forms.school_id', profile.school_ids);
     }
 
-    const { data: applications } = await query;
+    const { data: applications, error: queryError } = await query;
+
+    console.log('📊 Dashboard Debug - Applications Query Error:', queryError);
+    console.log('📊 Dashboard Debug - Applications Found:', applications?.length || 0);
+    if (applications && applications.length > 0) {
+        console.log('📊 Dashboard Debug - First Application:', applications[0]);
+    }
 
     // 5. STATS CALCULATION - Pending (dept-wide) + Personal (approved/rejected by ME)
     const { count: pendingCount } = await supabaseAdmin
