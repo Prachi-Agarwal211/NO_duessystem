@@ -202,11 +202,10 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    // Update the status
+    // Update the status (✅ SIMPLIFIED: No user tracking needed)
     const statusValue = action === 'approve' ? 'approved' : 'rejected';
     const updateData = {
       status: statusValue,
-      action_by_user_id: userId,
       action_at: new Date().toISOString()
     };
 

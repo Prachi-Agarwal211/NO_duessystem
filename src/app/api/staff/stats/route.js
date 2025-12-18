@@ -153,10 +153,11 @@ export async function GET(request) {
         isHOD
       });
 
-      // Department staff members get comprehensive stats for their assigned departments AND personal actions
+      // ✅ SIMPLIFIED: Just count ALL statuses for this department
+      // No complex user tracking - just show department workload
       
-      // 1. Get PERSONAL action counts (actions taken by THIS staff member)
-      let personalQuery = supabaseAdmin
+      // 1. Get ALL statuses for my departments (not filtered by user)
+      let allStatusesQuery = supabaseAdmin
         .from('no_dues_status')
         .select(`
           status,
@@ -166,37 +167,29 @@ export async function GET(request) {
             branch_id
           )
         `)
-        .in('department_name', myDeptNames)
-        .eq('action_by_user_id', userId);
+        .in('department_name', myDeptNames);
 
-      // IMPORTANT: Apply scope filtering ONLY for school_hod (HOD/Dean)
-      // The other departments see ALL students (consistent with dashboard API)
+      // Apply HOD scope filtering if needed
       if (isHOD) {
-        // Apply school filtering for HOD staff using UUID arrays
         if (profile.school_ids && profile.school_ids.length > 0) {
-          personalQuery = personalQuery.in('no_dues_forms.school_id', profile.school_ids);
+          allStatusesQuery = allStatusesQuery.in('no_dues_forms.school_id', profile.school_ids);
         }
-        
-        // Apply course filtering for HOD staff using UUID arrays
         if (profile.course_ids && profile.course_ids.length > 0) {
-          personalQuery = personalQuery.in('no_dues_forms.course_id', profile.course_ids);
+          allStatusesQuery = allStatusesQuery.in('no_dues_forms.course_id', profile.course_ids);
         }
-        
-        // Apply branch filtering for HOD staff using UUID arrays
         if (profile.branch_ids && profile.branch_ids.length > 0) {
-          personalQuery = personalQuery.in('no_dues_forms.branch_id', profile.branch_ids);
+          allStatusesQuery = allStatusesQuery.in('no_dues_forms.branch_id', profile.branch_ids);
         }
       }
-      // For other 9 departments: No additional filtering - they see all students
 
-      const { data: personalActions, error: personalError } = await personalQuery;
+      const { data: allStatuses, error: statusError } = await allStatusesQuery;
 
-      if (personalError) {
-        console.error('Error fetching personal stats:', personalError);
+      if (statusError) {
+        console.error('Error fetching stats:', statusError);
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
-      // 2. Get PENDING counts (for all assigned departments - these need action)
+      // 2. Get PENDING counts (these need action)
       console.log('📊 Stats API - Building pending query for:', {
         departments: myDeptNames,
         userId: userId,
@@ -234,60 +227,43 @@ export async function GET(request) {
           pendingQuery = pendingQuery.in('no_dues_forms.branch_id', profile.branch_ids);
         }
       }
-      // For other 9 departments: No additional filtering - they see all students
+      // For other departments: No additional filtering
 
       const { data: pendingActions, error: pendingError } = await pendingQuery;
-
-      // DEBUG: Log what we got
-      console.log('📊 Stats API - Pending query result:', {
-        department: profile.department_name,
-        count: pendingActions?.length || 0,
-        sample: pendingActions?.[0] || null,
-        error: pendingError
-      });
 
       if (pendingError) {
         console.error('Error fetching pending stats:', pendingError);
         return NextResponse.json({ error: 'Error fetching stats' }, { status: 500 });
       }
 
-      // Aggregate personal action counts
-      const myApprovedCount = personalActions?.filter(s => s.status === 'approved').length || 0;
-      const myRejectedCount = personalActions?.filter(s => s.status === 'rejected').length || 0;
-      const myTotalCount = personalActions?.length || 0;
+      // ✅ SIMPLIFIED: Count all statuses (not just personal actions)
+      const approvedCount = allStatuses?.filter(s => s.status === 'approved').length || 0;
+      const rejectedCount = allStatuses?.filter(s => s.status === 'rejected').length || 0;
+      const totalCount = allStatuses?.length || 0;
       const pendingCount = pendingActions?.length || 0;
 
       stats = {
         departments: myDepartments.map(d => d.display_name),
         department: myDepartments[0]?.display_name || profile.department_name,
         departmentName: myDepartments[0]?.name || profile.department_name,
-        pending: pendingCount, // Departments pending (need action)
-        approved: myApprovedCount, // MY approved count
-        rejected: myRejectedCount, // MY rejected count
-        total: myTotalCount, // MY total actions
-        approvalRate: myTotalCount > 0 ? Math.round((myApprovedCount / myTotalCount) * 100) : 0
+        pending: pendingCount, // Applications awaiting action
+        approved: approvedCount, // Total approved for this department
+        rejected: rejectedCount, // Total rejected for this department
+        total: totalCount, // Total applications handled
+        approvalRate: totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
       };
 
-      // Get today's activity (MY actions today across all assigned departments)
+      // ✅ SIMPLIFIED: Today's activity - just show today's actions for department
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { data: todayActions, error: todayError } = await supabaseAdmin
-        .from('no_dues_status')
-        .select('status')
-        .in('department_name', myDeptNames)
-        .eq('action_by_user_id', userId) // Only MY actions
-        .gte('action_at', today.toISOString());
+      const todayStatuses = allStatuses?.filter(s => {
+        return s.action_at && new Date(s.action_at) >= today;
+      }) || [];
 
-      if (!todayError && todayActions) {
-        stats.todayApproved = todayActions.filter(a => a.status === 'approved').length;
-        stats.todayRejected = todayActions.filter(a => a.status === 'rejected').length;
-        stats.todayTotal = todayActions.length;
-      } else {
-        stats.todayApproved = 0;
-        stats.todayRejected = 0;
-        stats.todayTotal = 0;
-      }
+      stats.todayApproved = todayStatuses.filter(s => s.status === 'approved').length;
+      stats.todayRejected = todayStatuses.filter(s => s.status === 'rejected').length;
+      stats.todayTotal = todayStatuses.length;
     }
 
     return NextResponse.json({ 
