@@ -37,18 +37,42 @@ export default function StaffDashboard() {
   useEffect(() => {
     fetchDashboard();
     
-    // ⚡⚡ STAFF REALTIME - Listens for status changes ⚡⚡
-    const channel = supabase.channel('staff_dashboard_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'no_dues_status' }, () => {
+    // ⚡⚡ ENHANCED REALTIME - Listens to BOTH tables ⚡⚡
+    const channel = supabase.channel('staff_dashboard_realtime_v2')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'no_dues_forms'
+      }, (payload) => {
+        console.log('📋 Form event detected:', payload.eventType);
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(() => {
-            console.log("⚡ New Task/Update Detected - Refreshing Staff...");
-            fetchDashboard();
-        }, 1000);
+          console.log("⚡ Refreshing Staff Dashboard (New Form)...");
+          fetchDashboard();
+          toast.success("New form detected!");
+        }, 800);
       })
-      .subscribe();
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'no_dues_status'
+      }, (payload) => {
+        console.log('📊 Status event detected:', payload.eventType);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+          console.log("⚡ Refreshing Staff Dashboard (Status Change)...");
+          fetchDashboard();
+          toast.success("Status updated!");
+        }, 800);
+      })
+      .subscribe((status) => {
+        console.log('📡 Realtime status:', status);
+      });
 
-    return () => supabase.removeChannel(channel);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleAction = async (e, formId, departmentName, action) => {
@@ -111,7 +135,13 @@ export default function StaffDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Department Dashboard</h1>
-             <p className="text-gray-500 dark:text-gray-400 text-sm">Realtime Pending List</p>
+             <div className="flex items-center gap-2 mt-2">
+               <div className="flex items-center gap-2 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                 <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+               </div>
+               <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
+             </div>
           </div>
           <button 
             onClick={() => {setLoading(true); fetchDashboard();}} 

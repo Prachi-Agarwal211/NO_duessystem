@@ -1,217 +1,128 @@
 'use client';
-
-export const dynamic = 'force-dynamic';
-
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import PageWrapper from '@/components/landing/PageWrapper';
-import GlobalBackground from '@/components/ui/GlobalBackground';
+import { supabase } from '@/lib/supabaseClient';
 import GlassCard from '@/components/ui/GlassCard';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import Logo from '@/components/ui/Logo';
-import ForgotPasswordFlow from '@/components/staff/ForgotPasswordFlow';
+import Link from 'next/link';
+import { ArrowLeft, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
-function StaffLoginContent() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn } = useAuth();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
-      // Validate inputs
-      if (!email.trim() || !password.trim()) {
-        throw new Error('Email and password are required');
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Sign in using AuthContext
-      const result = await signIn(email, password, rememberMe);
+      if (error) throw error;
 
-      // Success! Redirect based on role
-      const redirect = searchParams.get('redirect') || result.redirectTo;
-      router.push(redirect);
+      // Check Profile Role
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profile?.role === 'admin') router.push('/admin');
+      else router.push('/staff/dashboard');
+
+      toast.success('Welcome back!');
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please check your credentials and try again.');
+      setError(err.message);
+      toast.error('Login Failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <PageWrapper>
-      <GlobalBackground />
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
-        <div className="w-full max-w-md">
-          <GlassCard>
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-6">
-                <Logo size="medium" />
-              </div>
-              <h1 className={`text-3xl sm:text-4xl font-bold mb-2 transition-all duration-700
-                ${isDark
-                  ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
-                  : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
-                }`}>
-                Staff Login
-              </h1>
-              <p className={`text-sm transition-colors duration-700
-                ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Department Staff & Administrators Only
-              </p>
-            </div>
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black transition-colors duration-500">
+      
+      {/* Back Button */}
+      <Link href="/" className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium">Back to Home</span>
+      </Link>
 
-            {error && (
-              <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
-                <p className="text-red-200 text-sm">{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${isDark
-                    ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
-                    : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
-                    }`}
-                  placeholder="your.email@jecrcu.edu.in"
-                  required
-                  disabled={loading}
-                  autoComplete="email"
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-2 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-jecrc-red transition-all duration-300 ${isDark
-                    ? 'bg-white/10 border border-white/20 text-white placeholder-gray-500'
-                    : 'bg-white border border-black/20 text-ink-black placeholder-gray-400'
-                    }`}
-                  placeholder="Enter your password"
-                  required
-                  disabled={loading}
-                  autoComplete="current-password"
-                />
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={loading}
-                  className={`h-4 w-4 rounded border transition-colors duration-300 focus:ring-2 focus:ring-jecrc-red focus:ring-offset-0 ${
-                    isDark
-                      ? 'bg-white/10 border-white/20 text-jecrc-red'
-                      : 'bg-white border-gray-300 text-jecrc-red'
-                  }`}
-                />
-                <label
-                  htmlFor="remember-me"
-                  className={`ml-2 block text-sm cursor-pointer select-none transition-colors duration-700 ${
-                    isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}
-                >
-                  Remember me for 30 days
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  disabled={loading}
-                  className={`text-sm transition-colors duration-300 hover:underline ${
-                    isDark ? 'text-red-400 hover:text-red-300' : 'text-jecrc-red hover:text-red-700'
-                  }`}
-                >
-                  Forgot Password?
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="interactive w-full px-6 py-3 min-h-[44px] bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <LoadingSpinner />
-                    <span>Logging in...</span>
-                  </>
-                ) : (
-                  'Login to Dashboard'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => router.push('/')}
-                className={`text-sm transition-colors duration-700 hover:underline ${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'
-                  }`}
-              >
-                ← Back to Home
-              </button>
-            </div>
-
-            <div className={`mt-6 pt-6 border-t text-center text-xs transition-colors duration-700 ${isDark ? 'border-white/10 text-gray-500' : 'border-black/10 text-gray-600'
-              }`}>
-              <p>Need help? Contact your system administrator</p>
-            </div>
-          </GlassCard>
-
-          {/* Forgot Password Flow Modal */}
-          <ForgotPasswordFlow
-            isOpen={showForgotPassword}
-            onClose={() => setShowForgotPassword(false)}
-            onSuccess={() => {
-              setError('');
-              // Optionally show a success message
-            }}
-          />
+      <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-600/20 rounded-full flex items-center justify-center mb-4">
+             <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Staff Login</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Access the No-Dues Verification Portal</p>
         </div>
-      </div>
-    </PageWrapper>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          
+          {error && (
+            <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-3 text-red-600 dark:text-red-400 text-sm">
+               <AlertCircle className="w-5 h-5 shrink-0" />
+               {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+              <input
+                type="email"
+                required
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="staff@college.edu"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Password</label>
+                <Link href="/staff/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">Forgot?</Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                required
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+          </button>
+        </form>
+      </GlassCard>
+    </div>
   );
 }
 
 export default function StaffLogin() {
   return (
-    <Suspense fallback={
-      <PageWrapper>
-        <div className="min-h-screen flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </PageWrapper>
-    }>
-      <StaffLoginContent />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>}>
+      <LoginForm />
     </Suspense>
   );
 }

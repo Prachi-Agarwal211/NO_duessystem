@@ -5,37 +5,52 @@ import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatsGrid from '@/components/dashboard/StatsGrid';
-import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock } from 'lucide-react';
+import ApplicationsTable from '@/components/admin/ApplicationsTable';
+import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download } from 'lucide-react';
+import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import toast from 'react-hot-toast';
 
-// Simple Performance Chart Component
+// Performance Chart Component
 const PerformanceBar = ({ label, pending, approved, timeTaken }) => (
   <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-blue-500/30 transition-all">
     <div className="flex justify-between items-center mb-2">
-        <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{label.replace(/_/g, ' ')}</h4>
-        <div className="flex items-center gap-1 text-xs font-mono text-gray-500 dark:text-gray-400">
-            <Clock className="w-3 h-3" /> {timeTaken || '~24'}h avg
-        </div>
+      <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{label.replace(/_/g, ' ')}</h4>
+      <div className="flex items-center gap-1 text-xs font-mono text-gray-500 dark:text-gray-400">
+        <Clock className="w-3 h-3" /> {timeTaken || '~24'}h avg
+      </div>
     </div>
     <div className="space-y-2">
-        <div className="flex justify-between text-xs">
-            <span className="text-yellow-600 dark:text-yellow-400">Pending: {pending}</span>
-            <span className="text-green-600 dark:text-green-400">Cleared: {approved}</span>
-        </div>
-        <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-200 dark:bg-white/10">
-            <div className="bg-yellow-400 transition-all duration-500" style={{ width: `${(pending / (pending + approved || 1)) * 100}%` }} />
-            <div className="bg-green-500 transition-all duration-500" style={{ width: `${(approved / (pending + approved || 1)) * 100}%` }} />
-        </div>
+      <div className="flex justify-between text-xs">
+        <span className="text-yellow-600 dark:text-yellow-400">Pending: {pending}</span>
+        <span className="text-green-600 dark:text-green-400">Cleared: {approved}</span>
+      </div>
+      <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-200 dark:bg-white/10">
+        <div className="bg-yellow-400 transition-all duration-500" style={{ width: `${(pending / (pending + approved || 1)) * 100}%` }} />
+        <div className="bg-green-500 transition-all duration-500" style={{ width: `${(approved / (pending + approved || 1)) * 100}%` }} />
+      </div>
     </div>
   </div>
 );
 
-export default function AdminDashboard() {
+export default function EnhancedAdminDashboard() {
   const router = useRouter();
+  const debounceTimer = useRef(null);
+  
+  // Stats & Department Performance
   const [data, setData] = useState({ overallStats: {}, departmentStats: [] });
   const [loading, setLoading] = useState(true);
-  const debounceTimer = useRef(null);
+  
+  // Applications Table
+  const [applications, setApplications] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
+  // Fetch Stats
   const fetchStats = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -48,29 +63,98 @@ export default function AdminDashboard() {
       const json = await res.json();
       if (json.overallStats) setData(json);
     } catch (e) {
-      console.error("Admin Sync Error:", e);
+      console.error("Stats Error:", e);
+    }
+  };
+
+  // Fetch Applications with Filters
+  const fetchApplications = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20'
+      });
+      
+      if (statusFilter) params.append('status', statusFilter);
+      if (searchTerm.trim()) params.append('search', searchTerm.trim());
+
+      const res = await fetch(`/api/admin/dashboard?${params}`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        cache: 'no-store'
+      });
+      
+      const json = await res.json();
+      if (json.applications) {
+        setApplications(json.applications);
+        setTotalPages(json.pagination?.totalPages || 1);
+        setTotalItems(json.pagination?.total || 0);
+      }
+    } catch (e) {
+      console.error("Applications Error:", e);
+      toast.error("Failed to load applications");
     } finally {
       setLoading(false);
     }
   };
 
-  // ⚡ Realtime Monitoring (Students + Statuses)
+  // Initial Load
   useEffect(() => {
     fetchStats();
-    const channel = supabase.channel('admin_realtime_v2')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'no_dues_forms' }, () => {
-         if (debounceTimer.current) clearTimeout(debounceTimer.current);
-         debounceTimer.current = setTimeout(fetchStats, 1500); // 1.5s debounce
-         toast.success("New Application Received");
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'no_dues_status' }, () => {
-         if (debounceTimer.current) clearTimeout(debounceTimer.current);
-         debounceTimer.current = setTimeout(fetchStats, 1500);
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
+    fetchApplications();
   }, []);
+
+  // Fetch when filters change
+  useEffect(() => {
+    fetchApplications();
+  }, [currentPage, statusFilter, searchTerm]);
+
+  // ⚡⚡ FIXED REALTIME - Separate from filters (never recreates) ⚡⚡
+  useEffect(() => {
+    console.log("🔌 Admin Realtime: Connecting...");
+    
+    const channel = supabase.channel('admin_realtime_v3_fixed')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'no_dues_forms'
+      }, (payload) => {
+        console.log('📋 Admin: Form event detected:', payload.eventType);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+          console.log("⚡ Refreshing Admin Dashboard (Form)...");
+          fetchStats();
+          fetchApplications();
+          toast.success("New form detected!");
+        }, 800);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'no_dues_status'
+      }, (payload) => {
+        console.log('📊 Admin: Status event detected:', payload.eventType);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+          console.log("⚡ Refreshing Admin Dashboard (Status)...");
+          fetchStats();
+          fetchApplications();
+          toast.success("Status updated!");
+        }, 800);
+      })
+      .subscribe((status) => {
+        console.log('📡 Admin Realtime status:', status);
+      });
+
+    return () => {
+      console.log("🔌 Admin Realtime: Disconnecting...");
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      supabase.removeChannel(channel);
+    };
+  }, []); // ✅ FIXED: Empty dependencies - channel never recreates
 
   return (
     <PageWrapper>
@@ -80,15 +164,28 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Realtime System Overview</p>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
+            </div>
           </div>
           <div className="flex gap-3">
-             <button onClick={() => router.push('/admin/settings')} className="p-2 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group">
-                <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-             </button>
-             <button onClick={() => {setLoading(true); fetchStats();}} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-lg shadow-blue-600/20">
-                <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-             </button>
+            <button onClick={() => router.push('/admin/settings')} className="p-2 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group">
+              <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+            </button>
+            <button 
+              onClick={() => {
+                setLoading(true); 
+                fetchStats(); 
+                fetchApplications();
+              }} 
+              className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-lg shadow-blue-600/20"
+            >
+              <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
 
@@ -96,55 +193,117 @@ export default function AdminDashboard() {
         <StatsGrid stats={data.overallStats} loading={loading} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* 2. DEPARTMENT PERFORMANCE & MONITORING (Left) */}
-            <GlassCard className="lg:col-span-2 p-6">
-                <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-white/5 pb-4">
-                    <TrendingUp className="w-5 h-5 text-purple-500" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+          
+          {/* 2. DEPARTMENT PERFORMANCE */}
+          <GlassCard className="lg:col-span-2 p-6">
+            <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-white/5 pb-4">
+              <TrendingUp className="w-5 h-5 text-purple-500" />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {data.departmentStats.length === 0 ? (
+                <div className="col-span-2 text-center py-10 text-gray-400">No active data</div>
+              ) : (
+                data.departmentStats.map((dept) => (
+                  <PerformanceBar 
+                    key={dept.department_name}
+                    label={dept.department_name} 
+                    pending={dept.pending_count} 
+                    approved={dept.approved_count}
+                    timeTaken={dept.avg_hours || 12}
+                  />
+                ))
+              )}
+            </div>
+          </GlassCard>
+
+          {/* 3. QUICK ACTIONS */}
+          <div className="space-y-4">
+            <GlassCard className="p-6 cursor-pointer group hover:border-blue-500/50 transition-all" onClick={() => router.push('/admin/convocation')}>
+              <div className="flex justify-between items-start">
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                  <GraduationCap className="w-6 h-6" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {data.departmentStats.length === 0 ? (
-                        <div className="col-span-2 text-center py-10 text-gray-400">No active data</div>
-                    ) : (
-                        data.departmentStats.map((dept) => (
-                            <PerformanceBar 
-                                key={dept.department_name}
-                                label={dept.department_name} 
-                                pending={dept.pending_count} 
-                                approved={dept.approved_count}
-                                timeTaken={dept.avg_hours || 12} // Mock data or add calculation in SQL
-                            />
-                        ))
-                    )}
-                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Convocation 2024</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
             </GlassCard>
 
-            {/* 3. QUICK ACTIONS (Right) */}
-            <div className="space-y-4">
-                <GlassCard className="p-6 cursor-pointer group hover:border-blue-500/50 transition-all" onClick={() => router.push('/admin/convocation')}>
-                    <div className="flex justify-between items-start">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
-                            <GraduationCap className="w-6 h-6" />
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Convocation 2024</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
-                </GlassCard>
-
-                <GlassCard className="p-6 cursor-pointer group hover:border-emerald-500/50 transition-all" onClick={() => router.push('/admin/manual-entry')}>
-                    <div className="flex justify-between items-start">
-                        <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
-                            <FileText className="w-6 h-6" />
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Manual Entries</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Offline Records Database</p>
-                </GlassCard>
-            </div>
+            <GlassCard className="p-6 cursor-pointer group hover:border-emerald-500/50 transition-all" onClick={() => router.push('/admin/manual-entry')}>
+              <div className="flex justify-between items-start">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Manual Entries</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Offline Records Database</p>
+            </GlassCard>
+          </div>
         </div>
+
+        {/* 4. SEARCH & FILTER */}
+        <GlassCard className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search students..."
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+            {/* Export Buttons */}
+            <button
+              onClick={() => {
+                exportStatsToCSV(data);
+                toast.success("Stats exported!");
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Export Stats
+            </button>
+            
+            <button
+              onClick={() => {
+                exportApplicationsToCSV(applications);
+                toast.success("Data exported!");
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Export Data
+            </button>
+          </div>
+        </GlassCard>
+
+        {/* 5. APPLICATIONS TABLE WITH PAGINATION */}
+        <ApplicationsTable
+          key={`apps-${applications.length}-${currentPage}-${Date.now()}`}
+          applications={applications}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </PageWrapper>
   );
