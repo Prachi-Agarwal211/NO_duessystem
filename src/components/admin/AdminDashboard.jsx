@@ -358,20 +358,7 @@ export default function AdminDashboard() {
 
       {activeTab === 'dashboard' ? (
         <div className="space-y-8 animate-fade-in">
-          {/* Stats Loading/Error State */}
-          {!statsLoaded && !loading && (
-            <div className={`p-4 rounded-lg border ${
-              isDark
-                ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-            }`}>
-              <p className="text-sm">
-                ⚠️ Loading statistics... If this persists, try refreshing the page.
-              </p>
-            </div>
-          )}
-          
-          {/* Stats Grid - Clickable Cards with Smooth Scroll Animation */}
+          {/* Stats Grid - Always renders with fallback values */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
               onClick={() => {
@@ -402,8 +389,8 @@ export default function AdminDashboard() {
             >
               <StatsCard
                 title="Completed"
-                value={statusCounts.completed_requests || 0}
-                change={statusCounts ? `${((statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                value={statusCounts?.completed_requests || 0}
+                change={statusCounts?.total_requests ? `${((statusCounts.completed_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
                 trend="up"
                 color="bg-green-500"
               />
@@ -422,8 +409,8 @@ export default function AdminDashboard() {
             >
               <StatsCard
                 title="Pending"
-                value={statusCounts.pending_requests || 0}
-                change={statusCounts ? `${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                value={statusCounts?.pending_requests || 0}
+                change={statusCounts?.total_requests ? `${((statusCounts.pending_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
                 trend="down"
                 color="bg-yellow-500"
               />
@@ -442,8 +429,8 @@ export default function AdminDashboard() {
             >
               <StatsCard
                 title="Rejected"
-                value={statusCounts.rejected_requests || 0}
-                change={statusCounts ? `${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
+                value={statusCounts?.rejected_requests || 0}
+                change={statusCounts?.total_requests ? `${((statusCounts.rejected_requests / Math.max(statusCounts.total_requests, 1)) * 100).toFixed(1)}%` : '0%'}
                 trend="down"
                 color="bg-red-500"
               />

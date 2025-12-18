@@ -408,7 +408,7 @@ export async function GET(request) {
         },
         history: history || []
       }
-    });
+    }, { status: 200 });
 
   } catch (error) {
     console.error('Get Reapplication History Error:', error);
