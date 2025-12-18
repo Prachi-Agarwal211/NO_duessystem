@@ -1,13 +1,13 @@
 'use client';
 import { Users, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-export default function StatsGrid({ stats, role = 'staff', loading = false }) {
-  // Normalize data keys (Handling the API mismatch)
+export default function StatsGrid({ stats, loading = false }) {
+  // Normalize keys to handle both Admin and Staff API formats
   const safeStats = {
-    total: stats?.total || stats?.totalApplications || 0,
     pending: stats?.pending || stats?.pendingApplications || 0,
     approved: stats?.approved || stats?.approvedApplications || 0,
     rejected: stats?.rejected || stats?.rejectedApplications || 0,
+    total: stats?.total || stats?.totalApplications || 0,
   };
 
   const cards = [
