@@ -2,6 +2,11 @@
  * Email Service using Nodemailer (Vercel Compatible)
  * Handles all email notifications for the JECRC UNIVERSITY NO DUES System
  * Features: SMTP connection pooling, email queue, retry logic
+ * 
+ * OPTIMIZED: Reduced from 15 emails per student to just 3:
+ * 1. One combined email to ALL departments (not individual)
+ * 2. One email to student on rejection
+ * 3. One email to student when fully approved
  */
 
 import nodemailer from 'nodemailer';
@@ -167,107 +172,6 @@ export async function sendEmail({ to, subject, html, text, queueOnFailure = true
 }
 
 /**
- * Send email with automatic retry logic
- * @param {Object} params - Email parameters
- * @param {number} maxRetries - Maximum retry attempts (default: 3)
- * @returns {Promise<Object>} - Send result
- */
-export async function sendEmailWithRetry(params, maxRetries = 3) {
-  let attempt = 0;
-  let lastError = null;
-
-  while (attempt < maxRetries) {
-    attempt++;
-    console.log(`📤 Email send attempt ${attempt}/${maxRetries}...`);
-    
-    const result = await sendEmail({ ...params, queueOnFailure: false });
-    
-    if (result.success) {
-      if (attempt > 1) {
-        console.log(`✅ Email sent successfully after ${attempt} attempts`);
-      }
-      return result;
-    }
-    
-    lastError = result.error;
-    
-    // Exponential backoff before retry
-    if (attempt < maxRetries) {
-      const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
-      console.log(`⏳ Waiting ${delay}ms before retry...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-  }
-  
-  // All retries failed - add to queue
-  console.log(`❌ All ${maxRetries} attempts failed. Adding to queue...`);
-  return await addToQueue(params);
-}
-
-/**
- * Send bulk emails in batches
- * Compatible with Vercel's function timeout limits
- * @param {Array} emails - Array of email objects
- * @param {number} batchSize - Emails per batch (default: 10)
- * @param {number} timeout - Max processing time in ms (default: 45000)
- * @returns {Promise<Object>} - Results and statistics
- */
-export async function sendBulkEmails(emails, batchSize = 10, timeout = 45000) {
-  const startTime = Date.now();
-  const results = {
-    sent: 0,
-    queued: 0,
-    failed: 0,
-    details: []
-  };
-
-  for (let i = 0; i < emails.length; i += batchSize) {
-    // Check timeout to avoid Vercel function limit
-    if (Date.now() - startTime > timeout) {
-      console.log(`⏰ Approaching timeout. Queueing remaining ${emails.length - i} emails...`);
-      
-      // Queue remaining emails
-      const remaining = emails.slice(i);
-      for (const email of remaining) {
-        const queueResult = await addToQueue(email);
-        if (queueResult.success) {
-          results.queued++;
-        } else {
-          results.failed++;
-        }
-      }
-      break;
-    }
-
-    // Process current batch
-    const batch = emails.slice(i, i + batchSize);
-    console.log(`📧 Processing batch ${Math.floor(i / batchSize) + 1} (${batch.length} emails)...`);
-    
-    const batchResults = await Promise.all(
-      batch.map(email => sendEmail(email))
-    );
-    
-    // Count results
-    batchResults.forEach((result, index) => {
-      if (result.success) {
-        results.sent++;
-      } else if (result.queued) {
-        results.queued++;
-      } else {
-        results.failed++;
-      }
-      results.details.push({
-        email: batch[index].to,
-        ...result
-      });
-    });
-  }
-
-  console.log(`\n📊 Bulk email results: ${results.sent} sent, ${results.queued} queued, ${results.failed} failed`);
-  return results;
-}
-
-/**
  * Generate HTML email template
  * @param {Object} params - Template parameters
  * @returns {string} - HTML content
@@ -344,20 +248,31 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
 }
 
 /**
- * Send notification to department when new form is submitted
+ * 🆕 OPTIMIZED: Send ONE combined email to ALL departments
+ * Instead of individual emails to each staff member
  * @param {Object} params - Notification parameters
  * @returns {Promise<Object>} - Email send result
  */
-export async function sendDepartmentNotification({
-  departmentEmail,
+export async function sendCombinedDepartmentNotification({
+  allStaffEmails,
   studentName,
   registrationNo,
+  school,
+  course,
+  branch,
   formId,
   dashboardUrl
 }) {
+  if (!allStaffEmails || allStaffEmails.length === 0) {
+    console.warn('⚠️ No staff emails to notify');
+    return { success: false, error: 'No recipients' };
+  }
+
+  console.log(`📧 Sending COMBINED notification to ${allStaffEmails.length} staff members...`);
+
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      A new No Dues application has been submitted and requires your attention.
+      A new No Dues application has been submitted and requires review from <strong>all departments</strong>.
     </p>
     
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -369,128 +284,86 @@ export async function sendDepartmentNotification({
           <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
             <strong>Name:</strong> ${studentName}
           </p>
-          <p style="margin: 0; color: #1f2937; font-size: 15px;">
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
             <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+            <strong>School:</strong> ${school}
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+            <strong>Course:</strong> ${course}
+          </p>
+          <p style="margin: 0; color: #1f2937; font-size: 15px;">
+            <strong>Branch:</strong> ${branch}
           </p>
         </td>
       </tr>
     </table>
     
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <strong>📌 Important:</strong> This email is sent to all department staff. Please log in to your dashboard to review and take action (Approve/Reject) for your department only.
+      </p>
+    </div>
+    
     <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-      Please review the application and take appropriate action (Approve/Reject) from your dashboard.
+      The student will be notified only when ALL departments approve or if ANY department rejects.
     </p>
   `;
 
   const html = generateEmailTemplate({
-    title: 'New No Dues Application',
+    title: 'New No Dues Application - All Departments',
     content,
     actionUrl: dashboardUrl,
     actionText: 'Review Application',
-    footerText: 'Please do not reply to this email. For support, contact support@jecrc.ac.in'
+    footerText: 'This is a combined notification sent to all department staff. Please do not reply to this email.'
   });
 
+  // Send ONE email with all staff in BCC for privacy
   return sendEmail({
-    to: departmentEmail,
-    subject: `New Application: ${studentName} (${registrationNo})`,
+    to: allStaffEmails[0], // Primary recipient (first staff)
+    bcc: allStaffEmails.slice(1), // BCC others for privacy
+    subject: `🔔 New Application: ${studentName} (${registrationNo}) - All Departments`,
     html,
-    metadata: { formId, type: 'department_notification' }
+    metadata: { formId, type: 'combined_department_notification', recipientCount: allStaffEmails.length }
   });
 }
 
 /**
- * Send notification to all staff members
- * Uses parallel sending with queue fallback for Vercel compatibility
- * @param {Object} params - Notification parameters
- * @returns {Promise<Object>} - Results summary
- */
-export async function notifyAllDepartments({
-  staffMembers,
-  studentName,
-  registrationNo,
-  formId,
-  dashboardUrl
-}) {
-  if (!staffMembers || staffMembers.length === 0) {
-    console.warn('⚠️ No staff members to notify');
-    return { sent: 0, queued: 0, failed: 0 };
-  }
-
-  console.log(`📧 Sending notifications to ${staffMembers.length} staff member(s)...`);
-
-  // Prepare all emails
-  const emails = staffMembers.map(staff => ({
-    to: staff.email,
-    subject: `New Application: ${studentName} (${registrationNo})`,
-    html: generateEmailTemplate({
-      title: 'New No Dues Application',
-      content: `
-        <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-          A new No Dues application has been submitted to the <strong>${staff.department}</strong> department.
-        </p>
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <tr><td>
-            <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-              <strong>Name:</strong> ${studentName}
-            </p>
-            <p style="margin: 0; color: #1f2937; font-size: 15px;">
-              <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
-            </p>
-          </td></tr>
-        </table>
-      `,
-      actionUrl: dashboardUrl,
-      actionText: 'Review Application'
-    }),
-    metadata: { formId, type: 'department_notification', department: staff.department }
-  }));
-
-  // Send in batches with automatic queueing
-  const results = await sendBulkEmails(emails, 10, 45000);
-  
-  console.log(`\n✅ Department notifications: ${results.sent} sent, ${results.queued} queued, ${results.failed} failed`);
-  return results;
-}
-
-/**
- * Send status update notification to student
+ * Send rejection notification to student
  * @param {Object} params - Notification parameters
  * @returns {Promise<Object>} - Email send result
  */
-export async function sendStatusUpdateToStudent({
+export async function sendRejectionNotification({
   studentEmail,
   studentName,
   registrationNo,
   departmentName,
-  action,
   rejectionReason,
   statusUrl
 }) {
-  const isApproved = action === 'approved';
-  const actionText = isApproved ? 'Approved' : 'Rejected';
-  const emoji = isApproved ? '✅' : '❌';
-
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
       Hello <strong>${studentName}</strong>,
     </p>
     
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      The <strong>${departmentName}</strong> department has <strong>${actionText.toLowerCase()}</strong> your No Dues application.
+      Your No Dues application has been <strong>rejected</strong> by the <strong>${departmentName}</strong> department.
     </p>
     
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: ${isApproved ? '#f0fdf4' : '#fef2f2'}; border-radius: 8px; border-left: 4px solid ${isApproved ? '#16a34a' : '#dc2626'}; padding: 20px; margin: 20px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0;">
       <tr>
         <td>
-          <p style="margin: 0 0 8px 0; color: ${isApproved ? '#16a34a' : '#dc2626'}; font-size: 18px; font-weight: 600;">
-            ${emoji} ${actionText}
+          <p style="margin: 0 0 8px 0; color: #dc2626; font-size: 18px; font-weight: 600;">
+            ❌ Application Rejected
           </p>
           <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
             <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
           </p>
-          <p style="margin: 0; color: #1f2937; font-size: 14px;">
-            <strong>Department:</strong> ${departmentName}
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
+            <strong>Rejected By:</strong> ${departmentName}
           </p>
-          ${!isApproved && rejectionReason ? `
+          ${rejectionReason ? `
             <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #fecaca;">
               <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase;">
                 Reason for Rejection
@@ -503,25 +376,32 @@ export async function sendStatusUpdateToStudent({
         </td>
       </tr>
     </table>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+        <strong>⚠️ Next Steps:</strong><br/>
+        Please resolve the issues mentioned above and reapply through the system. You can edit your application and resubmit for review.
+      </p>
+    </div>
   `;
 
   const html = generateEmailTemplate({
-    title: `${actionText}: ${departmentName} Department`,
+    title: `Application Rejected: ${departmentName}`,
     content,
     actionUrl: statusUrl,
-    actionText: 'Check Application Status'
+    actionText: 'View Application Status'
   });
 
   return sendEmail({
     to: studentEmail,
-    subject: `${emoji} ${departmentName} - Application ${actionText}`,
+    subject: `❌ Application Rejected - ${registrationNo}`,
     html,
-    metadata: { type: 'status_update', action, department: departmentName }
+    metadata: { type: 'rejection_notification', department: departmentName }
   });
 }
 
 /**
- * Send certificate ready notification to student
+ * Send certificate ready notification to student (all approved)
  * @param {Object} params - Notification parameters
  * @returns {Promise<Object>} - Email send result
  */
@@ -552,6 +432,13 @@ export async function sendCertificateReadyNotification({
         </td>
       </tr>
     </table>
+    
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <strong>📥 Download Your Certificate:</strong><br/>
+        Click the button below to access your No Dues Certificate. You can download and print it for official use.
+      </p>
+    </div>
   `;
 
   const html = generateEmailTemplate({
@@ -570,80 +457,92 @@ export async function sendCertificateReadyNotification({
 }
 
 /**
- * Send reapplication notification to staff members
+ * 🆕 OPTIMIZED: Send ONE email for reapplication (combined to all departments)
  * @param {Object} params - Notification parameters
- * @returns {Promise<Object>} - Results summary
+ * @returns {Promise<Object>} - Email send result
  */
-export async function sendReapplicationNotifications({
-  staffMembers,
+export async function sendReapplicationNotification({
+  allStaffEmails,
   studentName,
   registrationNo,
   studentMessage,
   reapplicationNumber,
-  dashboardUrl,
-  formUrl
+  school,
+  course,
+  branch,
+  dashboardUrl
 }) {
-  if (!staffMembers || staffMembers.length === 0) {
-    console.warn('⚠️ No staff members to notify for reapplication');
-    return { sent: 0, queued: 0, failed: 0 };
+  if (!allStaffEmails || allStaffEmails.length === 0) {
+    console.warn('⚠️ No staff emails for reapplication notification');
+    return { success: false, error: 'No recipients' };
   }
 
-  console.log(`📧 Sending reapplication notifications to ${staffMembers.length} staff member(s)...`);
+  console.log(`📧 Sending COMBINED reapplication notification to ${allStaffEmails.length} staff members...`);
 
-  const emails = staffMembers.map(staff => ({
-    to: staff.email,
-    subject: `🔄 Reapplication: ${studentName} (${registrationNo}) - Review #${reapplicationNumber}`,
-    html: generateEmailTemplate({
-      title: 'Student Reapplication - Review Required',
-      content: `
-        <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-          A student has <strong>reapplied</strong> to their No Dues application.
+  const content = `
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      A student has <strong>reapplied</strong> to their No Dues application after addressing previous concerns.
+    </p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+      <tr><td>
+        <p style="margin: 0 0 8px 0; color: #f59e0b; font-size: 16px; font-weight: 600;">
+          🔄 Reapplication #${reapplicationNumber}
         </p>
-        
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
-          <tr><td>
-            <p style="margin: 0 0 8px 0; color: #f59e0b; font-size: 16px; font-weight: 600;">
-              🔄 Reapplication #${reapplicationNumber}
-            </p>
-            <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-              <strong>Student:</strong> ${studentName}
-            </p>
-            <p style="margin: 0; color: #1f2937; font-size: 15px;">
-              <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
-            </p>
-          </td></tr>
-        </table>
-        
-        <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <p style="margin: 0 0 8px 0; color: #3b82f6; font-size: 13px; font-weight: 600;">
-            STUDENT'S RESPONSE
-          </p>
-          <p style="margin: 0; color: #1e3a8a; font-size: 14px; font-style: italic;">
-            "${studentMessage}"
-          </p>
-        </div>
-      `,
-      actionUrl: formUrl || dashboardUrl,
-      actionText: 'Review Reapplication'
-    }),
-    metadata: { type: 'reapplication', reapplicationNumber, department: staff.department }
-  }));
+        <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+          <strong>Student:</strong> ${studentName}
+        </p>
+        <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+          <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
+        </p>
+        <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+          <strong>School:</strong> ${school}
+        </p>
+        <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
+          <strong>Course:</strong> ${course}
+        </p>
+        <p style="margin: 0; color: #1f2937; font-size: 15px;">
+          <strong>Branch:</strong> ${branch}
+        </p>
+      </td></tr>
+    </table>
+    
+    <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 0 0 8px 0; color: #3b82f6; font-size: 13px; font-weight: 600;">
+        STUDENT'S RESPONSE
+      </p>
+      <p style="margin: 0; color: #1e3a8a; font-size: 14px; font-style: italic;">
+        "${studentMessage}"
+      </p>
+    </div>
+    
+    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
+      Please log in to review the updated application and take appropriate action.
+    </p>
+  `;
 
-  const results = await sendBulkEmails(emails, 10, 45000);
-  
-  console.log(`\n✅ Reapplication notifications: ${results.sent} sent, ${results.queued} queued`);
-  return results;
+  const html = generateEmailTemplate({
+    title: 'Student Reapplication - Review Required',
+    content,
+    actionUrl: dashboardUrl,
+    actionText: 'Review Reapplication'
+  });
+
+  return sendEmail({
+    to: allStaffEmails[0],
+    bcc: allStaffEmails.slice(1),
+    subject: `🔄 Reapplication #${reapplicationNumber}: ${studentName} (${registrationNo})`,
+    html,
+    metadata: { type: 'reapplication', reapplicationNumber, recipientCount: allStaffEmails.length }
+  });
 }
 
-// Export all functions as default for compatibility
+// Export all functions
 export default {
   sendEmail,
-  sendEmailWithRetry,
-  sendBulkEmails,
-  sendDepartmentNotification,
-  notifyAllDepartments,
-  sendStatusUpdateToStudent,
+  sendCombinedDepartmentNotification,
+  sendRejectionNotification,
   sendCertificateReadyNotification,
-  sendReapplicationNotifications,
+  sendReapplicationNotification,
   addToQueue
 };

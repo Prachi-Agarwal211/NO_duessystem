@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function StudentSupport() {
@@ -57,15 +57,24 @@ export default function StudentSupport() {
   return (
     <PageWrapper>
       <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push('/')}
+          className="mb-6 flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Back to Home</span>
+        </button>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Center</h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">Get help with your No-Dues application</p>
             </div>
-            <button 
+            <button
                 onClick={() => setIsModalOpen(true)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all"
+                className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-jecrc-red/20 transition-all"
             >
                 <Plus className="w-5 h-5" /> New Ticket
             </button>
@@ -77,26 +86,26 @@ export default function StudentSupport() {
                 onClick={() => setActiveTab('open')}
                 className={`pb-3 px-1 font-medium transition-colors relative ${
                     activeTab === 'open' 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                        ? 'text-jecrc-red dark:text-jecrc-red'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-            >
-                Open Tickets ({openTickets.length})
-                {activeTab === 'open' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+                    }`}
+                >
+                    Open Tickets ({openTickets.length})
+                    {activeTab === 'open' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-jecrc-red dark:bg-jecrc-red" />
                 )}
             </button>
             <button 
                 onClick={() => setActiveTab('closed')}
                 className={`pb-3 px-1 font-medium transition-colors relative ${
                     activeTab === 'closed' 
-                        ? 'text-blue-600 dark:text-blue-400' 
+                        ? 'text-jecrc-red dark:text-jecrc-red'
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-            >
-                Closed Tickets ({closedTickets.length})
-                {activeTab === 'closed' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+                    }`}
+                >
+                    Closed Tickets ({closedTickets.length})
+                    {activeTab === 'closed' && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-jecrc-red dark:bg-jecrc-red" />
                 )}
             </button>
         </div>
@@ -126,7 +135,7 @@ export default function StudentSupport() {
                     {(activeTab === 'open' ? openTickets : closedTickets).map(ticket => (
                         <div 
                             key={ticket.id} 
-                            className="p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all cursor-pointer"
+                            className="p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-jecrc-red/50 dark:hover:border-jecrc-red/50 transition-all cursor-pointer"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
@@ -171,7 +180,7 @@ export default function StudentSupport() {
                                 value={formData.subject}
                                 onChange={(e) => setFormData({...formData, subject: e.target.value})}
                                 placeholder="Brief description of your issue"
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
                             />
                         </div>
 
@@ -183,7 +192,7 @@ export default function StudentSupport() {
                                 required
                                 value={formData.category}
                                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
                             >
                                 <option value="">Select department</option>
                                 <option value="library">Library</option>
@@ -203,7 +212,7 @@ export default function StudentSupport() {
                             <select 
                                 value={formData.priority}
                                 onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
                             >
                                 <option value="low">Low</option>
                                 <option value="normal">Normal</option>
@@ -221,13 +230,13 @@ export default function StudentSupport() {
                                 onChange={(e) => setFormData({...formData, message: e.target.value})}
                                 placeholder="Describe your issue in detail..."
                                 rows="4"
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red resize-none"
                             />
                         </div>
 
                         <button 
                             type="submit"
-                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-600/20 transition-all"
+                            className="w-full py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold shadow-lg shadow-jecrc-red/20 transition-all"
                         >
                             Submit Ticket
                         </button>

@@ -7,7 +7,7 @@ import GlassCard from '@/components/ui/GlassCard';
 import {
   Settings, Save, Plus, Trash2, Edit,
   Building2, School, Mail, Users,
-  CheckCircle, XCircle, Loader2, BookOpen, GitBranch
+  CheckCircle, XCircle, Loader2, BookOpen, GitBranch, ArrowLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -353,14 +353,23 @@ export default function AdminSettings() {
       <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
         
         {/* HEADER */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
-            <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
+              <Settings className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Settings</h1>
+              <p className="text-gray-500 dark:text-gray-400">Manage departments, schools, and staff</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Settings</h1>
-            <p className="text-gray-500 dark:text-gray-400">Manage departments, schools, and staff</p>
-          </div>
+          <button
+            onClick={() => router.push('/admin')}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Back to Dashboard</span>
+          </button>
         </div>
 
         {/* TABS */}

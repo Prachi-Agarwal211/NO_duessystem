@@ -3,7 +3,6 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
-import GlobalBackground from '@/components/ui/GlobalBackground';
 import GlassCard from '@/components/ui/GlassCard';
 import Link from 'next/link';
 import { ArrowLeft, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
@@ -50,7 +49,6 @@ function LoginForm() {
 
   return (
     <PageWrapper>
-      <GlobalBackground />
       <div className="relative z-10 min-h-screen w-full flex items-center justify-center p-4">
         
         {/* Back Button */}
@@ -128,7 +126,6 @@ export default function StaffLogin() {
   return (
     <Suspense fallback={
       <PageWrapper>
-        <GlobalBackground />
         <div className="min-h-screen flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
         </div>

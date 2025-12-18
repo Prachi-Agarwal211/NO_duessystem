@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { notifyAllDepartments } from '@/lib/emailService';
+import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
@@ -278,19 +278,25 @@ export async function POST(request) {
         });
 
         if (staffToNotify.length > 0) {
-          const emailResults = await notifyAllDepartments({
-            staffMembers: staffToNotify.map(staff => ({
-              email: staff.email,
-              name: staff.full_name,
-              department: staff.department_name
-            })),
+          // 🆕 OPTIMIZED: Send ONE combined email to all departments instead of individual emails
+          const allStaffEmails = staffToNotify.map(staff => staff.email);
+          
+          const emailResult = await sendCombinedDepartmentNotification({
+            allStaffEmails,
             studentName: form.student_name,
             registrationNo: form.registration_no,
+            school: sanitizedData.school,
+            course: sanitizedData.course,
+            branch: sanitizedData.branch,
             formId: form.id,
             dashboardUrl: APP_URLS.staffLogin()
           });
 
-          console.log(`📧 Notified ${staffToNotify.length} staff members (filtered from ${allStaff.length} total)`);
+          if (emailResult.success) {
+            console.log(`📧 ✅ Combined notification sent to ${staffToNotify.length} staff members (1 email total)`);
+          } else {
+            console.error(`📧 ❌ Failed to send combined notification: ${emailResult.error}`);
+          }
           
           // ==================== AUTO-PROCESS EMAIL QUEUE ====================
           // Trigger queue processing immediately after sending emails

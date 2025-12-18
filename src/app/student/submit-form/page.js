@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PageWrapper from '@/components/landing/PageWrapper';
-import GlobalBackground from '@/components/ui/GlobalBackground';
 import SubmitForm from '@/components/student/SubmitForm';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,7 +16,6 @@ function SubmitFormPageContent() {
 
   return (
       <>
-        <GlobalBackground />
         <div className="relative z-10 min-h-screen py-12 px-4 sm:px-6">
         {/* Back Button */}
         <motion.button

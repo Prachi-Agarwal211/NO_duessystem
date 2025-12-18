@@ -9,7 +9,6 @@ import { CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import PageWrapper from '@/components/landing/PageWrapper';
-import GlobalBackground from '@/components/ui/GlobalBackground';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
@@ -140,7 +139,6 @@ function DepartmentActionContent() {
 
   return (
     <PageWrapper>
-      <GlobalBackground />
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <GlassCard className="max-w-md w-full p-8 text-center">
           {status === 'success' ? (

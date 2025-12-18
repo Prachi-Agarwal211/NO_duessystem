@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import TicketList from '@/components/support/TicketList';
-import { Search, Inbox, CheckCircle, Archive, RefreshCcw } from 'lucide-react';
+import { Search, Inbox, CheckCircle, Archive, RefreshCcw, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function StaffSupportPage() {
@@ -78,12 +78,21 @@ export default function StaffSupportPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Department Support</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your support tickets and queries.</p>
           </div>
-          <button
-            onClick={fetchTickets}
-            className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red transition-all"
-          >
-            <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/staff/dashboard')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </button>
+            <button
+              onClick={fetchTickets}
+              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red transition-all"
+            >
+              <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -140,7 +149,7 @@ export default function StaffSupportPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 border-blue-600'
+                    ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 border-jecrc-red'
                     : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 border-gray-200 dark:border-white/10'
                 }`}
               >
@@ -158,7 +167,7 @@ export default function StaffSupportPage() {
                   <input
                     type="text"
                     placeholder="Search tickets by subject, message, or number..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent text-gray-900 dark:text-white transition-all"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />

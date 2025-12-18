@@ -288,24 +288,27 @@ export async function PUT(request) {
         });
         
         if (staffToNotify.length > 0) {
-          // Import email service
-          const { sendReapplicationNotifications } = await import('@/lib/emailService');
+          // 🆕 OPTIMIZED: Send ONE combined email for reapplication
+          const { sendReapplicationNotification } = await import('@/lib/emailService');
+          const allStaffEmails = staffToNotify.map(staff => staff.email);
           
-          await sendReapplicationNotifications({
-            staffMembers: staffToNotify.map(staff => ({
-              email: staff.email,
-              name: staff.full_name,
-              department: staff.department_name
-            })),
+          const emailResult = await sendReapplicationNotification({
+            allStaffEmails,
             studentName: form.student_name,
             registrationNo: form.registration_no,
             studentMessage: student_reply_message.trim(),
             reapplicationNumber: form.reapplication_count + 1,
-            dashboardUrl: APP_URLS.staffLogin(),
-            formUrl: APP_URLS.staffStudentForm(form.id)
+            school: form.school,
+            course: form.course,
+            branch: form.branch,
+            dashboardUrl: APP_URLS.staffLogin()
           });
 
-          console.log(`📧 Reapplication notifications sent to ${staffToNotify.length} staff member(s) across all departments`);
+          if (emailResult.success) {
+            console.log(`📧 ✅ Combined reapplication notification sent to ${staffToNotify.length} staff members (1 email total)`);
+          } else {
+            console.error(`📧 ❌ Failed to send reapplication notification: ${emailResult.error}`);
+          }
         }
         
         // ==================== AUTO-PROCESS EMAIL QUEUE ====================

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { Search, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 
 export default function StaffHistory() {
   const router = useRouter();
@@ -50,13 +50,22 @@ export default function StaffHistory() {
   return (
     <PageWrapper>
       <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Action History</h1>
-                <p className="text-gray-500 dark:text-gray-400">View past approvals and rejections.</p>
+        <div className="flex flex-col gap-4 mb-8">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Action History</h1>
+                    <p className="text-gray-500 dark:text-gray-400">View past approvals and rejections.</p>
+                </div>
+                <button
+                    onClick={() => router.push('/staff/dashboard')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white font-medium"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Back to Dashboard</span>
+                </button>
             </div>
             
-            <div className="relative w-full md:w-64">
+            <div className="relative w-full md:w-96">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                 <input
                     type="text"

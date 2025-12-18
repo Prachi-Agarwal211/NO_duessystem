@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Upload, FileCheck, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, FileCheck, AlertCircle, CheckCircle, X, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -354,6 +354,22 @@ export default function ManualEntryPage() {
     <PageWrapper>
       <div className="min-h-screen py-12 px-4">
         <div className="max-w-2xl mx-auto">
+          {/* Back Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            onClick={() => router.push('/')}
+            className={`mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 backdrop-blur-md ${
+              isDark
+                ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
+            }`}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium hidden sm:inline">Back to Home</span>
+          </motion.button>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

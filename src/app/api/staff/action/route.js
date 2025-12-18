@@ -286,77 +286,69 @@ export async function PUT(request) {
         });
     }
 
-    // ==================== SEND EMAIL NOTIFICATION TO STUDENT ====================
-    // Get student email from the form (personal_email is primary, college_email as fallback)
+    // ==================== OPTIMIZED EMAIL NOTIFICATIONS ====================
+    // 🆕 ONLY send emails to students on:
+    // 1. ANY rejection (immediate notification)
+    // 2. ALL departments approved (certificate ready)
+    // ❌ NO emails on individual department approvals
+    
     const { data: formWithEmail, error: emailFetchError } = await supabaseAdmin
       .from('no_dues_forms')
-      .select('personal_email, college_email, student_name, registration_no')
+      .select('personal_email, college_email, student_name, registration_no, status')
       .eq('id', formId)
       .single();
 
     if (formWithEmail && (formWithEmail.personal_email || formWithEmail.college_email)) {
+      const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
+      
       try {
-        const { sendStatusUpdateToStudent } = await import('@/lib/emailService');
         const { EMAIL_URLS } = await import('@/lib/urlHelper');
-        const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
         
-        const emailResult = await sendStatusUpdateToStudent({
-          studentEmail: studentEmail,
-          studentName: formWithEmail.student_name,
-          registrationNo: formWithEmail.registration_no,
-          departmentName: departmentName,
-          action: statusValue,
-          rejectionReason: action === 'reject' ? reason : null,
-          statusUrl: EMAIL_URLS.studentCheckStatus(formWithEmail.registration_no)
-        });
-
-        if (emailResult.success) {
-          console.log(`✅ Status update email sent to student: ${studentEmail}`);
+        // CASE 1: Department REJECTED - Send immediate notification
+        if (action === 'reject') {
+          const { sendRejectionNotification } = await import('@/lib/emailService');
           
-          // Log the email notification
-          try {
-            await supabaseAdmin.rpc('log_email_notification', {
-              p_form_id: formId,
-              p_recipient_email: studentEmail,
-              p_notification_type: 'status_update',
-              p_department_name: departmentName,
-              p_status: 'sent'
-            });
-          } catch (logError) {
-            console.error('Failed to log email notification:', logError);
-          }
-        } else {
-          console.warn(`⚠️ Email ${emailResult.queued ? 'queued' : 'failed'} for student: ${studentEmail}`);
-          
-          // Log the failed/queued email
-          try {
-            await supabaseAdmin.rpc('log_email_notification', {
-              p_form_id: formId,
-              p_recipient_email: studentEmail,
-              p_notification_type: 'status_update',
-              p_department_name: departmentName,
-              p_status: emailResult.queued ? 'queued' : 'failed',
-              p_error_message: emailResult.error
-            });
-          } catch (logError) {
-            console.error('Failed to log email notification:', logError);
-          }
-        }
-      } catch (emailError) {
-        console.error('❌ Failed to send email notification to student:', emailError);
-        // Log the error
-        try {
-          await supabaseAdmin.rpc('log_email_notification', {
-            p_form_id: formId,
-            p_recipient_email: formWithEmail.personal_email || formWithEmail.college_email,
-            p_notification_type: 'status_update',
-            p_department_name: departmentName,
-            p_status: 'failed',
-            p_error_message: emailError.message
+          const emailResult = await sendRejectionNotification({
+            studentEmail,
+            studentName: formWithEmail.student_name,
+            registrationNo: formWithEmail.registration_no,
+            departmentName: departmentName,
+            rejectionReason: reason,
+            statusUrl: EMAIL_URLS.studentCheckStatus(formWithEmail.registration_no)
           });
-        } catch (logError) {
-          console.error('Failed to log email notification:', logError);
+
+          if (emailResult.success) {
+            console.log(`📧 ✅ Rejection email sent to student: ${studentEmail}`);
+          } else {
+            console.warn(`📧 ⚠️ Rejection email ${emailResult.queued ? 'queued' : 'failed'}: ${studentEmail}`);
+          }
         }
+        
+        // CASE 2: Department APPROVED + ALL completed - Send certificate ready email
+        else if (action === 'approve' && currentForm?.status === 'completed') {
+          const { sendCertificateReadyNotification } = await import('@/lib/emailService');
+          
+          const emailResult = await sendCertificateReadyNotification({
+            studentEmail,
+            studentName: formWithEmail.student_name,
+            registrationNo: formWithEmail.registration_no,
+            certificateUrl: EMAIL_URLS.studentCheckStatus(formWithEmail.registration_no)
+          });
+
+          if (emailResult.success) {
+            console.log(`📧 ✅ Certificate ready email sent to student: ${studentEmail}`);
+          } else {
+            console.warn(`📧 ⚠️ Certificate email ${emailResult.queued ? 'queued' : 'failed'}: ${studentEmail}`);
+          }
+        }
+        
+        // CASE 3: Individual department approval - NO EMAIL (silent approval)
+        else {
+          console.log(`ℹ️ Individual approval by ${departmentName} - No email sent (waiting for all departments)`);
+        }
+        
+      } catch (emailError) {
+        console.error('❌ Failed to send email notification:', emailError);
         // Don't fail the request if email fails
       }
     } else {

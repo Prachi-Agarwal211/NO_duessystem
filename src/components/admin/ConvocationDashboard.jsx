@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -15,13 +16,15 @@ import {
   ChevronRight,
   GraduationCap,
   FileCheck,
-  XCircle
+  XCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function ConvocationDashboard() {
+  const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -242,18 +245,31 @@ export default function ConvocationDashboard() {
             Track convocation eligibility and clearance status for all 3,181 students
           </p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-            isDark
-              ? 'bg-white/10 hover:bg-white/20 text-white'
-              : 'bg-gray-100 hover:bg-gray-200 text-ink-black'
-          } disabled:opacity-50`}
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => router.push('/admin')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              isDark
+                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                : 'bg-white hover:bg-gray-50 text-ink-black border border-gray-200'
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              isDark
+                ? 'bg-white/10 hover:bg-white/20 text-white'
+                : 'bg-gray-100 hover:bg-gray-200 text-ink-black'
+            } disabled:opacity-50`}
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Statistics Cards */}

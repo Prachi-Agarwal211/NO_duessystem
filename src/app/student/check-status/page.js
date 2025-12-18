@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Search, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
-import GlobalBackground from '@/components/ui/GlobalBackground';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
@@ -259,7 +258,6 @@ function CheckStatusContent() {
 
   return (
     <PageWrapper>
-      <GlobalBackground />
       <div className="relative z-10 min-h-screen pt-12 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
