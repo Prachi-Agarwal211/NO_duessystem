@@ -5,36 +5,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
-// ✅ OPTIMIZATION: Simple in-memory cache to reduce repeated database calls
-const statusCache = new Map();
-const CACHE_TTL = 5000; // 5 seconds
-
-function getCachedStatus(registrationNo) {
-  const cached = statusCache.get(registrationNo);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    console.log('📋 Using cached status for:', registrationNo);
-    return cached.data;
-  }
-  return null;
-}
-
-function setCachedStatus(registrationNo, data) {
-  statusCache.set(registrationNo, {
-    data,
-    timestamp: Date.now()
-  });
-  
-  // Clean up old cache entries periodically
-  if (statusCache.size > 100) {
-    const now = Date.now();
-    for (const [key, value] of statusCache.entries()) {
-      if (now - value.timestamp > CACHE_TTL * 2) {
-        statusCache.delete(key);
-      }
-    }
-  }
-}
-
+// ✅ CRITICAL FIX: Force real-time data, NO CACHING
+// Removed in-memory cache to ensure librarian sees updates immediately
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -42,7 +14,15 @@ const supabaseAdmin = createClient(
     auth: {
       autoRefreshToken: false,
       persistSession: false
-    }
+    },
+    global: {
+      fetch: (url, options) => {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store', // Force fresh data from Supabase
+        });
+      },
+    },
   }
 );
 
@@ -89,12 +69,7 @@ export async function GET(request) {
       }, { status: 400 });
     }
 
-    // ✅ CACHE CHECK: Return cached result if available and fresh
-    const cachedResult = getCachedStatus(registrationNo);
-    if (cachedResult) {
-      return NextResponse.json(cachedResult);
-    }
-
+    // ✅ NO CACHING: Always fetch fresh data from database
     // OPTIMIZATION: Single optimized query with proper indexing
     // ✅ FIXED: Removed manual entry fields (now in separate table)
     const { data: form, error: formError } = await supabaseAdmin
@@ -243,15 +218,14 @@ export async function GET(request) {
       }
     };
 
-    // ✅ CACHE RESULT: Store in memory cache for future requests
-    setCachedStatus(registrationNo, responseData);
-
-    // Return optimized response
-    return NextResponse.json(responseData, { 
+    // ✅ NO CACHING: Return fresh data with strict no-cache headers
+    return NextResponse.json(responseData, {
       status: 200,
       headers: {
-        'Cache-Control': 'no-store, must-revalidate',
-        'Pragma': 'no-cache'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
       }
     });
 
