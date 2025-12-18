@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import { 
-  Settings, Save, Plus, Trash2, Edit, 
-  Building2, School, Mail, Users, 
-  CheckCircle, XCircle, Loader2 
+import {
+  Settings, Save, Plus, Trash2, Edit,
+  Building2, School, Mail, Users,
+  CheckCircle, XCircle, Loader2, BookOpen, GitBranch
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -19,15 +19,25 @@ export default function AdminSettings() {
   // Data States
   const [departments, setDepartments] = useState([]);
   const [schools, setSchools] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [emailConfig, setEmailConfig] = useState([]);
   const [staffList, setStaffList] = useState([]);
 
   // Edit States
   const [editingDept, setEditingDept] = useState(null);
   const [editingSchool, setEditingSchool] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [editingBranch, setEditingBranch] = useState(null);
   const [editingEmail, setEditingEmail] = useState(null);
   const [newStaff, setNewStaff] = useState({
-    email: '', password: '', full_name: '', department_name: ''
+    email: '',
+    password: '',
+    full_name: '',
+    department_name: '',
+    school_ids: [],
+    course_ids: [],
+    branch_ids: []
   });
 
   // Fetch Functions
@@ -52,6 +62,32 @@ export default function AdminSettings() {
       });
       const json = await res.json();
       if (json.success) setSchools(json.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/config/courses?include_inactive=true', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const json = await res.json();
+      if (json.success) setCourses(json.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/config/branches?include_inactive=true', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const json = await res.json();
+      if (json.success) setBranches(json.data || []);
     } catch (e) {
       console.error(e);
     }
@@ -138,6 +174,60 @@ export default function AdminSettings() {
     }
   };
 
+  const updateCourse = async (course) => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/config/courses', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(course)
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Course updated');
+        fetchCourses();
+        setEditingCourse(null);
+      } else {
+        toast.error(json.error);
+      }
+    } catch (e) {
+      toast.error('Update failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateBranch = async (branch) => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/config/branches', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(branch)
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Branch updated');
+        fetchBranches();
+        setEditingBranch(null);
+      } else {
+        toast.error(json.error);
+      }
+    } catch (e) {
+      toast.error('Update failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateEmailConfig = async (config) => {
     setLoading(true);
     try {
@@ -167,7 +257,7 @@ export default function AdminSettings() {
 
   const createStaff = async () => {
     if (!newStaff.email || !newStaff.password || !newStaff.full_name || !newStaff.department_name) {
-      toast.error('All fields required');
+      toast.error('Email, password, name, and department are required');
       return;
     }
     setLoading(true);
@@ -179,13 +269,29 @@ export default function AdminSettings() {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(newStaff)
+        body: JSON.stringify({
+          email: newStaff.email,
+          password: newStaff.password,
+          full_name: newStaff.full_name,
+          department_name: newStaff.department_name,
+          school_ids: newStaff.school_ids.length > 0 ? newStaff.school_ids : null,
+          course_ids: newStaff.course_ids.length > 0 ? newStaff.course_ids : null,
+          branch_ids: newStaff.branch_ids.length > 0 ? newStaff.branch_ids : null
+        })
       });
       const json = await res.json();
       if (json.success) {
-        toast.success('Staff account created');
+        toast.success('Staff account created with scope restrictions');
         fetchStaff();
-        setNewStaff({ email: '', password: '', full_name: '', department_name: '' });
+        setNewStaff({
+          email: '',
+          password: '',
+          full_name: '',
+          department_name: '',
+          school_ids: [],
+          course_ids: [],
+          branch_ids: []
+        });
       } else {
         toast.error(json.error);
       }
@@ -227,6 +333,8 @@ export default function AdminSettings() {
     checkAuth();
     fetchDepartments();
     fetchSchools();
+    fetchCourses();
+    fetchBranches();
     fetchEmailConfig();
     fetchStaff();
   }, []);
@@ -234,6 +342,8 @@ export default function AdminSettings() {
   const tabs = [
     { id: 'departments', label: 'Departments', icon: Building2 },
     { id: 'schools', label: 'Schools', icon: School },
+    { id: 'courses', label: 'Courses', icon: BookOpen },
+    { id: 'branches', label: 'Branches', icon: GitBranch },
     { id: 'emails', label: 'Email Config', icon: Mail },
     { id: 'staff', label: 'Staff Accounts', icon: Users }
   ];
@@ -282,13 +392,13 @@ export default function AdminSettings() {
                     <div className="flex-1 flex gap-3">
                       <input
                        type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                        value={editingDept.display_name}
                        onChange={(e) => setEditingDept({ ...editingDept, display_name: e.target.value })}
                      />
                      <input
                        type="email"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                        value={editingDept.email || ''}
                        onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
                        placeholder="Email (optional)"
@@ -324,7 +434,7 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingDept({ ...dept })}
-                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
+                        className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -347,7 +457,7 @@ export default function AdminSettings() {
                     <div className="flex-1 flex gap-3">
                       <input
                        type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                        value={editingSchool.name}
                        onChange={(e) => setEditingSchool({ ...editingSchool, name: e.target.value })}
                      />
@@ -380,7 +490,123 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingSchool({ ...school })}
-                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
+                        className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        )}
+
+        {/* COURSES TAB */}
+        {activeTab === 'courses' && (
+          <GlassCard className="p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Course Management</h3>
+            <div className="space-y-3">
+              {courses.map(course => (
+                <div key={course.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                  {editingCourse?.id === course.id ? (
+                    <div className="flex-1 flex gap-3">
+                      <input
+                       type="text"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                       value={editingCourse.name}
+                       onChange={(e) => setEditingCourse({ ...editingCourse, name: e.target.value })}
+                     />
+                     <button
+                       onClick={() => updateCourse(editingCourse)}
+                       disabled={loading}
+                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                     >
+                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                     </button>
+                     <button
+                       onClick={() => setEditingCourse(null)}
+                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                     >
+                       Cancel
+                     </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-900 dark:text-white">{course.name}</span>
+                          {course.is_active ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {course.config_schools?.name} • Order: {course.display_order}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setEditingCourse({ ...course })}
+                        className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        )}
+
+        {/* BRANCHES TAB */}
+        {activeTab === 'branches' && (
+          <GlassCard className="p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Branch Management</h3>
+            <div className="space-y-3">
+              {branches.map(branch => (
+                <div key={branch.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                  {editingBranch?.id === branch.id ? (
+                    <div className="flex-1 flex gap-3">
+                      <input
+                       type="text"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                       value={editingBranch.name}
+                       onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
+                     />
+                     <button
+                       onClick={() => updateBranch(editingBranch)}
+                       disabled={loading}
+                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                     >
+                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                     </button>
+                     <button
+                       onClick={() => setEditingBranch(null)}
+                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                     >
+                       Cancel
+                     </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-900 dark:text-white">{branch.name}</span>
+                          {branch.is_active ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          {branch.config_courses?.name} ({branch.config_courses?.config_schools?.name}) • Order: {branch.display_order}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setEditingBranch({ ...branch })}
+                        className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -403,7 +629,7 @@ export default function AdminSettings() {
                     <div className="flex-1 flex gap-3">
                       <input
                        type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                        value={editingEmail.value}
                        onChange={(e) => setEditingEmail({ ...editingEmail, value: e.target.value })}
                      />
@@ -432,7 +658,7 @@ export default function AdminSettings() {
                       </div>
                       <button
                         onClick={() => setEditingEmail({ ...config })}
-                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-lg transition-colors border border-transparent hover:border-blue-200 dark:hover:border-blue-500/30"
+                        className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
                       >
                         <Edit className="w-5 h-5" />
                       </button>
@@ -450,46 +676,136 @@ export default function AdminSettings() {
             {/* Create New Staff */}
             <GlassCard className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Create New Staff Account</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <input
                   type="email"
-                  placeholder="Email"
-                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Email *"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                   value={newStaff.email}
                   onChange={(e) => setNewStaff({ ...newStaff, email: e.target.value })}
                 />
                 <input
                   type="password"
-                  placeholder="Password (min 6 chars)"
-                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Password (min 6 chars) *"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                   value={newStaff.password}
                   onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
                 />
                 <input
                   type="text"
-                  placeholder="Full Name"
-                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Full Name *"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                   value={newStaff.full_name}
                   onChange={(e) => setNewStaff({ ...newStaff, full_name: e.target.value })}
                 />
                 <select
-                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
                   value={newStaff.department_name}
                   onChange={(e) => setNewStaff({ ...newStaff, department_name: e.target.value })}
                 >
-                  <option value="">Select Department</option>
+                  <option value="">Select Department *</option>
                   {departments.filter(d => d.is_active).map(dept => (
                     <option key={dept.name} value={dept.name}>{dept.display_name}</option>
                   ))}
                 </select>
               </div>
+
+              {/* Scope Restrictions */}
+              <div className="border-t border-gray-200 dark:border-white/10 pt-4 mb-4">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  🔒 Access Scope (Optional - Leave empty for full access)
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                  Restrict this staff member to specific schools, courses, or branches. Hold Ctrl/Cmd to select multiple.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Schools Multi-Select */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Schools (Multi-Select)
+                    </label>
+                    <select
+                      multiple
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
+                      value={newStaff.school_ids}
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+                        setNewStaff({ ...newStaff, school_ids: selected });
+                      }}
+                    >
+                      {schools.filter(s => s.is_active).map(school => (
+                        <option key={school.id} value={school.id} className="py-1">
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {newStaff.school_ids.length} selected
+                    </p>
+                  </div>
+
+                  {/* Courses Multi-Select */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Courses (Multi-Select)
+                    </label>
+                    <select
+                      multiple
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
+                      value={newStaff.course_ids}
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+                        setNewStaff({ ...newStaff, course_ids: selected });
+                      }}
+                    >
+                      {courses.filter(c => c.is_active).map(course => (
+                        <option key={course.id} value={course.id} className="py-1">
+                          {course.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {newStaff.course_ids.length} selected
+                    </p>
+                  </div>
+
+                  {/* Branches Multi-Select */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Branches (Multi-Select)
+                    </label>
+                    <select
+                      multiple
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
+                      value={newStaff.branch_ids}
+                      onChange={(e) => {
+                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
+                        setNewStaff({ ...newStaff, branch_ids: selected });
+                      }}
+                    >
+                      {branches.filter(b => b.is_active).map(branch => (
+                        <option key={branch.id} value={branch.id} className="py-1">
+                          {branch.name} ({branch.config_courses?.name})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {newStaff.branch_ids.length} selected
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <button
                 onClick={createStaff}
                 disabled={loading}
-                className="mt-4 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 font-medium shadow-lg shadow-blue-600/20"
+                className="w-full px-6 py-2.5 bg-jecrc-red hover:bg-red-700 text-white rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 font-medium shadow-lg shadow-jecrc-red/20 transition-all"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                Create Staff Account
+                Create Staff Account with Scope
               </button>
             </GlassCard>
 
@@ -505,6 +821,25 @@ export default function AdminSettings() {
                       <span className="text-xs text-gray-500 dark:text-gray-500 block mt-1">
                         {staff.department_name} • Created: {new Date(staff.created_at).toLocaleDateString()}
                       </span>
+                      {(staff.school_ids || staff.course_ids || staff.branch_ids) && (
+                        <div className="flex gap-2 mt-2">
+                          {staff.school_ids && (
+                            <span className="px-2 py-0.5 bg-jecrc-rose dark:bg-jecrc-red/20 text-jecrc-red dark:text-jecrc-red-bright rounded text-xs font-medium">
+                              🏫 {staff.school_ids.length} Schools
+                            </span>
+                          )}
+                          {staff.course_ids && (
+                            <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-medium">
+                              📚 {staff.course_ids.length} Courses
+                            </span>
+                          )}
+                          {staff.branch_ids && (
+                            <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
+                              🎓 {staff.branch_ids.length} Branches
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => deleteStaff(staff.id)}

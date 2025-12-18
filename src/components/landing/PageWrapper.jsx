@@ -15,7 +15,10 @@ export default function PageWrapper({ children, showThemeToggle = true }) {
       {showThemeToggle && <ThemeToggle />}
       
       <div className={`relative transition-colors duration-700 min-h-screen
-        ${isDark ? 'text-white' : 'text-ink-black'}`}>
+        ${isDark
+          ? 'bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white'
+          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-ink-black'
+        }`}>
         {children}
       </div>
     </>

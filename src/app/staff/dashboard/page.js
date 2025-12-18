@@ -306,10 +306,10 @@ export default function StaffDashboard() {
 
         {/* Today's Activity */}
         {data.stats?.todayTotal > 0 && (
-          <div className="mb-6 p-4 rounded-lg border bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20">
+          <div className="mb-6 p-4 rounded-lg border bg-jecrc-rose dark:bg-jecrc-red/10 border-jecrc-red/30 dark:border-jecrc-red/20">
             <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="font-semibold text-blue-600 dark:text-blue-400">Your Today's Activity</h3>
+              <Calendar className="w-5 h-5 text-jecrc-red dark:text-jecrc-red-bright" />
+              <h3 className="font-semibold text-jecrc-red dark:text-jecrc-red-bright">Your Today's Activity</h3>
             </div>
             <div className="text-sm text-gray-700 dark:text-gray-300">
               You processed <strong>{data.stats.todayTotal}</strong> application{data.stats.todayTotal !== 1 ? 's' : ''} today
