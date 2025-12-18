@@ -1,11 +1,27 @@
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// ✅ CRITICAL FIX: Force Supabase to bypass all caching layers (same as Admin Dashboard)
+// This ensures we ALWAYS get fresh data from the database, not cached results
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      persistSession: false,
+    },
+    global: {
+      fetch: (url, options) => {
+        return fetch(url, {
+          ...options,
+          cache: 'no-store', // ⚡ Forces fresh data on every query
+        });
+      },
+    },
+  }
 );
 
 export async function GET(request) {
