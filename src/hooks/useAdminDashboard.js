@@ -158,7 +158,7 @@ export function useAdminDashboard() {
   fetchDashboardDataRef.current = fetchDashboardData;
 
   const fetchStats = useCallback(async () => {
-    console.log('🔄 fetchStats called, userId:', userId);
+    console.log('🔄 fetchStats called');
     
     // ⚡ PERFORMANCE: If already fetching, return existing promise
     if (pendingStatsRequest.current) {
@@ -177,16 +177,39 @@ export function useAdminDashboard() {
 
         console.log('📡 Fetching stats from API...');
         // ✅ REAL-TIME: No caching for immediate stats updates
-        const response = await fetch(`/api/admin/stats?userId=${session.user.id}&_t=${Date.now()}`, {
-          cache: 'no-store'
+        const response = await fetch(`/api/admin/stats`, {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
         });
+        
         const result = await response.json();
 
-        console.log('📊 Stats API response:', { ok: response.ok, status: response.status, hasData: !!result.overallStats });
+        console.log('📊 Stats API response:', {
+          ok: response.ok,
+          status: response.status,
+          overallStats: result.overallStats,
+          departmentCount: result.departmentStats?.length
+        });
 
         if (response.ok) {
-          setStats(result);
-          console.log('✅ Stats updated successfully:', result.overallStats?.[0]);
+          // Format stats for component compatibility
+          const formattedStats = {
+            overallStats: [{
+              total_forms: result.overallStats?.totalApplications || 0,
+              pending_requests: result.overallStats?.pendingApplications || 0,
+              completed_requests: result.overallStats?.approvedApplications || 0,
+              rejected_requests: result.overallStats?.rejectedApplications || 0,
+              total_requests: result.overallStats?.totalApplications || 0
+            }],
+            departmentStats: result.departmentStats || [],
+            recentActivity: result.recentActivity || []
+          };
+          
+          setStats(formattedStats);
+          console.log('✅ Stats updated successfully');
         } else {
           console.error('❌ Stats API returned error:', result);
           setError('Failed to load statistics');
@@ -201,7 +224,7 @@ export function useAdminDashboard() {
 
     pendingStatsRequest.current = fetchPromise;
     return fetchPromise;
-  }, [userId]);
+  }, []);
 
   // Store latest function in ref
   fetchStatsRef.current = fetchStats;

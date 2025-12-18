@@ -238,6 +238,23 @@ function StaffDashboardContent() {
     }
   };
 
+  // Helper: Safe date formatter to prevent "Invalid Date" errors
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return 'N/A';
+    }
+  };
+
   // Table data for pending requests
   const tableHeaders = ['Student Name', 'Registration No', 'Course', 'Branch', 'Date'];
   const tableData = requests.map(request => ({
@@ -245,7 +262,7 @@ function StaffDashboardContent() {
     'registration_no': request.registration_no,
     'course': request.course || 'N/A',
     'branch': request.branch || 'N/A',
-    'date': new Date(request.created_at).toLocaleDateString('en-IN'),
+    'date': formatDate(request.created_at),
     'id': request.id
   }));
 
@@ -255,7 +272,7 @@ function StaffDashboardContent() {
     'student_name': item.no_dues_forms?.student_name || 'N/A',
     'registration_no': item.no_dues_forms?.registration_no || 'N/A',
     'action': item.status === 'approved' ? '✅ Approved' : '❌ Rejected',
-    'date': item.action_at ? new Date(item.action_at).toLocaleDateString('en-IN') : 'N/A',
+    'date': formatDate(item.action_at),
     'reason': item.rejection_reason || '-',
     'id': item.no_dues_forms?.id
   }));
@@ -650,7 +667,7 @@ function StaffDashboardContent() {
                         'student_name': item.no_dues_forms?.student_name || 'N/A',
                         'registration_no': item.no_dues_forms?.registration_no || 'N/A',
                         'action': '❌ Rejected',
-                        'date': item.action_at ? new Date(item.action_at).toLocaleDateString('en-IN') : 'N/A',
+                        'date': formatDate(item.action_at),
                         'reason': item.rejection_reason || '-',
                         'id': item.no_dues_forms?.id
                       }))}
