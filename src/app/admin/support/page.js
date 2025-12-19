@@ -206,6 +206,17 @@ export default function AdminSupportPage() {
     }
   };
 
+  // Memoized filtered tickets for performance (MOVED UP - must be defined before use)
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(ticket =>
+      ticket.subject?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.message?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.user_email?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.user_name?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [tickets, search]);
+
   // Mark ticket as read when it appears in view
   const markTicketAsRead = useCallback(async (ticketId) => {
     // Don't mark again if already marked in this session
@@ -243,17 +254,6 @@ export default function AdminSupportPage() {
       });
     }
   }, [filteredTickets, markTicketAsRead]);
-
-  // Memoized filtered tickets for performance
-  const filteredTickets = useMemo(() => {
-    return tickets.filter(ticket =>
-      ticket.subject?.toLowerCase().includes(search.toLowerCase()) ||
-      ticket.message?.toLowerCase().includes(search.toLowerCase()) ||
-      ticket.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
-      ticket.user_email?.toLowerCase().includes(search.toLowerCase()) ||
-      ticket.user_name?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [tickets, search]);
 
   const getStatusColor = (status) => {
     switch(status) {

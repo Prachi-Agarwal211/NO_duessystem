@@ -2,6 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Force dynamic rendering (uses cookies)
+export const dynamic = 'force-dynamic';
+
 // GET - Admin view all tickets (filtered by requester_type)
 export async function GET(request) {
   const cookieStore = cookies();
