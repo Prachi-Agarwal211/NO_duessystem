@@ -46,6 +46,11 @@ export async function POST(request) {
       );
     }
 
+    // Generate ticket number
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const ticketNumber = `TKT-${timestamp}${random}`;
+
     // Insert support ticket - SIMPLIFIED
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
@@ -59,7 +64,8 @@ export async function POST(request) {
           message: message.trim(),
           category: 'other', // Default category
           status: 'open',
-          priority: 'medium' // Default priority
+          priority: 'medium', // Default priority
+          ticket_number: ticketNumber
         }
       ])
       .select()

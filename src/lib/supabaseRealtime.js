@@ -44,7 +44,7 @@ class SupabaseRealtimeService {
 
     // Initialize the single global subscription
     await this.initialize();
-    
+
     return () => this.unsubscribe();
   }
 
@@ -77,7 +77,7 @@ class SupabaseRealtimeService {
             presence: { key: '' },
           }
         })
-        
+
         // ==================== EVENT 1: NEW FORM SUBMISSION ====================
         .on(
           'postgres_changes',
@@ -88,10 +88,10 @@ class SupabaseRealtimeService {
           },
           (payload) => {
             console.log('🆕 New form submission:', payload.new?.registration_no);
-            
+
             // Queue event for batched processing
             realtimeManager.queueEvent('form_submission', payload);
-            
+
             // Dispatch browser event for notifications
             if (typeof window !== 'undefined') {
               window.dispatchEvent(new CustomEvent('new-submission', {
@@ -104,7 +104,7 @@ class SupabaseRealtimeService {
             }
           }
         )
-        
+
         // ==================== EVENT 2: FORM STATUS CHANGE ====================
         // This fires when form goes from 'pending' to 'completed' or 'rejected'
         .on(
@@ -117,18 +117,18 @@ class SupabaseRealtimeService {
           (payload) => {
             // Only process if status actually changed
             if (payload.old?.status !== payload.new?.status) {
-              console.log('🔄 Form status changed:', 
-                payload.new?.registration_no, 
+              console.log('🔄 Form status changed:',
+                payload.new?.registration_no,
                 `${payload.old?.status} → ${payload.new?.status}`
               );
-              
+
               // Queue appropriate event type
-              const eventType = payload.new?.status === 'completed' 
-                ? 'form_completion' 
+              const eventType = payload.new?.status === 'completed'
+                ? 'form_completion'
                 : 'form_status_update';
-              
+
               realtimeManager.queueEvent(eventType, payload);
-              
+
               // Dispatch completion event if completed
               if (payload.new?.status === 'completed' && typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('form-completed', {
@@ -142,7 +142,7 @@ class SupabaseRealtimeService {
             }
           }
         )
-        
+
         // ==================== EVENT 3: DEPARTMENT ACTION ====================
         // This fires when a department approves/rejects
         .on(
@@ -155,16 +155,16 @@ class SupabaseRealtimeService {
           (payload) => {
             // Only process if status actually changed
             if (payload.old?.status !== payload.new?.status) {
-              console.log('📋 Department action:', 
+              console.log('📋 Department action:',
                 payload.new?.department_name,
                 `${payload.old?.status} → ${payload.new?.status}`
               );
-              
+
               realtimeManager.queueEvent('department_status_update', payload);
             }
           }
         )
-        
+
         // ==================== EVENT 4: NEW STATUS RECORDS ====================
         // This fires when department status records are created for a new form
         // NOTE: With optimized triggers, this should only fire ONCE per form submission
@@ -177,19 +177,79 @@ class SupabaseRealtimeService {
           },
           (payload) => {
             console.log('📝 Department status created:', payload.new?.department_name);
-            
+
             // Queue for batching - multiple INSERTs will be processed together
             realtimeManager.queueEvent('department_status_created', payload);
           }
         )
-        
+
+        // ==================== EVENT 5: SUPPORT TICKET INSERT ====================
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'support_tickets'
+          },
+          (payload) => {
+            console.log('🎫 New support ticket:', payload.new?.ticket_number);
+
+            // Queue event
+            realtimeManager.queueEvent('support_ticket_insert', payload);
+
+            // Dispatch browser event for notifications
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('support-ticket-created', {
+                detail: {
+                  ticketNumber: payload.new?.ticket_number,
+                  requesterType: payload.new?.requester_type,
+                  status: payload.new?.status,
+                  ticketId: payload.new?.id
+                }
+              }));
+            }
+          }
+        )
+
+        // ==================== EVENT 6: SUPPORT TICKET UPDATE ====================
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'support_tickets'
+          },
+          (payload) => {
+            // Only process if status changed or important fields
+            if (payload.old?.status !== payload.new?.status) {
+              console.log('🔄 Support ticket updated:',
+                payload.new?.ticket_number,
+                `${payload.old?.status} → ${payload.new?.status}`
+              );
+
+              realtimeManager.queueEvent('support_ticket_update', payload);
+
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('support-ticket-updated', {
+                  detail: {
+                    ticketNumber: payload.new?.ticket_number,
+                    oldStatus: payload.old?.status,
+                    newStatus: payload.new?.status,
+                    ticketId: payload.new?.id
+                  }
+                }));
+              }
+            }
+          }
+        )
+
         // ==================== SUBSCRIPTION STATUS ====================
         .subscribe((status) => {
           this.handleSubscriptionStatus(status);
         });
 
       this.lastConnectionTime = Date.now();
-      
+
     } catch (error) {
       console.error('❌ Error initializing realtime:', error);
       this.isInitializing = false;
@@ -203,25 +263,25 @@ class SupabaseRealtimeService {
   handleSubscriptionStatus(status) {
     this.connectionStatus = status;
     realtimeManager.setConnectionStatus(status);
-    
+
     console.log('📡 Global realtime status:', status);
 
     if (status === 'SUBSCRIBED') {
       console.log('✅ Global realtime connection active');
       this.isInitializing = false;
       this.reconnectAttempts = 0;
-      
+
       // Clear any pending reconnect
       if (this.reconnectTimeout) {
         clearTimeout(this.reconnectTimeout);
         this.reconnectTimeout = null;
       }
-      
+
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
       console.error('❌ Realtime connection error:', status);
       this.isInitializing = false;
       this.scheduleReconnect();
-      
+
     } else if (status === 'CLOSED') {
       if (this.connectionStatus === 'SUBSCRIBED') {
         console.log('🔌 Realtime connection closed');
@@ -269,13 +329,13 @@ class SupabaseRealtimeService {
 
     this.reconnectTimeout = setTimeout(async () => {
       console.log(`🔄 Attempting reconnect #${this.reconnectAttempts}...`);
-      
+
       // Clean up old channel
       if (this.channel) {
         await supabase.removeChannel(this.channel);
         this.channel = null;
       }
-      
+
       // Try to initialize again
       await this.initialize();
     }, delay);
@@ -318,7 +378,7 @@ class SupabaseRealtimeService {
     this.reconnectAttempts = 0;
     this.connectionStatus = 'disconnected';
     this.userInitiatedDisconnect = false;
-    
+
     // Flush any pending events in manager
     realtimeManager.flush();
   }
