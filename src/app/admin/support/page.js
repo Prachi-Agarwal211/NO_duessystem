@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import { Search, Users, Building2, RefreshCcw, ArrowLeft, MessageSquare, CheckCircle, XCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { Search, Users, Building2, RefreshCcw, ArrowLeft, MessageSquare, CheckCircle, XCircle, Clock, Wifi, WifiOff, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminSupportPage() {
@@ -22,6 +22,7 @@ export default function AdminSupportPage() {
   const [search, setSearch] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [markedAsRead, setMarkedAsRead] = useState(new Set());
 
   const statusOptions = [
     { id: 'all', label: 'All Tickets' },
@@ -204,6 +205,44 @@ export default function AdminSupportPage() {
       setUpdatingStatus(null);
     }
   };
+
+  // Mark ticket as read when it appears in view
+  const markTicketAsRead = useCallback(async (ticketId) => {
+    // Don't mark again if already marked in this session
+    if (markedAsRead.has(ticketId)) return;
+
+    try {
+      const res = await fetch('/api/support/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        // Add to marked set to prevent duplicate calls
+        setMarkedAsRead(prev => new Set(prev).add(ticketId));
+        
+        // Update ticket in local state
+        setTickets(prev => prev.map(t =>
+          t.id === ticketId ? { ...t, is_read: true } : t
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  }, [markedAsRead]);
+
+  // Auto-mark tickets as read when they appear in filtered list
+  useEffect(() => {
+    if (filteredTickets.length > 0) {
+      filteredTickets.forEach(ticket => {
+        if (!ticket.is_read) {
+          markTicketAsRead(ticket.id);
+        }
+      });
+    }
+  }, [filteredTickets, markTicketAsRead]);
 
   // Memoized filtered tickets for performance
   const filteredTickets = useMemo(() => {
@@ -400,8 +439,8 @@ export default function AdminSupportPage() {
           ) : (
             <div className="space-y-4">
               {filteredTickets.map(ticket => (
-                <div 
-                  key={ticket.id} 
+                <div
+                  key={ticket.id}
                   className="p-5 rounded-xl border border-gray-200 dark:border-white/10 hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all"
                 >
                   {/* Ticket Header */}
@@ -414,6 +453,18 @@ export default function AdminSupportPage() {
                         {getStatusIcon(ticket.status)}
                         {ticket.status.replace('_', ' ').toUpperCase()}
                       </div>
+                      {/* Read/Unread Badge */}
+                      {ticket.is_read ? (
+                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                          <Eye className="w-3 h-3" />
+                          <span>Read</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-pulse" />
+                          <span>New</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-400">

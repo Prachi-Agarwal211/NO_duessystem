@@ -2,12 +2,13 @@
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import { 
-  LayoutDashboard, 
-  History, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
+import { useState, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  History,
+  MessageSquare,
+  Settings,
+  LogOut,
   X,
   GraduationCap,
   FileText
@@ -17,9 +18,50 @@ import toast from 'react-hot-toast';
 export default function Sidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const isStaff = pathname.startsWith('/staff');
   const isAdmin = pathname.startsWith('/admin');
+
+  // Fetch unread count for admin users
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch('/api/support/unread-count');
+        const json = await res.json();
+        if (json.success) {
+          setUnreadCount(json.unreadCount);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+
+    // Subscribe to realtime changes on support_tickets table
+    const channel = supabase
+      .channel('support-tickets-sidebar')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets'
+        },
+        (payload) => {
+          // Refetch count when any change happens
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
 
   const menuItems = isStaff ? [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/staff/dashboard' },
@@ -29,7 +71,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { name: 'Overview', icon: LayoutDashboard, href: '/admin' },
     { name: 'Convocation', icon: GraduationCap, href: '/admin/convocation' },
     { name: 'Manual Entries', icon: FileText, href: '/admin/manual-entry' },
-    { name: 'Support Tickets', icon: MessageSquare, href: '/admin/support' },
+    { name: 'Support Tickets', icon: MessageSquare, href: '/admin/support', badge: unreadCount },
     { name: 'Settings', icon: Settings, href: '/admin/settings' },
   ] : [];
 
@@ -77,15 +119,28 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium
+                  flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium
                   ${isActive
                     ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                   }
                 `}
               >
-                <item.icon className="w-5 h-5" />
-                {item.name}
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </div>
+                {item.badge > 0 && (
+                  <span className={`
+                    flex items-center justify-center min-w-[20px] h-5 px-2 rounded-full text-xs font-bold
+                    ${isActive
+                      ? 'bg-white text-jecrc-red'
+                      : 'bg-red-500 text-white'
+                    }
+                  `}>
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

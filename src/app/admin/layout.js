@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function AdminLayout({ children }) {
   return (
-    <PageWrapper showThemeToggle={true}>
+    <PageWrapper showThemeToggle={true} showSupportButton={false}>
       {children}
     </PageWrapper>
   );

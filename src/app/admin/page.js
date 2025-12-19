@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
@@ -157,8 +156,7 @@ export default function EnhancedAdminDashboard() {
   }, []); // ✅ FIXED: Empty dependencies - channel never recreates
 
   return (
-    <PageWrapper>
-      <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen space-y-8">
         
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -304,7 +302,6 @@ export default function EnhancedAdminDashboard() {
           totalItems={totalItems}
           onPageChange={setCurrentPage}
         />
-      </div>
-    </PageWrapper>
+    </div>
   );
 }
