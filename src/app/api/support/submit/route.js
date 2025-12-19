@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering (prevents static generation)
+export const dynamic = 'force-dynamic';
+
 // Create Supabase client with service role for bypassing RLS on insert
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

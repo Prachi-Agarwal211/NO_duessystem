@@ -3,11 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Headphones } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/contexts/ThemeContext';
 import StudentSupportModal from '@/components/support/StudentSupportModal';
 import DepartmentSupportModal from '@/components/support/DepartmentSupportModal';
-import AdminSupportModal from '@/components/support/AdminSupportModal';
 
 /**
  * Enhanced Floating Support Button with Liquid Effects
@@ -15,10 +14,10 @@ import AdminSupportModal from '@/components/support/AdminSupportModal';
  * - Liquid glow on hover
  * - Magnetic hover effect (follows cursor slightly)
  * - Pulsing ring animation
- * - Role-based modal detection
+ * - URL-based modal detection (no auth required)
  */
 export default function EnhancedSupportButton() {
-  const { user, profile } = useAuth();
+  const pathname = usePathname();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [showModal, setShowModal] = useState(false);
@@ -45,28 +44,26 @@ export default function EnhancedSupportButton() {
     return () => window.removeEventListener('resize', detectDevice);
   }, []);
 
-  // Determine which modal to show based on user role
+  // Determine which modal to show based on current URL path
   const renderModal = () => {
-    // For unauthenticated users or students, use StudentSupportModal (allows manual entry)
-    if (!user || !profile) {
-      return <StudentSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
+    // Hide on admin pages (admins don't need support button)
+    if (pathname.startsWith('/admin')) {
+      return null;
     }
 
-    const role = profile.role?.toLowerCase();
-    
-    switch (role) {
-      case 'admin':
-        return <AdminSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
-      case 'department':
-      case 'hod':
-      case 'registrar':
-        return <DepartmentSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
-      case 'student':
-      default:
-        // Fallback to StudentSupportModal for unknown roles or students
-        return <StudentSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
+    // Show department support on staff pages
+    if (pathname.startsWith('/staff')) {
+      return <DepartmentSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
     }
+
+    // Default: Show student support for all other pages (student pages, public pages, etc.)
+    return <StudentSupportModal isOpen={showModal} onClose={() => setShowModal(false)} />;
   };
+
+  // Don't render button at all on admin pages
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <>

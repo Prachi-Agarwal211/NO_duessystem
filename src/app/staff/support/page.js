@@ -84,8 +84,8 @@ export default function StaffSupportPage() {
           <GlassCard className="p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 mx-auto bg-purple-100 dark:bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <div className="w-16 h-16 mx-auto bg-jecrc-red/10 dark:bg-jecrc-red/20 rounded-full flex items-center justify-center mb-4">
+                <MessageSquare className="w-8 h-8 text-jecrc-red dark:text-jecrc-red-bright" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Department Support</h1>
               <p className="text-gray-500 dark:text-gray-400">
@@ -106,7 +106,7 @@ export default function StaffSupportPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="department.email@college.edu"
-                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 transition-all"
+                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent disabled:opacity-50 transition-all"
                 />
               </div>
 
@@ -121,17 +121,17 @@ export default function StaffSupportPage() {
                   onChange={(e) => setFormData({...formData, message: e.target.value})}
                   placeholder="Describe your issue, request, or question..."
                   rows="6"
-                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none disabled:opacity-50 transition-all"
+                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent resize-none disabled:opacity-50 transition-all"
                 />
                 <p className="text-xs text-gray-400 mt-2">
                   {formData.message.length} / 10 characters minimum
                 </p>
               </div>
 
-              <button 
+              <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                className="w-full py-4 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl font-bold text-lg shadow-lg shadow-jecrc-red/30 dark:shadow-neon-red transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
               >
                 {submitting ? (
                   <>
@@ -147,8 +147,8 @@ export default function StaffSupportPage() {
               </button>
             </form>
 
-            <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
-              <p className="text-sm text-purple-800 dark:text-purple-300 text-center">
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <p className="text-sm text-blue-800 dark:text-blue-300 text-center">
                 💡 <strong>Tip:</strong> Admin team monitors all department requests in realtime and will assist you promptly.
               </p>
             </div>
