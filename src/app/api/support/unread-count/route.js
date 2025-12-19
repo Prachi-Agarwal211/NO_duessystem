@@ -55,12 +55,12 @@ export async function GET(request) {
       );
     }
 
-    // Get unread count (not read AND not resolved)
+    // Get unread count (not read AND not resolved/closed)
     const { count, error: countError } = await supabaseAdmin
       .from('support_tickets')
       .select('*', { count: 'exact', head: true })
       .eq('is_read', false)
-      .neq('status', 'resolved');
+      .not('status', 'in', '(resolved,closed)');
 
     if (countError) {
       console.error('Unread count error:', countError);

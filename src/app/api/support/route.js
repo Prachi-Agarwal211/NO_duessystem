@@ -158,13 +158,26 @@ export async function PATCH(request) {
     }
 
     // Update ticket status using admin client
+    // Auto-mark as read when closing or resolving
     const { data: updatedTicket, error: updateError } = await supabaseAdmin
       .from('support_tickets')
       .update({
         status,
         updated_at: new Date().toISOString(),
-        ...(status === 'resolved' && { resolved_at: new Date().toISOString(), resolved_by: profile.email }),
-        ...(status === 'closed' && { resolved_at: new Date().toISOString(), resolved_by: profile.email })
+        ...(status === 'resolved' && {
+          resolved_at: new Date().toISOString(),
+          resolved_by: profile.email,
+          is_read: true,
+          read_at: new Date().toISOString(),
+          read_by: user.id
+        }),
+        ...(status === 'closed' && {
+          resolved_at: new Date().toISOString(),
+          resolved_by: profile.email,
+          is_read: true,
+          read_at: new Date().toISOString(),
+          read_by: user.id
+        })
       })
       .eq('id', ticketId)
       .select()
