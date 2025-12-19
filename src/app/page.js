@@ -39,7 +39,7 @@ export default function Home() {
 
         {/* Main Content Area - Enhanced Spacing & Visual Separation */}
         <main className="w-full max-w-7xl px-4 sm:px-6 md:px-12 pb-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 md:gap-14 lg:gap-16 items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 md:gap-14 lg:gap-16 items-stretch max-w-4xl mx-auto">
             <EnhancedActionCard
               index={0}
               title="Submit No Dues Form"
@@ -53,13 +53,6 @@ export default function Home() {
               subtitle="Track the status of your no dues application using your registration number."
               icon={Search}
               onClick={() => router.push('/student/check-status')}
-            />
-            <EnhancedActionCard
-              index={2}
-              title="Upload Completed Form"
-              subtitle="Already completed your no-dues offline? Upload your manually signed form here."
-              icon={Upload}
-              onClick={() => router.push('/student/manual-entry')}
             />
           </div>
         </main>

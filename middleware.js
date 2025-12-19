@@ -17,6 +17,7 @@ export async function middleware(request) {
       '/student/check-status',
       '/student/submit-form',
       '/student/manual-entry',
+      '/student/support',
       '/staff/login',
       '/staff/forgot-password',
       '/staff/verify-otp',
@@ -69,8 +70,11 @@ export async function middleware(request) {
       '/admin': ['admin'],
       '/admin/dashboard': ['admin'],
       '/admin/request': ['admin'],
+      '/admin/support': ['admin'],
       '/staff/dashboard': ['department', 'admin'],
       '/staff/student': ['department', 'admin'],
+      '/staff/support': ['department', 'admin'],
+      '/staff/history': ['department', 'admin'],
     };
 
     // Check if the current path is protected

@@ -1,15 +1,17 @@
 'use client';
 
-import SupportModal from './SupportModal';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DepartmentSupportModal({ isOpen, onClose }) {
-    return (
-        <SupportModal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Department Support"
-            description="This feature is under development."
-            buttonText="Close"
-        />
-    );
+    const router = useRouter();
+    
+    useEffect(() => {
+        if (isOpen) {
+            router.push('/staff/support');
+            onClose();
+        }
+    }, [isOpen, router, onClose]);
+    
+    return null;
 }
