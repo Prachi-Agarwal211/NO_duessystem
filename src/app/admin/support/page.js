@@ -1,15 +1,15 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import { Search, Users, Building2, RefreshCcw, ArrowLeft, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, Users, Building2, RefreshCcw, ArrowLeft, MessageSquare, CheckCircle, XCircle, Clock, Wifi, WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminSupportPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('student'); // 'student' or 'department'
+  const [activeTab, setActiveTab] = useState('student');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [tickets, setTickets] = useState([]);
@@ -21,6 +21,7 @@ export default function AdminSupportPage() {
   });
   const [search, setSearch] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
 
   const statusOptions = [
     { id: 'all', label: 'All Tickets' },
@@ -63,9 +64,116 @@ export default function AdminSupportPage() {
     }
   };
 
+  // Initial fetch
   useEffect(() => {
     fetchTickets();
   }, [activeTab, statusFilter]);
+
+  // ✅ REALTIME SUBSCRIPTION
+  useEffect(() => {
+    const channel = supabase
+      .channel('support_tickets_realtime')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'support_tickets' 
+        },
+        (payload) => {
+          console.log('🔔 New ticket received:', payload.new);
+          const newTicket = payload.new;
+          
+          // Add to list if matches current filter
+          if (newTicket.requester_type === activeTab) {
+            if (statusFilter === 'all' || newTicket.status === statusFilter) {
+              setTickets(prev => [newTicket, ...prev]);
+            }
+          }
+          
+          // Update stats
+          setStats(prev => ({
+            ...prev,
+            [`${newTicket.requester_type}_total`]: prev[`${newTicket.requester_type}_total`] + 1,
+            [`${newTicket.requester_type}_open`]: prev[`${newTicket.requester_type}_open`] + (newTicket.status === 'open' ? 1 : 0),
+          }));
+          
+          // Show notification
+          toast.success(`🔔 New ${newTicket.requester_type} ticket #${newTicket.ticket_number}`, {
+            duration: 5000,
+            icon: '📩'
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'support_tickets' 
+        },
+        (payload) => {
+          console.log('🔄 Ticket updated:', payload.new);
+          const updatedTicket = payload.new;
+          const oldTicket = payload.old;
+          
+          // Update in list
+          setTickets(prev => 
+            prev.map(t => t.id === updatedTicket.id ? updatedTicket : t)
+          );
+          
+          // Update stats if status changed
+          if (oldTicket.status !== updatedTicket.status) {
+            setStats(prev => ({
+              ...prev,
+              [`${updatedTicket.requester_type}_open`]: 
+                prev[`${updatedTicket.requester_type}_open`] + 
+                (updatedTicket.status === 'open' ? 1 : 0) -
+                (oldTicket.status === 'open' ? 1 : 0)
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'support_tickets' 
+        },
+        (payload) => {
+          console.log('🗑️ Ticket deleted:', payload.old);
+          const deletedTicket = payload.old;
+          
+          // Remove from list
+          setTickets(prev => prev.filter(t => t.id !== deletedTicket.id));
+          
+          // Update stats
+          setStats(prev => ({
+            ...prev,
+            [`${deletedTicket.requester_type}_total`]: prev[`${deletedTicket.requester_type}_total`] - 1,
+            [`${deletedTicket.requester_type}_open`]: prev[`${deletedTicket.requester_type}_open`] - (deletedTicket.status === 'open' ? 1 : 0),
+          }));
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Realtime status:', status);
+        if (status === 'SUBSCRIBED') {
+          setRealtimeConnected(true);
+          console.log('✅ Realtime connected - listening for ticket changes');
+        } else if (status === 'CLOSED') {
+          setRealtimeConnected(false);
+          console.log('❌ Realtime disconnected');
+        }
+      });
+
+    // Cleanup on unmount
+    return () => {
+      console.log('🔌 Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+      setRealtimeConnected(false);
+    };
+  }, [activeTab, statusFilter]); // Re-subscribe when filters change
 
   const updateTicketStatus = async (ticketId, newStatus) => {
     setUpdatingStatus(ticketId);
@@ -85,7 +193,7 @@ export default function AdminSupportPage() {
       const result = await res.json();
       if (result.success) {
         toast.success('Status updated successfully');
-        fetchTickets();
+        // No need to manually update - realtime will handle it
       } else {
         toast.error('Failed to update status');
       }
@@ -97,13 +205,16 @@ export default function AdminSupportPage() {
     }
   };
 
-  const filteredTickets = tickets.filter(ticket =>
-    ticket.subject?.toLowerCase().includes(search.toLowerCase()) ||
-    ticket.message?.toLowerCase().includes(search.toLowerCase()) ||
-    ticket.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
-    ticket.user_email?.toLowerCase().includes(search.toLowerCase()) ||
-    ticket.user_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Memoized filtered tickets for performance
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(ticket =>
+      ticket.subject?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.message?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.ticket_number?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.user_email?.toLowerCase().includes(search.toLowerCase()) ||
+      ticket.user_name?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [tickets, search]);
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -132,8 +243,30 @@ export default function AdminSupportPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Manage student and department support requests.</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Support Tickets</h1>
+              {/* Realtime Status Indicator */}
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+                realtimeConnected 
+                  ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' 
+                  : 'bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400'
+              }`}>
+                {realtimeConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3" />
+                    <span>Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3" />
+                    <span>Offline</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              {realtimeConnected ? 'Monitoring new tickets in realtime' : 'Manage student and department support requests'}
+            </p>
           </div>
           <div className="flex gap-3">
             <button
@@ -146,6 +279,7 @@ export default function AdminSupportPage() {
             <button
               onClick={fetchTickets}
               className="p-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all"
+              title="Manual refresh (realtime is active)"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>

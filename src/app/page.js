@@ -2,11 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FileCheck, Search, Upload } from 'lucide-react';
+import { FileCheck, Search } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import EnhancedActionCard from '@/components/landing/EnhancedActionCard';
 import LiquidTitle from '@/components/landing/LiquidTitle';
-import EnhancedSupportButton from '@/components/landing/EnhancedSupportButton';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -56,9 +55,6 @@ export default function Home() {
             />
           </div>
         </main>
-
-        {/* Enhanced Support Button - Floating with orbital animation */}
-        <EnhancedSupportButton />
 
         {/* Minimal Footer with enhanced visibility */}
         <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-70 hover:opacity-100 transition-opacity duration-500">

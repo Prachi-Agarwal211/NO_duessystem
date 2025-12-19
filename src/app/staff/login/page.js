@@ -48,15 +48,16 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black transition-colors duration-500">
-      
-      {/* Back Button */}
-      <Link href="/" className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-        <ArrowLeft className="w-5 h-5" />
-        <span className="font-medium">Back to Home</span>
-      </Link>
+    <PageWrapper>
+      <div className="min-h-screen w-full flex items-center justify-center p-4">
+        
+        {/* Back Button */}
+        <Link href="/" className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-jecrc-red dark:hover:text-jecrc-red-bright transition-colors z-10">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Back to Home</span>
+        </Link>
 
-      <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl">
+        <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl relative z-10">
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto bg-jecrc-rose dark:bg-jecrc-red/20 rounded-full flex items-center justify-center mb-4">
                <Lock className="w-8 h-8 text-jecrc-red dark:text-jecrc-red-bright" />
@@ -116,13 +117,18 @@ function LoginForm() {
             </button>
           </form>
         </GlassCard>
-    </div>
+      </div>
+    </PageWrapper>
   );
 }
 
 export default function StaffLogin() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
+      </div>
+    }>
       <LoginForm />
     </Suspense>
   );

@@ -2,9 +2,10 @@
 
 import ThemeToggle from './ThemeToggle';
 import GlobalBackground from '@/components/ui/GlobalBackground';
+import EnhancedSupportButton from '@/components/landing/EnhancedSupportButton';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export default function PageWrapper({ children, showThemeToggle = true }) {
+export default function PageWrapper({ children, showThemeToggle = true, showSupportButton = true }) {
   const { theme } = useTheme();
   
   // Provide default theme during SSR/initial render
@@ -17,6 +18,9 @@ export default function PageWrapper({ children, showThemeToggle = true }) {
       
       {/* Global Background with campus image, animated gradients, and grid */}
       <GlobalBackground />
+      
+      {/* Floating Support Button - Shows on all pages by default */}
+      {showSupportButton && <EnhancedSupportButton />}
       
       <div className={`relative transition-colors duration-700 min-h-screen
         ${isDark ? 'text-white' : 'text-ink-black'
