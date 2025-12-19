@@ -144,28 +144,55 @@ export async function GET(request) {
         return result;
       })(),
 
-      // Count pending (dept-wide)
-      supabaseAdmin
-        .from('no_dues_status')
-        .select('id', { count: 'exact', head: true })
-        .in('department_name', myDeptNames)
-        .eq('status', 'pending'),
+      // Count pending (with HOD scoping)
+      (async () => {
+        let query = supabaseAdmin
+          .from('no_dues_status')
+          .select('id, no_dues_forms!inner(school_id)', { count: 'exact', head: true })
+          .in('department_name', myDeptNames)
+          .eq('status', 'pending');
+        
+        // Apply HOD scoping if needed
+        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+          query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        return query;
+      })(),
 
-      // Count MY approved
-      supabaseAdmin
-        .from('no_dues_status')
-        .select('id', { count: 'exact', head: true })
-        .in('department_name', myDeptNames)
-        .eq('status', 'approved')
-        .eq('action_by_user_id', user.id),
+      // Count MY approved (with HOD scoping)
+      (async () => {
+        let query = supabaseAdmin
+          .from('no_dues_status')
+          .select('id, no_dues_forms!inner(school_id)', { count: 'exact', head: true })
+          .in('department_name', myDeptNames)
+          .eq('status', 'approved')
+          .eq('action_by_user_id', user.id);
+        
+        // Apply HOD scoping if needed
+        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+          query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        return query;
+      })(),
 
-      // Count MY rejected
-      supabaseAdmin
-        .from('no_dues_status')
-        .select('id', { count: 'exact', head: true })
-        .in('department_name', myDeptNames)
-        .eq('status', 'rejected')
-        .eq('action_by_user_id', user.id)
+      // Count MY rejected (with HOD scoping)
+      (async () => {
+        let query = supabaseAdmin
+          .from('no_dues_status')
+          .select('id, no_dues_forms!inner(school_id)', { count: 'exact', head: true })
+          .in('department_name', myDeptNames)
+          .eq('status', 'rejected')
+          .eq('action_by_user_id', user.id);
+        
+        // Apply HOD scoping if needed
+        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+          query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        return query;
+      })()
     ]);
 
     // Extract results

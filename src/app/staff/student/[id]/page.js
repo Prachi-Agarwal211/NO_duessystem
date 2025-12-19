@@ -422,110 +422,186 @@ export default function StudentDetailView() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-              <div>
-                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                  }`}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Student Information Section */}
+              <div className={`p-6 rounded-xl border transition-colors duration-700 ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
+              }`}>
+                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${
+                  isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
+                }`}>
                   Student Information
                 </h2>
-                <div className="space-y-3">
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Name:</span> {studentData.student_name}
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Full Name</span>
+                    <span className={`text-sm font-medium transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{studentData.student_name}</span>
                   </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Registration No:</span> {studentData.registration_no}
+                  
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Registration Number</span>
+                    <span className={`text-sm font-mono font-medium transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{studentData.registration_no}</span>
                   </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Academic Period:</span> {studentData.admission_year} (Admission) - {studentData.passing_year} (Passing)
+                  
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Academic Period</span>
+                    <span className={`text-sm font-medium transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{studentData.admission_year} (Admission) - {studentData.passing_year} (Passing)</span>
                   </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Parent Name:</span> {studentData.parent_name}
+                  
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Parent Name</span>
+                    <span className={`text-sm font-medium transition-colors duration-700 ${
+                      isDark ? 'text-white' : 'text-gray-900'
+                    }`}>{studentData.parent_name}</span>
                   </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>School:</span> {studentData.school}
-                  </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Course:</span> {studentData.course}
-                  </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Branch:</span> {studentData.branch}
-                  </div>
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                    <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>Contact:</span> {studentData.contact_no}
+                  
+                  <div className={`pt-3 mt-3 border-t space-y-4 transition-colors duration-700 ${
+                    isDark ? 'border-white/10' : 'border-gray-200'
+                  }`}>
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                        isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}>School</span>
+                      <span className={`text-sm font-medium transition-colors duration-700 ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{studentData.school}</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                        isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}>Course</span>
+                      <span className={`text-sm font-medium transition-colors duration-700 ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{studentData.course}</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                        isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}>Branch</span>
+                      <span className={`text-sm font-medium transition-colors duration-700 ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{studentData.branch}</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                        isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}>Contact Number</span>
+                      <span className={`text-sm font-mono font-medium transition-colors duration-700 ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{studentData.contact_no}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                  }`}>
+              {/* Verification Section */}
+              <div className={`p-6 rounded-xl border transition-colors duration-700 ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
+              }`}>
+                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${
+                  isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
+                }`}>
                   Verification
                 </h2>
                 {studentData.alumni_screenshot_url ? (
-                  <div>
-                    <div className={`mb-2 transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                      Alumni Verification Screenshot:
+                  <div className="space-y-3">
+                    <div className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${
+                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Alumni Verification Screenshot
                     </div>
                     <img
                       src={studentData.alumni_screenshot_url}
                       alt="Alumni verification"
-                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${isDark ? 'border-white/20' : 'border-black/10'
-                        }`}
+                      className={`w-full h-auto rounded-lg border-2 shadow-lg transition-all duration-700 ${
+                        isDark ? 'border-white/20' : 'border-gray-300'
+                      }`}
                     />
                   </div>
                 ) : (
-                  <div className={`transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                    No alumni verification screenshot provided
+                  <div className={`py-8 text-center rounded-lg border-2 border-dashed transition-colors duration-700 ${
+                    isDark ? 'border-white/10 text-gray-500' : 'border-gray-300 text-gray-400'
+                  }`}>
+                    <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm font-medium">No verification screenshot provided</p>
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mb-6 sm:mb-8">
-              <h2 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+            {/* Department Status Table */}
+            <div className="mb-8">
+              <h2 className={`text-lg font-bold mb-5 transition-colors duration-700 ${
+                isDark ? 'text-white' : 'text-ink-black'
+              }`}>
                 Department Status
               </h2>
-              {/* ⚡ FIXED: Responsive table with proper overflow handling */}
               <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <div className="inline-block min-w-full align-middle">
-                  <div className={`overflow-hidden rounded-lg border transition-colors duration-700 ${isDark ? 'border-gray-700' : 'border-gray-200'
-                    }`}>
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className={`transition-colors duration-700 ${isDark ? 'bg-gray-800' : 'bg-gray-50'
-                        }`}>
+                  <div className={`overflow-hidden rounded-xl border-2 shadow-lg transition-colors duration-700 ${
+                    isDark ? 'border-white/10' : 'border-gray-200'
+                  }`}>
+                    <table className="min-w-full">
+                      <thead className={`transition-colors duration-700 ${
+                        isDark ? 'bg-gray-800/50' : 'bg-gray-100'
+                      }`}>
                         <tr>
-                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                            isDark ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                             Department
                           </th>
-                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                            isDark ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                             Status
                           </th>
-                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                            isDark ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                             Updated
                           </th>
-                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                            isDark ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                             Action By
                           </th>
-                          <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider min-w-[200px] transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
-                            }`}>
+                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[200px] transition-colors duration-700 ${
+                            isDark ? 'text-gray-200' : 'text-gray-700'
+                          }`}>
                             Notes
                           </th>
                         </tr>
                       </thead>
-                      <tbody className={`divide-y transition-colors duration-700 ${isDark ? 'bg-gray-900 divide-gray-700' : 'bg-white divide-gray-200'
-                        }`}>
+                      <tbody className={`transition-colors duration-700 ${
+                        isDark ? 'bg-gray-900/30' : 'bg-white'
+                      }`}>
                         {statusData.map((status, index) => (
-                          <tr key={index} className={`transition-colors duration-700 ${isDark ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'
+                          <tr key={index} className={`border-b transition-colors duration-700 ${
+                            isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'
+                          }`}>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold transition-colors duration-700 ${
+                              isDark ? 'text-white' : 'text-gray-900'
                             }`}>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-gray-900'
-                              }`}>
                               {status.display_name}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -596,9 +672,9 @@ export default function StudentDetailView() {
 
             {/* Approve Confirmation Modal */}
             {showApproveModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
                 <div id="approve-modal" className="w-full max-w-md my-8 animate-scale-in">
-                  <GlassCard>
+                  <GlassCard className="p-6 shadow-2xl">
                     <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>
                       Confirm Approval
@@ -635,9 +711,9 @@ export default function StudentDetailView() {
 
             {/* Reject Modal */}
             {showRejectModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
                 <div id="reject-modal" className="w-full max-w-md my-8 animate-scale-in">
-                  <GlassCard>
+                  <GlassCard className="p-6 shadow-2xl">
                     <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>
                       Reject Request

@@ -67,7 +67,7 @@ export default function GlobalBackground() {
           className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 z-10"
           style={{
             backgroundImage: "url('/assets/9-1-1536x720.jpg')",
-            opacity: isDark ? 0.15 : 0.45,
+            opacity: isDark ? 0.08 : 0.25,
             mixBlendMode: isDark ? 'screen' : 'multiply',
             filter: isDark
               ? 'brightness(0.7) contrast(1.0) saturate(0.3) blur(1px)'
