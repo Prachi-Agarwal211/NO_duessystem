@@ -242,7 +242,7 @@ export default function EnhancedAdminDashboard() {
           {/* 2. DEPARTMENT PERFORMANCE */}
           <GlassCard className="lg:col-span-2 p-6">
             <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-white/5 pb-4">
-              <TrendingUp className="w-5 h-5 text-purple-500" />
+              <TrendingUp className="w-5 h-5 text-jecrc-red dark:text-jecrc-red-bright" />
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
