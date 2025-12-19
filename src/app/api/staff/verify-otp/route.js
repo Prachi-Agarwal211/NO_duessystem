@@ -132,26 +132,37 @@ export async function POST(request) {
     }
 
     // OTP is valid - generate temporary reset token
-    // This token will be used for the reset-password endpoint
+    // ✅ NEW: Using dedicated reset_token field instead of reusing otp_code
     const resetToken = `${profile.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // ✅ FIXED: 30 minutes
+    const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
-    // Store reset token in the expanded otp_code field
-    // The field has been expanded to VARCHAR(255) to handle long tokens
-    await supabaseAdmin
+    // Store reset token in dedicated field and clear OTP
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
-        otp_code: resetToken,
-        otp_expires_at: resetTokenExpiry.toISOString(),
+        reset_token: resetToken, // ✅ NEW: Dedicated field for reset token
+        reset_token_expires_at: resetTokenExpiry.toISOString(), // ✅ NEW: Separate expiration
+        otp_code: null, // ✅ Clear OTP after successful verification
+        otp_expires_at: null,
         otp_attempts: 0
       })
       .eq('id', profile.id);
+
+    if (updateError) {
+      console.error('Error storing reset token:', updateError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to generate reset token' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ Reset token generated for ${profile.email}, expires in 30 minutes`);
 
     return NextResponse.json({
       success: true,
       message: 'OTP verified successfully',
       resetToken: resetToken,
-      expiresIn: 30 * 60 // ✅ FIXED: Match backend expiration time (30 minutes)
+      expiresIn: 30 * 60 // 30 minutes in seconds
     });
 
   } catch (error) {

@@ -79,13 +79,15 @@ export async function POST(request) {
     const otpCode = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Store OTP in database
+    // Store OTP in database and clear any existing reset tokens
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
         otp_code: otpCode,
         otp_expires_at: expiresAt.toISOString(),
-        otp_attempts: 0
+        otp_attempts: 0,
+        reset_token: null, // ✅ Clear any existing reset token
+        reset_token_expires_at: null
       })
       .eq('id', profile.id);
 
@@ -187,7 +189,9 @@ This is an automated message. Please do not reply to this email.
         .update({
           otp_code: null,
           otp_expires_at: null,
-          otp_attempts: 0
+          otp_attempts: 0,
+          reset_token: null,
+          reset_token_expires_at: null
         })
         .eq('id', profile.id);
 

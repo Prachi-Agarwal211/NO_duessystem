@@ -103,14 +103,15 @@ export async function POST(request) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Get user profile with reset token
+    // ✅ NEW: Get user profile with dedicated reset_token field
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, email, role, otp_code, otp_expires_at')
+      .select('id, email, role, reset_token, reset_token_expires_at')
       .eq('email', normalizedEmail)
       .single();
 
     if (profileError || !profile) {
+      console.error('Profile lookup error:', profileError);
       return NextResponse.json(
         { success: false, error: 'Invalid reset token' },
         { status: 400 }
@@ -118,7 +119,7 @@ export async function POST(request) {
     }
 
     // Verify reset token exists
-    if (!profile.otp_code) {
+    if (!profile.reset_token) {
       return NextResponse.json(
         { success: false, error: 'Reset token not found. Please restart the password reset process.' },
         { status: 400 }
@@ -126,17 +127,25 @@ export async function POST(request) {
     }
 
     // Check if reset token has expired
-    const expiresAt = new Date(profile.otp_expires_at);
+    const expiresAt = new Date(profile.reset_token_expires_at);
     const now = new Date();
+
+    console.log(`🔍 Token validation for ${profile.email}:`, {
+      tokenFromURL: resetToken.substring(0, 20) + '...',
+      tokenInDB: profile.reset_token.substring(0, 20) + '...',
+      expiresAt: expiresAt.toISOString(),
+      now: now.toISOString(),
+      isExpired: now > expiresAt,
+      tokensMatch: profile.reset_token === resetToken
+    });
 
     if (now > expiresAt) {
       // Clear expired token
       await supabaseAdmin
         .from('profiles')
         .update({
-          otp_code: null,
-          otp_expires_at: null,
-          otp_attempts: 0
+          reset_token: null,
+          reset_token_expires_at: null
         })
         .eq('id', profile.id);
 
@@ -146,20 +155,24 @@ export async function POST(request) {
       );
     }
 
-    // Verify reset token matches (the token generated in verify-otp step)
-    // Note: At this stage, otp_code contains the resetToken, not the original OTP
-    // The otp_code field has been expanded to VARCHAR(255) to handle long tokens
-    if (profile.otp_code !== resetToken) {
+    // ✅ NEW: Verify reset token matches using dedicated field
+    if (profile.reset_token !== resetToken) {
+      console.error('❌ Token mismatch!', {
+        expected: profile.reset_token,
+        received: resetToken
+      });
+      
       return NextResponse.json(
         {
           success: false,
-          error: 'Your password reset session has expired or the token is invalid. Please restart the password reset process from the beginning.',
-          code: 'TOKEN_INVALID',
-          hint: 'This can happen if you refreshed the page or took too long. Please start over.'
+          error: 'Invalid reset token. Please restart the password reset process.',
+          code: 'TOKEN_INVALID'
         },
         { status: 400 }
       );
     }
+
+    console.log('✅ Reset token validated successfully');
 
     // Get user's auth record
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
@@ -195,13 +208,12 @@ export async function POST(request) {
       );
     }
 
-    // Clear reset token and update last_password_change
+    // ✅ NEW: Clear reset token from dedicated field and update last_password_change
     const { error: clearError } = await supabaseAdmin
       .from('profiles')
       .update({
-        otp_code: null,
-        otp_expires_at: null,
-        otp_attempts: 0,
+        reset_token: null,
+        reset_token_expires_at: null,
         last_password_change: new Date().toISOString()
       })
       .eq('id', profile.id);
@@ -210,6 +222,8 @@ export async function POST(request) {
       console.error('Error clearing reset token:', clearError);
       // Don't fail the request since password was updated successfully
     }
+
+    console.log(`✅ Password reset successful for ${profile.email}`);
 
     return NextResponse.json({
       success: true,
