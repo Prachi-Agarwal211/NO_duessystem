@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import GlassCard from '@/components/ui/GlassCard';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
-import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download } from 'lucide-react';
+import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download, MessageSquare, AlertCircle } from 'lucide-react';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import toast from 'react-hot-toast';
 
@@ -48,6 +48,10 @@ export default function EnhancedAdminDashboard() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  // Support Tickets
+  const [supportStats, setSupportStats] = useState({ total: 0, unread: 0, open: 0 });
+  const [recentTickets, setRecentTickets] = useState([]);
 
   // Fetch Stats
   const fetchStats = async () => {
@@ -100,10 +104,45 @@ export default function EnhancedAdminDashboard() {
     }
   };
 
+  // Fetch Support Tickets Stats
+  const fetchSupportStats = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Fetch unread count
+      const unreadRes = await fetch('/api/support/unread-count', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const unreadJson = await unreadRes.json();
+
+      // Fetch recent tickets
+      const ticketsRes = await fetch('/api/support?requester_type=student&limit=3', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const ticketsJson = await ticketsRes.json();
+
+      if (unreadJson.success) {
+        setSupportStats({
+          total: ticketsJson.stats?.student_total + ticketsJson.stats?.department_total || 0,
+          unread: unreadJson.unreadCount || 0,
+          open: ticketsJson.stats?.student_open + ticketsJson.stats?.department_open || 0
+        });
+      }
+
+      if (ticketsJson.success && ticketsJson.tickets) {
+        setRecentTickets(ticketsJson.tickets.slice(0, 3));
+      }
+    } catch (e) {
+      console.error("Support stats error:", e);
+    }
+  };
+
   // Initial Load
   useEffect(() => {
     fetchStats();
     fetchApplications();
+    fetchSupportStats();
   }, []);
 
   // Fetch when filters change
@@ -143,6 +182,14 @@ export default function EnhancedAdminDashboard() {
           fetchApplications();
           toast.success("Status updated!");
         }, 800);
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'support_tickets'
+      }, (payload) => {
+        console.log('💬 Admin: Support ticket event detected:', payload.eventType);
+        fetchSupportStats(); // Refresh support stats
       })
       .subscribe((status) => {
         console.log('📡 Admin Realtime status:', status);
@@ -217,6 +264,43 @@ export default function EnhancedAdminDashboard() {
 
           {/* 3. QUICK ACTIONS */}
           <div className="space-y-4">
+            {/* Support Tickets Widget */}
+            <GlassCard className="p-6 cursor-pointer group hover:border-blue-500/50 transition-all" onClick={() => router.push('/admin/support')}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  {supportStats.unread > 0 && (
+                    <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {supportStats.unread} New
+                    </span>
+                  )}
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Support Tickets</h3>
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="text-yellow-600 dark:text-yellow-400">{supportStats.open} Open</span>
+                <span className="text-gray-400">•</span>
+                <span className="text-gray-600 dark:text-gray-400">{supportStats.total} Total</span>
+              </div>
+              
+              {/* Recent Tickets Preview */}
+              {recentTickets.length > 0 && (
+                <div className="mt-4 space-y-2 border-t border-gray-100 dark:border-white/5 pt-4">
+                  {recentTickets.map((ticket) => (
+                    <div key={ticket.id} className="flex items-center gap-2 text-xs">
+                      {!ticket.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                      <span className="text-gray-600 dark:text-gray-400 truncate flex-1">
+                        {ticket.message?.substring(0, 40)}...
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </GlassCard>
+
             <GlassCard className="p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all" onClick={() => router.push('/admin/convocation')}>
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">

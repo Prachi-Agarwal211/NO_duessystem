@@ -347,23 +347,23 @@ export default function AdminSupportPage() {
               </div>
            </GlassCard>
 
-           <GlassCard className="flex items-center justify-between border-l-4 border-l-purple-500">
+           <GlassCard className="flex items-center justify-between border-l-4 border-l-jecrc-red">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Department Tickets</p>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.department_total}</h2>
               </div>
-              <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl">
-                <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="p-3 bg-red-100 dark:bg-red-500/20 rounded-xl">
+                <Building2 className="w-6 h-6 text-jecrc-red dark:text-jecrc-red-bright" />
               </div>
            </GlassCard>
 
-           <GlassCard className="flex items-center justify-between border-l-4 border-l-red-500">
+           <GlassCard className="flex items-center justify-between border-l-4 border-l-jecrc-red-dark">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">Department Open</p>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.department_open}</h2>
               </div>
               <div className="p-3 bg-red-100 dark:bg-red-500/20 rounded-xl">
-                <Clock className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <Clock className="w-6 h-6 text-jecrc-red-dark dark:text-jecrc-red" />
               </div>
            </GlassCard>
         </div>
@@ -387,7 +387,7 @@ export default function AdminSupportPage() {
               onClick={() => setActiveTab('department')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all ${
                 activeTab === 'department'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+                  ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20'
                   : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/10 border border-gray-200 dark:border-white/10'
               }`}
             >
