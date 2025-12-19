@@ -40,9 +40,9 @@ function VerifyOTPContent() {
             if (nextInput) nextInput.focus();
         }
 
-        // Auto submit if all digits filled
-        if (newOtp.every(digit => digit !== '') && index === 5) {
-            handleVerify();
+        // Clear any previous error when user types
+        if (error) {
+            setError('');
         }
     };
 

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
+import MultiSelectCheckbox from '@/components/admin/MultiSelectCheckbox';
 import {
   Settings, Save, Plus, Trash2, Edit,
   Building2, School, Mail, Users,
@@ -727,84 +728,59 @@ export default function AdminSettings() {
                   🔒 Access Scope (Optional - Leave empty for full access)
                 </h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                  Restrict this staff member to specific schools, courses, or branches. Hold Ctrl/Cmd to select multiple.
+                  Restrict this staff member to specific schools, courses, or branches. Click to open dropdown and use checkboxes to select multiple items.
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Schools Multi-Select */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Schools (Multi-Select)
-                    </label>
-                    <select
-                      multiple
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
-                      value={newStaff.school_ids}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-                        setNewStaff({ ...newStaff, school_ids: selected });
-                      }}
-                    >
-                      {schools.filter(s => s.is_active).map(school => (
-                        <option key={school.id} value={school.id} className="py-1">
-                          {school.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {newStaff.school_ids.length} selected
-                    </p>
-                  </div>
+                  {/* Schools Checkbox Multi-Select */}
+                  <MultiSelectCheckbox
+                    label="Schools"
+                    placeholder="Select schools (optional)"
+                    emptyMessage="No active schools available"
+                    options={schools
+                      .filter(s => s.is_active)
+                      .map(school => ({
+                        id: school.id,
+                        label: school.name
+                      }))
+                    }
+                    selectedIds={newStaff.school_ids}
+                    onChange={(ids) => setNewStaff({ ...newStaff, school_ids: ids })}
+                  />
 
-                  {/* Courses Multi-Select */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Courses (Multi-Select)
-                    </label>
-                    <select
-                      multiple
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
-                      value={newStaff.course_ids}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-                        setNewStaff({ ...newStaff, course_ids: selected });
-                      }}
-                    >
-                      {courses.filter(c => c.is_active).map(course => (
-                        <option key={course.id} value={course.id} className="py-1">
-                          {course.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {newStaff.course_ids.length} selected
-                    </p>
-                  </div>
+                  {/* Courses Checkbox Multi-Select */}
+                  <MultiSelectCheckbox
+                    label="Courses"
+                    placeholder="Select courses (optional)"
+                    emptyMessage="No active courses available"
+                    options={courses
+                      .filter(c => c.is_active)
+                      .map(course => ({
+                        id: course.id,
+                        label: course.name,
+                        subtitle: course.config_schools?.name
+                      }))
+                    }
+                    selectedIds={newStaff.course_ids}
+                    onChange={(ids) => setNewStaff({ ...newStaff, course_ids: ids })}
+                  />
 
-                  {/* Branches Multi-Select */}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      Branches (Multi-Select)
-                    </label>
-                    <select
-                      multiple
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent h-32 text-sm"
-                      value={newStaff.branch_ids}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, option => parseInt(option.value));
-                        setNewStaff({ ...newStaff, branch_ids: selected });
-                      }}
-                    >
-                      {branches.filter(b => b.is_active).map(branch => (
-                        <option key={branch.id} value={branch.id} className="py-1">
-                          {branch.name} ({branch.config_courses?.name})
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {newStaff.branch_ids.length} selected
-                    </p>
-                  </div>
+                  {/* Branches Checkbox Multi-Select */}
+                  <MultiSelectCheckbox
+                    label="Branches"
+                    placeholder="Select branches (optional)"
+                    emptyMessage="No active branches available"
+                    options={branches
+                      .filter(b => b.is_active)
+                      .map(branch => ({
+                        id: branch.id,
+                        label: branch.name,
+                        subtitle: branch.config_courses?.name
+                      }))
+                    }
+                    selectedIds={newStaff.branch_ids}
+                    onChange={(ids) => setNewStaff({ ...newStaff, branch_ids: ids })}
+                  />
                 </div>
               </div>
 
