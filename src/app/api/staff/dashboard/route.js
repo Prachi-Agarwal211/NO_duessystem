@@ -36,29 +36,42 @@ export async function GET(request) {
     // ⚡ PHASE 1 OPTIMIZATION: Parallel Query Execution
     // Changed from 6 sequential queries → 2 parallel queries = 60-70% faster
     
-    // 🚀 QUERY 1: Get Profile + Departments (Combined with JOIN)
-    const { data: profile, error: profileError } = await supabaseAdmin
-        .from('profiles')
-        .select(`
-          role,
-          assigned_department_ids,
-          school_ids,
-          departments:assigned_department_ids (
-            name,
-            display_name
-          )
-        `)
-        .eq('id', user.id)
-        .single();
+    // 🚀 QUERY 1 & 2: Get Profile + Departments in parallel
+    const [profileResult, departmentsResult] = await Promise.all([
+        // Get profile
+        supabaseAdmin
+            .from('profiles')
+            .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
+            .eq('id', user.id)
+            .single(),
+        
+        // Get departments (will filter after we have profile)
+        supabaseAdmin
+            .from('profiles')
+            .select('assigned_department_ids')
+            .eq('id', user.id)
+            .single()
+            .then(async (profileData) => {
+                if (!profileData.data?.assigned_department_ids?.length) return { data: null };
+                return supabaseAdmin
+                    .from('departments')
+                    .select('name, display_name')
+                    .in('id', profileData.data.assigned_department_ids);
+            })
+    ]);
+
+    const { data: profile, error: profileError } = profileResult;
+    const { data: departments } = departmentsResult;
 
     console.log('📊 Dashboard Debug - User ID:', user.id);
     console.log('📊 Dashboard Debug - Profile:', profile);
+    console.log('📊 Dashboard Debug - Departments:', departments);
 
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
 
-    // Extract department info from joined data
-    const myDeptNames = profile.departments?.map(d => d.name) || [];
-    const deptInfo = profile.departments?.map(d => ({ name: d.name, displayName: d.display_name })) || [];
+    // Extract department info
+    const myDeptNames = departments?.map(d => d.name) || [];
+    const deptInfo = departments?.map(d => ({ name: d.name, displayName: d.display_name })) || [];
 
     console.log('📊 Dashboard Debug - My Dept Names:', myDeptNames);
 
@@ -70,7 +83,7 @@ export async function GET(request) {
         });
     }
 
-    // 🚀 QUERY 2: Parallel fetch of Applications + All Stats
+    // 🚀 QUERY 3: Parallel fetch of Applications + All Stats
     // Instead of 4 sequential queries, we do 4 in parallel
     const [
       applicationsResult,
