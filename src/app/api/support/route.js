@@ -1,18 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createClient } from '@supabase/supabase-js';
 
-// Admin client for bypassing RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
+// GET - Admin view all tickets (filtered by requester_type)
 export async function GET(request) {
   const cookieStore = cookies();
 
-  // Create server client for authentication
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -38,7 +31,7 @@ export async function GET(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check if user is admin
+  // Get user's profile to verify admin role
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
@@ -46,40 +39,31 @@ export async function GET(request) {
     .single();
 
   if (profileError || !profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
   }
 
   // Parse query parameters
   const { searchParams } = new URL(request.url);
+  const requesterType = searchParams.get('requester_type'); // 'student' or 'department'
   const status = searchParams.get('status');
-  const requesterType = searchParams.get('requester_type');
-  const priority = searchParams.get('priority');
-  const search = searchParams.get('search');
   const page = parseInt(searchParams.get('page')) || 1;
   const limit = parseInt(searchParams.get('limit')) || 50;
   const offset = (page - 1) * limit;
 
   try {
     // Build query
-    let query = supabaseAdmin
+    let query = supabase
       .from('support_tickets')
       .select('*', { count: 'exact' });
 
-    // Apply filters
-    if (status) {
-      query = query.eq('status', status);
-    }
-
+    // Filter by requester type (required for admin view)
     if (requesterType) {
       query = query.eq('requester_type', requesterType);
     }
 
-    if (priority) {
-      query = query.eq('priority', priority);
-    }
-
-    if (search) {
-      query = query.or(`email.ilike.%${search}%,roll_number.ilike.%${search}%,ticket_number.ilike.%${search}%,message.ilike.%${search}%`);
+    // Apply status filter if provided
+    if (status) {
+      query = query.eq('status', status);
     }
 
     // Apply pagination and ordering
@@ -93,11 +77,17 @@ export async function GET(request) {
       throw ticketsError;
     }
 
-    // Get statistics
-    const { data: statsData } = await supabaseAdmin
-      .from('support_tickets_stats')
-      .select('*')
-      .single();
+    // Get statistics for both types
+    const { data: allTickets } = await supabase
+      .from('support_tickets')
+      .select('status, requester_type');
+
+    const stats = {
+      student_total: allTickets?.filter(t => t.requester_type === 'student').length || 0,
+      student_open: allTickets?.filter(t => t.requester_type === 'student' && t.status === 'open').length || 0,
+      department_total: allTickets?.filter(t => t.requester_type === 'department').length || 0,
+      department_open: allTickets?.filter(t => t.requester_type === 'department' && t.status === 'open').length || 0,
+    };
 
     return NextResponse.json({
       success: true,
@@ -108,18 +98,7 @@ export async function GET(request) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit)
       },
-      stats: statsData || {
-        total_tickets: 0,
-        open_tickets: 0,
-        in_progress_tickets: 0,
-        resolved_tickets: 0,
-        closed_tickets: 0,
-        student_tickets: 0,
-        department_tickets: 0,
-        urgent_tickets: 0,
-        high_priority_tickets: 0,
-        avg_resolution_time_hours: 0
-      }
+      stats
     });
 
   } catch (error) {
@@ -131,7 +110,7 @@ export async function GET(request) {
   }
 }
 
-// UPDATE ticket (admin only)
+// PATCH - Admin update ticket status
 export async function PATCH(request) {
   const cookieStore = cookies();
 
@@ -160,71 +139,64 @@ export async function PATCH(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check if user is admin
+  // Get user's profile to verify admin role
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email")
     .eq("id", session.user.id)
     .single();
 
   if (profileError || !profile || profile.role !== 'admin') {
-    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+    return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const { ticketId, status, priority, adminNotes } = body;
+    const { ticketId, status } = body;
 
-    if (!ticketId) {
+    if (!ticketId || !status) {
       return NextResponse.json(
-        { success: false, error: 'Ticket ID is required' },
+        { success: false, error: 'Missing ticketId or status' },
         { status: 400 }
       );
     }
 
-    // Build update object
-    const updateData = {
-      updated_at: new Date().toISOString()
-    };
-
-    if (status) {
-      updateData.status = status;
-      // If resolved or closed, set resolved_at and resolved_by
-      if ((status === 'resolved' || status === 'closed')) {
-        updateData.resolved_at = new Date().toISOString();
-        updateData.resolved_by = session.user.id;
-      }
+    // Validate status
+    const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid status value' },
+        { status: 400 }
+      );
     }
 
-    if (priority) {
-      updateData.priority = priority;
-    }
-
-    if (adminNotes !== undefined) {
-      updateData.admin_notes = adminNotes;
-    }
-
-    const { data, error } = await supabaseAdmin
+    // Update ticket status
+    const { data: updatedTicket, error: updateError } = await supabase
       .from('support_tickets')
-      .update(updateData)
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+        ...(status === 'resolved' && { resolved_at: new Date().toISOString(), resolved_by: profile.email }),
+        ...(status === 'closed' && { resolved_at: new Date().toISOString(), resolved_by: profile.email })
+      })
       .eq('id', ticketId)
       .select()
       .single();
 
-    if (error) {
-      throw error;
+    if (updateError) {
+      throw updateError;
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Ticket updated successfully',
-      ticket: data
+      ticket: updatedTicket,
+      message: 'Ticket status updated successfully'
     });
 
   } catch (error) {
-    console.error('Error updating support ticket:', error);
+    console.error('Error updating ticket status:', error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to update ticket" },
+      { success: false, error: error.message || "Failed to update ticket status" },
       { status: 500 }
     );
   }

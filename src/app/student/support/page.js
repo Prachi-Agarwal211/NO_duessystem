@@ -1,10 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Plus, Clock, CheckCircle, XCircle, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function StudentSupport() {
@@ -12,34 +11,87 @@ export default function StudentSupport() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('open'); // 'open' or 'closed'
+  const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('open');
 
-  // Form state
+  // Simplified form state - Only email and message
   const [formData, setFormData] = useState({
-    subject: '',
-    category: '',
-    priority: 'normal',
+    email: '',
     message: ''
   });
 
   useEffect(() => {
-    // TODO: Fetch tickets from API when implemented
-    // For now, show empty state
-    setLoading(false);
+    fetchTickets();
   }, []);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      // Fetch tickets from API (if user is logged in, otherwise show empty)
+      // For now, show empty state - will be populated when tickets exist
+      setTickets([]);
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.subject || !formData.category || !formData.message) {
-      toast.error('Please fill all required fields');
+    if (!formData.email.trim() || !formData.message.trim()) {
+      toast.error('Please fill all fields');
       return;
     }
 
-    // TODO: Implement API call to create ticket
-    toast.success('Ticket submitted successfully!');
-    setIsModalOpen(false);
-    setFormData({ subject: '', category: '', priority: 'normal', message: '' });
+    if (formData.message.trim().length < 10) {
+      toast.error('Message must be at least 10 characters');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch('/api/support/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          message: formData.message,
+          requesterType: 'student'
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit ticket');
+      }
+
+      toast.success('Support request submitted successfully!');
+      setIsModalOpen(false);
+      setFormData({ email: '', message: '' });
+      
+      // Add the new ticket to the list
+      if (result.ticket) {
+        setTickets(prev => [{
+          id: result.ticket.ticketNumber,
+          ticket_number: result.ticket.ticketNumber,
+          email: result.ticket.email,
+          message: formData.message,
+          status: result.ticket.status,
+          created_at: result.ticket.createdAt,
+          requester_type: 'student'
+        }, ...prev]);
+      }
+
+    } catch (err) {
+      console.error('Submit error:', err);
+      toast.error(err.message || 'Failed to submit support request');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const openTickets = tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved');
@@ -49,8 +101,17 @@ export default function StudentSupport() {
     switch(status) {
       case 'resolved': return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'closed': return <XCircle className="w-5 h-5 text-gray-400" />;
-      case 'pending': return <Clock className="w-5 h-5 text-yellow-500" />;
-      default: return <AlertCircle className="w-5 h-5 text-blue-500" />;
+      case 'in_progress': return <Clock className="w-5 h-5 text-blue-500" />;
+      default: return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch(status) {
+      case 'resolved': return 'Resolved';
+      case 'closed': return 'Closed';
+      case 'in_progress': return 'In Progress';
+      default: return 'Open';
     }
   };
 
@@ -76,7 +137,7 @@ export default function StudentSupport() {
                 onClick={() => setIsModalOpen(true)}
                 className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-jecrc-red/20 transition-all"
             >
-                <Plus className="w-5 h-5" /> New Ticket
+                <Plus className="w-5 h-5" /> New Request
             </button>
         </div>
 
@@ -90,7 +151,7 @@ export default function StudentSupport() {
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
-                    Open Tickets ({openTickets.length})
+                    Open Requests ({openTickets.length})
                     {activeTab === 'open' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-jecrc-red dark:bg-jecrc-red" />
                 )}
@@ -103,7 +164,7 @@ export default function StudentSupport() {
                         : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
-                    Closed Tickets ({closedTickets.length})
+                    Closed Requests ({closedTickets.length})
                     {activeTab === 'closed' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-jecrc-red dark:bg-jecrc-red" />
                 )}
@@ -111,7 +172,7 @@ export default function StudentSupport() {
         </div>
 
         {/* Tickets List */}
-        <GlassCard className="p-8 min-h-[400px]">
+        <GlassCard className="min-h-[400px]">
             {loading ? (
                 <div className="space-y-4">
                     {[1,2,3].map(i => <div key={i} className="h-20 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />)}
@@ -122,32 +183,47 @@ export default function StudentSupport() {
                         <MessageSquare className="w-10 h-10 text-gray-400" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                        {activeTab === 'open' ? 'No Open Tickets' : 'No Closed Tickets'}
+                        {activeTab === 'open' ? 'No Open Requests' : 'No Closed Requests'}
                     </h3>
-                    <p className="text-gray-500 dark:text-gray-400">
+                    <p className="text-gray-500 dark:text-gray-400 mb-6">
                         {activeTab === 'open' 
-                            ? "You haven't raised any support requests yet." 
-                            : "No resolved or closed tickets to show."}
+                            ? "You haven't submitted any support requests yet." 
+                            : "No resolved or closed requests to show."}
                     </p>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-lg shadow-jecrc-red/20 transition-all"
+                    >
+                        <Plus className="w-5 h-5" /> Submit First Request
+                    </button>
                 </div>
             ) : (
                 <div className="space-y-3">
                     {(activeTab === 'open' ? openTickets : closedTickets).map(ticket => (
                         <div 
                             key={ticket.id} 
-                            className="p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-jecrc-red/50 dark:hover:border-jecrc-red/50 transition-all cursor-pointer"
+                            className="p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-jecrc-red/50 dark:hover:border-jecrc-red/50 transition-all"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
+                                    <div className="flex items-center gap-3 mb-2">
                                         {getStatusIcon(ticket.status)}
-                                        <h4 className="font-semibold text-gray-900 dark:text-white">{ticket.subject}</h4>
+                                        <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                                            #{ticket.ticket_number}
+                                        </span>
+                                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400">
+                                            {getStatusText(ticket.status)}
+                                        </span>
                                     </div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{ticket.category}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">{ticket.message}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{ticket.message}</p>
+                                    <p className="text-xs text-gray-400">From: {ticket.email}</p>
                                 </div>
                                 <div className="text-right text-xs text-gray-400">
-                                    {new Date(ticket.created_at).toLocaleDateString('en-IN')}
+                                    {new Date(ticket.created_at).toLocaleDateString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -156,89 +232,70 @@ export default function StudentSupport() {
             )}
         </GlassCard>
 
-        {/* Create Ticket Modal */}
+        {/* Simplified Submit Modal - Only Email + Message */}
         {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
                 <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-gray-200 dark:border-white/10">
                     <button 
                         onClick={() => setIsModalOpen(false)} 
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none"
+                        disabled={submitting}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none disabled:opacity-50"
                     >
                         ×
                     </button>
                     
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Submit Support Request</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Submit Support Request</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                        Our admin team will review and respond to your request.
+                    </p>
                     
                     <form className="space-y-4" onSubmit={handleSubmit}>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Subject *
+                                Your Email *
                             </label>
                             <input 
-                                type="text"
+                                type="email"
                                 required
-                                value={formData.subject}
-                                onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                                placeholder="Brief description of your issue"
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
+                                disabled={submitting}
+                                value={formData.email}
+                                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                placeholder="your.email@example.com"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red disabled:opacity-50"
                             />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Category *
-                            </label>
-                            <select 
-                                required
-                                value={formData.category}
-                                onChange={(e) => setFormData({...formData, category: e.target.value})}
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
-                            >
-                                <option value="">Select department</option>
-                                <option value="library">Library</option>
-                                <option value="accounts">Accounts</option>
-                                <option value="hostel">Hostel</option>
-                                <option value="sports">Sports</option>
-                                <option value="academic">Academic</option>
-                                <option value="technical">Technical Issue</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Priority
-                            </label>
-                            <select 
-                                value={formData.priority}
-                                onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red"
-                            >
-                                <option value="low">Low</option>
-                                <option value="normal">Normal</option>
-                                <option value="high">High</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Message *
+                                Message * (minimum 10 characters)
                             </label>
                             <textarea 
                                 required
+                                disabled={submitting}
                                 value={formData.message}
                                 onChange={(e) => setFormData({...formData, message: e.target.value})}
-                                placeholder="Describe your issue in detail..."
-                                rows="4"
-                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red resize-none"
+                                placeholder="Describe your issue or question in detail..."
+                                rows="5"
+                                className="w-full p-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red resize-none disabled:opacity-50"
                             />
+                            <p className="text-xs text-gray-400 mt-1">
+                                {formData.message.length} characters
+                            </p>
                         </div>
 
                         <button 
                             type="submit"
-                            className="w-full py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold shadow-lg shadow-jecrc-red/20 transition-all"
+                            disabled={submitting}
+                            className="w-full py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold shadow-lg shadow-jecrc-red/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Submit Ticket
+                            {submitting ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                'Submit Request'
+                            )}
                         </button>
                     </form>
                 </div>

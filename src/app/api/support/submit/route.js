@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supportTicketSchema, validateWithZod } from '@/lib/zodSchemas';
 
 // Create Supabase client with service role for bypassing RLS on insert
 const supabaseAdmin = createClient(
@@ -11,40 +10,40 @@ const supabaseAdmin = createClient(
 export async function POST(request) {
   try {
     const body = await request.json();
+    const { email, message, requesterType } = body;
 
-    // ==================== ZOD VALIDATION ====================
-    // Validates email, message length, requester type, and roll number rules
-    const validation = validateWithZod(body, supportTicketSchema);
-    
-    if (!validation.success) {
-      const errorFields = Object.keys(validation.errors);
-      const firstError = validation.errors[errorFields[0]];
-      
+    // Simple validation
+    if (!email || !email.trim()) {
       return NextResponse.json(
-        { success: false, error: firstError || 'Validation failed' },
+        { success: false, error: 'Email is required' },
         { status: 400 }
       );
     }
 
-    // All data is validated and sanitized by Zod
-    const { email, rollNumber, message, requesterType, subject } = validation.data;
-    
-    // Roll number is already handled by Zod (null for department, required for student)
-    const finalRollNumber = rollNumber;
-
-    // Extract priority from subject if present (for admin requests)
-    let priority = 'normal';
-    let cleanSubject = subject?.trim() || 'Support Request';
-    
-    // Check if subject contains priority tag from admin modal
-    if (cleanSubject.includes('[Priority:')) {
-      const priorityMatch = cleanSubject.match(/\[Priority:\s*(NORMAL|HIGH|URGENT)\]/i);
-      if (priorityMatch) {
-        priority = priorityMatch[1].toLowerCase();
-      }
+    if (!message || !message.trim() || message.trim().length < 10) {
+      return NextResponse.json(
+        { success: false, error: 'Message must be at least 10 characters' },
+        { status: 400 }
+      );
     }
 
-    // Insert support ticket with correct column names
+    if (!requesterType || !['student', 'department'].includes(requesterType)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid requester type' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    // Insert support ticket - SIMPLIFIED
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
       .insert([
@@ -52,13 +51,12 @@ export async function POST(request) {
           user_email: email.toLowerCase().trim(),
           user_name: email.split('@')[0].replace(/[._-]/g, ' ').trim(),
           user_type: requesterType,
-          roll_number: finalRollNumber?.toUpperCase().trim() || null,
           requester_type: requesterType,
-          subject: cleanSubject,
+          subject: 'Support Request', // Simple default
           message: message.trim(),
-          category: determineCategory(cleanSubject),
+          category: 'other', // Default category
           status: 'open',
-          priority: priority
+          priority: 'medium' // Default priority
         }
       ])
       .select()
@@ -72,10 +70,9 @@ export async function POST(request) {
       );
     }
 
-    // Log successful submission
     console.log('✅ Support ticket created:', {
       ticketNumber: data.ticket_number,
-      email: data.email,
+      email: data.user_email,
       requesterType: data.requester_type
     });
 
@@ -84,7 +81,7 @@ export async function POST(request) {
       message: 'Support request submitted successfully',
       ticket: {
         ticketNumber: data.ticket_number,
-        email: data.email,
+        email: data.user_email,
         requesterType: data.requester_type,
         status: data.status,
         createdAt: data.created_at
@@ -98,19 +95,6 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to determine category from subject
-function determineCategory(subject) {
-  const lower = subject.toLowerCase();
-  if (lower.includes('login') || lower.includes('password') || lower.includes('access')) {
-    return 'account';
-  } else if (lower.includes('form') || lower.includes('submit') || lower.includes('reject')) {
-    return 'form_issue';
-  } else if (lower.includes('error') || lower.includes('bug') || lower.includes('not working')) {
-    return 'technical';
-  }
-  return 'other';
 }
 
 // OPTIONS for CORS preflight

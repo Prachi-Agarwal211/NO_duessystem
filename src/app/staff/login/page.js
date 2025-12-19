@@ -48,16 +48,15 @@ function LoginForm() {
   };
 
   return (
-    <PageWrapper>
-      <div className="relative z-10 min-h-screen w-full flex items-center justify-center p-4">
-        
-        {/* Back Button */}
-        <Link href="/" className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors z-10">
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back to Home</span>
-        </Link>
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black transition-colors duration-500">
+      
+      {/* Back Button */}
+      <Link href="/" className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium">Back to Home</span>
+      </Link>
 
-        <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl">
+      <GlassCard className="w-full max-w-md p-8 md:p-10 shadow-2xl">
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto bg-jecrc-rose dark:bg-jecrc-red/20 rounded-full flex items-center justify-center mb-4">
                <Lock className="w-8 h-8 text-jecrc-red dark:text-jecrc-red-bright" />
@@ -117,20 +116,13 @@ function LoginForm() {
             </button>
           </form>
         </GlassCard>
-      </div>
-    </PageWrapper>
+    </div>
   );
 }
 
 export default function StaffLogin() {
   return (
-    <Suspense fallback={
-      <PageWrapper>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      </PageWrapper>
-    }>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>}>
       <LoginForm />
     </Suspense>
   );

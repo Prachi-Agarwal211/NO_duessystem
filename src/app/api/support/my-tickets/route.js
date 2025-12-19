@@ -54,7 +54,7 @@ export async function GET(request) {
     let query = supabase
       .from('support_tickets')
       .select('*', { count: 'exact' })
-      .eq('email', profile.email);
+      .eq('user_email', profile.email);
 
     // Filter by requester type based on role
     if (profile.role === 'student') {
@@ -86,7 +86,7 @@ export async function GET(request) {
     let statsQuery = supabase
       .from('support_tickets')
       .select('status, requester_type')
-      .eq('email', profile.email);
+      .eq('user_email', profile.email);
 
     if (profile.role === 'student') {
       statsQuery = statsQuery.eq('requester_type', 'student');

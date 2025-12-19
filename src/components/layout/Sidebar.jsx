@@ -29,6 +29,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { name: 'Overview', icon: LayoutDashboard, href: '/admin' },
     { name: 'Convocation', icon: GraduationCap, href: '/admin/convocation' },
     { name: 'Manual Entries', icon: FileText, href: '/admin/manual-entry' },
+    { name: 'Support Tickets', icon: MessageSquare, href: '/admin/support' },
     { name: 'Settings', icon: Settings, href: '/admin/settings' },
   ] : [];
 
