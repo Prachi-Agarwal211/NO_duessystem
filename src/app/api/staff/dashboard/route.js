@@ -36,38 +36,29 @@ export async function GET(request) {
     // ⚡ PHASE 1 OPTIMIZATION: Parallel Query Execution
     // Changed from 6 sequential queries → 2 parallel queries = 60-70% faster
     
-    // 🚀 QUERY 1 & 2: Get Profile + Departments in parallel
-    const [profileResult, departmentsResult] = await Promise.all([
-        // Get profile
-        supabaseAdmin
-            .from('profiles')
-            .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
-            .eq('id', user.id)
-            .single(),
-        
-        // Get departments (will filter after we have profile)
-        supabaseAdmin
-            .from('profiles')
-            .select('assigned_department_ids')
-            .eq('id', user.id)
-            .single()
-            .then(async (profileData) => {
-                if (!profileData.data?.assigned_department_ids?.length) return { data: null };
-                return supabaseAdmin
-                    .from('departments')
-                    .select('name, display_name')
-                    .in('id', profileData.data.assigned_department_ids);
-            })
-    ]);
-
-    const { data: profile, error: profileError } = profileResult;
-    const { data: departments } = departmentsResult;
+    // 🚀 QUERY 1: Get Profile with all needed fields
+    const { data: profile, error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
+        .eq('id', user.id)
+        .single();
 
     console.log('📊 Dashboard Debug - User ID:', user.id);
     console.log('📊 Dashboard Debug - Profile:', profile);
-    console.log('📊 Dashboard Debug - Departments:', departments);
 
     if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+
+    // 🚀 QUERY 2: Get Department Details (only if profile has departments)
+    let departments = null;
+    if (profile.assigned_department_ids?.length > 0) {
+        const { data: deptData } = await supabaseAdmin
+            .from('departments')
+            .select('name, display_name')
+            .in('id', profile.assigned_department_ids);
+        departments = deptData;
+    }
+
+    console.log('📊 Dashboard Debug - Departments:', departments);
 
     // Extract department info
     const myDeptNames = departments?.map(d => d.name) || [];
@@ -93,6 +84,32 @@ export async function GET(request) {
     ] = await Promise.all([
       // Get pending applications
       (async () => {
+        console.log('🔍 DEBUG - Querying with department names:', myDeptNames);
+        
+        // First check what's in no_dues_status WITHOUT JOIN
+        const { data: rawStatus, error: rawError } = await supabaseAdmin
+          .from('no_dues_status')
+          .select('id, department_name, form_id, status')
+          .in('department_name', myDeptNames)
+          .eq('status', 'pending')
+          .limit(5);
+        
+        console.log('🔍 DEBUG - Raw no_dues_status records:', rawStatus);
+        console.log('🔍 DEBUG - Raw query error:', rawError);
+
+        // Now check if those form_ids exist in no_dues_forms
+        if (rawStatus && rawStatus.length > 0) {
+          const formIds = rawStatus.map(s => s.form_id);
+          const { data: forms, error: formsError } = await supabaseAdmin
+            .from('no_dues_forms')
+            .select('id, registration_no, student_name')
+            .in('id', formIds);
+          
+          console.log('🔍 DEBUG - Matching forms in no_dues_forms:', forms);
+          console.log('🔍 DEBUG - Forms query error:', formsError);
+        }
+
+        // Now do the actual query with INNER JOIN
         let query = supabaseAdmin
           .from('no_dues_status')
           .select(`
@@ -113,8 +130,7 @@ export async function GET(request) {
             )
           `)
           .in('department_name', myDeptNames)
-          .eq('status', 'pending')
-          .order('no_dues_forms.created_at', { ascending: false }); // ⚡ Most recent first
+          .eq('status', 'pending');
 
         // HOD SCOPE ENFORCEMENT
         if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
@@ -122,7 +138,10 @@ export async function GET(request) {
           query = query.in('no_dues_forms.school_id', profile.school_ids);
         }
 
-        return query;
+        const result = await query;
+        console.log('🔍 DEBUG - Final query result:', result);
+        
+        return result;
       })(),
 
       // Count pending (dept-wide)
