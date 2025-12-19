@@ -923,7 +923,8 @@ export default function SubmitForm() {
         />
       </motion.div>
 
-      <motion.div
+      {/* TEMPORARILY HIDDEN - Alumni Screenshot Upload */}
+      {/* <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.6, type: "spring", stiffness: 100 }}
@@ -933,7 +934,7 @@ export default function SubmitForm() {
           accept="image/*"
           maxSize={1 * 1024 * 1024}
         />
-      </motion.div>
+      </motion.div> */}
 
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
