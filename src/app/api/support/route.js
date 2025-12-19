@@ -1,44 +1,41 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from "next/server";
 
-// Force dynamic rendering (uses cookies)
+// Force dynamic rendering
 export const dynamic = 'force-dynamic';
+
+// Create Supabase admin client with service role
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      persistSession: false,
+    }
+  }
+);
 
 // GET - Admin view all tickets (filtered by requester_type)
 export async function GET(request) {
-  const cookieStore = cookies();
+  // ✅ FIX: Extract token from Authorization header
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
+  }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          cookieStore.set(name, value, options);
-        },
-        remove(name, options) {
-          cookieStore.delete(name, options);
-        },
-      },
-    }
-  );
+  // ✅ FIX: Validate token using service role client
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
-  // Check authentication
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
   }
 
   // Get user's profile to verify admin role
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single();
 
   if (profileError || !profile || profile.role !== 'admin') {
@@ -54,8 +51,8 @@ export async function GET(request) {
   const offset = (page - 1) * limit;
 
   try {
-    // Build query
-    let query = supabase
+    // Build query using admin client
+    let query = supabaseAdmin
       .from('support_tickets')
       .select('*', { count: 'exact' });
 
@@ -81,7 +78,7 @@ export async function GET(request) {
     }
 
     // Get statistics for both types
-    const { data: allTickets } = await supabase
+    const { data: allTickets } = await supabaseAdmin
       .from('support_tickets')
       .select('status, requester_type');
 
@@ -115,38 +112,25 @@ export async function GET(request) {
 
 // PATCH - Admin update ticket status
 export async function PATCH(request) {
-  const cookieStore = cookies();
+  // ✅ FIX: Extract token from Authorization header
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) {
+    return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
+  }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        get(name) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name, value, options) {
-          cookieStore.set(name, value, options);
-        },
-        remove(name, options) {
-          cookieStore.delete(name, options);
-        },
-      },
-    }
-  );
+  // ✅ FIX: Validate token using service role client
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
-  // Check authentication
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized - Invalid token" }, { status: 401 });
   }
 
   // Get user's profile to verify admin role
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("role, email")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single();
 
   if (profileError || !profile || profile.role !== 'admin') {
@@ -173,8 +157,8 @@ export async function PATCH(request) {
       );
     }
 
-    // Update ticket status
-    const { data: updatedTicket, error: updateError } = await supabase
+    // Update ticket status using admin client
+    const { data: updatedTicket, error: updateError } = await supabaseAdmin
       .from('support_tickets')
       .update({
         status,

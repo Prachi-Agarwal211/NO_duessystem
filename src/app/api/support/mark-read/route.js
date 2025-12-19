@@ -1,9 +1,19 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-// Force dynamic rendering (uses cookies)
+// Force dynamic rendering
 export const dynamic = 'force-dynamic';
+
+// Create Supabase admin client with service role
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      persistSession: false,
+    }
+  }
+);
 
 /**
  * POST /api/support/mark-read
@@ -12,41 +22,31 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request) {
   try {
-    const cookieStore = cookies();
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name, value, options) {
-            cookieStore.set(name, value, options);
-          },
-          remove(name, options) {
-            cookieStore.delete(name, options);
-          },
-        },
-      }
-    );
-    
-    // Check authentication
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    
-    if (authError || !session) {
+    // ✅ FIX: Extract token from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+
+    // ✅ FIX: Validate token using service role client
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized - Invalid token' },
         { status: 401 }
       );
     }
 
     // Check if user is admin
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profile?.role !== 'admin') {
@@ -67,12 +67,12 @@ export async function POST(request) {
     }
 
     // Mark ticket as read
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await supabaseAdmin
       .from('support_tickets')
       .update({
         is_read: true,
         read_at: new Date().toISOString(),
-        read_by: session.user.id
+        read_by: user.id
       })
       .eq('id', ticketId)
       .select()

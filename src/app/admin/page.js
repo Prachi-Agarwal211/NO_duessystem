@@ -190,6 +190,28 @@ export default function EnhancedAdminDashboard() {
       }, (payload) => {
         console.log('💬 Admin: Support ticket event detected:', payload.eventType);
         fetchSupportStats(); // Refresh support stats
+        
+        // Add toast notifications based on event type
+        if (payload.eventType === 'INSERT') {
+          const ticket = payload.new;
+          toast.success(
+            `🔔 New ${ticket.requester_type} support ticket #${ticket.ticket_number}`,
+            { duration: 5000, icon: '📩' }
+          );
+        } else if (payload.eventType === 'UPDATE') {
+          const ticket = payload.new;
+          const oldTicket = payload.old;
+          
+          // Only show notification if status changed
+          if (oldTicket.status !== ticket.status) {
+            toast.info(
+              `📝 Ticket #${ticket.ticket_number} status: ${oldTicket.status} → ${ticket.status}`,
+              { duration: 4000 }
+            );
+          }
+        } else if (payload.eventType === 'DELETE') {
+          toast.error('🗑️ Support ticket deleted', { duration: 3000 });
+        }
       })
       .subscribe((status) => {
         console.log('📡 Admin Realtime status:', status);
