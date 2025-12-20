@@ -43,27 +43,6 @@ export default function Home() {
 
           {/* Enhanced Liquid Title */}
           <LiquidTitle />
-
-          {/* Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.8,
-              delay: 1,
-              repeat: Infinity,
-              repeatType: "reverse",
-              repeatDelay: 0.5
-            }}
-            className="mt-8"
-          >
-            <ChevronDown
-              className={`w-6 h-6 ${isDark ? 'text-jecrc-red' : 'text-jecrc-red-dark'}`}
-              style={{
-                filter: isDark ? 'drop-shadow(0 0 8px rgba(196, 30, 58, 0.6))' : 'none'
-              }}
-            />
-          </motion.div>
         </motion.header>
 
         {/* Main Content Area with Stagger Animation */}
