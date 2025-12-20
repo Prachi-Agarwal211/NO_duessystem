@@ -900,7 +900,7 @@ export default function AdminSettings() {
                   Restrict this staff member to specific schools, courses, or branches. Click to open dropdown and use checkboxes to select multiple items.
                 </p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Schools Checkbox Multi-Select */}
                   <MultiSelectCheckbox
                     label="Schools"
@@ -1006,7 +1006,7 @@ export default function AdminSettings() {
                           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                             🔒 Access Scope
                           </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <MultiSelectCheckbox
                               label="Schools"
                               placeholder="Select schools"

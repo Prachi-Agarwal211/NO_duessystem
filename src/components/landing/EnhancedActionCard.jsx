@@ -19,6 +19,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
   const cardRef = useRef(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [magneticOffset, setMagneticOffset] = useState({ x: 0, y: 0 });
   
   // Device capability detection for progressive animation
   const [deviceTier, setDeviceTier] = useState('high');
@@ -58,6 +59,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       if (rafId) cancelAnimationFrame(rafId);
       
       rafId = requestAnimationFrame(() => {
+        if (!cardRef.current) return; // Guard against unmount
         const rect = cardRef.current.getBoundingClientRect();
         setMousePosition({
           x: e.clientX - rect.left,
@@ -71,8 +73,9 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
     card.addEventListener('mousemove', handleMouseMove);
     
     return () => {
-      card.removeEventListener('mousemove', handleMouseMove);
+      // Cancel RAF BEFORE removing listener to prevent leaks
       if (rafId) cancelAnimationFrame(rafId);
+      card.removeEventListener('mousemove', handleMouseMove);
     };
   }, [deviceTier]);
   
@@ -86,6 +89,36 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
   // Animation durations based on device tier
   const animationDuration = deviceTier === 'very-low' ? 0.3 : deviceTier === 'low' ? 0.4 : 0.5;
   const hoverDuration = deviceTier === 'very-low' ? 0.2 : deviceTier === 'low' ? 0.25 : 0.3;
+  
+  // Magnetic effect - card follows cursor slightly (high-end only)
+  useEffect(() => {
+    if (deviceTier !== 'high' || !cardRef.current) return;
+    
+    const handleGlobalMouseMove = (e) => {
+      if (!isHovering) {
+        setMagneticOffset({ x: 0, y: 0 });
+        return;
+      }
+      
+      const rect = cardRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Calculate distance from card center
+      const deltaX = e.clientX - centerX;
+      const deltaY = e.clientY - centerY;
+      
+      // Apply subtle magnetic pull (max 12px)
+      const magnetStrength = 0.15;
+      setMagneticOffset({
+        x: Math.max(-12, Math.min(12, deltaX * magnetStrength)),
+        y: Math.max(-12, Math.min(12, deltaY * magnetStrength))
+      });
+    };
+    
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
+  }, [isHovering, deviceTier]);
   
   return (
     <motion.button
@@ -109,9 +142,22 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       onHoverStart={() => setIsHovering(true)}
       onHoverEnd={() => setIsHovering(false)}
       onClick={onClick}
+      style={{
+        x: magneticOffset.x,
+        y: magneticOffset.y,
+        boxShadow: isDark ? (
+          isHovering
+            ? '0 12px 40px rgba(0, 0, 0, 0.6), 0 0 50px rgba(196, 30, 58, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+            : '0 6px 24px rgba(0, 0, 0, 0.4), 0 0 30px rgba(196, 30, 58, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        ) : (
+          isHovering
+            ? '0 12px 30px rgba(0, 0, 0, 0.15), 0 0 30px rgba(196, 30, 58, 0.2)'
+            : '0 6px 16px rgba(0, 0, 0, 0.1)'
+        )
+      }}
       className={`
         interactive group relative
-        w-full min-h-[280px] sm:min-h-[300px] md:min-h-[320px]
+        w-full aspect-[4/5] sm:aspect-[3/4] md:aspect-[4/5]
         overflow-hidden text-left
         p-7 sm:p-8 md:p-9
         flex flex-col justify-between
@@ -123,15 +169,6 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           : 'bg-gradient-to-br from-white/90 via-gray-50/95 to-white/85 hover:from-white/95 hover:via-rose-50/90 hover:to-pink-50/85 border-black/10 hover:border-jecrc-red/30'
         }
       `}
-      style={isDark ? {
-        boxShadow: isHovering
-          ? '0 12px 40px rgba(0, 0, 0, 0.6), 0 0 50px rgba(196, 30, 58, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
-          : '0 6px 24px rgba(0, 0, 0, 0.4), 0 0 30px rgba(196, 30, 58, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-      } : {
-        boxShadow: isHovering
-          ? '0 12px 30px rgba(0, 0, 0, 0.15), 0 0 30px rgba(196, 30, 58, 0.2)'
-          : '0 6px 16px rgba(0, 0, 0, 0.1)'
-      }}
     >
       {/* 1. Liquid Ripple Effect (Mouse Follow) - HIGH END ONLY */}
       {deviceTier === 'high' && isHovering && (

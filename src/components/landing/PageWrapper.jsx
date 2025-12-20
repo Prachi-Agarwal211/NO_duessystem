@@ -1,10 +1,13 @@
 'use client';
 
 import ThemeToggle from './ThemeToggle';
-import GlobalBackground from '@/components/ui/GlobalBackground';
 import EnhancedSupportButton from '@/components/landing/EnhancedSupportButton';
 import { useTheme } from '@/contexts/ThemeContext';
 
+/**
+ * PageWrapper - Layout wrapper for landing pages
+ * Note: GlobalBackground is rendered once in ClientProviders to avoid duplication
+ */
 export default function PageWrapper({ children, showThemeToggle = true, showSupportButton = true }) {
   const { theme } = useTheme();
   
@@ -15,9 +18,6 @@ export default function PageWrapper({ children, showThemeToggle = true, showSupp
   return (
     <>
       {showThemeToggle && <ThemeToggle />}
-      
-      {/* Global Background with campus image, animated gradients, and grid */}
-      <GlobalBackground />
       
       {/* Floating Support Button - Shows on all pages by default */}
       {showSupportButton && <EnhancedSupportButton />}

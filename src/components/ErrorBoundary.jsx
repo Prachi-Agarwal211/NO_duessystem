@@ -1,182 +1,131 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 /**
- * Error Boundary Component
- * 
- * Catches JavaScript errors anywhere in the child component tree,
- * logs those errors, and displays a fallback UI instead of crashing the whole app.
- * 
- * Usage:
- * <ErrorBoundary fallback={<CustomError />}>
- *   <YourComponent />
- * </ErrorBoundary>
+ * ErrorBoundary - Graceful error handling with fallback UI
+ * Catches React errors and displays user-friendly message
+ * Provides options to retry or return home
  */
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
+    this.state = { 
       hasError: false,
       error: null,
-      errorInfo: null,
-      errorCount: 0
+      errorInfo: null
     };
   }
 
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log error to console
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-
-    // Update state with error details
-    this.setState(prevState => ({
+    this.setState({
       error,
-      errorInfo,
-      errorCount: prevState.errorCount + 1
-    }));
-
-    // Log to error tracking service (e.g., Sentry)
-    if (typeof window !== 'undefined' && window.Sentry) {
-      window.Sentry.captureException(error, {
-        contexts: {
-          react: {
-            componentStack: errorInfo.componentStack
-          }
-        }
-      });
+      errorInfo
+    });
+    
+    // Log to console in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
-
-    // Log to custom error service
-    this.logErrorToService(error, errorInfo);
+    
+    // In production, you could send to error tracking service
+    // Example: Sentry.captureException(error);
   }
 
-  logErrorToService = async (error, errorInfo) => {
-    try {
-      // Send error to your backend for logging
-      await fetch('/api/log-error', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          error: {
-            message: error.message,
-            stack: error.stack,
-            name: error.name
-          },
-          errorInfo: {
-            componentStack: errorInfo.componentStack
-          },
-          url: window.location.href,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString()
-        })
-      });
-    } catch (err) {
-      console.error('Failed to log error to service:', err);
-    }
-  };
-
   handleReset = () => {
-    this.setState({
+    this.setState({ 
       hasError: false,
       error: null,
       errorInfo: null
     });
   };
 
+  handleGoHome = () => {
+    window.location.href = '/';
+  };
+
   render() {
     if (this.state.hasError) {
-      // Use custom fallback if provided
-      if (this.props.fallback) {
-        return React.cloneElement(this.props.fallback, {
-          error: this.state.error,
-          resetError: this.handleReset
-        });
-      }
-
-      // Default fallback UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 dark:from-gray-900 dark:to-red-900 p-4">
-          <div className="glass max-w-2xl w-full p-8 rounded-lg">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/50 mb-4">
-                <svg
-                  className="w-8 h-8 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-black">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-md w-full"
+          >
+            {/* Error Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8">
+              {/* Icon */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="flex justify-center mb-6"
+              >
+                <div className="w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                  <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+              </motion.div>
+
+              {/* Title */}
+              <h1 className="text-2xl font-bold text-center mb-3 text-gray-900 dark:text-white">
                 Oops! Something went wrong
               </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                We apologize for the inconvenience. The error has been logged and we'll fix it soon.
+
+              {/* Description */}
+              <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
+                We encountered an unexpected error. Don't worry, your data is safe.
               </p>
+
+              {/* Error Details (Development Only) */}
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Error Details (Dev Mode)
+                  </summary>
+                  <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto max-h-40">
+                    {this.state.error.toString()}
+                    {this.state.errorInfo?.componentStack}
+                  </pre>
+                </details>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={this.handleReset}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-lg font-semibold transition-colors duration-200"
+                >
+                  <RefreshCw size={18} />
+                  Try Again
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={this.handleGoHome}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-lg font-semibold transition-colors duration-200"
+                >
+                  <Home size={18} />
+                  Go Home
+                </motion.button>
+              </div>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                <h3 className="font-semibold text-red-900 dark:text-red-300 mb-2">
-                  Error Details (Development Only):
-                </h3>
-                <pre className="text-sm text-red-800 dark:text-red-400 overflow-x-auto whitespace-pre-wrap break-words">
-                  {this.state.error.toString()}
-                </pre>
-                {this.state.errorInfo && (
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-red-700 dark:text-red-300 font-medium">
-                      Component Stack
-                    </summary>
-                    <pre className="mt-2 text-xs text-red-700 dark:text-red-400 overflow-x-auto whitespace-pre-wrap">
-                      {this.state.errorInfo.componentStack}
-                    </pre>
-                  </details>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={this.handleReset}
-                className="btn-primary px-6 py-3"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="btn-ghost px-6 py-3"
-              >
-                Go to Home
-              </button>
-              <button
-                onClick={() => window.location.reload()}
-                className="btn-ghost px-6 py-3"
-              >
-                Reload Page
-              </button>
-            </div>
-
-            {this.state.errorCount > 1 && (
-              <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <p className="text-sm text-yellow-800 dark:text-yellow-300 text-center">
-                  ⚠️ This error has occurred {this.state.errorCount} times. 
-                  If it persists, please contact support.
-                </p>
-              </div>
-            )}
-          </div>
+            {/* Footer */}
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+              If this problem persists, please contact support.
+            </p>
+          </motion.div>
         </div>
       );
     }
@@ -186,123 +135,15 @@ export class ErrorBoundary extends React.Component {
 }
 
 /**
- * Async Error Boundary for handling async errors
- * Wraps the standard ErrorBoundary with Promise rejection handling
+ * withErrorBoundary - HOC to wrap components with error boundary
+ * Usage: export default withErrorBoundary(MyComponent);
  */
-export class AsyncErrorBoundary extends ErrorBoundary {
-  componentDidMount() {
-    // Catch unhandled promise rejections
-    window.addEventListener('unhandledrejection', this.handlePromiseRejection);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('unhandledrejection', this.handlePromiseRejection);
-  }
-
-  handlePromiseRejection = (event) => {
-    // Prevent default browser error handling
-    event.preventDefault();
-    
-    // Create a synthetic error
-    const error = new Error(event.reason?.message || 'Unhandled Promise Rejection');
-    error.stack = event.reason?.stack || '';
-    
-    // Trigger error boundary
-    this.componentDidCatch(error, { componentStack: 'Promise Rejection' });
-  };
-}
-
-/**
- * Route-specific Error Boundary
- * Provides different error messages based on the route
- */
-export function RouteErrorBoundary({ children, routeName = 'page' }) {
-  return (
-    <ErrorBoundary
-      fallback={
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="glass max-w-lg w-full p-8 rounded-lg text-center">
-            <h2 className="text-2xl font-bold mb-4">
-              Error loading {routeName}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              We're having trouble loading this {routeName}. Please try refreshing.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn-primary px-6 py-3"
-            >
-              Refresh Page
-            </button>
-          </div>
-        </div>
-      }
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
-
-/**
- * Component-specific Error Boundary
- * Shows a smaller inline error instead of full page
- */
-export function ComponentErrorBoundary({ children, componentName = 'component' }) {
-  return (
-    <ErrorBoundary
-      fallback={
-        <div className="glass p-6 rounded-lg border-2 border-red-300 dark:border-red-700">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
-                Failed to load {componentName}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                This component encountered an error. Try refreshing the page.
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="text-sm text-red-600 dark:text-red-400 hover:underline"
-              >
-                Refresh Page
-              </button>
-            </div>
-          </div>
-        </div>
-      }
-    >
-      {children}
-    </ErrorBoundary>
-  );
-}
-
-/**
- * HOC (Higher Order Component) for wrapping components with error boundary
- * 
- * Usage:
- * export default withErrorBoundary(MyComponent);
- */
-export function withErrorBoundary(Component, fallback) {
-  return function WrappedComponent(props) {
+export function withErrorBoundary(Component) {
+  return function WithErrorBoundaryWrapper(props) {
     return (
-      <ErrorBoundary fallback={fallback}>
+      <ErrorBoundary>
         <Component {...props} />
       </ErrorBoundary>
     );
   };
 }
-
-export default ErrorBoundary;

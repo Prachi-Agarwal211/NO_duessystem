@@ -95,9 +95,9 @@ export default function Home() {
 
         {/* Minimal Footer with Fade-in Animation */}
         <ScrollReveal animation="fade" delay={0.3}>
-          <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-70 hover:opacity-100 transition-opacity duration-500">
+          <footer className="mt-auto mb-8 flex flex-col items-center gap-5 opacity-80 hover:opacity-100 transition-opacity duration-500">
             <div
-              className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-800'}`}
+              className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-900'}`}
               style={isDark ? {
                 textShadow: '0 0 20px rgba(255, 255, 255, 0.3), 0 2px 10px rgba(0, 0, 0, 0.8)'
               } : {

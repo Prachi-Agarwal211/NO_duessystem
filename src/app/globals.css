@@ -36,6 +36,17 @@ html {
   background: rgba(196, 30, 58, 0.6);
 }
 
+/* Shake animation for form validation errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
 :root {
   /* ========================================
      JECRC CORE BRAND COLORS (Black/Red/White)
@@ -290,22 +301,19 @@ input:-webkit-autofill:active {
    TEXT GLOW & HEADING STYLES (CONTROLLED)
    ======================================== */
 
-/* Dark mode text glow - REDUCED for performance */
-.dark h1,
-.dark h2,
-.dark h3,
+/* Dark mode text glow - SELECTIVE ONLY for hero sections */
+.dark .hero-text,
 .dark .text-glow {
   text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
 }
 
-/* Enhanced headings with animations */
+/* Enhanced headings with animations - NO GLOBAL SHADOWS */
 h1, h2, h3 {
   transition: text-shadow 300ms ease;
 }
 
-.dark h1:hover,
-.dark h2:hover,
-.dark h3:hover {
+/* Hero text hover effects only */
+.dark .hero-text:hover {
   text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
 }
 
@@ -368,31 +376,8 @@ h1, h2, h3 {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-@keyframes float {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -10px, 0); }
-}
-
-.float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.9; }
-}
-
-.pulse {
-  animation: pulse 2s ease-in-out infinite;
-}
+/* Removed unused animations: float, spin, pulse */
+/* These are defined in Tailwind config if needed */
 
 /* ========================================
    SCROLLBAR STYLING
@@ -417,42 +402,42 @@ h1, h2, h3 {
 }
 
 /* ========================================
-   TEXT SHADOW UTILITIES (CONTROLLED)
+   TEXT SHADOW UTILITIES (CONTROLLED & MINIMAL)
    ======================================== */
 
-/* Dark text shadows - REDUCED spread */
+/* Dark text shadows - MINIMAL spread for performance */
 .text-shadow-black-sm {
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .text-shadow-black {
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .text-shadow-black-lg {
-  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* Light text shadows - REDUCED spread */
+/* Light text shadows - MINIMAL spread for performance */
 .text-shadow-white-sm {
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .text-shadow-white {
-  text-shadow: 0 2px 6px rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.9);
 }
 
 .text-shadow-white-lg {
-  text-shadow: 0 3px 10px rgba(255, 255, 255, 1);
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 1);
 }
 
-/* Adaptive text shadows */
+/* Adaptive text shadows - MINIMAL */
 .text-shadow-adaptive {
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .dark .text-shadow-adaptive {
-  text-shadow: 0 2px 6px rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
 }
 
 /* ========================================
@@ -1001,6 +986,53 @@ button,
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* ========================================
+   FOCUS-VISIBLE STATES (ACCESSIBILITY)
+   ======================================== */
+
+/* Remove default focus outline */
+*:focus {
+  outline: none;
+}
+
+/* High-contrast focus indicators for keyboard navigation */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--jecrc-red);
+  outline-offset: 2px;
+  transition: outline 0.2s ease;
+}
+
+/* Dark mode focus indicators with glow */
+.dark button:focus-visible,
+.dark a:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible,
+.dark [tabindex]:focus-visible,
+.dark [role="button"]:focus-visible {
+  outline: 2px solid var(--jecrc-red-bright);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.2);
+}
+
+/* Interactive card focus */
+.interactive:focus-visible {
+  outline: 3px solid var(--jecrc-red);
+  outline-offset: 4px;
+}
+
+.dark .interactive:focus-visible {
+  outline: 3px solid var(--jecrc-red-bright);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 6px rgba(255, 51, 102, 0.15);
 }
 
 /* ========================================
