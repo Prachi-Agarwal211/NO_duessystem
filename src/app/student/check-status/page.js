@@ -32,7 +32,7 @@ const StudentInfoCard = memo(({ formData, isDark, onReset }) => (
       </motion.button>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-sm">
       {/* Student Name */}
       <div>
         <p className="text-gray-500 dark:text-gray-400 mb-1">Student Name</p>

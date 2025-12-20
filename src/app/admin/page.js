@@ -11,10 +11,10 @@ import toast from 'react-hot-toast';
 
 // Performance Chart Component
 const PerformanceBar = ({ label, pending, approved, timeTaken }) => (
-  <div className="p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-jecrc-red/30 transition-all">
-    <div className="flex justify-between items-center mb-2">
-      <h4 className="font-semibold text-gray-900 dark:text-white capitalize">{label.replace(/_/g, ' ')}</h4>
-      <div className="flex items-center gap-1 text-xs font-mono text-gray-500 dark:text-gray-400">
+  <div className="p-3 sm:p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 hover:border-jecrc-red/30 transition-all">
+    <div className="flex justify-between items-center mb-2 gap-2">
+      <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white capitalize truncate">{label.replace(/_/g, ' ')}</h4>
+      <div className="flex items-center gap-1 text-xs font-mono text-gray-500 dark:text-gray-400 flex-shrink-0">
         <Clock className="w-3 h-3" /> {timeTaken || '~24'}h avg
       </div>
     </div>
@@ -225,12 +225,12 @@ export default function EnhancedAdminDashboard() {
   }, []); // ✅ FIXED: Empty dependencies - channel never recreates
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto min-h-screen space-y-6 sm:space-y-8">
         
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
             <div className="flex items-center gap-2 mt-2">
               <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
@@ -239,8 +239,8 @@ export default function EnhancedAdminDashboard() {
               <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button onClick={() => router.push('/admin/settings')} className="p-2.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group">
+          <div className="flex gap-2 sm:gap-3">
+            <button onClick={() => router.push('/admin/settings')} className="p-3 min-h-[44px] min-w-[44px] bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group active:scale-95">
               <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             </button>
             <button
@@ -249,7 +249,7 @@ export default function EnhancedAdminDashboard() {
                 fetchStats();
                 fetchApplications();
               }}
-              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red"
+              className="p-3 min-h-[44px] min-w-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -259,15 +259,15 @@ export default function EnhancedAdminDashboard() {
         {/* 1. KEY METRICS */}
         <StatsGrid stats={data.overallStats} loading={loading} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           
           {/* 2. DEPARTMENT PERFORMANCE */}
-          <GlassCard className="lg:col-span-2 p-6">
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-100 dark:border-white/5 pb-4">
-              <TrendingUp className="w-5 h-5 text-jecrc-red dark:text-jecrc-red-bright" />
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+          <GlassCard className="lg:col-span-2 p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 dark:border-white/5 pb-3 sm:pb-4">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-jecrc-red dark:text-jecrc-red-bright" />
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               {data.departmentStats.length === 0 ? (
                 <div className="col-span-2 text-center py-10 text-gray-400">No active data</div>
               ) : (
@@ -285,9 +285,9 @@ export default function EnhancedAdminDashboard() {
           </GlassCard>
 
           {/* 3. QUICK ACTIONS */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Support Tickets Widget */}
-            <GlassCard className="p-6 cursor-pointer group hover:border-blue-500/50 transition-all" onClick={() => router.push('/admin/support')}>
+            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-blue-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/support')}>
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
                   <MessageSquare className="w-6 h-6" />
@@ -301,8 +301,8 @@ export default function EnhancedAdminDashboard() {
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Support Tickets</h3>
-              <div className="flex items-center gap-4 mt-2 text-sm">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Support Tickets</h3>
+              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
                 <span className="text-yellow-600 dark:text-yellow-400">{supportStats.open} Open</span>
                 <span className="text-gray-400">•</span>
                 <span className="text-gray-600 dark:text-gray-400">{supportStats.total} Total</span>
@@ -323,79 +323,83 @@ export default function EnhancedAdminDashboard() {
               )}
             </GlassCard>
 
-            <GlassCard className="p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all" onClick={() => router.push('/admin/convocation')}>
+            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/convocation')}>
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
                   <GraduationCap className="w-6 h-6" />
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-jecrc-red transition-colors" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Convocation 2024</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Convocation 2024</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
             </GlassCard>
 
-            <GlassCard className="p-6 cursor-pointer group hover:border-emerald-500/50 transition-all" onClick={() => router.push('/admin/manual-entry')}>
+            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-emerald-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/manual-entry')}>
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
                   <FileText className="w-6 h-6" />
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mt-4">Manual Entries</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Offline Records Database</p>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Manual Entries</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Offline Records Database</p>
             </GlassCard>
           </div>
         </div>
 
         {/* 4. SEARCH & FILTER */}
-        <GlassCard className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+        <GlassCard className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by name or registration number..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
+                placeholder="Search by name or registration..."
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
-            >
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full sm:w-auto px-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
+              >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
               <option value="rejected">Rejected</option>
-            </select>
+              </select>
 
-            {/* Export Buttons */}
-            <button
-              onClick={() => {
-                exportStatsToCSV(data);
-                toast.success("Stats exported!");
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all font-medium shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red"
-            >
-              <Download className="w-4 h-4" />
-              Export Stats
-            </button>
-            
-            <button
-              onClick={() => {
-                exportApplicationsToCSV(applications);
-                toast.success("Data exported!");
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg shadow-green-600/20"
-            >
-              <Download className="w-4 h-4" />
-              Export Data
-            </button>
+              {/* Export Buttons */}
+              <button
+                onClick={() => {
+                  exportStatsToCSV(data);
+                  toast.success("Stats exported!");
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all font-medium shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95 text-sm sm:text-base whitespace-nowrap"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export Stats</span>
+                <span className="sm:hidden">Stats</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  exportApplicationsToCSV(applications);
+                  toast.success("Data exported!");
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg shadow-green-600/20 active:scale-95 text-sm sm:text-base whitespace-nowrap"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export Data</span>
+                <span className="sm:hidden">Data</span>
+              </button>
+            </div>
           </div>
         </GlassCard>
 

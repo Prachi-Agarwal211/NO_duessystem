@@ -61,22 +61,22 @@ export default function GlobalBackground() {
         }`}
       />
 
-      {/* 2. JECRC Campus Image (Enhanced Visibility) - Desktop only for performance */}
-      {!isMobile && (
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 z-10"
-          style={{
-            backgroundImage: "url('/assets/9-1-1536x720.jpg')",
-            opacity: isDark ? 0.08 : 0.25,
-            mixBlendMode: isDark ? 'screen' : 'multiply',
-            filter: isDark
-              ? 'brightness(0.7) contrast(1.0) saturate(0.3) blur(1px)'
-              : 'brightness(1.0) contrast(1.15) saturate(0.9)',
-            transform: 'translateZ(0)', // GPU acceleration
-            willChange: 'opacity'
-          }}
-        />
-      )}
+      {/* 2. JECRC Campus Image (Enhanced Visibility) - Optimized for mobile */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 z-10"
+        style={{
+          backgroundImage: "url('/assets/9-1-1536x720.jpg')",
+          opacity: isDark
+            ? (isMobile ? 0.04 : 0.08)
+            : (isMobile ? 0.15 : 0.25),
+          mixBlendMode: isDark ? 'screen' : 'multiply',
+          filter: isMobile
+            ? (isDark ? 'brightness(0.8) contrast(0.9) saturate(0.3) blur(2px)' : 'brightness(1.0) contrast(1.1) saturate(0.8) blur(2px)')
+            : (isDark ? 'brightness(0.7) contrast(1.0) saturate(0.3) blur(1px)' : 'brightness(1.0) contrast(1.15) saturate(0.9)'),
+          transform: 'translateZ(0)', // GPU acceleration
+          willChange: 'opacity'
+        }}
+      />
 
       {/* 3. Animated Gradient Mesh Blobs - PROGRESSIVE OPTIMIZATION */}
       {!isVeryLowEnd && (

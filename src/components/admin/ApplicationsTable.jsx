@@ -27,7 +27,11 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
 
   return (
     <div className="rounded-xl border overflow-hidden transition-all duration-200 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 shadow-sm">
-      <div className="overflow-x-auto">
+      {/* Mobile scroll hint */}
+      <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 text-center">
+        ← Swipe left/right to view all columns →
+      </div>
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         <table className="min-w-full">
           <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
             <tr>
@@ -50,7 +54,8 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
                     <td className="px-4 py-4">
                       <button
                         onClick={() => toggleRowExpansion(app.id)}
-                        className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-white/10"
+                        className="p-3 min-h-[44px] min-w-[44px] rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-white/10 flex items-center justify-center"
+                        aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
                       >
                         {isExpanded ? '▼' : '▶'}
                       </button>
@@ -85,7 +90,7 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
                     <td className="px-4 py-4 text-sm">
                       <button
                         onClick={() => window.location.href = `/admin/request/${app.id}`}
-                        className="text-jecrc-red dark:text-jecrc-red-bright hover:text-jecrc-red-dark dark:hover:text-jecrc-red-light font-medium transition-colors"
+                        className="px-4 py-2 min-h-[44px] text-jecrc-red dark:text-jecrc-red-bright hover:text-jecrc-red-dark dark:hover:text-jecrc-red-light font-medium transition-colors hover:bg-jecrc-red/10 rounded-lg"
                       >
                         View Details
                       </button>
@@ -107,23 +112,23 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination - Mobile Optimized */}
       <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-gray-200 dark:border-white/10 gap-3 bg-gray-50 dark:bg-white/5">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 dark:text-gray-400 order-2 sm:order-1">
           Page <span className="font-semibold text-gray-900 dark:text-white">{currentPage}</span> of <span className="font-semibold text-gray-900 dark:text-white">{totalPages}</span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
           <button
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-none px-4 py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 text-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

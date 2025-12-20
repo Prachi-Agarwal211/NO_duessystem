@@ -38,7 +38,7 @@ export default function Home() {
 
         {/* Main Content Area - Enhanced Spacing & Visual Separation */}
         <main className="w-full max-w-7xl px-4 sm:px-6 md:px-12 pb-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 md:gap-14 lg:gap-16 items-stretch max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 md:gap-12 lg:gap-16 items-stretch max-w-4xl mx-auto">
             <EnhancedActionCard
               index={0}
               title="Submit No Dues Form"

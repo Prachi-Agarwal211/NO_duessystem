@@ -15,7 +15,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggleTheme}
       className={`
-        interactive fixed top-8 right-8 z-50
+        interactive fixed bottom-24 right-8 z-50
         p-3 rounded-full
         transition-all duration-700 ease-smooth
         backdrop-blur-md border

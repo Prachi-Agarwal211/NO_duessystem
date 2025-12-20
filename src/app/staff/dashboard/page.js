@@ -213,11 +213,11 @@ export default function StaffDashboard() {
 
   return (
     <PageWrapper>
-      <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
+      <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto min-h-screen">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-4">
           <div>
-             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
                {data.departments?.[0]?.displayName || 'Department'} Dashboard
              </h1>
              <div className="flex items-center gap-2 mt-2">
@@ -230,28 +230,28 @@ export default function StaffDashboard() {
           </div>
           <button
             onClick={() => {
-              setLoading(true); 
+              setLoading(true);
               fetchDashboard();
               setHistoryFetched(false);
               setRejectedFetched(false);
             }}
-            className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red transition-all"
+            className="p-3 min-h-[44px] min-w-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red transition-all active:scale-95"
           >
             <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
         {/* Stats Cards - Clickable */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <button
             onClick={() => setActiveTab('pending')}
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+            className="text-left transform transition-all duration-300 hover:scale-[1.02] active:scale-95 min-h-[44px]"
           >
-            <GlassCard className="p-6">
+            <GlassCard className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.pending || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Pending</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.pending || 0}</p>
                   <p className="text-xs text-gray-400 mt-1">Awaiting action</p>
                 </div>
                 <div className="p-3 bg-yellow-100 dark:bg-yellow-500/20 rounded-xl">
@@ -259,17 +259,17 @@ export default function StaffDashboard() {
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
 
-          <div
+          <button
             onClick={() => setActiveTab('history')}
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+            className="text-left transform transition-all duration-300 hover:scale-[1.02] active:scale-95 min-h-[44px]"
           >
-            <GlassCard className="p-6">
+            <GlassCard className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">My Approved</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.approved || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">My Approved</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.approved || 0}</p>
                   <p className="text-xs text-gray-400 mt-1">By you</p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-500/20 rounded-xl">
@@ -277,17 +277,17 @@ export default function StaffDashboard() {
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
 
-          <div
+          <button
             onClick={() => setActiveTab('rejected')}
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+            className="text-left transform transition-all duration-300 hover:scale-[1.02] active:scale-95 min-h-[44px]"
           >
-            <GlassCard className="p-6">
+            <GlassCard className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">My Rejected</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.rejected || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">My Rejected</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.rejected || 0}</p>
                   <p className="text-xs text-gray-400 mt-1">By you</p>
                 </div>
                 <div className="p-3 bg-red-100 dark:bg-red-500/20 rounded-xl">
@@ -295,17 +295,17 @@ export default function StaffDashboard() {
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
 
-          <div
+          <button
             onClick={() => setActiveTab('history')}
-            className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+            className="text-left transform transition-all duration-300 hover:scale-[1.02] active:scale-95 min-h-[44px]"
           >
-            <GlassCard className="p-6">
+            <GlassCard className="p-4 sm:p-5 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">My Total</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.total || 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">My Total</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{data.stats?.total || 0}</p>
                   <p className="text-xs text-gray-400 mt-1">{data.stats?.approvalRate || 0}% approval</p>
                 </div>
                 <div className="p-3 bg-jecrc-red/10 dark:bg-jecrc-red/20 rounded-xl">
@@ -313,7 +313,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
         </div>
 
         {/* Today's Activity */}
@@ -332,20 +332,20 @@ export default function StaffDashboard() {
 
         {/* Search Bar */}
         <div className="mb-6 relative">
-             <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
              <input
                 type="text"
-                placeholder="Search by name or registration number..."
-                className="w-full md:w-96 pl-10 pr-4 py-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
+                placeholder="Search by name or registration..."
+                className="w-full pl-10 pr-4 py-3 min-h-[44px] bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
                 onChange={(e) => setSearch(e.target.value)}
              />
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-4 mb-6 border-b border-gray-200 dark:border-white/10 overflow-x-auto">
+        <div className="flex gap-2 sm:gap-4 mb-6 border-b border-gray-200 dark:border-white/10 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
+            className={`pb-3 px-3 sm:px-4 min-h-[44px] font-medium text-sm sm:text-base transition-all duration-300 whitespace-nowrap ${
               activeTab === 'pending'
                 ? 'border-b-2 border-jecrc-red text-jecrc-red dark:text-jecrc-red-bright'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
@@ -355,7 +355,7 @@ export default function StaffDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('rejected')}
-            className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
+            className={`pb-3 px-3 sm:px-4 min-h-[44px] font-medium text-sm sm:text-base transition-all duration-300 whitespace-nowrap ${
               activeTab === 'rejected'
                 ? 'border-b-2 border-red-600 text-red-600 dark:text-red-400'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
@@ -365,7 +365,7 @@ export default function StaffDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`pb-3 px-2 font-medium transition-all duration-300 whitespace-nowrap ${
+            className={`pb-3 px-3 sm:px-4 min-h-[44px] font-medium text-sm sm:text-base transition-all duration-300 whitespace-nowrap ${
               activeTab === 'history'
                 ? 'border-b-2 border-jecrc-red text-jecrc-red dark:text-jecrc-red-bright'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300'
@@ -384,21 +384,25 @@ export default function StaffDashboard() {
                 {[1,2,3,4].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />)}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                {/* Mobile Scroll Hint */}
+                <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
+                  ← Swipe left/right to view all columns →
+                </div>
+                <table className="w-full text-left min-w-[640px]">
+                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Course</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Status</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 text-right">Actions</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Course</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Status</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-600 dark:text-gray-300">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
                     {filtered.length === 0 ? (
-                        <tr><td colSpan="6" className="p-8 text-center text-gray-400">
+                        <tr><td colSpan="6" className="p-6 sm:p-8 text-center text-gray-400">
                           <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           No pending requests
                         </td></tr>
@@ -409,23 +413,23 @@ export default function StaffDashboard() {
                             className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group" 
                             onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
                           >
-                            <td className="p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</td>
-                            <td className="p-4 font-mono text-sm">{item.no_dues_forms.registration_no}</td>
-                            <td className="p-4 text-sm">{item.no_dues_forms.course} - {item.no_dues_forms.branch}</td>
-                            <td className="p-4 text-sm">{formatDate(item.no_dues_forms.created_at)}</td>
-                            <td className="p-4"><StatusBadge status={item.status} /></td>
-                            <td className="p-4 text-right">
-                               <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <td className="p-3 sm:p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</td>
+                            <td className="p-3 sm:p-4 font-mono text-xs sm:text-sm">{item.no_dues_forms.registration_no}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm">{item.no_dues_forms.course} - {item.no_dues_forms.branch}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm">{formatDate(item.no_dues_forms.created_at)}</td>
+                            <td className="p-3 sm:p-4"><StatusBadge status={item.status} /></td>
+                            <td className="p-3 sm:p-4 text-right">
+                               <div className="flex justify-end gap-1.5 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                  <button
                                     onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
-                                    className="p-2 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-lg hover:bg-green-200 dark:hover:bg-green-500/30 transition-all"
+                                    className="p-2.5 min-h-[44px] min-w-[44px] bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-lg hover:bg-green-200 dark:hover:bg-green-500/30 transition-all active:scale-95"
                                     title="Quick Approve"
                                   >
                                     <CheckCircle className="w-4 h-4"/>
                                   </button>
                                  <button
                                     onClick={(e) => {e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`)}}
-                                    className="p-2 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-200 dark:hover:bg-red-500/30 transition-all"
+                                    className="p-2.5 min-h-[44px] min-w-[44px] bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-200 dark:hover:bg-red-500/30 transition-all active:scale-95"
                                     title="View Details / Reject"
                                   >
                                     <XCircle className="w-4 h-4"/>
@@ -448,19 +452,23 @@ export default function StaffDashboard() {
                 {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />)}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                {/* Mobile Scroll Hint */}
+                <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
+                  ← Swipe left/right to view all columns →
+                </div>
+                <table className="w-full text-left min-w-[580px]">
+                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Reason</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Reason</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-600 dark:text-gray-300">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
                     {filteredRejected.length === 0 ? (
-                        <tr><td colSpan="4" className="p-8 text-center text-gray-400">
+                        <tr><td colSpan="4" className="p-6 sm:p-8 text-center text-gray-400">
                           <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           No rejected applications
                         </td></tr>
@@ -471,10 +479,10 @@ export default function StaffDashboard() {
                             className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer" 
                             onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
                           >
-                            <td className="p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms?.student_name}</td>
-                            <td className="p-4 font-mono text-sm">{item.no_dues_forms?.registration_no}</td>
-                            <td className="p-4 text-sm">{formatDate(item.action_at)}</td>
-                            <td className="p-4 text-sm text-red-600 dark:text-red-400">{item.rejection_reason || '-'}</td>
+                            <td className="p-3 sm:p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms?.student_name}</td>
+                            <td className="p-3 sm:p-4 font-mono text-xs sm:text-sm">{item.no_dues_forms?.registration_no}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm">{formatDate(item.action_at)}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm text-red-600 dark:text-red-400">{item.rejection_reason || '-'}</td>
                           </tr>
                         ))
                     )}
@@ -491,20 +499,24 @@ export default function StaffDashboard() {
                 {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />)}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                {/* Mobile Scroll Hint */}
+                <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
+                  ← Swipe left/right to view all columns →
+                </div>
+                <table className="w-full text-left min-w-[640px]">
+                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Action</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Reason</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Action</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Date</th>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Reason</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-gray-600 dark:text-gray-300">
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
                     {filteredHistory.length === 0 ? (
-                        <tr><td colSpan="5" className="p-8 text-center text-gray-400">
+                        <tr><td colSpan="5" className="p-6 sm:p-8 text-center text-gray-400">
                           <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           No action history yet
                         </td></tr>
@@ -515,16 +527,16 @@ export default function StaffDashboard() {
                             className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer" 
                             onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
                           >
-                            <td className="p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms?.student_name}</td>
-                            <td className="p-4 font-mono text-sm">{item.no_dues_forms?.registration_no}</td>
-                            <td className="p-4">
+                            <td className="p-3 sm:p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms?.student_name}</td>
+                            <td className="p-3 sm:p-4 font-mono text-xs sm:text-sm">{item.no_dues_forms?.registration_no}</td>
+                            <td className="p-3 sm:p-4">
                               {item.status === 'approved' 
                                 ? <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium"><CheckCircle className="w-4 h-4"/> Approved</span>
                                 : <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-medium"><XCircle className="w-4 h-4"/> Rejected</span>
                               }
                             </td>
-                            <td className="p-4 text-sm">{formatDate(item.action_at)}</td>
-                            <td className="p-4 text-sm">{item.rejection_reason || '-'}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm">{formatDate(item.action_at)}</td>
+                            <td className="p-3 sm:p-4 text-xs sm:text-sm">{item.rejection_reason || '-'}</td>
                           </tr>
                         ))
                     )}

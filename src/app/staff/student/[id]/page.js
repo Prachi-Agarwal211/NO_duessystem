@@ -351,12 +351,12 @@ export default function StudentDetailView() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen py-6 sm:py-8 md:py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <GlassCard>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
               <div>
-                <h1 className={`text-2xl sm:text-3xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                   }`}>
                   Student Details
                 </h1>
@@ -422,12 +422,12 @@ export default function StudentDetailView() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {/* Student Information Section */}
-              <div className={`p-6 rounded-xl border transition-colors duration-700 ${
+              <div className={`p-4 sm:p-6 rounded-xl border transition-colors duration-700 ${
                 isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
               }`}>
-                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${
+                <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 pb-3 border-b transition-colors duration-700 ${
                   isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
                 }`}>
                   Student Information
@@ -512,10 +512,10 @@ export default function StudentDetailView() {
               </div>
 
               {/* Verification Section */}
-              <div className={`p-6 rounded-xl border transition-colors duration-700 ${
+              <div className={`p-4 sm:p-6 rounded-xl border transition-colors duration-700 ${
                 isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
               }`}>
-                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${
+                <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 pb-3 border-b transition-colors duration-700 ${
                   isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
                 }`}>
                   Verification
@@ -549,43 +549,47 @@ export default function StudentDetailView() {
             </div>
 
             {/* Department Status Table */}
-            <div className="mb-8">
-              <h2 className={`text-lg font-bold mb-5 transition-colors duration-700 ${
+            <div className="mb-6 sm:mb-8">
+              <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 transition-colors duration-700 ${
                 isDark ? 'text-white' : 'text-ink-black'
               }`}>
                 Department Status
               </h2>
-              <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="overflow-x-auto -mx-4 sm:mx-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+                {/* Mobile Scroll Hint */}
+                <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
+                  ← Swipe left/right to view all columns →
+                </div>
                 <div className="inline-block min-w-full align-middle">
                   <div className={`overflow-hidden rounded-xl border-2 shadow-lg transition-colors duration-700 ${
                     isDark ? 'border-white/10' : 'border-gray-200'
                   }`}>
-                    <table className="min-w-full">
-                      <thead className={`transition-colors duration-700 ${
+                    <table className="min-w-full" style={{ minWidth: '640px' }}>
+                      <thead className={`sticky top-0 transition-colors duration-700 ${
                         isDark ? 'bg-gray-800/50' : 'bg-gray-100'
                       }`}>
                         <tr>
-                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
                             isDark ? 'text-gray-200' : 'text-gray-700'
                           }`}>
                             Department
                           </th>
-                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
                             isDark ? 'text-gray-200' : 'text-gray-700'
                           }`}>
                             Status
                           </th>
-                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
                             isDark ? 'text-gray-200' : 'text-gray-700'
                           }`}>
                             Updated
                           </th>
-                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
+                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${
                             isDark ? 'text-gray-200' : 'text-gray-700'
                           }`}>
                             Action By
                           </th>
-                          <th className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[200px] transition-colors duration-700 ${
+                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[200px] transition-colors duration-700 ${
                             isDark ? 'text-gray-200' : 'text-gray-700'
                           }`}>
                             Notes
@@ -599,23 +603,23 @@ export default function StudentDetailView() {
                           <tr key={index} className={`border-b transition-colors duration-700 ${
                             isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'
                           }`}>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold transition-colors duration-700 ${
+                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold transition-colors duration-700 ${
                               isDark ? 'text-white' : 'text-gray-900'
                             }`}>
                               {status.display_name}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
                               <StatusBadge status={status.status} />
                             </td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
+                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
                               }`}>
                               {status.action_at ? new Date(status.action_at).toLocaleDateString() : '-'}
                             </td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
+                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
                               }`}>
                               {status.action_by || '-'}
                             </td>
-                            <td className={`px-6 py-4 text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
+                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
                               }`}>
                               {status.status === 'rejected' && status.rejection_reason ? (
                                 <div className="space-y-1">
@@ -642,11 +646,11 @@ export default function StudentDetailView() {
             </div>
 
             {canApproveOrReject && (
-              <div id="action-buttons" className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div id="action-buttons" className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleApproveClick}
                   disabled={approving}
-                  className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {approving ? 'Approving...' : 'Approve Request'}
                 </button>
@@ -663,7 +667,7 @@ export default function StudentDetailView() {
                     }, 150);
                   }}
                   disabled={rejecting}
-                  className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {rejecting ? 'Rejecting...' : 'Reject Request'}
                 </button>
@@ -674,13 +678,13 @@ export default function StudentDetailView() {
             {showApproveModal && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
                 <div id="approve-modal" className="w-full max-w-md my-8 animate-scale-in">
-                  <GlassCard className="p-6 shadow-2xl">
-                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  <GlassCard className="p-4 sm:p-6 shadow-2xl">
+                    <h3 className={`text-base sm:text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>
                       Confirm Approval
                     </h3>
 
-                    <p className={`mb-6 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                    <p className={`text-sm sm:text-base mb-6 transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
                       }`}>
                       Are you sure you want to approve this no dues request for <span className="font-bold">{studentData?.student_name}</span>?
                     </p>
@@ -689,7 +693,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={() => setShowApproveModal(false)}
                         disabled={approving}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 active:scale-95 ${isDark
+                        className={`interactive w-full sm:w-auto px-6 py-3 min-h-[44px] rounded-lg font-medium text-sm sm:text-base transition-all duration-300 active:scale-95 ${isDark
                           ? 'bg-gray-700 hover:bg-gray-600 text-white'
                           : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -699,7 +703,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={handleApprove}
                         disabled={approving}
-                        className="interactive px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-medium text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {approving ? 'Approving...' : 'Confirm Approve'}
                       </button>
@@ -713,8 +717,8 @@ export default function StudentDetailView() {
             {showRejectModal && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
                 <div id="reject-modal" className="w-full max-w-md my-8 animate-scale-in">
-                  <GlassCard className="p-6 shadow-2xl">
-                    <h3 className={`text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  <GlassCard className="p-4 sm:p-6 shadow-2xl">
+                    <h3 className={`text-base sm:text-lg font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                       }`}>
                       Reject Request
                     </h3>
@@ -743,7 +747,7 @@ export default function StudentDetailView() {
                           setShowRejectModal(false);
                           setRejectionReason('');
                         }}
-                        className={`interactive px-6 py-3 min-h-[44px] rounded-lg font-medium transition-all duration-300 active:scale-95 ${isDark
+                        className={`interactive w-full sm:w-auto px-6 py-3 min-h-[44px] rounded-lg font-medium text-sm sm:text-base transition-all duration-300 active:scale-95 ${isDark
                           ? 'bg-gray-700 hover:bg-gray-600 text-white'
                           : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
                           }`}
@@ -753,7 +757,7 @@ export default function StudentDetailView() {
                       <button
                         onClick={handleReject}
                         disabled={!rejectionReason.trim() || rejecting}
-                        className="interactive px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-medium text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {rejecting ? 'Rejecting...' : 'Confirm Reject'}
                       </button>

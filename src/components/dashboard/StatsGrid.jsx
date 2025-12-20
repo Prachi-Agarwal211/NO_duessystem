@@ -1,7 +1,7 @@
 'use client';
 import { Users, Clock, CheckCircle, XCircle } from 'lucide-react';
 
-export default function StatsGrid({ stats, loading = false }) {
+export default function StatsGrid({ stats, loading = false, onFilterChange }) {
   // Normalize keys to handle both Admin and Staff API formats
   const safeStats = {
     pending: stats?.pending || stats?.pendingApplications || 0,
@@ -62,9 +62,13 @@ export default function StatsGrid({ stats, loading = false }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       {cards.map((card, idx) => (
-        <div key={idx} className={`p-6 rounded-xl border ${card.lightBg} ${card.darkBg} ${card.borderColor} ${card.borderLeft} transition-all hover:shadow-lg`}>
+        <button
+          key={idx}
+          onClick={() => onFilterChange && onFilterChange(card.title.toLowerCase().replace(' ', '_'))}
+          className={`p-4 sm:p-5 md:p-6 rounded-xl border ${card.lightBg} ${card.darkBg} ${card.borderColor} ${card.borderLeft} transition-all hover:shadow-lg cursor-pointer text-left w-full min-h-[44px] active:scale-[0.98] ${onFilterChange ? 'hover:scale-[1.02]' : ''}`}
+        >
           <div className="flex justify-between items-start mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{card.title}</p>
             <div className={`p-2.5 rounded-xl ${card.lightIconBg} ${card.darkIconBg} ${card.iconColor}`}>
@@ -78,7 +82,7 @@ export default function StatsGrid({ stats, loading = false }) {
               {card.value}
             </h3>
           )}
-        </div>
+        </button>
       ))}
     </div>
   );
