@@ -318,13 +318,34 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           <Icon size={24} strokeWidth={1.5} className="relative z-10" />
         </motion.div>
         
-        {/* Enhanced Title - SOLID COLORS (No gradient to prevent invisible text) */}
+        {/* Enhanced Title with Gradient - FIXED with color fallback */}
         <h2
           className={`font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300 ${
-            isDark
-              ? 'text-white group-hover:text-jecrc-red-bright'
-              : 'text-gray-900 group-hover:text-jecrc-red'
+            isDark ? 'text-white' : 'text-gray-900'
           }`}
+          style={isDark ? {
+            background: isHovering
+              ? 'linear-gradient(135deg, #FFFFFF 0%, #ff6b89 30%, #ff3366 60%, #C41E3A 100%)'
+              : undefined,
+            backgroundSize: '200% 200%',
+            backgroundClip: isHovering ? 'text' : undefined,
+            WebkitBackgroundClip: isHovering ? 'text' : undefined,
+            WebkitTextFillColor: isHovering ? 'transparent' : undefined,
+            color: 'white', // FALLBACK - shows if gradient fails
+            filter: isHovering
+              ? 'drop-shadow(0 1px 4px rgba(255, 107, 157, 0.3))'
+              : 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))'
+          } : {
+            background: isHovering
+              ? 'linear-gradient(135deg, #8B0000 0%, #C41E3A 40%, #1F2937 100%)'
+              : undefined,
+            backgroundSize: '200% 200%',
+            backgroundClip: isHovering ? 'text' : undefined,
+            WebkitBackgroundClip: isHovering ? 'text' : undefined,
+            WebkitTextFillColor: isHovering ? 'transparent' : undefined,
+            color: '#1F2937', // FALLBACK - shows if gradient fails
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15))'
+          }}
         >
           {title}
         </h2>
