@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 /**
  * LiquidTitle - Animated gradient title with liquid flow effect
@@ -15,6 +15,8 @@ export default function LiquidTitle() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [deviceTier, setDeviceTier] = useState('high');
+  const [gradientReady, setGradientReady] = useState(false);
+  const titleRef = useRef(null);
   
   useEffect(() => {
     const detectDevice = () => {
@@ -36,6 +38,13 @@ export default function LiquidTitle() {
     window.addEventListener('resize', detectDevice);
     return () => window.removeEventListener('resize', detectDevice);
   }, []);
+  
+  // Wait for gradient to be ready before applying transparency
+  useEffect(() => {
+    setGradientReady(false);
+    const timer = setTimeout(() => setGradientReady(true), 50);
+    return () => clearTimeout(timer);
+  }, [theme]); // Reset on theme change
 
   return (
     <motion.div
@@ -99,35 +108,34 @@ export default function LiquidTitle() {
           />
         )}
 
-        {/* Chrome Metallic Title Text - FIXED with color fallback */}
+        {/* Chrome Metallic Title Text - FIXED: Only apply transparent when gradient is ready */}
         <h1
+          ref={titleRef}
           className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}
           style={isDark ? {
-            background: deviceTier !== 'very-low'
+            background: deviceTier !== 'very-low' && gradientReady
               ? 'linear-gradient(145deg, #ff3366 0%, #ffffff 20%, #ff6b89 30%, #c41e3a 50%, #ff3366 70%, #ffffff 85%, #c41e3a 100%)'
               : undefined,
             backgroundSize: '300% 300%',
-            backgroundClip: deviceTier !== 'very-low' ? 'text' : undefined,
-            WebkitBackgroundClip: deviceTier !== 'very-low' ? 'text' : undefined,
-            WebkitTextFillColor: deviceTier !== 'very-low' ? 'transparent' : undefined,
-            color: 'white', // FALLBACK - shows if gradient fails
+            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
             filter: deviceTier === 'high'
               ? 'drop-shadow(0 0 20px rgba(255,51,102,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))'
               : 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))',
-            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
           } : {
-            background: deviceTier !== 'very-low'
+            background: deviceTier !== 'very-low' && gradientReady
               ? 'linear-gradient(145deg, #ffffff 0%, #8b0000 20%, #c41e3a 35%, #1f2937 55%, #c41e3a 70%, #8b0000 85%, #ffffff 100%)'
               : undefined,
             backgroundSize: '300% 300%',
-            backgroundClip: deviceTier !== 'very-low' ? 'text' : undefined,
-            WebkitBackgroundClip: deviceTier !== 'very-low' ? 'text' : undefined,
-            WebkitTextFillColor: deviceTier !== 'very-low' ? 'transparent' : undefined,
-            color: '#1F2937', // FALLBACK - shows if gradient fails
+            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
             filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
           }}
         >
           NO DUES

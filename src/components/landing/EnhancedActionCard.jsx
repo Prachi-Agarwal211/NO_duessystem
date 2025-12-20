@@ -20,6 +20,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [magneticOffset, setMagneticOffset] = useState({ x: 0, y: 0 });
+  const [gradientReady, setGradientReady] = useState(false);
   
   // Device capability detection for progressive animation
   const [deviceTier, setDeviceTier] = useState('high');
@@ -44,6 +45,13 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
     window.addEventListener('resize', detectDevice);
     return () => window.removeEventListener('resize', detectDevice);
   }, []);
+  
+  // Wait for gradient to be ready before applying transparency
+  useEffect(() => {
+    setGradientReady(false);
+    const timer = setTimeout(() => setGradientReady(true), 50);
+    return () => clearTimeout(timer);
+  }, [theme]); // Reset on theme change
   
   // Throttled mouse tracking for liquid ripple (16ms = 60 FPS)
   useEffect(() => {
@@ -318,32 +326,30 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           <Icon size={24} strokeWidth={1.5} className="relative z-10" />
         </motion.div>
         
-        {/* Enhanced Title with Gradient - FIXED with color fallback */}
+        {/* Enhanced Title with Gradient - FIXED: Only apply transparent when gradient is ready */}
         <h2
           className={`font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300 ${
             isDark ? 'text-white' : 'text-gray-900'
           }`}
           style={isDark ? {
-            background: isHovering
+            background: isHovering && gradientReady
               ? 'linear-gradient(135deg, #FFFFFF 0%, #ff6b89 30%, #ff3366 60%, #C41E3A 100%)'
               : undefined,
             backgroundSize: '200% 200%',
-            backgroundClip: isHovering ? 'text' : undefined,
-            WebkitBackgroundClip: isHovering ? 'text' : undefined,
-            WebkitTextFillColor: isHovering ? 'transparent' : undefined,
-            color: 'white', // FALLBACK - shows if gradient fails
+            backgroundClip: isHovering && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: isHovering && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: isHovering && gradientReady ? 'transparent' : undefined,
             filter: isHovering
               ? 'drop-shadow(0 1px 4px rgba(255, 107, 157, 0.3))'
               : 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))'
           } : {
-            background: isHovering
+            background: isHovering && gradientReady
               ? 'linear-gradient(135deg, #8B0000 0%, #C41E3A 40%, #1F2937 100%)'
               : undefined,
             backgroundSize: '200% 200%',
-            backgroundClip: isHovering ? 'text' : undefined,
-            WebkitBackgroundClip: isHovering ? 'text' : undefined,
-            WebkitTextFillColor: isHovering ? 'transparent' : undefined,
-            color: '#1F2937', // FALLBACK - shows if gradient fails
+            backgroundClip: isHovering && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: isHovering && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: isHovering && gradientReady ? 'transparent' : undefined,
             filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15))'
           }}
         >
