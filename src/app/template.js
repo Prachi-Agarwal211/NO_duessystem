@@ -2,27 +2,24 @@
 
 import { motion } from 'framer-motion';
 
-// Professional page transition variants
+// Optimized page transition variants (removed blur for performance)
 const pageVariants = {
   initial: {
     opacity: 0,
-    scale: 0.98,
-    filter: 'blur(8px)',
+    y: 10,
   },
   animate: {
     opacity: 1,
-    scale: 1,
-    filter: 'blur(0px)',
+    y: 0,
   },
   exit: {
     opacity: 0,
-    scale: 1.02,
-    filter: 'blur(8px)',
+    y: -10,
   },
 };
 
 const pageTransition = {
-  duration: 0.4,
+  duration: 0.3,
   ease: [0.22, 1, 0.36, 1], // Smooth cubic-bezier easing
 };
 

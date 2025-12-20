@@ -4,6 +4,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Lightweight CSS Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(196, 30, 58, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 30, 58, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(196, 30, 58, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 30, 58, 0.6);
+}
+
 :root {
   /* ========================================
      JECRC CORE BRAND COLORS (Black/Red/White)
