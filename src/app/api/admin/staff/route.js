@@ -127,10 +127,10 @@ export async function POST(request) {
       );
     }
 
-    // Verify department exists
+    // Verify department exists and get its ID
     const { data: department, error: deptError } = await supabaseAdmin
       .from('departments')
-      .select('name')
+      .select('id, name')
       .eq('name', body.department_name.trim())
       .single();
 
@@ -164,6 +164,7 @@ export async function POST(request) {
         email: body.email.trim(),
         role: 'department',  // FIXED: Changed from 'staff' to 'department'
         department_name: body.department_name.trim(),
+        assigned_department_ids: [department.id],  // CRITICAL: Map to department UUID
         school_ids: body.school_ids && body.school_ids.length > 0 ? body.school_ids : null,
         course_ids: body.course_ids && body.course_ids.length > 0 ? body.course_ids : null,
         branch_ids: body.branch_ids && body.branch_ids.length > 0 ? body.branch_ids : null
@@ -220,10 +221,10 @@ export async function PUT(request) {
     const updates = {};
     if (body.full_name !== undefined) updates.full_name = body.full_name.trim();
     if (body.department_name !== undefined) {
-      // Verify department exists
+      // Verify department exists and get its ID
       const { data: department, error: deptError } = await supabaseAdmin
         .from('departments')
-        .select('name')
+        .select('id, name')
         .eq('name', body.department_name.trim())
         .single();
 
@@ -234,6 +235,7 @@ export async function PUT(request) {
         );
       }
       updates.department_name = body.department_name.trim();
+      updates.assigned_department_ids = [department.id];  // CRITICAL: Sync department UUID
     }
     
     // Update scope fields (allow empty arrays to be set as null)

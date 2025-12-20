@@ -374,6 +374,19 @@ async function createAllHODAccounts() {
 
         const course_ids = courses.map(c => c.id);
 
+        // Get department_id for the department_name (CRITICAL FIX)
+        const { data: deptData } = await supabase
+          .from('departments')
+          .select('id')
+          .eq('name', hod.department_name)
+          .single();
+
+        if (!deptData) {
+          throw new Error(`Department not found: ${hod.department_name}`);
+        }
+
+        const department_id = deptData.id;
+
         // Step 2: Create profile record with proper scoping
         const { error: profileError } = await supabase
           .from('profiles')
@@ -383,6 +396,7 @@ async function createAllHODAccounts() {
             full_name: hod.full_name,
             role: 'department',
             department_name: hod.department_name,
+            assigned_department_ids: [department_id],  // CRITICAL: Map to department UUID
             school_id: school_id,  // Single school (backward compatibility)
             school_ids: [school_id],  // Array for filtering
             course_ids: course_ids.length > 0 ? course_ids : null,  // Specific courses or all

@@ -31,6 +31,7 @@ export default function AdminSettings() {
   const [editingCourse, setEditingCourse] = useState(null);
   const [editingBranch, setEditingBranch] = useState(null);
   const [editingEmail, setEditingEmail] = useState(null);
+  const [editingStaff, setEditingStaff] = useState(null);
   const [newStaff, setNewStaff] = useState({
     email: '',
     password: '',
@@ -321,6 +322,40 @@ export default function AdminSettings() {
       }
     } catch (e) {
       toast.error('Deletion failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStaff = async (staff) => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/staff', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: staff.id,
+          full_name: staff.full_name,
+          department_name: staff.department_name,
+          school_ids: staff.school_ids && staff.school_ids.length > 0 ? staff.school_ids : null,
+          course_ids: staff.course_ids && staff.course_ids.length > 0 ? staff.course_ids : null,
+          branch_ids: staff.branch_ids && staff.branch_ids.length > 0 ? staff.branch_ids : null
+        })
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success('Staff account updated');
+        fetchStaff();
+        setEditingStaff(null);
+      } else {
+        toast.error(json.error);
+      }
+    } catch (e) {
+      toast.error('Update failed');
     } finally {
       setLoading(false);
     }
@@ -799,40 +834,136 @@ export default function AdminSettings() {
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Existing Staff ({staffList.length})</h3>
               <div className="space-y-3">
                 {staffList.map(staff => (
-                  <div key={staff.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
-                    <div className="flex-1">
-                      <span className="font-bold text-gray-900 dark:text-white block">{staff.full_name}</span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">{staff.email}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-500 block mt-1">
-                        {staff.department_name} • Created: {new Date(staff.created_at).toLocaleDateString()}
-                      </span>
-                      {(staff.school_ids || staff.course_ids || staff.branch_ids) && (
-                        <div className="flex gap-2 mt-2">
-                          {staff.school_ids && (
-                            <span className="px-2 py-0.5 bg-jecrc-rose dark:bg-jecrc-red/20 text-jecrc-red dark:text-jecrc-red-bright rounded text-xs font-medium">
-                              🏫 {staff.school_ids.length} Schools
-                            </span>
-                          )}
-                          {staff.course_ids && (
-                            <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-medium">
-                              📚 {staff.course_ids.length} Courses
-                            </span>
-                          )}
-                          {staff.branch_ids && (
-                            <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
-                              🎓 {staff.branch_ids.length} Branches
-                            </span>
+                  <div key={staff.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                    {editingStaff?.id === staff.id ? (
+                      // EDIT MODE
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input
+                            type="text"
+                            placeholder="Full Name"
+                            className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                            value={editingStaff.full_name}
+                            onChange={(e) => setEditingStaff({ ...editingStaff, full_name: e.target.value })}
+                          />
+                          <select
+                            className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                            value={editingStaff.department_name}
+                            onChange={(e) => setEditingStaff({ ...editingStaff, department_name: e.target.value })}
+                          >
+                            <option value="">Select Department</option>
+                            {departments.filter(d => d.is_active).map(dept => (
+                              <option key={dept.name} value={dept.name}>{dept.display_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        
+                        <div className="border-t border-gray-200 dark:border-white/10 pt-4">
+                          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                            🔒 Access Scope
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <MultiSelectCheckbox
+                              label="Schools"
+                              placeholder="Select schools"
+                              emptyMessage="No schools"
+                              options={schools.filter(s => s.is_active).map(school => ({
+                                id: school.id,
+                                label: school.name
+                              }))}
+                              selectedIds={editingStaff.school_ids || []}
+                              onChange={(ids) => setEditingStaff({ ...editingStaff, school_ids: ids })}
+                            />
+                            <MultiSelectCheckbox
+                              label="Courses"
+                              placeholder="Select courses"
+                              emptyMessage="No courses"
+                              options={courses.filter(c => c.is_active).map(course => ({
+                                id: course.id,
+                                label: course.name,
+                                subtitle: course.config_schools?.name
+                              }))}
+                              selectedIds={editingStaff.course_ids || []}
+                              onChange={(ids) => setEditingStaff({ ...editingStaff, course_ids: ids })}
+                            />
+                            <MultiSelectCheckbox
+                              label="Branches"
+                              placeholder="Select branches"
+                              emptyMessage="No branches"
+                              options={branches.filter(b => b.is_active).map(branch => ({
+                                id: branch.id,
+                                label: branch.name,
+                                subtitle: branch.config_courses?.name
+                              }))}
+                              selectedIds={editingStaff.branch_ids || []}
+                              onChange={(ids) => setEditingStaff({ ...editingStaff, branch_ids: ids })}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => updateStaff(editingStaff)}
+                            disabled={loading}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                          >
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            Save Changes
+                          </button>
+                          <button
+                            onClick={() => setEditingStaff(null)}
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // VIEW MODE
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <span className="font-bold text-gray-900 dark:text-white block">{staff.full_name}</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{staff.email}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-500 block mt-1">
+                            {staff.department_name} • Created: {new Date(staff.created_at).toLocaleDateString()}
+                          </span>
+                          {(staff.school_ids || staff.course_ids || staff.branch_ids) && (
+                            <div className="flex gap-2 mt-2">
+                              {staff.school_ids && (
+                                <span className="px-2 py-0.5 bg-jecrc-rose dark:bg-jecrc-red/20 text-jecrc-red dark:text-jecrc-red-bright rounded text-xs font-medium">
+                                  🏫 {staff.school_ids.length} Schools
+                                </span>
+                              )}
+                              {staff.course_ids && (
+                                <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-medium">
+                                  📚 {staff.course_ids.length} Courses
+                                </span>
+                              )}
+                              {staff.branch_ids && (
+                                <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
+                                  🎓 {staff.branch_ids.length} Branches
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => deleteStaff(staff.id)}
-                      disabled={loading}
-                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 border border-transparent hover:border-red-200 dark:hover:border-red-500/30"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setEditingStaff({ ...staff })}
+                            className="p-2 text-jecrc-red dark:text-jecrc-red-bright hover:bg-jecrc-rose dark:hover:bg-jecrc-red/20 rounded-lg transition-colors border border-transparent hover:border-jecrc-red/30 dark:hover:border-jecrc-red/30"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => deleteStaff(staff.id)}
+                            disabled={loading}
+                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 border border-transparent hover:border-red-200 dark:hover:border-red-500/30"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

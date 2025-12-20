@@ -132,10 +132,25 @@ export async function GET(request) {
           .in('department_name', myDeptNames)
           .eq('status', 'pending');
 
-        // HOD SCOPE ENFORCEMENT
-        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
-          console.log('📊 Dashboard Debug - Applying HOD scope filter for schools:', profile.school_ids);
+        // SCOPE ENFORCEMENT: Apply filtering based on staff's assigned scope
+        // This ensures staff only see forms matching their school/course/branch restrictions
+        
+        // Filter by schools (if staff has school_ids restriction)
+        if (profile.school_ids && profile.school_ids.length > 0) {
+          console.log('📊 Dashboard Debug - Applying school filter:', profile.school_ids);
           query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        
+        // Filter by courses (if staff has course_ids restriction)
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          console.log('📊 Dashboard Debug - Applying course filter:', profile.course_ids);
+          query = query.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        
+        // Filter by branches (if staff has branch_ids restriction)
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          console.log('📊 Dashboard Debug - Applying branch filter:', profile.branch_ids);
+          query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
 
         const result = await query;
@@ -152,9 +167,15 @@ export async function GET(request) {
           .in('department_name', myDeptNames)
           .eq('status', 'pending');
         
-        // Apply HOD scoping if needed
-        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+        // Apply scope filtering (schools, courses, branches)
+        if (profile.school_ids && profile.school_ids.length > 0) {
           query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          query = query.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
         
         return query;
@@ -169,9 +190,15 @@ export async function GET(request) {
           .eq('status', 'approved')
           .eq('action_by_user_id', user.id);
         
-        // Apply HOD scoping if needed
-        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+        // Apply scope filtering (schools, courses, branches)
+        if (profile.school_ids && profile.school_ids.length > 0) {
           query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          query = query.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
         
         return query;
@@ -186,9 +213,15 @@ export async function GET(request) {
           .eq('status', 'rejected')
           .eq('action_by_user_id', user.id);
         
-        // Apply HOD scoping if needed
-        if (myDeptNames.includes('school_hod') && profile.school_ids && profile.school_ids.length > 0) {
+        // Apply scope filtering (schools, courses, branches)
+        if (profile.school_ids && profile.school_ids.length > 0) {
           query = query.in('no_dues_forms.school_id', profile.school_ids);
+        }
+        if (profile.course_ids && profile.course_ids.length > 0) {
+          query = query.in('no_dues_forms.course_id', profile.course_ids);
+        }
+        if (profile.branch_ids && profile.branch_ids.length > 0) {
+          query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
         
         return query;
