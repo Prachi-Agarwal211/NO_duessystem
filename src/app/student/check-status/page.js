@@ -288,8 +288,8 @@ function CheckStatusContent() {
             </div>
             <h1 className={`font-serif text-4xl md:text-5xl font-bold mb-4 transition-all duration-700
               ${isDark
-                ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
-                : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
+                ? 'bg-gradient-to-r from-jecrc-red via-white to-red-400 bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
+                : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-900 bg-clip-text text-transparent'
               }`}>
               Check No Dues Form Status
             </h1>
@@ -355,7 +355,7 @@ function CheckStatusContent() {
               </div>
               <h3 className={`font-serif text-2xl font-bold mb-3 transition-all duration-700
                 ${isDark
-                  ? 'bg-gradient-to-r from-white via-pink-200 to-orange-400 bg-clip-text text-transparent'
+                  ? 'bg-gradient-to-r from-white via-red-300 to-orange-400 bg-clip-text text-transparent'
                   : 'bg-gradient-to-r from-[#8B0000] to-orange-600 bg-clip-text text-transparent'
                 }`}>
                 No Application Found

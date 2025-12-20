@@ -162,8 +162,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           className="absolute inset-0 opacity-0 group-hover:opacity-40 pointer-events-none animate-holographic"
           style={{
             background: isDark
-              ? 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.03) 20%, rgba(255,51,102,0.08) 35%, rgba(196,30,58,0.15) 50%, rgba(255,182,193,0.08) 65%, rgba(255,255,255,0.03) 80%, transparent 100%)'
-              : 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.4) 20%, rgba(255,182,193,0.25) 35%, rgba(196,30,58,0.2) 50%, rgba(255,209,217,0.25) 65%, rgba(255,255,255,0.3) 80%, transparent 100%)',
+              ? 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.03) 20%, rgba(255,51,102,0.08) 35%, rgba(196,30,58,0.15) 50%, rgba(255,51,102,0.08) 65%, rgba(255,255,255,0.03) 80%, transparent 100%)'
+              : 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.4) 20%, rgba(196,30,58,0.15) 35%, rgba(196,30,58,0.2) 50%, rgba(196,30,58,0.15) 65%, rgba(255,255,255,0.3) 80%, transparent 100%)',
             backgroundSize: '200% 200%',
           }}
           initial={{ scale: 0.95, opacity: 0 }}
@@ -197,7 +197,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           style={{
             background: isDark
               ? 'linear-gradient(90deg, transparent, rgba(196,30,58,0.4), rgba(255,51,102,0.6), rgba(196,30,58,0.4), transparent)'
-              : 'linear-gradient(90deg, transparent, rgba(255,182,193,0.5), rgba(196,30,58,0.6), rgba(255,182,193,0.5), transparent)',
+              : 'linear-gradient(90deg, transparent, rgba(196,30,58,0.4), rgba(196,30,58,0.6), rgba(196,30,58,0.4), transparent)',
             backgroundSize: '200% 100%',
             mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
@@ -286,7 +286,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           className="font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300"
           style={isDark ? {
             backgroundImage: isHovering
-              ? 'linear-gradient(135deg, #FFFFFF 0%, #FFC0CB 30%, #FF6B9D 60%, #C41E3A 100%)'
+              ? 'linear-gradient(135deg, #FFFFFF 0%, #ff6b89 30%, #ff3366 60%, #C41E3A 100%)'
               : 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
             backgroundSize: '200% 200%',
             backgroundClip: 'text',

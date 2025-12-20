@@ -1,5 +1,6 @@
 import "./globals.css";
 import ClientProviders from "@/components/providers/ClientProviders";
+import SmoothScroll from "@/components/ui/SmoothScroll";
 import { validateEnvironment } from "@/lib/envValidation";
 import { Cinzel, Manrope } from 'next/font/google';
 // Optimize font loading with next/font
@@ -65,9 +66,11 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/assets/logo.png" />
       </head>
       <body className="antialiased font-sans">
-        <ClientProviders>
-          {children}
-        </ClientProviders>
+        <SmoothScroll>
+          <ClientProviders>
+            {children}
+          </ClientProviders>
+        </SmoothScroll>
       </body>
     </html>
   );

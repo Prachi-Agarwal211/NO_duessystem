@@ -73,8 +73,8 @@ export default function LiquidTitle() {
             }}
             style={{
               background: isDark
-                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(255,51,102,0.15) 40%, transparent 70%)'
-                : 'radial-gradient(ellipse at center, rgba(255,182,193,0.4) 0%, rgba(196,30,58,0.2) 40%, transparent 70%)',
+                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.4) 0%, rgba(255,51,102,0.2) 40%, transparent 70%)'
+                : 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(139,0,0,0.15) 40%, transparent 70%)',
               filter: 'blur(60px)',
             }}
           />
@@ -94,7 +94,7 @@ export default function LiquidTitle() {
               ease: "easeInOut"
             }}
             style={{
-              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.6) 0%, rgba(255, 182, 193, 0.3) 50%, transparent 100%)',
+              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.6) 0%, rgba(255, 51, 102, 0.3) 50%, transparent 100%)',
             }}
           />
         )}
@@ -104,7 +104,7 @@ export default function LiquidTitle() {
           className="font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10"
           style={isDark ? {
             background: deviceTier !== 'very-low'
-              ? 'linear-gradient(145deg, #1a1a1a 0%, #ffffff 15%, #ffc0cb 25%, #ff3366 40%, #c41e3a 55%, #8b0000 70%, #000000 85%, #1a1a1a 100%)'
+              ? 'linear-gradient(145deg, #ff3366 0%, #ffffff 20%, #ff6b89 30%, #c41e3a 50%, #ff3366 70%, #ffffff 85%, #c41e3a 100%)'
               : '#FFFFFF',
             backgroundSize: '300% 300%',
             backgroundClip: 'text',
@@ -148,7 +148,7 @@ export default function LiquidTitle() {
           className="absolute inset-0"
           style={{
             background: isDark
-              ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.7) 30%, rgba(255, 105, 180, 0.9) 50%, rgba(196, 30, 58, 0.7) 70%, transparent 100%)'
+              ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.7) 30%, rgba(255, 51, 102, 0.9) 50%, rgba(196, 30, 58, 0.7) 70%, transparent 100%)'
               : 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.5) 30%, rgba(196, 30, 58, 0.8) 50%, rgba(196, 30, 58, 0.5) 70%, transparent 100%)',
             boxShadow: isDark && deviceTier === 'high'
               ? '0 0 6px rgba(196, 30, 58, 0.4)'
