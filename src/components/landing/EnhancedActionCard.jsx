@@ -157,7 +157,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       }}
       className={`
         interactive group relative
-        w-full aspect-[4/5] sm:aspect-[3/4] md:aspect-[4/5]
+        w-full min-h-[320px]
         overflow-hidden text-left
         p-7 sm:p-8 md:p-9
         flex flex-col justify-between
