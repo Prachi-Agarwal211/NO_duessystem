@@ -75,10 +75,54 @@ export function SkeletonDropdownOptions({ count = 5 }) {
   );
 }
 
+export function FormDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="space-y-3">
+          <SkeletonBox width="w-48" height="h-8" />
+          <SkeletonBox width="w-32" height="h-6" />
+        </div>
+        <SkeletonBox width="w-24" height="h-6" />
+      </div>
+
+      {/* Two Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+          <SkeletonBox width="w-32" height="h-6" className="mb-5" />
+          <div className="space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <SkeletonBox width="w-24" height="h-4" />
+                <SkeletonBox width="w-full" height="h-5" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+          <SkeletonBox width="w-32" height="h-6" className="mb-5" />
+          <SkeletonBox width="w-full" height="h-64" />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="space-y-4">
+        <SkeletonBox width="w-40" height="h-6" />
+        <SkeletonTable rows={5} columns={5} />
+      </div>
+    </div>
+  );
+}
+
 export default {
   Box: SkeletonBox,
   Text: SkeletonText,
   Card: SkeletonCard,
   Table: SkeletonTable,
   DropdownOptions: SkeletonDropdownOptions,
+  FormDetailSkeleton: FormDetailSkeleton,
 };
