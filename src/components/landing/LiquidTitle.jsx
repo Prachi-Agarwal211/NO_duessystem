@@ -56,12 +56,34 @@ export default function LiquidTitle() {
         Student Services
       </span>
 
-      {/* Main Title with Liquid Gradient */}
+      {/* Main Title with Chrome Metallic Effect */}
       <div className="relative">
+        {/* Pulsing Halo Effect - HIGH END ONLY */}
+        {deviceTier === 'high' && (
+          <motion.div
+            className="absolute inset-0 -z-10"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.2, 0.4, 0.2],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            style={{
+              background: isDark
+                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(255,51,102,0.15) 40%, transparent 70%)'
+                : 'radial-gradient(ellipse at center, rgba(255,182,193,0.4) 0%, rgba(196,30,58,0.2) 40%, transparent 70%)',
+              filter: 'blur(60px)',
+            }}
+          />
+        )}
+
         {/* Background Glow Layer - HIGH END ONLY */}
         {deviceTier === 'high' && isDark && (
           <motion.div
-            className="absolute inset-0 blur-3xl opacity-50"
+            className="absolute inset-0 blur-3xl opacity-50 -z-10"
             animate={{
               scale: [1, 1.1, 1],
               opacity: [0.3, 0.5, 0.3],
@@ -77,31 +99,31 @@ export default function LiquidTitle() {
           />
         )}
 
-        {/* Title Text with Premium Metallic Gradient - REFINED */}
+        {/* Chrome Metallic Title Text */}
         <h1
-          className="font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight transition-all duration-700 ease-smooth relative z-10"
+          className="font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10"
           style={isDark ? {
-            backgroundImage: deviceTier !== 'very-low'
-              ? 'linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 20%, #FFC0CB 40%, #FF6B9D 65%, #C41E3A 100%)'
+            background: deviceTier !== 'very-low'
+              ? 'linear-gradient(145deg, #1a1a1a 0%, #ffffff 15%, #ffc0cb 25%, #ff3366 40%, #c41e3a 55%, #8b0000 70%, #000000 85%, #1a1a1a 100%)'
               : '#FFFFFF',
-            backgroundSize: '200% 200%',
+            backgroundSize: '300% 300%',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             filter: deviceTier === 'high'
-              ? 'drop-shadow(0 2px 8px rgba(255, 107, 157, 0.35)) drop-shadow(0 1px 2px rgba(255, 255, 255, 0.5))'
+              ? 'drop-shadow(0 0 20px rgba(255,51,102,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))'
               : 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))',
-            animation: deviceTier === 'high' ? 'gradient-shift 8s ease-in-out infinite' : 'none'
+            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
           } : {
-            backgroundImage: deviceTier !== 'very-low'
-              ? 'linear-gradient(135deg, #8B0000 0%, #C41E3A 30%, #1F2937 70%, #374151 100%)'
+            background: deviceTier !== 'very-low'
+              ? 'linear-gradient(145deg, #ffffff 0%, #8b0000 20%, #c41e3a 35%, #1f2937 55%, #c41e3a 70%, #8b0000 85%, #ffffff 100%)'
               : '#1F2937',
-            backgroundSize: '200% 200%',
+            backgroundSize: '300% 300%',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2))',
-            animation: deviceTier === 'high' ? 'gradient-shift 8s ease-in-out infinite' : 'none'
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
           }}
         >
           NO DUES
@@ -135,17 +157,6 @@ export default function LiquidTitle() {
         />
       </div>
 
-      {/* Add keyframe animation to globals.css */}
-      <style jsx global>{`
-        @keyframes liquid-flow {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-      `}</style>
     </motion.div>
   );
 }

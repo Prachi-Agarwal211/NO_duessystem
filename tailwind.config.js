@@ -121,6 +121,17 @@ module.exports = {
         'blob-slow': 'blobSlow 25s ease-in-out infinite',
         'border-flow': 'borderFlow 3s linear infinite',
         'gradient-shift': 'gradientShift 8s ease-in-out infinite',
+        // 2026 Advanced Animations
+        'holographic': 'holographicShift 4s ease-in-out infinite',
+        'border-sweep': 'borderSweep 3s linear infinite',
+        'caustic': 'causticFlow 15s ease-in-out infinite',
+        'chrome': 'chromeShine 6s ease-in-out infinite',
+        'morph-blob': 'morphBlob 20s ease-in-out infinite',
+        'prismatic': 'prismaticShimmer 8s ease-in-out infinite',
+        'halo': 'haloPulse 4s ease-in-out infinite',
+        'iridescent': 'iridescentWave 10s ease-in-out infinite',
+        'liquid': 'liquidFlow 8s ease-in-out infinite',
+        'depth': 'depthLayers 6s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -229,6 +240,109 @@ module.exports = {
           },
           '50%': {
             backgroundPosition: '100% 50%'
+          },
+        },
+        // 2026 Advanced Keyframes
+        holographicShift: {
+          '0%, 100%': {
+            backgroundPosition: '0% 50%',
+            filter: 'hue-rotate(0deg)'
+          },
+          '50%': {
+            backgroundPosition: '100% 50%',
+            filter: 'hue-rotate(10deg)'
+          },
+        },
+        borderSweep: {
+          '0%': { backgroundPosition: '200% 0' },
+          '100%': { backgroundPosition: '-200% 0' },
+        },
+        causticFlow: {
+          '0%, 100%': {
+            transform: 'translate(0, 0) scale(1)',
+            opacity: '0.1'
+          },
+          '33%': {
+            transform: 'translate(20px, -15px) scale(1.05)',
+            opacity: '0.13'
+          },
+          '66%': {
+            transform: 'translate(-15px, 20px) scale(0.98)',
+            opacity: '0.12'
+          },
+        },
+        chromeShine: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        morphBlob: {
+          '0%, 100%': {
+            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
+            transform: 'translate(0, 0) rotate(0deg) scale(1)'
+          },
+          '33%': {
+            borderRadius: '40% 60% 50% 50% / 70% 40% 60% 30%',
+            transform: 'translate(15px, -10px) rotate(60deg) scale(1.05)'
+          },
+          '66%': {
+            borderRadius: '50% 50% 60% 40% / 40% 70% 30% 60%',
+            transform: 'translate(-10px, 15px) rotate(120deg) scale(0.98)'
+          },
+        },
+        prismaticShimmer: {
+          '0%, 100%': {
+            opacity: '0.05',
+            transform: 'translateY(0) rotate(-15deg)'
+          },
+          '50%': {
+            opacity: '0.12',
+            transform: 'translateY(-20px) rotate(-12deg)'
+          },
+        },
+        haloPulse: {
+          '0%, 100%': {
+            transform: 'scale(1)',
+            opacity: '0.2'
+          },
+          '50%': {
+            transform: 'scale(1.2)',
+            opacity: '0.4'
+          },
+        },
+        iridescentWave: {
+          '0%, 100%': {
+            backgroundPosition: '0% 50%',
+            filter: 'hue-rotate(0deg) saturate(1)'
+          },
+          '25%': {
+            filter: 'hue-rotate(5deg) saturate(1.1)'
+          },
+          '50%': {
+            backgroundPosition: '100% 50%',
+            filter: 'hue-rotate(10deg) saturate(1.2)'
+          },
+          '75%': {
+            filter: 'hue-rotate(5deg) saturate(1.1)'
+          },
+        },
+        liquidFlow: {
+          '0%, 100%': {
+            backgroundPosition: '0% 50%',
+            transform: 'scale(1)'
+          },
+          '50%': {
+            backgroundPosition: '100% 50%',
+            transform: 'scale(1.05)'
+          },
+        },
+        depthLayers: {
+          '0%, 100%': {
+            transform: 'translateZ(0) scale(1)',
+            opacity: '0.8'
+          },
+          '50%': {
+            transform: 'translateZ(20px) scale(1.05)',
+            opacity: '1'
           },
         },
       },

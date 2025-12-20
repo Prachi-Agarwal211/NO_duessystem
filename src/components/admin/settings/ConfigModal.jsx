@@ -73,7 +73,7 @@ export default function ConfigModal({
         // No persisted data - set default values
         const defaults = {};
         fields.forEach(field => {
-          defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? null : '');
+          defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? [] : '');
         });
         setFormData(defaults);
       }
@@ -136,7 +136,7 @@ export default function ConfigModal({
   const handleClearForm = () => {
     const defaults = {};
     fields.forEach(field => {
-      defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? null : '');
+      defaults[field.name] = field.defaultValue || (field.type === 'multi-checkbox' ? [] : '');
     });
     setFormData(defaults);
     clearPersistedData();
@@ -239,7 +239,7 @@ export default function ConfigModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleChange(field.name, null)}
+                    onClick={() => handleChange(field.name, [])}
                     className={`text-xs px-2 py-1 rounded transition-colors ${
                       isDark
                         ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30'
@@ -271,7 +271,7 @@ export default function ConfigModal({
                           const newValues = e.target.checked
                             ? [...currentValues, option.value]
                             : currentValues.filter(v => v !== option.value);
-                          handleChange(field.name, newValues.length > 0 ? newValues : null);
+                          handleChange(field.name, newValues);
                         }}
                         className="w-4 h-4 rounded border-white/20 bg-white/5
                                  text-red-600 focus:ring-red-500/50"

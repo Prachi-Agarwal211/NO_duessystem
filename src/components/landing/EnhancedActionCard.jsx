@@ -119,8 +119,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         border backdrop-blur-md rounded-xl
         touch-manipulation
         ${isDark
-          ? 'bg-white/[0.05] hover:bg-white/[0.12] border-white/20 hover:border-white/40'
-          : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 hover:from-white hover:via-gray-50 hover:to-white border-black/10 hover:border-black/20'
+          ? 'bg-gradient-to-br from-white/[0.02] via-white/[0.08] to-white/[0.02] hover:from-white/[0.08] hover:via-white/[0.15] hover:to-white/[0.08] border-white/20 hover:border-white/40'
+          : 'bg-gradient-to-br from-white/90 via-gray-50/95 to-white/85 hover:from-white/95 hover:via-rose-50/90 hover:to-pink-50/85 border-black/10 hover:border-jecrc-red/30'
         }
       `}
       style={isDark ? {
@@ -156,7 +156,24 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         />
       )}
 
-      {/* 2. Animated Gradient Mesh - DEVICE-AWARE */}
+      {/* 2. Holographic Foil Effect - Rainbow reflection */}
+      {deviceTier === 'high' && isHovering && (
+        <motion.div
+          className="absolute inset-0 opacity-0 group-hover:opacity-40 pointer-events-none animate-holographic"
+          style={{
+            background: isDark
+              ? 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.03) 20%, rgba(255,51,102,0.08) 35%, rgba(196,30,58,0.15) 50%, rgba(255,182,193,0.08) 65%, rgba(255,255,255,0.03) 80%, transparent 100%)'
+              : 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.4) 20%, rgba(255,182,193,0.25) 35%, rgba(196,30,58,0.2) 50%, rgba(255,209,217,0.25) 65%, rgba(255,255,255,0.3) 80%, transparent 100%)',
+            backgroundSize: '200% 200%',
+          }}
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
+      )}
+
+      {/* 3. Animated Gradient Mesh - DEVICE-AWARE */}
       {deviceTier !== 'very-low' && (
         <motion.div
           className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity ${
@@ -173,7 +190,28 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         />
       )}
       
-      {/* 3. Top Accent Line with Enhanced Glow - DEVICE-AWARE */}
+      {/* 4. Animated Metallic Border */}
+      {deviceTier === 'high' && isHovering && (
+        <motion.div
+          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none animate-border-sweep"
+          style={{
+            background: isDark
+              ? 'linear-gradient(90deg, transparent, rgba(196,30,58,0.4), rgba(255,51,102,0.6), rgba(196,30,58,0.4), transparent)'
+              : 'linear-gradient(90deg, transparent, rgba(255,182,193,0.5), rgba(196,30,58,0.6), rgba(255,182,193,0.5), transparent)',
+            backgroundSize: '200% 100%',
+            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            maskComposite: 'exclude',
+            WebkitMaskComposite: 'xor',
+            padding: '2px',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        />
+      )}
+      
+      {/* 5. Top Accent Line with Enhanced Glow - DEVICE-AWARE */}
       {deviceTier !== 'very-low' && (
         <motion.div
           className="absolute top-0 left-0 w-full h-[2px] opacity-0 group-hover:opacity-100"
@@ -189,7 +227,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         />
       )}
       
-      {/* 4. Corner Glow - DEVICE-AWARE */}
+      {/* 6. Corner Glow - DEVICE-AWARE */}
       {deviceTier !== 'very-low' && (
         <motion.div
           className={`absolute bottom-0 right-0 w-40 h-40 rounded-full ${

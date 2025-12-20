@@ -78,63 +78,56 @@ export default function GlobalBackground() {
         }}
       />
 
-      {/* 3. Animated Gradient Mesh Blobs - PROGRESSIVE OPTIMIZATION */}
+      {/* 3. Enhanced Iridescent Gradient Mesh with Morphing - PROGRESSIVE OPTIMIZATION */}
       {!isVeryLowEnd && (
         <div className={`absolute inset-0 transition-opacity duration-700 z-20 ${
           isDark ? 'opacity-70' : 'opacity-60'
         }`}>
-          {/* Top Left Blob */}
+          {/* Top Iridescent Blob with Morphing */}
           <div
             className={`
-              absolute top-[-20%] left-[-20%] w-[60%] h-[60%]
-              bg-gradient-to-br rounded-full
-              ${isDark
-                ? 'from-jecrc-red/80 via-jecrc-red/50 to-transparent'
-                : 'from-red-300/70 via-rose-300/50 to-transparent'
-              }
-              ${isVeryLowEnd ? 'blur-[20px]' : isLowEnd ? 'blur-[30px]' : isMobile ? 'blur-[40px]' : 'blur-[60px]'}
-              ${isVeryLowEnd || isLowEnd ? 'animate-blob-slow-simple' : 'animate-blob-slow'}
+              absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full
+              ${isVeryLowEnd || isLowEnd ? 'animate-blob-slow-simple' : 'animate-morph-blob'}
             `}
             style={{
+              background: isDark
+                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.25) 0%, rgba(255,51,102,0.18) 30%, rgba(139,0,139,0.12) 60%, transparent 100%)'
+                : 'radial-gradient(ellipse at center, rgba(255,182,193,0.3) 0%, rgba(255,209,217,0.22) 30%, rgba(255,192,203,0.15) 60%, transparent 100%)',
+              filter: `blur(${isVeryLowEnd ? '20px' : isLowEnd ? '30px' : isMobile ? '40px' : '60px'})`,
               transform: 'translateZ(0)',
               willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
             }}
           />
           
-          {/* Top Right Blob */}
+          {/* Top Right Iridescent Blob */}
           <div
             className={`
-              absolute top-[-20%] right-[-20%] w-[60%] h-[60%]
-              bg-gradient-to-bl rounded-full
-              ${isDark
-                ? 'from-jecrc-red-bright/70 via-jecrc-red-dark/40 to-transparent'
-                : 'from-rose-400/70 via-pink-300/50 to-transparent'
-              }
-              ${isVeryLowEnd ? 'blur-[20px]' : isLowEnd ? 'blur-[30px]' : isMobile ? 'blur-[40px]' : 'blur-[60px]'}
-              ${isVeryLowEnd || isLowEnd ? 'animate-blob-slow-simple animation-delay-2000' : 'animate-blob-slow animation-delay-2000'}
+              absolute top-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full
+              ${isVeryLowEnd || isLowEnd ? 'animate-blob-slow-simple animation-delay-2000' : 'animate-morph-blob animation-delay-2000'}
             `}
             style={{
+              background: isDark
+                ? 'radial-gradient(ellipse at center, rgba(255,51,102,0.22) 0%, rgba(196,30,58,0.18) 30%, rgba(255,182,193,0.10) 60%, transparent 100%)'
+                : 'radial-gradient(ellipse at center, rgba(255,192,203,0.28) 0%, rgba(255,182,193,0.20) 30%, rgba(255,209,217,0.12) 60%, transparent 100%)',
+              filter: `blur(${isVeryLowEnd ? '20px' : isLowEnd ? '30px' : isMobile ? '40px' : '60px'})`,
               transform: 'translateZ(0)',
-              willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
+              willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform',
+              animationDelay: '5s'
             }}
           />
           
-          {/* Bottom Blob - Desktop only, skip on low-end */}
+          {/* Bottom Blob with Color Shifting - Desktop only */}
           {!isMobile && !isLowEnd && !isVeryLowEnd && (
             <div
-              className={`
-                absolute bottom-[-20%] left-[10%] w-[50%] h-[50%]
-                bg-gradient-to-tr rounded-full
-                ${isDark
-                  ? 'from-jecrc-red-dark/70 via-jecrc-red/40 to-transparent'
-                  : 'from-blue-300/60 via-indigo-300/40 to-transparent'
-                }
-                blur-[60px]
-                animate-blob-slow animation-delay-4000
-              `}
+              className="absolute bottom-[-20%] left-[10%] w-[50%] h-[50%] rounded-full animate-morph-blob animation-delay-4000"
               style={{
+                background: isDark
+                  ? 'radial-gradient(ellipse at center, rgba(139,0,139,0.18) 0%, rgba(196,30,58,0.15) 30%, rgba(255,51,102,0.08) 60%, transparent 100%)'
+                  : 'radial-gradient(ellipse at center, rgba(219,186,255,0.22) 0%, rgba(255,182,193,0.18) 30%, rgba(255,209,217,0.10) 60%, transparent 100%)',
+                filter: 'blur(60px)',
                 transform: 'translateZ(0)',
-                willChange: 'transform'
+                willChange: 'transform',
+                animationDelay: '10s'
               }}
             />
           )}
@@ -213,7 +206,52 @@ export default function GlobalBackground() {
         </div>
       )}
 
-      {/* 5. Subtle Grid Overlay - Desktop only, skip on low-end and very low-end */}
+      {/* 5. Caustic Light Patterns - Desktop Only */}
+      {!isMobile && !isLowEnd && !isVeryLowEnd && (
+        <div className="absolute inset-0 z-35 mix-blend-overlay opacity-10">
+          <div
+            className="absolute inset-0 animate-caustic"
+            style={{
+              background: isDark
+                ? 'radial-gradient(ellipse 800px 600px at 30% 40%, rgba(196,30,58,0.15) 0%, transparent 50%), radial-gradient(ellipse 600px 800px at 70% 60%, rgba(255,51,102,0.1) 0%, transparent 50%)'
+                : 'radial-gradient(ellipse 800px 600px at 30% 40%, rgba(255,182,193,0.2) 0%, transparent 50%), radial-gradient(ellipse 600px 800px at 70% 60%, rgba(255,209,217,0.15) 0%, transparent 50%)',
+              filter: 'blur(80px)',
+              transform: 'translateZ(0)',
+            }}
+          />
+        </div>
+      )}
+
+      {/* 6. Prismatic Light Rays - High-End Only */}
+      {!isVeryLowEnd && !isLowEnd && !isMobile && (
+        <div className="absolute inset-0 z-36 mix-blend-screen opacity-5">
+          <div
+            className="absolute top-0 left-1/4 w-[1px] h-full animate-prismatic"
+            style={{
+              background: isDark
+                ? 'linear-gradient(180deg, transparent 0%, rgba(196,30,58,0.3) 30%, rgba(255,51,102,0.5) 50%, rgba(196,30,58,0.3) 70%, transparent 100%)'
+                : 'linear-gradient(180deg, transparent 0%, rgba(255,182,193,0.4) 30%, rgba(196,30,58,0.6) 50%, rgba(255,182,193,0.4) 70%, transparent 100%)',
+              filter: 'blur(20px)',
+              transform: 'rotate(-15deg)',
+              transformOrigin: 'top',
+            }}
+          />
+          <div
+            className="absolute top-0 right-1/3 w-[1px] h-full animate-prismatic"
+            style={{
+              background: isDark
+                ? 'linear-gradient(180deg, transparent 0%, rgba(255,51,102,0.4) 30%, rgba(196,30,58,0.6) 50%, rgba(255,51,102,0.4) 70%, transparent 100%)'
+                : 'linear-gradient(180deg, transparent 0%, rgba(255,209,217,0.5) 30%, rgba(196,30,58,0.7) 50%, rgba(255,209,217,0.5) 70%, transparent 100%)',
+              filter: 'blur(25px)',
+              transform: 'rotate(12deg)',
+              transformOrigin: 'top',
+              animationDelay: '2s'
+            }}
+          />
+        </div>
+      )}
+
+      {/* 7. Subtle Grid Overlay - Desktop only, skip on low-end and very low-end */}
       {!isMobile && !isLowEnd && !isVeryLowEnd && (
         <div
           className={`absolute inset-0 bg-center transition-opacity duration-700 z-40 ${
@@ -228,7 +266,7 @@ export default function GlobalBackground() {
         />
       )}
 
-      {/* 6. Subtle grain texture for depth */}
+      {/* 8. Subtle grain texture for depth */}
       <div
         className="absolute inset-0 opacity-[0.015] mix-blend-overlay z-50"
         style={{
