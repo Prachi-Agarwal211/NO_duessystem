@@ -39,27 +39,27 @@ function SubmitFormPageContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className={`p-8 md:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
+            className={`p-4 sm:p-6 md:p-8 lg:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
               ${isDark
                 ? 'bg-white/[0.02] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.4)]'
                 : 'bg-white border border-black/5 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
               }`}
           >
             {/* Header */}
-            <div className="text-center mb-10">
+            <div className="text-center mb-8 sm:mb-10">
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="flex flex-col items-center"
               >
-                <div className="mb-4">
+                <div className="mb-3 sm:mb-4">
                   <Logo size="medium" />
                 </div>
-                <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-3">
+                <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-2 sm:mb-3">
                   Student Services
                 </span>
-                <h1 className={`font-serif text-4xl md:text-5xl font-bold mb-3 transition-all duration-700
+                <h1 className={`font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 transition-all duration-700
                   ${isDark
                     ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
                     : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'

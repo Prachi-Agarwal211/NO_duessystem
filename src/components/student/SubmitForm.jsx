@@ -621,7 +621,7 @@ export default function SubmitForm() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 100 }}
       >
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <FormInput
               label="Registration Number"
@@ -656,49 +656,60 @@ export default function SubmitForm() {
             )}
           </div>
           
-          {/* Auto-Fill Button - Convocation Validation */}
-          <button
-            type="button"
-            onClick={() => validateConvocation(formData.registration_no)}
-            disabled={validatingConvocation || !formData.registration_no}
-            className={`mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 text-sm
-              ${isDark
-                ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
-                : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            title="Auto-fill student details from convocation database"
-          >
-            {validatingConvocation ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              'Auto-Fill from Convocation'
-            )}
-          </button>
-          
-          {/* Check Status Button */}
-          <button
-            type="button"
-            onClick={checkExistingForm}
-            disabled={checking || !formData.registration_no}
-            className={`mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap active:scale-95 text-sm
-              ${isDark
-                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            title="Check if application already exists"
-          >
-            {checking ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              'Verify Status'
-            )}
-          </button>
+          {/* Buttons container - Stack vertically on mobile */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Auto-Fill Button - Convocation Validation */}
+            <button
+              type="button"
+              onClick={() => validateConvocation(formData.registration_no)}
+              disabled={validatingConvocation || !formData.registration_no}
+              className={`sm:mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 text-sm w-full sm:w-auto min-h-[48px]
+                ${isDark
+                  ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title="Auto-fill student details from convocation database"
+            >
+              {validatingConvocation ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="hidden sm:inline">Loading...</span>
+                  <span className="sm:hidden">Loading...</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Auto-Fill from Convocation</span>
+                  <span className="sm:hidden">Auto-Fill Details</span>
+                </>
+              )}
+            </button>
+            
+            {/* Check Status Button */}
+            <button
+              type="button"
+              onClick={checkExistingForm}
+              disabled={checking || !formData.registration_no}
+              className={`sm:mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 text-sm w-full sm:w-auto min-h-[48px]
+                ${isDark
+                  ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                  : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title="Check if application already exists"
+            >
+              {checking ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="hidden sm:inline">Verifying...</span>
+                  <span className="sm:hidden">Verifying...</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Verify Status</span>
+                  <span className="sm:hidden">Verify</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
         
         {/* Show convocation details when validated */}
@@ -748,7 +759,7 @@ export default function SubmitForm() {
       </motion.div>
 
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}

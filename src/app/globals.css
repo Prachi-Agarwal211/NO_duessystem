@@ -576,6 +576,35 @@ select {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
+  
+  /* Mobile form optimizations */
+  .mobile-form-button {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .mobile-form-stack {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  /* Prevent horizontal overflow */
+  .mobile-form-container {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  /* Better touch targets for mobile */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Improve tap targets spacing */
+  button + button {
+    margin-top: 0.5rem;
+  }
 }
 
 /* ========================================

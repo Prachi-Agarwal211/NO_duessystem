@@ -24,6 +24,7 @@ export default function FormInput({
   const containerClasses = `
     relative w-full rounded-t-lg overflow-hidden transition-all duration-300
     bg-gray-50/50 dark:bg-white/5 border-b-2
+    min-h-[56px]
     ${error ? 'border-red-500' : 'border-gray-200 dark:border-white/20'}
     focus-within:border-jecrc-red dark:focus-within:border-jecrc-red
     hover:bg-gray-100 dark:hover:bg-white/10
@@ -35,6 +36,7 @@ export default function FormInput({
     peer w-full px-4 pt-7 pb-2 bg-transparent outline-none border-none
     text-gray-900 dark:text-white placeholder-transparent
     disabled:cursor-not-allowed
+    text-base
   `;
 
   // Label logic: Fixed positioning to prevent overlap
