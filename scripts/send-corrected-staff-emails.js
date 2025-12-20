@@ -1,12 +1,11 @@
 /**
- * Send Welcome Emails to All Staff Accounts
+ * Send Welcome Emails to Corrected Staff Accounts
  * 
- * This script sends welcome emails to all department and HOD staff with:
- * - Login credentials
- * - Password change instructions
- * - System access information
+ * This script sends welcome emails to staff with corrected email addresses:
+ * - Ashok Singh (Registrar)
+ * - Yogesh Joshi (Accounts)
  * 
- * Usage: node scripts/send-staff-welcome-emails.js
+ * Usage: node scripts/send-corrected-staff-emails.js
  */
 
 require('dotenv').config({ path: '.env.local' });
@@ -23,48 +22,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// All staff accounts
-const ALL_STAFF = [
-  // Department Staff
-  { email: 'seniormanager.it@jecrcu.edu.in', name: 'IT Senior Manager', department: 'IT Department', type: 'Department Staff' },
-  { email: 'nirmal.jain@jecrcu.edu.in', name: 'Nirmal Jain', department: 'Hostel', type: 'Department Staff' },
-  { email: 'librarian@jecrcu.edu.in', name: 'Librarian', department: 'Library', type: 'Department Staff' },
+// Corrected staff accounts
+const CORRECTED_STAFF = [
   { email: 'ashok.singh@jecrcu.edu.in', name: 'Ashok Singh', department: 'Registrar', type: 'Department Staff' },
-  { email: 'mohit.badgujar@jecrcu.edu.in', name: 'Mohit Badgujar', department: 'Alumni Cell', type: 'Department Staff' },
   { email: 'yogesh.joshi@jecrcu.edu.in', name: 'Yogesh Joshi', department: 'Accounts', type: 'Department Staff' },
-  
-  // HOD Staff
-  { email: 'hod.ece@jecrcu.edu.in', name: 'HOD - ECE', department: 'Engineering & Technology', type: 'School HOD' },
-  { email: 'hod.mechanical@jecrcu.edu.in', name: 'HOD - Mechanical', department: 'Engineering & Technology', type: 'School HOD' },
-  { email: 'hod.cse@jecrcu.edu.in', name: 'HOD - CSE', department: 'Engineering & Technology', type: 'School HOD' },
-  { email: 'hod.csedept@jecrcu.edu.in', name: 'HOD - CSE (Alt)', department: 'Engineering & Technology', type: 'School HOD' },
-  { email: 'hod.ce@jecrcu.edu.in', name: 'HOD - Civil', department: 'Engineering & Technology', type: 'School HOD' },
-  { email: 'hod.ca@jecrcu.edu.in', name: 'HOD - Computer Applications', department: 'Computer Applications', type: 'School HOD' },
-  { email: 'neha.gupta03@jecrcu.edu.in', name: 'Neha Gupta', department: 'Computer Applications', type: 'School HOD' },
-  { email: 'hod.law@jecrcu.edu.in', name: 'HOD - Law', department: 'School of Law', type: 'School HOD' },
-  { email: 'hod.mba@jecrcu.edu.in', name: 'HOD - MBA', department: 'Business School', type: 'School HOD' },
-  { email: 'hod.bba@jecrcu.edu.in', name: 'HOD - BBA', department: 'Business School', type: 'School HOD' },
-  { email: 'hod.bcom@jecrcu.edu.in', name: 'HOD - B.Com', department: 'Business School', type: 'School HOD' },
-  { email: 'jyoti.meratwal@sunstone.in', name: 'Jyoti Meratwal', department: 'Business School', type: 'School HOD' },
-  { email: 'vandana.ladha@sunstone.in', name: 'Vandana Ladha', department: 'Business School', type: 'School HOD' },
-  { email: 'sunita.sharma01@jecrcu.edu.in', name: 'Sunita Sharma', department: 'Business School', type: 'School HOD' },
-  { email: 'nimesh.gupta@jecrcu.edu.in', name: 'Nimesh Gupta', department: 'Business School', type: 'School HOD' },
-  { email: 'hod.hotelmanagement@jecrcu.edu.in', name: 'HOD - Hotel Management', department: 'Hospitality', type: 'School HOD' },
-  { email: 'hod.jmc@jecrcu.edu.in', name: 'HOD - JMC', department: 'Mass Communication', type: 'School HOD' },
-  { email: 'hod.design@jecrcu.edu.in', name: 'HOD - Design', department: 'School of Design', type: 'School HOD' },
-  { email: 'hod.biotechnology@jecrcu.edu.in', name: 'HOD - Biotechnology', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.microbiology@jecrcu.edu.in', name: 'HOD - Microbiology', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.forensic@jecrcu.edu.in', name: 'HOD - Forensic Science', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.mathmatics@jecrcu.edu.in', name: 'HOD - Mathematics', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.physics@jecrcu.edu.in', name: 'HOD - Physics', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.chemistry@jecrcu.edu.in', name: 'HOD - Chemistry', department: 'Sciences', type: 'School HOD' },
-  { email: 'hod.economics@jecrcu.edu.in', name: 'HOD - Economics', department: 'Humanities', type: 'School HOD' },
-  { email: 'hod.english@jecrcu.edu.in', name: 'HOD - English', department: 'Humanities', type: 'School HOD' },
-  { email: 'hod.psychology@jecrcu.edu.in', name: 'HOD - Psychology', department: 'Humanities', type: 'School HOD' },
-  { email: 'hod.political@jecrcu.edu.in', name: 'HOD - Political Science', department: 'Humanities', type: 'School HOD' },
-  { email: 'hod.bpt@jecrcu.edu.in', name: 'HOD - BPT', department: 'Allied Health Sciences', type: 'School HOD' },
-  { email: 'hod.brit@jecrcu.edu.in', name: 'HOD - BRIT', department: 'Allied Health Sciences', type: 'School HOD' },
-  { email: 'hod.bmlt@jecrcu.edu.in', name: 'HOD - BMLT', department: 'Allied Health Sciences', type: 'School HOD' },
 ];
 
 // Email template
@@ -348,9 +309,9 @@ async function sendWelcomeEmail(staff) {
 }
 
 // Main function
-async function sendAllWelcomeEmails() {
+async function sendCorrectedEmails() {
   console.log('\n╔═══════════════════════════════════════════════════════════╗');
-  console.log('║   Sending Welcome Emails to All Staff Members            ║');
+  console.log('║   Sending Welcome Emails to Corrected Staff Accounts     ║');
   console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
   // Verify email configuration
@@ -360,9 +321,12 @@ async function sendAllWelcomeEmails() {
     process.exit(1);
   }
 
-  console.log(`📧 Total emails to send: ${ALL_STAFF.length}`);
+  console.log(`📧 Total emails to send: ${CORRECTED_STAFF.length}`);
   console.log(`📤 SMTP Server: ${process.env.SMTP_HOST}`);
   console.log(`👤 From: ${process.env.SMTP_FROM}\n`);
+  console.log('🔄 Corrected Email Addresses:');
+  console.log('   • ashokh.singh@jecrcu.edu.in → ashok.singh@jecrcu.edu.in');
+  console.log('   • yogesh.jhoshi@jecrcu.edu.in → yogesh.joshi@jecrcu.edu.in\n');
 
   const results = {
     sent: [],
@@ -370,9 +334,9 @@ async function sendAllWelcomeEmails() {
   };
 
   // Send emails with delay to avoid rate limiting
-  for (let i = 0; i < ALL_STAFF.length; i++) {
-    const staff = ALL_STAFF[i];
-    console.log(`\n[${i + 1}/${ALL_STAFF.length}] Sending to ${staff.email}...`);
+  for (let i = 0; i < CORRECTED_STAFF.length; i++) {
+    const staff = CORRECTED_STAFF[i];
+    console.log(`\n[${i + 1}/${CORRECTED_STAFF.length}] Sending to ${staff.email}...`);
     console.log(`   Name: ${staff.name}`);
     console.log(`   Department: ${staff.department}`);
 
@@ -387,7 +351,7 @@ async function sendAllWelcomeEmails() {
     }
 
     // Wait 2 seconds between emails to avoid rate limiting
-    if (i < ALL_STAFF.length - 1) {
+    if (i < CORRECTED_STAFF.length - 1) {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
@@ -412,15 +376,15 @@ async function sendAllWelcomeEmails() {
   }
 
   console.log('\n📊 Statistics:');
-  console.log(`   Total: ${ALL_STAFF.length}`);
+  console.log(`   Total: ${CORRECTED_STAFF.length}`);
   console.log(`   Sent: ${results.sent.length}`);
   console.log(`   Failed: ${results.failed.length}\n`);
 
   if (results.sent.length > 0) {
-    console.log('✅ Email notification complete!\n');
+    console.log('✅ Corrected email notification complete!\n');
     console.log('⚠️  IMPORTANT REMINDERS:');
     console.log('─'.repeat(70));
-    console.log('• All staff have been notified with temporary password: Test@1234');
+    console.log('• Staff have been notified with temporary password: Test@1234');
     console.log('• They MUST change password before using the system');
     console.log('• Password reset URL: https://nodues.jecrcuniversity.edu.in/staff/forgot-password');
     console.log('• Staff login URL: https://nodues.jecrcuniversity.edu.in/staff/login');
@@ -429,7 +393,7 @@ async function sendAllWelcomeEmails() {
 }
 
 // Run the script
-sendAllWelcomeEmails()
+sendCorrectedEmails()
   .then(() => {
     console.log('\n✅ Script completed successfully\n');
     process.exit(0);

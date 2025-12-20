@@ -155,40 +155,40 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(80, 80, 80);
-    pdf.text('This is to certify that', pageWidth / 2, 78, { align: 'center' });
+    pdf.text('This is to certify that', pageWidth / 2, 68, { align: 'center' });
     
     // Student Name
     pdf.setFontSize(32);
     pdf.setFont('times', 'bolditalic');
     pdf.setTextColor(0, 0, 0);
-    pdf.text(certificateData.studentName, pageWidth / 2, 92, { align: 'center' });
+    pdf.text(certificateData.studentName, pageWidth / 2, 82, { align: 'center' });
     
     // Underline for name
     pdf.setLineWidth(0.5);
     pdf.setDrawColor(0, 0, 0);
-    pdf.line(pageWidth / 2 - 55, 94, pageWidth / 2 + 55, 94);
+    pdf.line(pageWidth / 2 - 55, 84, pageWidth / 2 + 55, 84);
     
     // Registration No
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(60, 60, 60);
-    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 104, { align: 'center' });
+    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 94, { align: 'center' });
     
     // Body Text
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(60, 60, 60);
-    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 116, { align: 'center' });
-    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 122, { align: 'center' });
+    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 106, { align: 'center' });
+    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 112, { align: 'center' });
     
     // Clearance Status (Stamp style)
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 132, { align: 'center' });
+    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 122, { align: 'center' });
     
     // --- 5. Academic Details (No Box) ---
-    const detailsY = 145;
+    const detailsY = 135;
     
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
@@ -203,7 +203,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
     
     // --- 6. Date & Signature ---
-    const footerY = 170;
+    const footerY = 160;
     
     // Date (Left)
     const issueDate = new Date().toLocaleDateString('en-IN', {
@@ -232,7 +232,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
 
     // --- 7. QR Code & Blockchain Verification (Bottom Left) ---
     const qrX = 25;
-    const qrY = footerY - 40; // Moved higher to prevent overlap with date (was -25, now -40)
+    const qrY = footerY - 35; // Adjusted for new footerY position
     const qrSize = 28;
     
     // Add QR Code
@@ -253,12 +253,12 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFontSize(7);
     pdf.setTextColor(180, 180, 180);
     const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
-    pdf.text(certId, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    pdf.text(certId, pageWidth / 2, pageHeight - 18, { align: 'center' });
     
     // Transaction ID (Blockchain) - use from blockchainRecord
     pdf.setFontSize(6);
     pdf.setTextColor(150, 150, 150);
-    pdf.text(`Blockchain TX: ${blockchainRecord.transactionId}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
+    pdf.text(`Blockchain TX: ${blockchainRecord.transactionId}`, pageWidth / 2, pageHeight - 14, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
