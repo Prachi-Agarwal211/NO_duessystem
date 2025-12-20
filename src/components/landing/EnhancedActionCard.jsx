@@ -318,30 +318,13 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           <Icon size={24} strokeWidth={1.5} className="relative z-10" />
         </motion.div>
         
-        {/* Enhanced Title with Premium Metallic Gradient - REFINED */}
+        {/* Enhanced Title - SOLID COLORS (No gradient to prevent invisible text) */}
         <h2
-          className="font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300"
-          style={isDark ? {
-            backgroundImage: isHovering
-              ? 'linear-gradient(135deg, #FFFFFF 0%, #ff6b89 30%, #ff3366 60%, #C41E3A 100%)'
-              : 'linear-gradient(135deg, #FFFFFF 0%, #E8E8E8 100%)',
-            backgroundSize: '200% 200%',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: isHovering
-              ? 'drop-shadow(0 1px 4px rgba(255, 107, 157, 0.3))'
-              : 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))'
-          } : {
-            backgroundImage: isHovering
-              ? 'linear-gradient(135deg, #8B0000 0%, #C41E3A 40%, #1F2937 100%)'
-              : 'linear-gradient(135deg, #1F2937 0%, #374151 100%)',
-            backgroundSize: '200% 200%',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15))'
-          }}
+          className={`font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300 ${
+            isDark
+              ? 'text-white group-hover:text-jecrc-red-bright'
+              : 'text-gray-900 group-hover:text-jecrc-red'
+          }`}
         >
           {title}
         </h2>
