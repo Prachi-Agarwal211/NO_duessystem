@@ -99,31 +99,19 @@ export default function LiquidTitle() {
           />
         )}
 
-        {/* Chrome Metallic Title Text */}
+        {/* Title Text - SOLID COLORS (No gradient to prevent rectangle box issue) */}
         <h1
-          className="font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10"
+          className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${
+            isDark
+              ? 'text-white'
+              : 'text-gray-900'
+          }`}
           style={isDark ? {
-            background: deviceTier !== 'very-low'
-              ? 'linear-gradient(145deg, #ff3366 0%, #ffffff 20%, #ff6b89 30%, #c41e3a 50%, #ff3366 70%, #ffffff 85%, #c41e3a 100%)'
-              : '#FFFFFF',
-            backgroundSize: '300% 300%',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: deviceTier === 'high'
-              ? 'drop-shadow(0 0 20px rgba(255,51,102,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))'
-              : 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))',
-            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+            textShadow: deviceTier === 'high'
+              ? '0 0 20px rgba(255,51,102,0.4), 0 2px 4px rgba(0,0,0,0.8), 0 0 40px rgba(196,30,58,0.3)'
+              : '0 2px 6px rgba(0, 0, 0, 0.5)'
           } : {
-            background: deviceTier !== 'very-low'
-              ? 'linear-gradient(145deg, #ffffff 0%, #8b0000 20%, #c41e3a 35%, #1f2937 55%, #c41e3a 70%, #8b0000 85%, #ffffff 100%)'
-              : '#1F2937',
-            backgroundSize: '300% 300%',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-            animation: deviceTier === 'high' ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}
         >
           NO DUES
