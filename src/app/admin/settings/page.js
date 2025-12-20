@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
@@ -374,6 +374,140 @@ export default function AdminSettings() {
     fetchEmailConfig();
     fetchStaff();
   }, []);
+
+  // ==================== CASCADING SCOPING FILTERS ====================
+  // Filter courses based on selected schools for NEW STAFF
+  const filteredCoursesForNewStaff = useMemo(() => {
+    if (!newStaff.school_ids || newStaff.school_ids.length === 0) {
+      // No schools selected - show all active courses
+      return courses.filter(c => c.is_active);
+    }
+    // Filter courses that belong to selected schools
+    return courses.filter(c =>
+      c.is_active && newStaff.school_ids.includes(c.school_id)
+    );
+  }, [courses, newStaff.school_ids]);
+
+  // Filter branches based on selected courses for NEW STAFF
+  const filteredBranchesForNewStaff = useMemo(() => {
+    if (!newStaff.course_ids || newStaff.course_ids.length === 0) {
+      // No courses selected - show all active branches
+      return branches.filter(b => b.is_active);
+    }
+    // Filter branches that belong to selected courses
+    return branches.filter(b =>
+      b.is_active && newStaff.course_ids.includes(b.course_id)
+    );
+  }, [branches, newStaff.course_ids]);
+
+  // Filter courses based on selected schools for EDITING STAFF
+  const filteredCoursesForEditStaff = useMemo(() => {
+    if (!editingStaff) return courses.filter(c => c.is_active);
+    
+    if (!editingStaff.school_ids || editingStaff.school_ids.length === 0) {
+      return courses.filter(c => c.is_active);
+    }
+    return courses.filter(c =>
+      c.is_active && editingStaff.school_ids.includes(c.school_id)
+    );
+  }, [courses, editingStaff?.school_ids, editingStaff]);
+
+  // Filter branches based on selected courses for EDITING STAFF
+  const filteredBranchesForEditStaff = useMemo(() => {
+    if (!editingStaff) return branches.filter(b => b.is_active);
+    
+    if (!editingStaff.course_ids || editingStaff.course_ids.length === 0) {
+      return branches.filter(b => b.is_active);
+    }
+    return branches.filter(b =>
+      b.is_active && editingStaff.course_ids.includes(b.course_id)
+    );
+  }, [branches, editingStaff?.course_ids, editingStaff]);
+
+  // Handle school selection change for NEW STAFF - reset dependent fields
+  const handleNewStaffSchoolChange = (schoolIds) => {
+    setNewStaff(prev => {
+      const updates = { school_ids: schoolIds };
+      
+      // If schools changed, filter out invalid courses
+      if (schoolIds.length > 0) {
+        const validCourseIds = courses
+          .filter(c => c.is_active && schoolIds.includes(c.school_id))
+          .map(c => c.id);
+        
+        // Keep only courses that belong to selected schools
+        updates.course_ids = prev.course_ids.filter(id => validCourseIds.includes(id));
+        
+        // If courses changed, filter out invalid branches
+        if (updates.course_ids.length !== prev.course_ids.length) {
+          const validBranchIds = branches
+            .filter(b => b.is_active && updates.course_ids.includes(b.course_id))
+            .map(b => b.id);
+          updates.branch_ids = prev.branch_ids.filter(id => validBranchIds.includes(id));
+        }
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  // Handle course selection change for NEW STAFF - reset dependent fields
+  const handleNewStaffCourseChange = (courseIds) => {
+    setNewStaff(prev => {
+      const updates = { course_ids: courseIds };
+      
+      // If courses changed, filter out invalid branches
+      if (courseIds.length > 0) {
+        const validBranchIds = branches
+          .filter(b => b.is_active && courseIds.includes(b.course_id))
+          .map(b => b.id);
+        updates.branch_ids = prev.branch_ids.filter(id => validBranchIds.includes(id));
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  // Handle school selection change for EDITING STAFF
+  const handleEditStaffSchoolChange = (schoolIds) => {
+    setEditingStaff(prev => {
+      if (!prev) return prev;
+      const updates = { school_ids: schoolIds };
+      
+      if (schoolIds.length > 0) {
+        const validCourseIds = courses
+          .filter(c => c.is_active && schoolIds.includes(c.school_id))
+          .map(c => c.id);
+        updates.course_ids = (prev.course_ids || []).filter(id => validCourseIds.includes(id));
+        
+        if (updates.course_ids.length !== (prev.course_ids || []).length) {
+          const validBranchIds = branches
+            .filter(b => b.is_active && updates.course_ids.includes(b.course_id))
+            .map(b => b.id);
+          updates.branch_ids = (prev.branch_ids || []).filter(id => validBranchIds.includes(id));
+        }
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
+
+  // Handle course selection change for EDITING STAFF
+  const handleEditStaffCourseChange = (courseIds) => {
+    setEditingStaff(prev => {
+      if (!prev) return prev;
+      const updates = { course_ids: courseIds };
+      
+      if (courseIds.length > 0) {
+        const validBranchIds = branches
+          .filter(b => b.is_active && courseIds.includes(b.course_id))
+          .map(b => b.id);
+        updates.branch_ids = (prev.branch_ids || []).filter(id => validBranchIds.includes(id));
+      }
+      
+      return { ...prev, ...updates };
+    });
+  };
 
   const tabs = [
     { id: 'departments', label: 'Departments', icon: Building2 },
@@ -780,39 +914,49 @@ export default function AdminSettings() {
                       }))
                     }
                     selectedIds={newStaff.school_ids}
-                    onChange={(ids) => setNewStaff({ ...newStaff, school_ids: ids })}
+                    onChange={handleNewStaffSchoolChange}
                   />
 
-                  {/* Courses Checkbox Multi-Select */}
+                  {/* Courses Checkbox Multi-Select - FILTERED BY SELECTED SCHOOLS */}
                   <MultiSelectCheckbox
                     label="Courses"
-                    placeholder="Select courses (optional)"
-                    emptyMessage="No active courses available"
-                    options={courses
-                      .filter(c => c.is_active)
-                      .map(course => ({
-                        id: course.id,
-                        label: course.name,
-                        subtitle: course.config_schools?.name
-                      }))
+                    placeholder={
+                      newStaff.school_ids.length > 0
+                        ? "Select courses (filtered by schools)"
+                        : "Select courses (optional)"
                     }
+                    emptyMessage={
+                      newStaff.school_ids.length > 0
+                        ? "No courses available for selected schools"
+                        : "No active courses available"
+                    }
+                    options={filteredCoursesForNewStaff.map(course => ({
+                      id: course.id,
+                      label: course.name,
+                      subtitle: course.config_schools?.name
+                    }))}
                     selectedIds={newStaff.course_ids}
-                    onChange={(ids) => setNewStaff({ ...newStaff, course_ids: ids })}
+                    onChange={handleNewStaffCourseChange}
                   />
 
-                  {/* Branches Checkbox Multi-Select */}
+                  {/* Branches Checkbox Multi-Select - FILTERED BY SELECTED COURSES */}
                   <MultiSelectCheckbox
                     label="Branches"
-                    placeholder="Select branches (optional)"
-                    emptyMessage="No active branches available"
-                    options={branches
-                      .filter(b => b.is_active)
-                      .map(branch => ({
-                        id: branch.id,
-                        label: branch.name,
-                        subtitle: branch.config_courses?.name
-                      }))
+                    placeholder={
+                      newStaff.course_ids.length > 0
+                        ? "Select branches (filtered by courses)"
+                        : "Select branches (optional)"
                     }
+                    emptyMessage={
+                      newStaff.course_ids.length > 0
+                        ? "No branches available for selected courses"
+                        : "No active branches available"
+                    }
+                    options={filteredBranchesForNewStaff.map(branch => ({
+                      id: branch.id,
+                      label: branch.name,
+                      subtitle: branch.config_courses?.name
+                    }))}
                     selectedIds={newStaff.branch_ids}
                     onChange={(ids) => setNewStaff({ ...newStaff, branch_ids: ids })}
                   />
@@ -872,25 +1016,43 @@ export default function AdminSettings() {
                                 label: school.name
                               }))}
                               selectedIds={editingStaff.school_ids || []}
-                              onChange={(ids) => setEditingStaff({ ...editingStaff, school_ids: ids })}
+                              onChange={handleEditStaffSchoolChange}
                             />
+                            {/* Courses - FILTERED BY SELECTED SCHOOLS */}
                             <MultiSelectCheckbox
                               label="Courses"
-                              placeholder="Select courses"
-                              emptyMessage="No courses"
-                              options={courses.filter(c => c.is_active).map(course => ({
+                              placeholder={
+                                (editingStaff.school_ids || []).length > 0
+                                  ? "Select courses (filtered by schools)"
+                                  : "Select courses"
+                              }
+                              emptyMessage={
+                                (editingStaff.school_ids || []).length > 0
+                                  ? "No courses for selected schools"
+                                  : "No courses"
+                              }
+                              options={filteredCoursesForEditStaff.map(course => ({
                                 id: course.id,
                                 label: course.name,
                                 subtitle: course.config_schools?.name
                               }))}
                               selectedIds={editingStaff.course_ids || []}
-                              onChange={(ids) => setEditingStaff({ ...editingStaff, course_ids: ids })}
+                              onChange={handleEditStaffCourseChange}
                             />
+                            {/* Branches - FILTERED BY SELECTED COURSES */}
                             <MultiSelectCheckbox
                               label="Branches"
-                              placeholder="Select branches"
-                              emptyMessage="No branches"
-                              options={branches.filter(b => b.is_active).map(branch => ({
+                              placeholder={
+                                (editingStaff.course_ids || []).length > 0
+                                  ? "Select branches (filtered by courses)"
+                                  : "Select branches"
+                              }
+                              emptyMessage={
+                                (editingStaff.course_ids || []).length > 0
+                                  ? "No branches for selected courses"
+                                  : "No branches"
+                              }
+                              options={filteredBranchesForEditStaff.map(branch => ({
                                 id: branch.id,
                                 label: branch.name,
                                 subtitle: branch.config_courses?.name
