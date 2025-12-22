@@ -16,7 +16,7 @@ export function generateQRData(certificateData) {
   const { id, student_name, enrollment_no, issued_at } = certificateData;
   
   // Create verification URL with certificate ID
-  const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://nodues.jecrc.ac.in'}/verify/${id}`;
+  const verificationUrl = `https://nodues.jecrcuniversity.edu.in/verify/${id}`;
   
   // Generate hash for tamper detection
   const dataString = `${id}|${student_name}|${enrollment_no}|${issued_at}`;

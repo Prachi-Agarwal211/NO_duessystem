@@ -223,108 +223,19 @@ export async function POST(request) {
 
     console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
 
-    // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // Note: Email failures are non-fatal - form is already created successfully
+    // ==================== DAILY DIGEST SYSTEM ====================
+    // 📧 IMMEDIATE EMAILS DISABLED - Staff will receive daily digest at 6 PM
+    // This prevents email inbox flooding when many students apply
     
-    try {
-      // IMPORTANT: Fetch staff based on department scope rules:
-      // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
-      // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
-      
-      const { data: allStaff, error: staffError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
-        .eq('role', 'department')
-        .not('email', 'is', null);
-
-      if (staffError) {
-        console.error('Failed to fetch staff members:', staffError);
-        // Continue even if email fails - form is already created
-      } else if (allStaff && allStaff.length > 0) {
-        // Filter staff based on scope:
-        // - school_hod staff: Only those matching student's school/course/branch (using UUID arrays)
-        // - All other departments: No filtering, all staff get notified
-        const staffToNotify = allStaff.filter(staff => {
-          // If school_hod staff (HOD/Dean), apply scope filtering using UUID arrays
-          if (staff.department_name === 'school_hod') {
-            // Check school scope (using UUID arrays OR single school_id for backward compatibility)
-            if (staff.school_ids && staff.school_ids.length > 0) {
-              if (!staff.school_ids.includes(school_id)) {
-                return false; // Student's school not in HOD's school array
-              }
-            } else if (staff.school_id && staff.school_id !== school_id) {
-              return false; // Backward compatibility: single school_id doesn't match
-            }
-            
-            // Check course scope (using UUID arrays)
-            if (staff.course_ids && staff.course_ids.length > 0) {
-              if (!staff.course_ids.includes(course_id)) {
-                return false; // Student's course not in HOD's course array
-              }
-            }
-            
-            // Check branch scope (using UUID arrays)
-            if (staff.branch_ids && staff.branch_ids.length > 0) {
-              if (!staff.branch_ids.includes(branch_id)) {
-                return false; // Student's branch not in HOD's branch array
-              }
-            }
-            
-            return true; // Matches scope, notify this HOD
-          }
-          
-          // For all other 10 departments (non-HOD), notify everyone
-          return true;
-        });
-
-        if (staffToNotify.length > 0) {
-          // 🆕 OPTIMIZED: Send ONE combined email to all departments instead of individual emails
-          const allStaffEmails = staffToNotify.map(staff => staff.email);
-          
-          const emailResult = await sendCombinedDepartmentNotification({
-            allStaffEmails,
-            studentName: form.student_name,
-            registrationNo: form.registration_no,
-            school: sanitizedData.school,
-            course: sanitizedData.course,
-            branch: sanitizedData.branch,
-            formId: form.id,
-            dashboardUrl: APP_URLS.staffLogin()
-          });
-
-          if (emailResult.success) {
-            console.log(`📧 ✅ Combined notification sent to ${staffToNotify.length} staff members (1 email total)`);
-          } else {
-            console.error(`📧 ❌ Failed to send combined notification: ${emailResult.error}`);
-          }
-          
-          // ==================== AUTO-PROCESS EMAIL QUEUE ====================
-          // Trigger queue processing immediately after sending emails
-          // This ensures any queued emails are sent without waiting for cron
-          try {
-            console.log('🔄 Triggering email queue processor...');
-            
-            // Fire and forget - don't wait for response
-            fetch(APP_URLS.emailQueue(), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            }).catch(err => {
-              console.log('Queue processing will retry later:', err.message);
-            });
-          } catch (queueError) {
-            console.log('Queue trigger skipped:', queueError.message);
-          }
-        } else {
-          console.warn('⚠️ No staff members match the scope for this student');
-        }
-      } else {
-        console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
-      }
-    } catch (emailError) {
-      console.error('❌ Email notification failed (non-fatal):', emailError);
-      console.log('📝 Form created successfully. Email will be queued for retry.');
-      // Continue - form submission should not fail if emails fail
-    }
+    console.log('📊 Application will be included in today\'s daily digest email');
+    console.log('   Staff will be notified at 6:00 PM IST with all pending applications');
+    
+    // No immediate email sending - rely on daily digest cron job
+    // The digest system will:
+    // 1. Run daily at 6 PM (configured in vercel.json)
+    // 2. Send ONE email per staff member with ALL pending applications
+    // 3. Include statistics (total pending, new today)
+    // 4. Reduce email overload significantly
 
     // ==================== RETURN SUCCESS ====================
     

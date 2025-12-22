@@ -146,12 +146,12 @@ async function addHODAccounts() {
     console.log('1. Engineering HOD (B.Tech/M.Tech)');
     console.log('   Email: razorrag.official@gmail.com');
     console.log('   Password: JECRC@2024');
-    console.log('   Dashboard: https://no-duessystem.onrender.com/staff/login');
+    console.log('   Dashboard: https://nodues.jecrcuniversity.edu.in/staff/login');
     console.log('');
     console.log('2. Business School HOD (BBA/MBA)');
     console.log('   Email: prachiagarwal211@gmail.com');
     console.log('   Password: JECRC@2024');
-    console.log('   Dashboard: https://no-duessystem.onrender.com/staff/login');
+    console.log('   Dashboard: https://nodues.jecrcuniversity.edu.in/staff/login');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {

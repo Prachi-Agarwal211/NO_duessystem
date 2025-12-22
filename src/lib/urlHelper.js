@@ -9,20 +9,8 @@
  * Works in both development and production
  */
 export function getBaseUrl() {
-  // Production URL
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
-  }
-
-  // Vercel deployment
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  // Development fallback
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://nodues.jecrc.ac.in' 
-    : 'http://localhost:3000';
+  // ALWAYS use the production URL - no environment checks
+  return 'https://nodues.jecrcuniversity.edu.in';
 }
 
 /**

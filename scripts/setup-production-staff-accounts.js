@@ -527,7 +527,7 @@ async function main() {
   
   console.log('⚠️  IMPORTANT NOTES:');
   console.log('─'.repeat(70));
-  console.log('1. Login URL: https://no-duessystem.vercel.app/staff/login');
+  console.log('1. Login URL: https://nodues.jecrcuniversity.edu.in/staff/login');
   console.log('2. Admin login: /admin/login');
   console.log('3. All staff should change password after first login');
   console.log('4. HOD scoping filters students automatically');

@@ -455,7 +455,7 @@ async function createAllHODAccounts() {
     console.log('2. Users should change password after first login');
     console.log('3. Each HOD is scoped to their specific school and courses');
     console.log('4. HODs can see ALL branches within their assigned courses');
-    console.log('5. Login URL: https://no-duessystem.vercel.app/staff/login');
+    console.log('5. Login URL: https://nodues.jecrcuniversity.edu.in/staff/login');
     console.log('6. Staff dashboard: /staff/dashboard (after login)');
     console.log('─'.repeat(70));
 
@@ -485,7 +485,7 @@ async function createAllHODAccounts() {
 createAllHODAccounts()
   .then(() => {
     console.log('✅ Script completed successfully');
-    console.log('🚀 All HODs can now login at: https://no-duessystem.vercel.app/staff/login\n');
+    console.log('🚀 All HODs can now login at: https://nodues.jecrcuniversity.edu.in/staff/login\n');
     process.exit(0);
   })
   .catch((error) => {

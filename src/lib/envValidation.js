@@ -318,6 +318,6 @@ export const getEnvConfig = () => {
             smtpPort: process.env.SMTP_PORT || '587',
             from: process.env.SMTP_FROM || 'noreply@jecrc.edu.in'
         },
-        baseUrl: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        baseUrl: 'https://nodues.jecrcuniversity.edu.in'
     };
 };

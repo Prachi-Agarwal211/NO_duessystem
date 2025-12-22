@@ -280,7 +280,7 @@ async function createDepartmentStaff() {
     console.log('2. Users should change password after first login');
     console.log('3. All staff can see ALL students (no school/course filtering)');
     console.log('4. Each staff member can only approve/reject for their department');
-    console.log('5. Login URL: https://no-duessystem.vercel.app/staff/login');
+    console.log('5. Login URL: https://nodues.jecrcuniversity.edu.in/staff/login');
     console.log('6. Staff dashboard: /staff/dashboard (after login)');
     console.log('─'.repeat(70));
 
@@ -310,7 +310,7 @@ async function createDepartmentStaff() {
 createDepartmentStaff()
   .then(() => {
     console.log('✅ Script completed successfully');
-    console.log('🚀 Staff can now login at: https://no-duessystem.vercel.app/staff/login\n');
+    console.log('🚀 Staff can now login at: https://nodues.jecrcuniversity.edu.in/staff/login\n');
     process.exit(0);
   })
   .catch((error) => {

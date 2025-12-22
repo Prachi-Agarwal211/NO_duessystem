@@ -1,7 +1,25 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 
+// Check and send daily reminders (runs in background)
+async function checkDailyReminders() {
+  try {
+    // Only check on API routes to avoid blocking page loads
+    const { checkAndSendReminder } = await import('./src/lib/dailyReminder');
+    await checkAndSendReminder();
+  } catch (error) {
+    // Silently fail - don't block requests
+    console.error('Reminder check failed:', error);
+  }
+}
+
 export async function middleware(request) {
+  // Check for daily reminders in background (non-blocking)
+  // Only runs on API requests to avoid slowing down page loads
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    checkDailyReminders().catch(() => {}); // Fire and forget
+  }
+
   // Create response early
   let response = NextResponse.next({
     request: {

@@ -320,39 +320,12 @@ export async function PUT(request) {
         });
         
         if (staffToNotify.length > 0) {
-          // 🆕 OPTIMIZED: Send ONE combined email for reapplication
-          const { sendReapplicationNotification } = await import('@/lib/emailService');
-          const allStaffEmails = staffToNotify.map(staff => staff.email);
+          // 📧 IMMEDIATE EMAILS DISABLED - Reapplication will be included in daily digest
+          console.log(`📊 Reapplication #${form.reapplication_count + 1} will be included in today's daily digest`);
+          console.log(`   ${staffToNotify.length} staff members will be notified at 6:00 PM IST`);
           
-          const emailResult = await sendReapplicationNotification({
-            allStaffEmails,
-            studentName: form.student_name,
-            registrationNo: form.registration_no,
-            studentMessage: student_reply_message.trim(),
-            reapplicationNumber: form.reapplication_count + 1,
-            school: form.school,
-            course: form.course,
-            branch: form.branch,
-            dashboardUrl: APP_URLS.staffLogin()
-          });
-
-          if (emailResult.success) {
-            console.log(`📧 ✅ Combined reapplication notification sent to ${staffToNotify.length} staff members (1 email total)`);
-          } else {
-            console.error(`📧 ❌ Failed to send reapplication notification: ${emailResult.error}`);
-          }
-        }
-        
-        // ==================== AUTO-PROCESS EMAIL QUEUE ====================
-        try {
-          console.log('🔄 Triggering email queue processor...');
-          
-          fetch(APP_URLS.emailQueue(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          }).catch(err => console.log('Queue processing will retry later:', err.message));
-        } catch (queueError) {
-          console.log('Queue trigger skipped:', queueError.message);
+          // No immediate email - rely on daily digest system
+          // The digest will show this as a pending application
         }
       } catch (emailError) {
         console.error('Failed to send reapplication notifications:', emailError);

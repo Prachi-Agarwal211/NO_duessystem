@@ -195,7 +195,7 @@ async function createDepartmentStaff() {
     console.log('─'.repeat(70));
     console.log('• All accounts see ALL students (no filtering)');
     console.log('• Each can only approve/reject for their department');
-    console.log('• Login: https://no-duessystem.vercel.app/staff/login');
+    console.log('• Login: https://nodues.jecrcuniversity.edu.in/staff/login');
     console.log('─'.repeat(70));
 
     console.log('\n📊 Statistics:');
