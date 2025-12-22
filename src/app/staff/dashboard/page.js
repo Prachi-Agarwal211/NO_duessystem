@@ -151,8 +151,8 @@ export default function StaffDashboard() {
     const prevData = { ...data };
     setData(prev => ({
         ...prev,
-        stats: { 
-            ...prev.stats, 
+        stats: {
+            ...prev.stats,
             pending: Math.max(0, prev.stats.pending - 1),
             approved: action === 'approve' ? prev.stats.approved + 1 : prev.stats.approved,
             rejected: action === 'reject' ? prev.stats.rejected + 1 : prev.stats.rejected,
@@ -164,13 +164,19 @@ export default function StaffDashboard() {
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // ✅ FIX: Only send reason for rejections, not for approvals
+        const requestBody = action === 'approve'
+          ? { formId, departmentName, action }
+          : { formId, departmentName, action, reason: "Quick Action" };
+        
         const res = await fetch('/api/staff/action', {
             method: 'PUT',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}` 
+                'Authorization': `Bearer ${session.access_token}`
             },
-            body: JSON.stringify({ formId, departmentName, action, reason: "Quick Action" })
+            body: JSON.stringify(requestBody)
         });
         if (!res.ok) throw new Error('Failed');
         toast.success(action === 'approve' ? 'Approved ✓' : 'Rejected');
