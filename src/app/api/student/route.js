@@ -268,7 +268,7 @@ export async function POST(request) {
                 contact_no: form.contact_no,
                 personal_email: form.personal_email
               },
-              actionUrl: `${APP_URLS.PRODUCTION}/staff`
+              actionUrl: `${APP_URLS.BASE}/staff`
             });
             
             console.log(`✅ Immediate email sent to ${staffToNotify.length} staff members`);

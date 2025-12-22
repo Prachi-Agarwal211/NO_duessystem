@@ -340,7 +340,7 @@ export async function PUT(request) {
                 contact_no: form.contact_no,
                 personal_email: form.personal_email
               },
-              actionUrl: `${APP_URLS.PRODUCTION}/staff`,
+              actionUrl: `${APP_URLS.BASE}/staff`,
               isReapplication: true,
               reapplicationNumber: form.reapplication_count + 1
             });
