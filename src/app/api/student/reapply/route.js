@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { APP_URLS } from '@/lib/urlHelper';
+import { shouldSendImmediateEmail } from '@/lib/emailNotificationHelper';
+import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -295,8 +297,10 @@ export async function PUT(request) {
     
     console.log(`♻️ Reset all 7 department statuses to pending for form ${form.id}`);
 
-    // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // ✅ MASTER CYCLE FIX: Notify ALL department staff, not just rejected ones
+    // ==================== EMAIL NOTIFICATION SYSTEM ====================
+    // Check admin setting to determine email mode (immediate vs daily digest)
+    const sendImmediate = await shouldSendImmediateEmail();
+    
     const { data: staffMembers, error: staffError } = await supabaseAdmin
       .from('profiles')
       .select('id, email, full_name, department_name, school_ids, course_ids, branch_ids')
@@ -305,10 +309,9 @@ export async function PUT(request) {
 
     if (!staffError && staffMembers && staffMembers.length > 0) {
       try {
-        // ✅ Filter staff based on HOD scope (school_hod only sees their students)
+        // Filter staff based on HOD scope
         const staffToNotify = staffMembers.filter(staff => {
           if (staff.department_name === 'school_hod') {
-            // Check if this HOD manages this student's school/course
             if (staff.school_ids && !staff.school_ids.includes(form.school_id)) {
               return false;
             }
@@ -316,23 +319,45 @@ export async function PUT(request) {
               return false;
             }
           }
-          return true; // All other departments see all students
+          return true;
         });
         
         if (staffToNotify.length > 0) {
-          // 📧 IMMEDIATE EMAILS DISABLED - Reapplication will be included in daily digest
-          console.log(`📊 Reapplication #${form.reapplication_count + 1} will be included in today's daily digest`);
-          console.log(`   ${staffToNotify.length} staff members will be notified at 6:00 PM IST`);
-          
-          // No immediate email - rely on daily digest system
-          // The digest will show this as a pending application
+          if (sendImmediate) {
+            // IMMEDIATE MODE: Send real-time reapplication notification
+            console.log(`📧 Immediate email mode - sending reapplication notification to ${staffToNotify.length} staff`);
+            
+            const allStaffEmails = staffToNotify.map(s => s.email);
+            
+            await sendCombinedDepartmentNotification({
+              allStaffEmails,
+              studentData: {
+                registration_no: form.registration_no,
+                student_name: form.student_name,
+                school: form.school,
+                course: form.course,
+                branch: form.branch,
+                contact_no: form.contact_no,
+                personal_email: form.personal_email
+              },
+              actionUrl: `${APP_URLS.PRODUCTION}/staff`,
+              isReapplication: true,
+              reapplicationNumber: form.reapplication_count + 1
+            });
+            
+            console.log(`✅ Immediate reapplication email sent to ${staffToNotify.length} staff members`);
+          } else {
+            // DAILY DIGEST MODE: Will be included in 4 PM reminder
+            console.log(`📊 Daily digest mode - reapplication #${form.reapplication_count + 1} will be included in 4 PM reminder`);
+            console.log(`   ${staffToNotify.length} staff members will be notified at 4:00 PM IST`);
+          }
         }
       } catch (emailError) {
         console.error('Failed to send reapplication notifications:', emailError);
         // Don't fail the request if email fails
       }
     } else {
-      console.warn('⚠️ No staff members found for rejected departments. Please ensure staff accounts exist.');
+      console.warn('⚠️ No staff members found. Please ensure staff accounts exist.');
     }
 
     // ==================== SUCCESS RESPONSE ====================

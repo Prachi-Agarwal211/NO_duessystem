@@ -4,6 +4,7 @@ import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
+import { shouldSendImmediateEmail } from '@/lib/emailNotificationHelper';
 
 // Create Supabase admin client for server-side operations
 const supabaseAdmin = createClient(
@@ -223,19 +224,65 @@ export async function POST(request) {
 
     console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
 
-    // ==================== DAILY DIGEST SYSTEM ====================
-    // 📧 IMMEDIATE EMAILS DISABLED - Staff will receive daily digest at 6 PM
-    // This prevents email inbox flooding when many students apply
+    // ==================== EMAIL NOTIFICATION SYSTEM ====================
+    // Check admin setting to determine email mode (immediate vs daily digest)
+    const sendImmediate = await shouldSendImmediateEmail();
     
-    console.log('📊 Application will be included in today\'s daily digest email');
-    console.log('   Staff will be notified at 6:00 PM IST with all pending applications');
-    
-    // No immediate email sending - rely on daily digest cron job
-    // The digest system will:
-    // 1. Run daily at 6 PM (configured in vercel.json)
-    // 2. Send ONE email per staff member with ALL pending applications
-    // 3. Include statistics (total pending, new today)
-    // 4. Reduce email overload significantly
+    if (sendImmediate) {
+      // IMMEDIATE MODE: Send real-time emails to all department staff
+      console.log('📧 Immediate email mode - sending notifications now');
+      
+      try {
+        // Get all department staff for email notification
+        const { data: staffMembers, error: staffError } = await supabaseAdmin
+          .from('profiles')
+          .select('id, email, full_name, department_name, school_ids, course_ids, branch_ids')
+          .eq('role', 'department')
+          .not('email', 'is', null);
+
+        if (!staffError && staffMembers && staffMembers.length > 0) {
+          // Filter staff based on HOD scope
+          const staffToNotify = staffMembers.filter(staff => {
+            if (staff.department_name === 'school_hod') {
+              if (staff.school_ids && !staff.school_ids.includes(form.school_id)) {
+                return false;
+              }
+              if (staff.course_ids && staff.course_ids.length > 0 && !staff.course_ids.includes(form.course_id)) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          if (staffToNotify.length > 0) {
+            const allStaffEmails = staffToNotify.map(s => s.email);
+            
+            await sendCombinedDepartmentNotification({
+              allStaffEmails,
+              studentData: {
+                registration_no: form.registration_no,
+                student_name: form.student_name,
+                school: form.school,
+                course: form.course,
+                branch: form.branch,
+                contact_no: form.contact_no,
+                personal_email: form.personal_email
+              },
+              actionUrl: `${APP_URLS.PRODUCTION}/staff`
+            });
+            
+            console.log(`✅ Immediate email sent to ${staffToNotify.length} staff members`);
+          }
+        }
+      } catch (emailError) {
+        console.error('Failed to send immediate notification:', emailError);
+        // Don't fail the request if email fails
+      }
+    } else {
+      // DAILY DIGEST MODE: Email will be sent at 4 PM IST
+      console.log('📊 Daily digest mode - application will be included in 4 PM reminder');
+      console.log('   Staff will be notified at 4:00 PM IST with all pending applications');
+    }
 
     // ==================== RETURN SUCCESS ====================
     

@@ -8,7 +8,7 @@ import MultiSelectCheckbox from '@/components/admin/MultiSelectCheckbox';
 import {
   Settings, Save, Plus, Trash2, Edit,
   Building2, School, Mail, Users,
-  CheckCircle, XCircle, Loader2, BookOpen, GitBranch, ArrowLeft
+  CheckCircle, XCircle, Loader2, BookOpen, GitBranch, ArrowLeft, Bell
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,6 +24,7 @@ export default function AdminSettings() {
   const [branches, setBranches] = useState([]);
   const [emailConfig, setEmailConfig] = useState([]);
   const [staffList, setStaffList] = useState([]);
+  const [emailNotificationMode, setEmailNotificationMode] = useState('immediate'); // 'immediate' or 'daily_digest'
 
   // Edit States
   const [editingDept, setEditingDept] = useState(null);
@@ -118,6 +119,47 @@ export default function AdminSettings() {
       if (json.success) setStaffList(json.data || []);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const fetchEmailNotificationMode = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'email_notification_mode')
+        .single();
+      
+      if (data) {
+        setEmailNotificationMode(data.value);
+      }
+    } catch (e) {
+      console.error('Error fetching notification mode:', e);
+    }
+  };
+
+  const updateEmailNotificationMode = async (mode) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('settings')
+        .upsert({
+          key: 'email_notification_mode',
+          value: mode,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
+
+      if (error) throw error;
+
+      setEmailNotificationMode(mode);
+      toast.success(`Email mode changed to: ${mode === 'immediate' ? 'Immediate Notifications' : 'Daily Digest at 4 PM'}`);
+    } catch (e) {
+      console.error('Error updating notification mode:', e);
+      toast.error('Failed to update email mode');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -373,6 +415,7 @@ export default function AdminSettings() {
     fetchBranches();
     fetchEmailConfig();
     fetchStaff();
+    fetchEmailNotificationMode();
   }, []);
 
   // ==================== CASCADING SCOPING FILTERS ====================
@@ -515,6 +558,7 @@ export default function AdminSettings() {
     { id: 'courses', label: 'Courses', icon: BookOpen },
     { id: 'branches', label: 'Branches', icon: GitBranch },
     { id: 'emails', label: 'Email Config', icon: Mail },
+    { id: 'notifications', label: 'Email Notifications', icon: Bell },
     { id: 'staff', label: 'Staff Accounts', icon: Users }
   ];
 
@@ -845,6 +889,129 @@ export default function AdminSettings() {
                   )}
                 </div>
               ))}
+            </div>
+          </GlassCard>
+        )}
+
+        {/* EMAIL NOTIFICATIONS TAB */}
+        {activeTab === 'notifications' && (
+          <GlassCard className="p-6">
+            <div className="mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Email Notification System</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Choose how staff members receive notifications about new student applications
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Immediate Mode */}
+              <div
+                onClick={() => updateEmailNotificationMode('immediate')}
+                className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                  emailNotificationMode === 'immediate'
+                    ? 'border-jecrc-red bg-jecrc-rose/20 dark:bg-jecrc-red/10'
+                    : 'border-gray-200 dark:border-white/10 hover:border-jecrc-red/50'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-xl ${
+                    emailNotificationMode === 'immediate'
+                      ? 'bg-jecrc-red text-white'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-lg text-gray-900 dark:text-white">
+                        Immediate Notifications
+                      </h4>
+                      {emailNotificationMode === 'immediate' && (
+                        <CheckCircle className="w-5 h-5 text-jecrc-red" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Staff receive an email immediately when a student submits or reapplies for no dues clearance
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Real-time alerts</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Quick response time</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <XCircle className="w-4 h-4 text-orange-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Higher email volume</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Daily Digest Mode */}
+              <div
+                onClick={() => updateEmailNotificationMode('daily_digest')}
+                className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+                  emailNotificationMode === 'daily_digest'
+                    ? 'border-jecrc-red bg-jecrc-rose/20 dark:bg-jecrc-red/10'
+                    : 'border-gray-200 dark:border-white/10 hover:border-jecrc-red/50'
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-xl ${
+                    emailNotificationMode === 'daily_digest'
+                      ? 'bg-jecrc-red text-white'
+                      : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    <Bell className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-bold text-lg text-gray-900 dark:text-white">
+                        Daily Digest at 4 PM
+                      </h4>
+                      {emailNotificationMode === 'daily_digest' && (
+                        <CheckCircle className="w-5 h-5 text-jecrc-red" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Staff receive ONE consolidated email at 4:00 PM IST with count of all pending applications
+                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Reduced email clutter</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Single daily reminder</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <XCircle className="w-4 h-4 text-orange-500" />
+                        <span className="text-gray-700 dark:text-gray-300">Delayed notifications</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+              <div className="flex gap-3">
+                <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-800 dark:text-blue-300">
+                  <p className="font-semibold mb-1">Current Mode: {emailNotificationMode === 'immediate' ? 'Immediate Notifications' : 'Daily Digest at 4 PM IST'}</p>
+                  <p>
+                    {emailNotificationMode === 'immediate'
+                      ? 'Staff receive emails immediately when students submit applications. Links in emails direct to: https://nodues.jecrcuniversity.edu.in/staff/dashboard'
+                      : 'Staff receive one summary email daily at 4 PM showing total pending applications. The system automatically checks and sends reminders without requiring Vercel Cron.'}
+                  </p>
+                </div>
+              </div>
             </div>
           </GlassCard>
         )}

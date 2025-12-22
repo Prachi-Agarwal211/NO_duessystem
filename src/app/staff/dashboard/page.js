@@ -21,6 +21,10 @@ export default function StaffDashboard() {
   const debounceTimer = useRef(null);
   const [historyFetched, setHistoryFetched] = useState(false);
   const [rejectedFetched, setRejectedFetched] = useState(false);
+  
+  // Bulk approval state
+  const [selectedForms, setSelectedForms] = useState(new Set());
+  const [bulkApproving, setBulkApproving] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -190,6 +194,95 @@ export default function StaffDashboard() {
     }
   };
 
+  // Bulk approval handlers
+  const toggleSelectForm = (formId, departmentName) => {
+    const newSelected = new Set(selectedForms);
+    const key = `${formId}:${departmentName}`;
+    
+    if (newSelected.has(key)) {
+      newSelected.delete(key);
+    } else {
+      newSelected.add(key);
+    }
+    setSelectedForms(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForms.size === filtered.length) {
+      setSelectedForms(new Set());
+    } else {
+      const allKeys = new Set(
+        filtered.map(item => `${item.no_dues_forms.id}:${item.department_name}`)
+      );
+      setSelectedForms(allKeys);
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedForms.size === 0) return;
+
+    setBulkApproving(true);
+    const prevData = { ...data };
+    
+    // Parse selected forms
+    const formActions = Array.from(selectedForms).map(key => {
+      const [formId, departmentName] = key.split(':');
+      return { formId, departmentName };
+    });
+
+    // Optimistic UI update
+    setData(prev => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        pending: Math.max(0, prev.stats.pending - formActions.length),
+        approved: prev.stats.approved + formActions.length,
+        total: prev.stats.total + formActions.length
+      },
+      applications: prev.applications.filter(app =>
+        !selectedForms.has(`${app.no_dues_forms.id}:${app.department_name}`)
+      )
+    }));
+    
+    toast.success(`Processing ${formActions.length} approvals...`);
+    setSelectedForms(new Set());
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const res = await fetch('/api/staff/bulk-action', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ formActions })
+      });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Bulk approval failed');
+      }
+
+      toast.success(`✅ Successfully approved ${result.data.processedCount} forms!`);
+      
+      // Invalidate history cache
+      setHistoryFetched(false);
+      setRejectedFetched(false);
+      
+      // Refresh dashboard to get latest data
+      setTimeout(() => fetchDashboard(), 1000);
+    } catch (err) {
+      console.error('Bulk approval error:', err);
+      setData(prevData);
+      setSelectedForms(new Set(formActions.map(a => `${a.formId}:${a.departmentName}`)));
+      toast.error(`Bulk approval failed: ${err.message}`);
+    } finally {
+      setBulkApproving(false);
+    }
+  };
+
   const formatDate = (date) => {
       if (!date) return 'N/A';
       try { 
@@ -336,6 +429,36 @@ export default function StaffDashboard() {
           </div>
         )}
 
+        {/* Bulk Actions Bar */}
+        {activeTab === 'pending' && selectedForms.size > 0 && (
+          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-500/30 rounded-xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-900 dark:text-green-100">
+                  {selectedForms.size} form{selectedForms.size !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  onClick={handleBulkApprove}
+                  disabled={bulkApproving}
+                  className="flex-1 sm:flex-none px-4 py-2 min-h-[44px] bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {bulkApproving ? 'Approving...' : `Approve ${selectedForms.size} Forms`}
+                </button>
+                <button
+                  onClick={() => setSelectedForms(new Set())}
+                  disabled={bulkApproving}
+                  className="px-4 py-2 min-h-[44px] bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg font-medium text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="mb-6 relative">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -395,9 +518,18 @@ export default function StaffDashboard() {
                 <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
                   ← Swipe left/right to view all columns →
                 </div>
-                <table className="w-full text-left min-w-[640px]">
+                <table className="w-full text-left min-w-[680px]">
                   <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10 sticky top-0">
                     <tr>
+                      <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
+                        <input
+                          type="checkbox"
+                          checked={filtered.length > 0 && selectedForms.size === filtered.length}
+                          onChange={toggleSelectAll}
+                          className="rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 focus:ring-2 w-4 h-4 cursor-pointer"
+                          title="Select all"
+                        />
+                      </th>
                       <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Student</th>
                       <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Roll No</th>
                       <th className="px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Course</th>
@@ -413,13 +545,27 @@ export default function StaffDashboard() {
                           No pending requests
                         </td></tr>
                     ) : (
-                        filtered.map((item) => (
-                          <tr 
-                            key={item.id} 
-                            className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group" 
-                            onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
-                          >
-                            <td className="p-3 sm:p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</td>
+                        filtered.map((item) => {
+                          const formKey = `${item.no_dues_forms.id}:${item.department_name}`;
+                          const isSelected = selectedForms.has(formKey);
+                          
+                          return (
+                            <tr
+                              key={item.id}
+                              className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer group ${
+                                isSelected ? 'bg-green-50 dark:bg-green-900/10' : ''
+                              }`}
+                              onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
+                            >
+                              <td className="p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelectForm(item.no_dues_forms.id, item.department_name)}
+                                  className="rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500 focus:ring-2 w-4 h-4 cursor-pointer"
+                                />
+                              </td>
+                              <td className="p-3 sm:p-4 font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</td>
                             <td className="p-3 sm:p-4 font-mono text-xs sm:text-sm">{item.no_dues_forms.registration_no}</td>
                             <td className="p-3 sm:p-4 text-xs sm:text-sm">{item.no_dues_forms.course} - {item.no_dues_forms.branch}</td>
                             <td className="p-3 sm:p-4 text-xs sm:text-sm">{formatDate(item.no_dues_forms.created_at)}</td>
@@ -442,8 +588,9 @@ export default function StaffDashboard() {
                                   </button>
                                </div>
                             </td>
-                          </tr>
-                        ))
+                           </tr>
+                         );
+                       })
                     )}
                   </tbody>
                 </table>

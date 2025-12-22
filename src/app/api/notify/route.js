@@ -109,7 +109,7 @@ export async function POST(request) {
         course: escapeHtml(course),
         branch: escapeHtml(branch),
         formId: form_id,
-        dashboardUrl: APP_URLS.staffLogin()
+        dashboardUrl: `${APP_URLS.BASE}/staff`
       });
 
       if (!result.success) {
