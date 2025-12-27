@@ -17,14 +17,14 @@ export default function LiquidTitle() {
   const [deviceTier, setDeviceTier] = useState('high');
   const [gradientReady, setGradientReady] = useState(false);
   const titleRef = useRef(null);
-  
+
   useEffect(() => {
     const detectDevice = () => {
       const isMobile = window.innerWidth < 768;
       const isVeryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
-                           (navigator.connection && navigator.connection.saveData);
+        (navigator.connection && navigator.connection.saveData);
       const isLowEnd = isMobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
-      
+
       if (isVeryLowEnd) {
         setDeviceTier('very-low');
       } else if (isLowEnd) {
@@ -33,12 +33,12 @@ export default function LiquidTitle() {
         setDeviceTier('high');
       }
     };
-    
+
     detectDevice();
     window.addEventListener('resize', detectDevice);
     return () => window.removeEventListener('resize', detectDevice);
   }, []);
-  
+
   // Wait for gradient to be ready before applying transparency
   useEffect(() => {
     setGradientReady(false);
@@ -54,16 +54,20 @@ export default function LiquidTitle() {
       className="flex flex-col items-center gap-2"
     >
       {/* Top Label - MINIMAL SHADOW */}
-      <span className={`font-sans text-[10px] md:text-xs font-bold tracking-[0.5em] uppercase transition-colors duration-700 ${
-        isDark ? 'text-jecrc-red-bright' : 'text-jecrc-red-dark'
-      }`}
-      style={{
-        textShadow: isDark
-          ? '0 0 8px rgba(196, 30, 58, 0.4), 0 1px 3px rgba(0, 0, 0, 0.6)'
-          : 'none'
-      }}>
+      {/* Top Label - MINIMAL SHADOW */}
+      <motion.span
+        initial={{ letterSpacing: "0.1em", opacity: 0 }}
+        animate={{ letterSpacing: "0.18em", opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className={`font-sans text-[10px] md:text-xs font-bold uppercase transition-colors duration-700 ${isDark ? 'text-jecrc-red-bright' : 'text-jecrc-red-dark'
+          }`}
+        style={{
+          textShadow: isDark
+            ? '0 0 8px rgba(196, 30, 58, 0.4), 0 1px 3px rgba(0, 0, 0, 0.6)'
+            : 'none'
+        }}>
         Student Services
-      </span>
+      </motion.span>
 
       {/* Main Title with Chrome Metallic Effect */}
       <div className="relative">
@@ -111,32 +115,8 @@ export default function LiquidTitle() {
         {/* Chrome Metallic Title Text - FIXED: Only apply transparent when gradient is ready */}
         <h1
           ref={titleRef}
-          className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}
-          style={isDark ? {
-            background: deviceTier !== 'very-low' && gradientReady
-              ? 'linear-gradient(145deg, #ff3366 0%, #ffffff 20%, #ff6b89 30%, #c41e3a 50%, #ff3366 70%, #ffffff 85%, #c41e3a 100%)'
-              : undefined,
-            backgroundSize: '300% 300%',
-            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
-            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
-            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
-            filter: deviceTier === 'high'
-              ? 'drop-shadow(0 0 20px rgba(255,51,102,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))'
-              : 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))',
-            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
-          } : {
-            background: deviceTier !== 'very-low' && gradientReady
-              ? 'linear-gradient(145deg, #ffffff 0%, #8b0000 20%, #c41e3a 35%, #1f2937 55%, #c41e3a 70%, #8b0000 85%, #ffffff 100%)'
-              : undefined,
-            backgroundSize: '300% 300%',
-            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
-            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
-            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
-            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
-          }}
+          className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${isDark ? 'text-chrome-emboss' : 'text-hero-light'
+            }`}
         >
           NO DUES
         </h1>
@@ -144,18 +124,17 @@ export default function LiquidTitle() {
 
       {/* Decorative Line with Liquid Flow */}
       <div className="relative h-[1px] w-20 mt-4 overflow-hidden">
-        <div className={`absolute inset-0 transition-colors duration-700 ease-smooth ${
-          isDark ? 'bg-white/20' : 'bg-black/10'
-        }`}></div>
-        
+        <div className={`absolute inset-0 transition-colors duration-700 ease-smooth ${isDark ? 'bg-white/20' : 'bg-black/10'
+          }`}></div>
+
         {/* Animated Gradient Line */}
         <motion.div
           initial={{ x: '-100%' }}
           animate={{ x: '100%' }}
-          transition={{ 
-            repeat: Infinity, 
-            duration: deviceTier === 'very-low' ? 3 : 2, 
-            ease: "linear" 
+          transition={{
+            repeat: Infinity,
+            duration: deviceTier === 'very-low' ? 3 : 2,
+            ease: "linear"
           }}
           className="absolute inset-0"
           style={{

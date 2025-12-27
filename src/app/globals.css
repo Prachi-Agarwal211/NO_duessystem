@@ -38,9 +38,26 @@ html {
 
 /* Shake animation for form validation errors */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 .animate-shake {
@@ -57,68 +74,68 @@ html {
   --jecrc-red-bright: #FF3366;
   --jecrc-pink: #FFE5E9;
   --jecrc-rose: #FFD1D9;
-  
+
   --pure-black: #000000;
   --deep-black: #050505;
   --ink-black: #0A0A0A;
-  
+
   --pure-white: #FFFFFF;
   --off-white: #F8F8F8;
   --soft-white: #F0F0F0;
   --cream: #FFF8F8;
-  
+
   /* ========================================
      LIGHT MODE - "Classic Elegance"
      ======================================== */
   --light-bg-primary: #FFFFFF;
   --light-bg-secondary: #F8F8F8;
   --light-bg-tertiary: #F0F0F0;
-  
+
   --light-text-primary: #000000;
   --light-text-secondary: #333333;
   --light-text-muted: #666666;
-  
+
   --light-border: rgba(0, 0, 0, 0.1);
   --light-border-strong: rgba(0, 0, 0, 0.2);
-  
+
   /* Light Mode Shadows (Black-based, CONTROLLED) */
   --light-shadow-soft: 0 1px 6px rgba(0, 0, 0, 0.08);
   --light-shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
   --light-shadow-dramatic: 0 8px 24px rgba(0, 0, 0, 0.15);
-  
+
   /* ========================================
      DARK MODE - "Refined Darkness"
      ======================================== */
   --dark-bg-primary: #050505;
   --dark-bg-secondary: #0A0A0A;
   --dark-bg-tertiary: #141414;
-  
+
   --dark-text-primary: #FFFFFF;
   --dark-text-secondary: #CCCCCC;
   --dark-text-muted: #888888;
-  
+
   --dark-border: rgba(255, 255, 255, 0.1);
   --dark-border-strong: rgba(255, 255, 255, 0.2);
-  
+
   /* Dark Mode Shadows & Glows (Red-based, CONTROLLED) */
   --dark-shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.6);
   --dark-shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.8);
   --dark-glow-red-soft: 0 0 12px rgba(196, 30, 58, 0.3);
   --dark-glow-red-strong: 0 0 20px rgba(255, 51, 102, 0.4);
   --dark-glow-white: 0 0 8px rgba(255, 255, 255, 0.15);
-  
+
   /* ========================================
      COMPLEMENTARY COLORS (Functional Only)
      ======================================== */
   --success-light: #2D7A45;
   --success-dark: #00FF88;
-  
+
   --warning-light: #D97706;
   --warning-dark: #FFB020;
-  
+
   --error-light: #C41E3A;
   --error-dark: #FF3366;
-  
+
   --info-light: #1E40C4;
   --info-dark: #4D9FFF;
 }
@@ -129,12 +146,17 @@ html {
   height: 100%;
 }
 
-html, body, #__next { height: 100%; }
+html,
+body,
+#__next {
+  height: 100%;
+}
 
 body {
   margin: 0;
   overflow-x: hidden;
-  background: transparent; /* GlobalBackground handles this */
+  background: transparent;
+  /* GlobalBackground handles this */
   color: var(--pure-white);
   min-height: 100vh;
   transition: background-color 700ms cubic-bezier(0.4, 0, 0.2, 1), color 700ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -149,6 +171,7 @@ body {
 
 /* Reduce motion for accessibility & performance */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -161,6 +184,7 @@ body {
 
 /* Mobile-specific optimizations */
 @media (max-width: 768px) {
+
   .glass,
   .glass-card {
     backdrop-filter: blur(8px) !important;
@@ -170,35 +194,35 @@ body {
 /* Light Mode - Static gradient background */
 body:not(.dark) {
   background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 248, 248, 0.92) 25%,
-    rgba(255, 229, 233, 0.90) 50%,
-    rgba(255, 248, 248, 0.92) 75%,
-    rgba(255, 255, 255, 0.95) 100%);
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(255, 248, 248, 0.92) 25%,
+      rgba(255, 229, 233, 0.90) 50%,
+      rgba(255, 248, 248, 0.92) 75%,
+      rgba(255, 255, 255, 0.95) 100%);
   color: var(--pure-black);
 }
 
 /* Dark Mode - Deep Black (#050505) with Subtle Red Theme */
 body.dark {
   background: radial-gradient(ellipse at top,
-    rgba(196, 30, 58, 0.15) 0%,
-    rgba(139, 0, 0, 0.08) 20%,
-    rgba(5, 5, 5, 0.98) 40%,
-    rgba(5, 5, 5, 1) 60%),
+      rgba(196, 30, 58, 0.15) 0%,
+      rgba(139, 0, 0, 0.08) 20%,
+      rgba(5, 5, 5, 0.98) 40%,
+      rgba(5, 5, 5, 1) 60%),
     radial-gradient(ellipse at bottom,
-    rgba(196, 30, 58, 0.12) 0%,
-    rgba(5, 5, 5, 0.98) 30%,
-    rgba(5, 5, 5, 1) 50%),
+      rgba(196, 30, 58, 0.12) 0%,
+      rgba(5, 5, 5, 0.98) 30%,
+      rgba(5, 5, 5, 1) 50%),
     linear-gradient(180deg,
-    rgba(5, 5, 5, 1) 0%,
-    rgba(5, 5, 5, 1) 100%);
+      rgba(5, 5, 5, 1) 0%,
+      rgba(5, 5, 5, 1) 100%);
   color: var(--pure-white);
 }
 
 /* Dark mode - Logo blend mode */
 .logo-dark-mode {
   mix-blend-mode: screen;
-  filter: brightness(0.9) contrast(1.4) saturate(1.1); 
+  filter: brightness(0.9) contrast(1.4) saturate(1.1);
   transition: all 300ms ease;
 }
 
@@ -219,8 +243,8 @@ body.dark {
    AUTOFILL OVERRIDES FOR DARK MODE
    ======================================== */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px white inset !important;
   -webkit-text-fill-color: black !important;
@@ -228,8 +252,8 @@ input:-webkit-autofill:active {
 }
 
 .dark input:-webkit-autofill,
-.dark input:-webkit-autofill:hover, 
-.dark input:-webkit-autofill:focus, 
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
   -webkit-text-fill-color: white !important;
@@ -251,6 +275,21 @@ input:-webkit-autofill:active {
   @apply bg-white/90 text-black placeholder-black/50 border-jecrc-red/20;
   @apply focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/40 focus:bg-white;
   transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+@layer utilities {
+  .text-shadow-black-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  .text-jecrc-red-bright {
+    color: #ff3366;
+    /* Brighter red for dark mode contrast */
+  }
+
+  .text-hero-light {
+    @apply font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 drop-shadow-sm;
+  }
 }
 
 /* Primary Button with Glow & Animation */
@@ -308,7 +347,9 @@ input:-webkit-autofill:active {
 }
 
 /* Enhanced headings with animations - NO GLOBAL SHADOWS */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   transition: text-shadow 300ms ease;
 }
 
@@ -342,19 +383,22 @@ h1, h2, h3 {
 
 /* Shimmer effect for loading states */
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* ========================================
@@ -366,6 +410,7 @@ h1, h2, h3 {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -438,6 +483,122 @@ h1, h2, h3 {
 
 .dark .text-shadow-adaptive {
   text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
+}
+
+/* ========================================
+   PREMIUM 3D TEXT EFFECTS (LUXURY UI)
+   ======================================== */
+
+/* 1. Polished Metal / Chrome (Hero Title) */
+.text-chrome-emboss {
+  background: linear-gradient(120deg,
+      #ffffff 0%,
+      #ffd1d1 25%,
+      #c41e3a 50%,
+      #7a0f1f 75%,
+      #ffffff 100%);
+  background-size: 300% 300%;
+  animation: chromeShift 6s ease infinite;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  /* Fallback */
+
+  text-shadow:
+    0 1px 1px rgba(255, 255, 255, 0.35),
+    0 -1px 1px rgba(0, 0, 0, 0.35),
+    0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes chromeShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 2. Soft Raised Emboss (Card Headings) */
+.text-soft-emboss {
+  background: linear-gradient(135deg,
+      #ffffff 0%,
+      #ff5a5a 40%,
+      #8b0000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+
+  /* 3D Elevation */
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35),
+    /* top highlight */
+    0 -1px 0 rgba(0, 0, 0, 0.25),
+    /* inner depth */
+    0 6px 14px rgba(0, 0, 0, 0.35);
+  /* outer lift */
+  letter-spacing: 0.08em;
+}
+
+/* Light Mode Variant for Soft Emboss (Cards) */
+.text-soft-emboss-light {
+  background: linear-gradient(135deg, #000000 40%, #C41E3A 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #000000;
+
+  /* Removed white shadow to prevent wash-out. Added subtle depth. */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-weight: 800;
+}
+
+/* Light Mode Variant for Hero Title (NO DUES) */
+.text-hero-light {
+  background: linear-gradient(120deg, #000000 0%, #1a1a1a 30%, #C41E3A 70%, #8B0000 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #000000;
+
+  /* Crisp, dark shadow for separation */
+  text-shadow: 0 4px 12px rgba(196, 30, 58, 0.15);
+}
+
+/* 3. Micro-3D Depth (CTAs, Subtitles) */
+.text-depth {
+  transform: translateZ(0);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3),
+    0 2px 2px rgba(0, 0, 0, 0.2),
+    0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Light Mode Variant for Depth */
+.text-depth-light {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 4. Hover Elevation (Interactive) */
+.text-raise-hover {
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+}
+
+.text-raise-hover:hover {
+  transform: translateY(-1px);
+  text-shadow:
+    0 2px 4px rgba(255, 255, 255, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* ========================================
@@ -562,26 +723,363 @@ select {
    GLASS MORPHISM
    ======================================== */
 
+/* ========================================
+   GLASS MORPHISM (THICK GLASS v2)
+   ======================================== */
+
 .glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.08);
+  /* More subtle base */
+  backdrop-filter: blur(16px);
+  /* Heavier blur for depth */
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  /* Top highlight */
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  /* Thick Glass Logic: Inner light + Deep outer shadow */
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    /* Top edge light */
+    inset 0 -1px 1px rgba(0, 0, 0, 0.05),
+    /* Bottom edge dim */
+    0 8px 32px -4px rgba(0, 0, 0, 0.15),
+    /* Drop shadow */
+    0 24px 60px -8px rgba(0, 0, 0, 0.2);
+  /* Deep ambient shadow */
+
   transform: translateZ(0);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px) translateZ(0);
+  /* Stronger lift shadows on hover */
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    0 12px 40px -4px rgba(0, 0, 0, 0.2),
+    0 30px 80px -8px rgba(0, 0, 0, 0.3);
 }
 
+/* =========================================
+   PROFESSIONAL LAYOUT & STRUCTURAL POLISH
+   ========================================= */
+
+/* =========================================
+   FINAL PROFESSIONAL SYSTEM (LOCKED)
+   ========================================= */
+
+/* 1. The Hero Grid - STRICT ALIGNMENT */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  align-items: center;
+  /* Center Vertically */
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 64px;
+    align-items: center;
+  }
+}
+
+/* 2. Unified Surface System (Left Panel & Cards) */
+/* Rule: Same radius, same shadow family */
+
+.surface-light {
+  background: #ffffff;
+  /* Solid White - No Transparency */
+  border-radius: 28px;
+  padding: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.08),
+    0 30px 80px rgba(0, 0, 0, 0.12);
+  /* Unified Elevation */
+  color: #1f2937;
+  /* slate-800 */
+}
+
+.surface-dark {
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 28px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Subtle border */
+  color: #e5e7eb;
+}
+
+/* Apply Surface System to Left Panel */
+.hero-info-panel-light {
+  @apply surface-light;
+  position: relative;
+  z-index: 10;
+  max-width: 520px;
+  /* Reducing Dominance */
+  width: 100%;
+}
+
+.hero-info-panel-dark {
+  @apply surface-dark;
+  max-width: 520px;
+  width: 100%;
+}
+
+/* Apply Surface System to Cards */
+.card-light-surface {
+  @apply surface-light;
+  padding: 32px;
+  /* Ensure consistent padding */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-light-surface:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.08),
+    0 40px 100px rgba(0, 0, 0, 0.15);
+  /* Lift elevation */
+}
+
+/* 3. Title Wrap - LOCKED CENTER & OPTICAL CORRECTION */
+.title-wrap {
+  text-align: center;
+  max-width: 360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(-4px);
+  /* Optical Nudge */
+}
+
+.title-divider {
+  width: 48px;
+  height: 3px;
+  margin: 12px auto;
+  /* Tighter margin */
+  background: #c41e3a;
+  /* JECRC Red */
+  border-radius: 2px;
+  opacity: 0.9;
+}
+
+/* 4. Card Typography Hierarchy */
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-top: 8px;
+  color: #4b5563;
+  /* slate-600 */
+}
+
+.dark .card-desc {
+  color: rgba(255, 255, 255, 0.75);
+  /* Improved Contrast */
+}
+
+.card-cta {
+  margin-top: 18px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #c41e3a;
+  /* JECRC Red */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.card-cta::after {
+  content: '';
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+  transition: width 0.3s ease;
+}
+
+.card-light-surface:hover .card-cta::after,
+.glass-card-dark:hover .card-cta::after {
+  width: 24px;
+}
+
+.card-light-surface:hover .card-cta,
+.glass-card-dark:hover .card-cta {
+  text-decoration: none;
+}
+
+.dark .card-cta {
+  color: rgba(255, 255, 255, 0.9);
+  /* High contrast in dark mode */
+}
+
+
+/* Dark Mode Card - FIXED MISSING CLASS */
 .glass-card-dark {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  @apply surface-dark;
+  padding: 32px;
+  /* Ensure consistent padding */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card-dark:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 30px rgba(196, 30, 58, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 5. Process Pills (Premium Polish) */
+.step-pill {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300;
+}
+
+.step-pill-light {
+  background: #ffffff;
+  /* Clean White */
+  color: #111827;
+  /* Deep Gray Text */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  /* Soft Lift */
+}
+
+.step-pill-dark {
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+}
+
+/* 6. Card Group Grid */
+.card-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .card-group {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 7. Card Stage (Right Zone Wrapper) */
+.card-stage {
+  padding: 24px;
+  border-radius: 32px;
+  background: rgba(0, 0, 0, 0.02);
+  /* Light Mode Anchor */
+  width: 100%;
+}
+
+.dark .card-stage {
+  background: rgba(255, 255, 255, 0.03);
+  /* Dark Mode Anchor */
+}
+
+/* Light Backdrop Overlay - Stronger Tone Control */
+.light-backdrop {
+  position: absolute;
+  inset: 0;
+  /* Cover entire screen */
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.75) 45%,
+      rgba(255, 255, 255, 0.55) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Mobile Lock */
+@media (max-width: 640px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .card-group {
+    grid-template-columns: 1fr;
+  }
+
+  .surface-light,
+  .surface-dark {
+    padding: 24px;
+  }
+
+  .hero-info-panel-light {
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
+
+  .card-stage {
+    padding: 0;
+    background: none;
+  }
+}
+
+/* Existing Glass Card Styles (Kept as fallback/dark base) */
+.glass-card {
+  @apply backdrop-blur-xl border border-white/10 shadow-xl;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Dark Mode: Premium Glass */
+.glass-card-dark {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  /* Matched blur (was 10px vs 20px) */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease-out;
+}
+
+.glass-card-dark:hover {
+  background: rgba(255, 255, 255, 0.06);
+  /* Lighter on hover to invite click */
+  border-color: rgba(255, 255, 255, 0.2);
+  /* Glow effect on border */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.hero-info-panel-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  /* Consistency: Matching card blur */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
 /* ========================================
@@ -593,7 +1091,7 @@ select {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
-  
+
   /* Mobile form optimizations */
   .mobile-form-button {
     width: 100%;
@@ -601,25 +1099,29 @@ select {
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
   }
-  
+
   .mobile-form-stack {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   /* Prevent horizontal overflow */
   .mobile-form-container {
     overflow-x: hidden;
     max-width: 100vw;
   }
-  
+
   /* Better touch targets for mobile */
-  button, a, input, select, textarea {
+  button,
+  a,
+  input,
+  select,
+  textarea {
     min-height: 44px;
   }
-  
+
   /* Improve tap targets spacing */
-  button + button {
+  button+button {
     margin-top: 0.5rem;
   }
 }
@@ -630,15 +1132,20 @@ select {
 
 /* Aurora flow animation */
 @keyframes aurora-flow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: rotate(0deg) scale(1) translateZ(0);
   }
+
   25% {
     transform: rotate(90deg) scale(1.1) translateZ(0);
   }
+
   50% {
     transform: rotate(180deg) scale(0.95) translateZ(0);
   }
+
   75% {
     transform: rotate(270deg) scale(1.05) translateZ(0);
   }
@@ -650,8 +1157,15 @@ select {
 
 /* Simplified aurora for low-end devices */
 @keyframes aurora-flow-simple {
-  0%, 100% { transform: rotate(0deg) translateZ(0); }
-  50% { transform: rotate(180deg) translateZ(0); }
+
+  0%,
+  100% {
+    transform: rotate(0deg) translateZ(0);
+  }
+
+  50% {
+    transform: rotate(180deg) translateZ(0);
+  }
 }
 
 .animate-aurora-flow-simple {
@@ -660,15 +1174,20 @@ select {
 
 /* Blob slow animation */
 @keyframes blob-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1) translateZ(0);
   }
+
   25% {
     transform: translate(25px, -25px) scale(1.08) translateZ(0);
   }
+
   50% {
     transform: translate(-20px, 20px) scale(0.92) translateZ(0);
   }
+
   75% {
     transform: translate(20px, 15px) scale(1.05) translateZ(0);
   }
@@ -680,8 +1199,15 @@ select {
 
 /* Simplified blob for low-end devices */
 @keyframes blob-slow-simple {
-  0%, 100% { transform: translate(0, 0) translateZ(0); }
-  50% { transform: translate(10px, -10px) translateZ(0); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) translateZ(0);
+  }
+
+  50% {
+    transform: translate(10px, -10px) translateZ(0);
+  }
 }
 
 .animate-blob-slow-simple {
@@ -707,6 +1233,7 @@ select {
   0% {
     transform: translateZ(0) translateX(-100%) translateY(-50%) rotate(-15deg) scaleY(0.5);
   }
+
   100% {
     transform: translateZ(0) translateX(100%) translateY(-50%) rotate(-15deg) scaleY(0.5);
   }
@@ -716,6 +1243,7 @@ select {
   0% {
     transform: translateZ(0) translateX(-50%) translateY(-50%) rotate(-15deg) scaleY(0.5);
   }
+
   100% {
     transform: translateZ(0) translateX(50%) translateY(-50%) rotate(-15deg) scaleY(0.5);
   }
@@ -726,6 +1254,7 @@ select {
   0% {
     transform: translateZ(0) translateX(100%) translateY(-50%) rotate(10deg) scaleY(0.6);
   }
+
   100% {
     transform: translateZ(0) translateX(-100%) translateY(-50%) rotate(10deg) scaleY(0.6);
   }
@@ -735,6 +1264,7 @@ select {
   0% {
     transform: translateZ(0) translateX(50%) translateY(-50%) rotate(10deg) scaleY(0.6);
   }
+
   100% {
     transform: translateZ(0) translateX(-50%) translateY(-50%) rotate(10deg) scaleY(0.6);
   }
@@ -745,6 +1275,7 @@ select {
   0% {
     transform: translateZ(0) translateX(-80%) translateY(-50%) rotate(-8deg) scaleY(0.4);
   }
+
   100% {
     transform: translateZ(0) translateX(80%) translateY(-50%) rotate(-8deg) scaleY(0.4);
   }
@@ -776,10 +1307,13 @@ select {
 
 /* Pulse animation for radial glow */
 @keyframes pulse-slow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.4;
     transform: translateZ(0) scale(1);
   }
+
   50% {
     opacity: 0.6;
     transform: translateZ(0) scale(1.05);
@@ -792,6 +1326,7 @@ select {
 
 /* Disable animations on very low-end devices */
 @media (prefers-reduced-motion: reduce) {
+
   .animate-aurora-flow,
   .animate-aurora-flow-simple,
   .animate-blob-slow,
@@ -812,12 +1347,15 @@ select {
 
 /* Hide scrollbar but keep functionality */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 /* Ensure touch targets are minimum 44px (Apple HIG) */
@@ -887,7 +1425,7 @@ select {
     color: rgba(59, 130, 246, 0.8);
     user-select: none;
   }
-  
+
   .dark .mobile-scroll-hint {
     background: rgba(59, 130, 246, 0.15);
     border-bottom-color: rgba(59, 130, 246, 0.3);
@@ -900,14 +1438,14 @@ select {
   table {
     min-width: 640px;
   }
-  
+
   /* Reduce table padding on mobile */
   table th,
   table td {
     padding: 0.75rem 0.75rem !important;
     font-size: 0.875rem;
   }
-  
+
   /* Make table text more readable on mobile */
   table {
     font-size: 0.875rem;
@@ -924,12 +1462,13 @@ select {
 
 /* Better table cell spacing on mobile */
 @media (max-width: 640px) {
+
   table th,
   table td {
     padding: 0.5rem 0.75rem !important;
     font-size: 0.8125rem;
   }
-  
+
   table {
     font-size: 0.8125rem;
   }
@@ -940,18 +1479,19 @@ select {
    ======================================== */
 
 @media (max-width: 640px) {
+
   /* Full-width buttons on mobile */
   .mobile-button-full {
     width: 100%;
   }
-  
+
   /* Button groups stack vertically on mobile */
   .mobile-button-group {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .mobile-button-group button,
   .mobile-button-group a {
     width: 100%;
@@ -1040,11 +1580,12 @@ textarea:focus-visible,
    ======================================== */
 
 @media (max-width: 640px) {
+
   /* Force single column on mobile */
   .mobile-grid-1 {
     grid-template-columns: 1fr !important;
   }
-  
+
   /* Reduce gaps on mobile */
   .mobile-gap-reduced {
     gap: 0.75rem !important;
@@ -1059,17 +1600,17 @@ textarea:focus-visible,
   .mobile-p-4 {
     padding: 1rem !important;
   }
-  
+
   .mobile-px-4 {
     padding-left: 1rem !important;
     padding-right: 1rem !important;
   }
-  
+
   .mobile-py-3 {
     padding-top: 0.75rem !important;
     padding-bottom: 0.75rem !important;
   }
-  
+
   .mobile-mb-6 {
     margin-bottom: 1.5rem !important;
   }
@@ -1083,19 +1624,19 @@ textarea:focus-visible,
   .mobile-text-sm {
     font-size: 0.875rem !important;
   }
-  
+
   .mobile-text-xs {
     font-size: 0.75rem !important;
   }
-  
+
   h1.mobile-responsive {
     font-size: 1.5rem !important;
   }
-  
+
   h2.mobile-responsive {
     font-size: 1.25rem !important;
   }
-  
+
   h3.mobile-responsive {
     font-size: 1.125rem !important;
   }
@@ -1108,10 +1649,13 @@ textarea:focus-visible,
 
 /* Holographic foil shift - Rainbow reflection effect */
 @keyframes holographic-shift {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
     filter: hue-rotate(0deg);
   }
+
   50% {
     background-position: 100% 50%;
     filter: hue-rotate(10deg);
@@ -1124,8 +1668,13 @@ textarea:focus-visible,
 
 /* Metallic border sweep - Flowing border animation */
 @keyframes border-sweep {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .animate-border-sweep {
@@ -1134,14 +1683,18 @@ textarea:focus-visible,
 
 /* Caustic water light flow - Organic light patterns */
 @keyframes caustic-flow {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
     opacity: 0.1;
   }
+
   33% {
     transform: translate(20px, -15px) scale(1.05);
     opacity: 0.13;
   }
+
   66% {
     transform: translate(-15px, 20px) scale(0.98);
     opacity: 0.12;
@@ -1154,9 +1707,12 @@ textarea:focus-visible,
 
 /* Chrome metallic text shine - Premium metallic effect */
 @keyframes chrome-shine {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -1168,14 +1724,18 @@ textarea:focus-visible,
 
 /* Morphing blob animation - Organic shape transformation */
 @keyframes morph-blob {
-  0%, 100% {
+
+  0%,
+  100% {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
+
   33% {
     border-radius: 40% 60% 50% 50% / 70% 40% 60% 30%;
     transform: translate(15px, -10px) rotate(60deg) scale(1.05);
   }
+
   66% {
     border-radius: 50% 50% 60% 40% / 40% 70% 30% 60%;
     transform: translate(-10px, 15px) rotate(120deg) scale(0.98);
@@ -1188,10 +1748,13 @@ textarea:focus-visible,
 
 /* Prismatic light ray shimmer */
 @keyframes prismatic-shimmer {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.05;
     transform: translateY(0) rotate(-15deg);
   }
+
   50% {
     opacity: 0.12;
     transform: translateY(-20px) rotate(-12deg);
@@ -1204,10 +1767,13 @@ textarea:focus-visible,
 
 /* Halo pulse - Soft glowing aura */
 @keyframes halo-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.2;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 0.4;
@@ -1220,17 +1786,22 @@ textarea:focus-visible,
 
 /* Iridescent wave - Color shifting animation */
 @keyframes iridescent-wave {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
     filter: hue-rotate(0deg) saturate(1);
   }
+
   25% {
     filter: hue-rotate(5deg) saturate(1.1);
   }
+
   50% {
     background-position: 100% 50%;
     filter: hue-rotate(10deg) saturate(1.2);
   }
+
   75% {
     filter: hue-rotate(5deg) saturate(1.1);
   }
@@ -1242,10 +1813,13 @@ textarea:focus-visible,
 
 /* Liquid flow - Smooth gradient movement */
 @keyframes liquid-flow {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
     transform: scale(1);
   }
+
   50% {
     background-position: 100% 50%;
     transform: scale(1.05);
@@ -1258,10 +1832,13 @@ textarea:focus-visible,
 
 /* Depth layers - 3D depth effect */
 @keyframes depth-layers {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateZ(0) scale(1);
     opacity: 0.8;
   }
+
   50% {
     transform: translateZ(20px) scale(1.05);
     opacity: 1;

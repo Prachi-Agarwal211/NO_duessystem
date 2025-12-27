@@ -21,9 +21,9 @@ export default function Logo({
 
     // Optimized sizes
     const sizeConfig = {
-        small:  { width: 200, height: 65 },
+        small: { width: 200, height: 65 },
         medium: { width: 280, height: 90 },
-        large:  { width: 360, height: 115 },
+        large: { width: 360, height: 115 },
     };
 
     const config = sizeConfig[size] || sizeConfig.medium;
@@ -35,10 +35,10 @@ export default function Logo({
     return (
         <div className={`flex justify-center items-center mb-8 ${className}`}>
             <div className={`
-                glass
-                px-4 py-3 rounded-xl
+                backdrop-blur-[6px] bg-white/5 border border-white/10 shadow-lg
+                px-5 py-3 rounded-lg
                 transition-all duration-300
-                hover:scale-[1.02]
+                hover:bg-white/10
                 inline-block
             `}>
                 <Image
@@ -46,9 +46,8 @@ export default function Logo({
                     alt="JECRC University"
                     width={config.width}
                     height={config.height}
-                    className={`object-contain transition-all duration-300 ${
-                        mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
-                    }`}
+                    className={`object-contain transition-all duration-300 ${mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
+                        }`}
                     style={{ height: 'auto' }}
                     priority={priority}
                 />
@@ -80,9 +79,8 @@ export function LogoIcon({ className = '' }) {
                     alt="JECRC"
                     width={160}
                     height={52}
-                    className={`object-contain transition-all duration-300 ${
-                        mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
-                    }`}
+                    className={`object-contain transition-all duration-300 ${mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
+                        }`}
                     style={{ height: 'auto' }}
                     priority
                 />

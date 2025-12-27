@@ -34,7 +34,7 @@ export default function Background({ theme }) {
     let animationFrameId;
     let width = window.innerWidth;
     let height = window.innerHeight;
-    
+
     canvas.width = width;
     canvas.height = height;
 
@@ -79,7 +79,7 @@ export default function Background({ theme }) {
 
       draw() {
         const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-        
+
         let r, g, b, opacity;
         if (theme === 'dark') {
           // Dark mode: Red glow
@@ -90,11 +90,11 @@ export default function Background({ theme }) {
           r = 255; g = 229; b = 233; // Light pink
           opacity = 0.25; // More visible for gradient effect
         }
-        
+
         gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${opacity})`);
         gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${opacity * 0.5})`);
         gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-        
+
         ctx.globalCompositeOperation = theme === 'dark' ? 'screen' : 'normal';
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -137,7 +137,7 @@ export default function Background({ theme }) {
             const force = (mouseRange - distance) / mouseRange;
             const angle = Math.atan2(dy, dx);
             const attractionSpeed = 6 * force;
-            
+
             this.x += Math.cos(angle) * attractionSpeed;
             this.y += Math.sin(angle) * attractionSpeed;
           } else {
@@ -161,7 +161,7 @@ export default function Background({ theme }) {
           color = '196, 30, 58'; // JECRC Red
           opacity = 0.5; // Slightly more subtle in light
         }
-        
+
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${color}, ${opacity})`;
@@ -172,7 +172,7 @@ export default function Background({ theme }) {
     // Initialize with optimized counts
     const orbCount = isMobile ? 3 : 6; // Reduce orbs on mobile
     const particleCount = calculateOptimalParticleCount(width, isMobile);
-    
+
     const orbs = Array.from({ length: orbCount }, () => new AmbientOrb());
     const particles = Array.from({ length: particleCount }, () => new Particle());
 
@@ -220,6 +220,27 @@ export default function Background({ theme }) {
       animationFrameId = requestAnimationFrame(animate);
     };
 
+    // Parallax State
+    const [parallax, setParallax] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+      // ✅ Parallax Logic (Only on desktop)
+      if (typeof window === 'undefined' || isMobile) return;
+
+      const handleParallax = (e) => {
+        if (prefersReducedMotion()) return;
+
+        requestAnimationFrame(() => {
+          const x = (e.clientX / window.innerWidth - 0.5) * 20; // 20px movement
+          const y = (e.clientY / window.innerHeight - 0.5) * 20;
+          setParallax({ x, y });
+        });
+      };
+
+      window.addEventListener('mousemove', handleParallax);
+      return () => window.removeEventListener('mousemove', handleParallax);
+    }, [isMobile]);
+
     animate();
 
     const handleResize = () => {
@@ -244,18 +265,68 @@ export default function Background({ theme }) {
   if (!shouldRender) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none"
-      style={{
-        background: 'transparent',
-        zIndex: 1,
-        position: 'fixed', // Ensure fixed positioning
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh'
-      }}
-    />
+    <>
+      {/* LAYER 1: Far Background (Campus Image) */}
+      <div
+        className="fixed inset-0 z-0 bg-cover bg-center transition-transform duration-100 ease-out"
+        style={{
+          backgroundImage: `url('/assets/9-1-1536x720.jpg')`,
+          // Dark mode: Darkened for white text. Light mode: Faded/White-washed for dark text.
+          filter: theme === 'dark'
+            ? 'blur(3px) brightness(0.4) saturate(1.2)'
+            : 'blur(3px) brightness(1.2) opacity(0.2) saturate(1.2)',
+          transform: `scale(1.1) translate(${-parallax.x * 0.5}px, ${-parallax.y * 0.5}px)`,
+          willChange: 'transform'
+        }}
+      />
+
+      {/* LAYER 2: Atmospheric Haze (Gradients) */}
+      <div className="fixed inset-0 z-0 pointer-events-none mix-blend-overlay opacity-60">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
+        <div
+          className="absolute inset-0 transition-transform duration-700 ease-out"
+          style={{
+            background: theme === 'dark'
+              ? 'radial-gradient(circle at 50% 50%, rgba(196, 30, 58, 0.15), transparent 70%)'
+              : 'radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), transparent 70%)',
+            transform: `translate(${parallax.x * 0.8}px, ${parallax.y * 0.8}px)`
+          }}
+        />
+      </div>
+
+      {/* LAYER 3: Particles & Orbs (Canvas) */}
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none"
+        style={{
+          background: 'transparent',
+          zIndex: 1,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          // Subtle movement for particles container
+          transform: `translate(${parallax.x}px, ${parallax.y}px)`
+        }}
+      />
+
+      {/* LAYER 4: Texture Overlay (Noise) */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-[0.04] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat',
+        }}
+      />
+
+      {/* LAYER 5: Vignette (Focus on Center) */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%)'
+        }}
+      />
+    </>
   );
 }

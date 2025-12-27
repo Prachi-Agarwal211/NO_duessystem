@@ -17,7 +17,7 @@ export default function FormInput({
 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   // Modern "Filled" Input Style
   // No border cutting needed. Label floats inside the padding.
 
@@ -49,9 +49,17 @@ export default function FormInput({
     }
   `;
 
+  const isTextarea = type === 'textarea';
+
   return (
-    <div className="w-full group relative mb-4">
-      <div className={containerClasses}>
+    <div className="w-full mb-4">
+      {/* Label is now above the input for solid style */}
+      <label className={`block text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-slate-500'
+        }`}>
+        {label} {required && <span className="text-jecrc-red">*</span>}
+      </label>
+
+      <div className="relative">
         {type === 'select' ? (
           <div className="relative">
             <select
@@ -60,74 +68,71 @@ export default function FormInput({
               onChange={onChange}
               required={required}
               disabled={disabled || loading}
-              className={`${inputClasses} appearance-none cursor-pointer`}
-              style={{
-                colorScheme: isDark ? 'dark' : 'light'
-              }}
+              className={`
+                w-full px-4 py-3 rounded-lg outline-none transition-all duration-200
+                font-medium text-sm appearance-none cursor-pointer
+                ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}
+                ${error ? 'border-red-500' : ''}
+                ${isDark
+                  ? 'bg-white/5 border border-white/10 text-white focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+                  : 'bg-white border border-slate-200 text-slate-900 focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+                }
+              `}
             >
-              <option value="" disabled style={{
-                backgroundColor: isDark ? '#0f0f0f' : '#ffffff',
-                color: isDark ? '#ffffff' : '#000000'
-              }}>
-                {loading ? 'Loading...' : (placeholder || '')}
-              </option>
-              {options.map((option) => (
-                <option
-                  key={option.value}
-                  value={option.value}
-                  style={{
-                    backgroundColor: isDark ? '#0f0f0f' : '#ffffff',
-                    color: isDark ? '#ffffff' : '#000000',
-                    padding: '8px 12px'
-                  }}
-                >
-                  {option.label}
+              <option value="" disabled>Select {label}</option>
+              {options.map((opt, i) => (
+                <option key={i} value={opt.value} className={isDark ? 'bg-gray-900 text-white' : 'bg-white text-slate-800'}>
+                  {opt.label}
                 </option>
               ))}
             </select>
-            <label className={labelClasses}>
-              {label} {required && <span className="text-jecrc-red">*</span>}
-            </label>
-
-            {/* Custom dropdown arrow */}
-            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400 peer-focus:text-jecrc-red transition-colors">
-              <svg width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M1 1.5L6 6.5L11 1.5" />
+            {/* Custom Arrow */}
+            <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 1L5 5L9 1" />
               </svg>
             </div>
           </div>
-        ) : type === 'textarea' ? (
-          <div className="relative">
-            <textarea
-              name={name}
-              value={value}
-              onChange={onChange}
-              required={required}
-              disabled={disabled}
-              placeholder={placeholder} // For floating label to work with placeholder-shown
-              rows={4}
-              className={`${inputClasses} resize-none`}
-            />
-            <label className={labelClasses}>
-              {label} {required && <span className="text-jecrc-red">*</span>}
-            </label>
-          </div>
+        ) : isTextarea ? (
+          <textarea
+            name={name}
+            value={value}
+            onChange={onChange}
+            disabled={disabled || loading}
+            required={required}
+            placeholder={placeholder}
+            rows={4}
+            className={`
+              w-full px-4 py-3 rounded-lg outline-none transition-all duration-200
+              font-medium text-sm resize-none
+              ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}
+              ${error ? 'border-red-500' : ''}
+              ${isDark
+                ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+                : 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+              }
+            `}
+          />
         ) : (
-          <div className="relative">
-            <input
-              type={type}
-              name={name}
-              value={value}
-              onChange={onChange}
-              required={required}
-              disabled={disabled}
-              placeholder={placeholder || " "} // Placeholder required for CSS-only floating label
-              className={inputClasses}
-            />
-            <label className={labelClasses}>
-              {label} {required && <span className="text-jecrc-red">*</span>}
-            </label>
-          </div>
+          <input
+            type={type}
+            name={name}
+            value={value}
+            onChange={onChange}
+            disabled={disabled || loading}
+            required={required}
+            placeholder={placeholder}
+            className={`
+              w-full px-4 py-3 rounded-lg outline-none transition-all duration-200
+              font-medium text-sm
+              ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}
+              ${error ? 'border-red-500' : ''}
+              ${isDark
+                ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+                : 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-jecrc-red focus:ring-1 focus:ring-jecrc-red'
+              }
+            `}
+          />
         )}
       </div>
 

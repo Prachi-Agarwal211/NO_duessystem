@@ -19,7 +19,7 @@ export default function SubmitForm() {
   const router = useRouter();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   // Load dynamic configuration (includes validation rules and country codes)
   const {
     schools,
@@ -51,7 +51,7 @@ export default function SubmitForm() {
     personal_email: '',
     college_email: '',
   });
-  
+
   // Filtered options based on selections
   const [availableCourses, setAvailableCourses] = useState([]);
   const [availableBranches, setAvailableBranches] = useState([]);
@@ -62,7 +62,7 @@ export default function SubmitForm() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [formId, setFormId] = useState(null);
-  
+
   // Convocation validation states
   const [validatingConvocation, setValidatingConvocation] = useState(false);
   const [convocationValid, setConvocationValid] = useState(null); // null = not validated, true = valid, false = invalid
@@ -74,7 +74,7 @@ export default function SubmitForm() {
     const loadCourses = async () => {
       if (formData.school) {
         logger.debug('School selected', { schoolId: formData.school });
-        
+
         // Fetch courses from API for selected school
         const coursesForSchool = await fetchCoursesBySchool(formData.school);
         logger.debug('Courses loaded for school', {
@@ -82,7 +82,7 @@ export default function SubmitForm() {
           count: coursesForSchool.length
         });
         setAvailableCourses(coursesForSchool);
-        
+
         // Reset course and branch since school changed
         if (formData.course) {
           setFormData(prev => ({ ...prev, course: '', branch: '' }));
@@ -93,7 +93,7 @@ export default function SubmitForm() {
         setAvailableBranches([]);
       }
     };
-    
+
     loadCourses();
   }, [formData.school, fetchCoursesBySchool]);
 
@@ -102,7 +102,7 @@ export default function SubmitForm() {
     const loadBranches = async () => {
       if (formData.course) {
         logger.debug('Course selected', { courseId: formData.course });
-        
+
         // Fetch branches from API for selected course
         const branchesForCourse = await fetchBranchesByCourse(formData.course);
         logger.debug('Branches loaded for course', {
@@ -110,7 +110,7 @@ export default function SubmitForm() {
           count: branchesForCourse.length
         });
         setAvailableBranches(branchesForCourse);
-        
+
         // Reset branch since course changed
         if (formData.branch) {
           setFormData(prev => ({ ...prev, branch: '' }));
@@ -119,13 +119,13 @@ export default function SubmitForm() {
         setAvailableBranches([]);
       }
     };
-    
+
     loadBranches();
   }, [formData.course, fetchBranchesByCourse]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Special handling for cascading dropdowns
     if (name === 'school') {
       setFormData(prev => ({
@@ -146,9 +146,9 @@ export default function SubmitForm() {
         [name]: value
       }));
     }
-    
+
     setError('');
-    
+
     // Clear convocation validation when registration number changes
     if (name === 'registration_no') {
       setConvocationValid(null);
@@ -165,7 +165,7 @@ export default function SubmitForm() {
 
     setValidatingConvocation(true);
     setConvocationError('');
-    
+
     try {
       const response = await fetch('/api/convocation/validate', {
         method: 'POST',
@@ -178,7 +178,7 @@ export default function SubmitForm() {
       if (result.valid && result.student) {
         setConvocationValid(true);
         setConvocationData(result.student);
-        
+
         // ==================== AUTO-FILL FORM DATA WITH SANITIZATION ====================
         // Sanitize and validate data before setting state
         const sanitizedName = result.student.name ? result.student.name.trim() : formData.student_name;
@@ -203,16 +203,16 @@ export default function SubmitForm() {
           student_name: sanitizedName,
           admission_year: sanitizedYear
         };
-        
+
         // Auto-fill school dropdown using fuzzy matching
         if (result.student.school && schools.length > 0) {
           const convocationSchoolName = result.student.school.toLowerCase().trim();
-          
+
           // Try exact match first
           let matchedSchool = schools.find(s =>
             s.name.toLowerCase().trim() === convocationSchoolName
           );
-          
+
           // If no exact match, try partial match (contains)
           if (!matchedSchool) {
             matchedSchool = schools.find(s =>
@@ -220,7 +220,7 @@ export default function SubmitForm() {
               convocationSchoolName.includes(s.name.toLowerCase())
             );
           }
-          
+
           // If school matched, set the UUID
           if (matchedSchool) {
             updates.school = matchedSchool.id;
@@ -236,13 +236,13 @@ export default function SubmitForm() {
             });
           }
         }
-        
+
         // Apply all updates at once
         setFormData(prev => ({
           ...prev,
           ...updates
         }));
-        
+
         logger.success('Convocation validation successful - form auto-filled', {
           registration_no,
           autoFilled: Object.keys(updates),
@@ -291,7 +291,7 @@ export default function SubmitForm() {
       // This avoids RLS issues and works in all environments
       // Note: API expects 'registration_no' parameter
       const response = await fetch(`/api/student/can-edit?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
-      
+
       const result = await response.json();
 
       if (response.status === 404 || result.error === 'Form not found') {
@@ -366,19 +366,19 @@ export default function SubmitForm() {
       if (!formData.school) {
         throw new Error('School selection is required');
       }
-      
+
       if (!formData.course) {
         throw new Error('Course selection is required');
       }
-      
+
       if (!formData.branch) {
         throw new Error('Branch selection is required');
       }
-      
+
       if (!formData.personal_email?.trim()) {
         throw new Error('Personal email is required');
       }
-      
+
       if (!formData.college_email?.trim()) {
         throw new Error('College email is required');
       }
@@ -392,11 +392,11 @@ export default function SubmitForm() {
       if (!emailPattern.test(formData.personal_email.trim())) {
         throw new Error('Invalid personal email format');
       }
-      
+
       if (!emailPattern.test(formData.college_email.trim())) {
         throw new Error('Invalid college email format');
       }
-      
+
       // College email domain check (only if collegeDomain is loaded)
       if (collegeDomain && !formData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
         throw new Error(`College email must end with ${collegeDomain}`);
@@ -414,7 +414,7 @@ export default function SubmitForm() {
           throw new Error('Please enter a valid Admission Year');
         }
       }
-      
+
       if (formData.passing_year) {
         // Validate YYYY format
         if (!/^\d{4}$/.test(formData.passing_year)) {
@@ -426,7 +426,7 @@ export default function SubmitForm() {
           throw new Error('Please enter a valid Passing Year');
         }
       }
-      
+
       // Validate year range (if both provided)
       if (formData.admission_year && formData.passing_year) {
         const admissionYear = parseInt(formData.admission_year);
@@ -449,7 +449,7 @@ export default function SubmitForm() {
         if (file.size > 1 * 1024 * 1024) {
           throw new Error('File size must be less than 1MB');
         }
-        
+
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
           throw new Error('Only JPEG, PNG, and WEBP images are allowed');
@@ -478,7 +478,7 @@ export default function SubmitForm() {
 
       // ==================== SUBMIT VIA API ROUTE ====================
       // This ensures server-side validation and email notifications
-      
+
       // Create timeout promise (30 seconds)
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout. Please try again.')), 30000)
@@ -503,18 +503,18 @@ export default function SubmitForm() {
         if (response.status === 409 || result.duplicate) {
           throw new Error('A form with this registration number already exists. Redirecting to status page...');
         }
-        
+
         // Show specific field errors if available
         if (result.field && result.error) {
           throw new Error(`${result.error}`);
         }
-        
+
         // Show detailed error if available
         if (result.details && typeof result.details === 'object') {
           const errorMessages = Object.values(result.details).join('. ');
           throw new Error(errorMessages || 'Please check all required fields');
         }
-        
+
         throw new Error(result.error || 'Failed to submit form. Please check all fields and try again.');
       }
 
@@ -543,10 +543,10 @@ export default function SubmitForm() {
         course: formData.course,
         branch: formData.branch
       });
-      
+
       // Provide user-friendly error messages
       let errorMessage = err.message;
-      
+
       if (errorMessage.includes('duplicate key') || errorMessage.includes('already exists')) {
         errorMessage = 'A form with this registration number already exists. Please check your status or contact support.';
         // Auto-redirect to check status after showing error
@@ -558,7 +558,7 @@ export default function SubmitForm() {
       } else if (!errorMessage || errorMessage === 'undefined') {
         errorMessage = 'An unexpected error occurred. Please try again or contact support.';
       }
-      
+
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -570,23 +570,19 @@ export default function SubmitForm() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`max-w-md mx-auto text-center p-8 rounded-xl backdrop-blur-md transition-all duration-700
-          ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-black/10 shadow-lg'}`}
+        className={`max-w-md mx-auto text-center p-8 rounded-2xl transition-all duration-300
+          ${isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-100'}`}
       >
-        <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-        <h2 className={`text-2xl font-serif font-bold mb-2 transition-all duration-700
-          ${isDark
-            ? 'bg-gradient-to-r from-white via-green-200 to-green-400 bg-clip-text text-transparent'
-            : 'bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent'
-          }`}>
-          Form Submitted Successfully!
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+        </div>
+        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          Form Submitted!
         </h2>
-        <p className={`text-sm mb-6 transition-colors duration-700
-          ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
           Your no dues application has been submitted. You can track its status using your registration number.
         </p>
-        <div className={`inline-flex items-center gap-2 text-sm transition-colors duration-700
-          ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+        <div className={`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
           <Loader2 className="w-4 h-4 animate-spin" />
           Redirecting to status page...
         </div>
@@ -597,7 +593,7 @@ export default function SubmitForm() {
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-6 font-futuristic"
+      className="space-y-8" // Increased spacing for comfort
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -632,7 +628,7 @@ export default function SubmitForm() {
               placeholder="e.g., 22BCAN001"
               disabled={loading}
             />
-            
+
             {/* Convocation Validation Status */}
             {validatingConvocation && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
@@ -640,14 +636,14 @@ export default function SubmitForm() {
                 <span className="text-xs text-blue-500">Validating...</span>
               </div>
             )}
-            
+
             {!validatingConvocation && convocationValid === true && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-500" />
                 <span className="text-xs text-green-500">Eligible</span>
               </div>
             )}
-            
+
             {!validatingConvocation && convocationValid === false && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
                 <X className="w-5 h-5 text-red-500" />
@@ -655,19 +651,24 @@ export default function SubmitForm() {
               </div>
             )}
           </div>
-          
+
           {/* Buttons container - Stack vertically on mobile */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Auto-Fill Button - Convocation Validation */}
             {/* Auto-Fill Button - Convocation Validation */}
             <button
               type="button"
               onClick={() => validateConvocation(formData.registration_no)}
               disabled={validatingConvocation || !formData.registration_no}
-              className={`sm:mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 text-sm w-full sm:w-auto min-h-[48px]
+              className={`
+                sm:mt-6 px-4 py-3 rounded-lg font-medium transition-all duration-200 
+                flex items-center justify-center gap-2 text-sm w-full sm:w-auto min-h-[50px]
+                disabled:opacity-50 disabled:cursor-not-allowed
                 ${isDark
-                  ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
-                  : 'bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  ? 'bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 border border-blue-500/30'
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                }
+              `}
               title="Auto-fill student details from convocation database"
             >
               {validatingConvocation ? (
@@ -679,21 +680,25 @@ export default function SubmitForm() {
               ) : (
                 <>
                   <span className="hidden sm:inline">Auto-Fill from Convocation</span>
-                  <span className="sm:hidden">Auto-Fill Details</span>
+                  <span className="sm:hidden">Auto-Fill</span>
                 </>
               )}
             </button>
-            
+
             {/* Check Status Button */}
             <button
               type="button"
               onClick={checkExistingForm}
               disabled={checking || !formData.registration_no}
-              className={`sm:mt-8 px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 text-sm w-full sm:w-auto min-h-[48px]
+              className={`
+                sm:mt-6 px-4 py-3 rounded-lg font-medium transition-all duration-200 
+                flex items-center justify-center gap-2 text-sm w-full sm:w-auto min-h-[50px]
+                disabled:opacity-50 disabled:cursor-not-allowed
                 ${isDark
-                  ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
-                  : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  ? 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
+                  : 'bg-gray-100 text-slate-700 hover:bg-gray-200 border border-gray-200'
+                }
+              `}
               title="Check if application already exists"
             >
               {checking ? (
@@ -711,7 +716,7 @@ export default function SubmitForm() {
             </button>
           </div>
         </div>
-        
+
         {/* Show convocation details when validated */}
         {convocationData && convocationValid && (
           <motion.div
@@ -732,7 +737,7 @@ export default function SubmitForm() {
             </div>
           </motion.div>
         )}
-        
+
         {/* Show helpful message for ineligible students */}
         {convocationError && convocationValid === false && (
           <motion.div
@@ -741,15 +746,13 @@ export default function SubmitForm() {
             className={`p-3 rounded-lg text-sm transition-all duration-700
               ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}
           >
-            <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${
-              isDark ? 'text-amber-400' : 'text-amber-700'
-            }`}>
+            <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-400' : 'text-amber-700'
+              }`}>
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium mb-1">Registration number not found in convocation list</p>
-                <p className={`text-xs transition-colors duration-700 ease-smooth ${
-                  isDark ? 'text-amber-300/70' : 'text-amber-600'
-                }`}>
+                <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-300/70' : 'text-amber-600'
+                  }`}>
                   You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
                 </p>
               </div>
@@ -910,7 +913,7 @@ export default function SubmitForm() {
             options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
           />
         </DropdownWithErrorBoundary>
-        
+
         <FormInput
           label="Personal Email"
           name="personal_email"
@@ -921,7 +924,7 @@ export default function SubmitForm() {
           placeholder="your.email@example.com"
           disabled={loading}
         />
-        
+
         <FormInput
           label={`College Email (must end with ${collegeDomain})`}
           name="college_email"
@@ -947,27 +950,35 @@ export default function SubmitForm() {
         />
       </motion.div> */}
 
-      <motion.button
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4, duration: 0.5, type: "spring", stiffness: 120 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        type="submit"
-        disabled={loading}
-        className={`interactive w-full py-4 rounded-lg font-bold text-white transition-all duration-300 flex items-center justify-center gap-2
-          bg-jecrc-red hover:bg-red-700 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40
-          disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Submitting...
-          </>
-        ) : (
-          'Submit Form'
-        )}
-      </motion.button>
+      {/* Form Actions */}
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
+        <button
+          type="submit"
+          disabled={loading}
+          className={`
+            w-full py-4 rounded-xl font-bold text-base tracking-wide uppercase transition-all duration-300
+            flex items-center justify-center gap-2
+            shadow-lg hover:shadow-xl active:scale-[0.99]
+            disabled:opacity-70 disabled:cursor-not-allowed
+            bg-[#c41e3a] hover:bg-[#a01830] text-white
+          `}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Submitting Application...</span>
+            </>
+          ) : (
+            <>
+              <span className={isDark ? "pl-[2px]" : ""}>Submit Application</span>
+              <span className="ml-1 opacity-70">→</span>
+            </>
+          )}
+        </button>
+        <p className={`text-center mt-4 text-xs ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+          By clicking submit, you confirm all details are accurate.
+        </p>
+      </div>
     </motion.form>
   );
 }

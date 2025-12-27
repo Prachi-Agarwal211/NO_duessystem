@@ -15,127 +15,67 @@ function SubmitFormPageContent() {
   const isDark = theme === 'dark';
 
   return (
-      <>
-        <div className="relative z-10 min-h-screen py-12 px-4 sm:px-6">
+    <>
+      {/* Enterprise Backdrop */}
+      {!isDark && <div className="light-backdrop" />}
+
+      <div className="relative z-10 min-h-screen py-12 px-4 sm:px-6 flex flex-col items-center">
         {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          onClick={() => router.push('/')}
-          className={`interactive mb-8 flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-700 ease-smooth backdrop-blur-md
-            ${isDark
-              ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
-              : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
-            }`}
+        <div className="w-full max-w-3xl mb-8">
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            onClick={() => router.push('/')}
+            className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
+                    ${isDark
+                ? 'text-gray-400 hover:text-white hover:bg-white/10'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+              }`}
+          >
+            <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+            <span className="font-medium text-sm">Back to Home</span>
+          </motion.button>
+        </div>
+
+        {/* Main Content Container */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-3xl"
         >
-          <ArrowLeft size={20} />
-          <span className="font-medium">Back to Home</span>
-        </motion.button>
+          {/* Header Section (Locked Center) */}
+          <div className="title-wrap mb-10">
+            <Logo size="medium" />
+            <div className="h-4"></div>
+            <span className="text-xs font-bold text-jecrc-red tracking-[0.2em] uppercase mb-2">
+              Student Services
+            </span>
+            <h1 className={`text-3xl sm:text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Submit Application
+            </h1>
+            <div className="title-divider"></div>
+            <p className={`text-sm mt-3 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Fill in your details to initiate the no-dues clearance process.
+            </p>
+          </div>
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className={`p-4 sm:p-6 md:p-8 lg:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
-              ${isDark
-                ? 'bg-white/[0.02] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.4)]'
-                : 'bg-white border border-black/5 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
-              }`}
-          >
-            {/* Header */}
-            <div className="text-center mb-8 sm:mb-10">
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="flex flex-col items-center"
-              >
-                <div className="mb-3 sm:mb-4">
-                  <Logo size="medium" />
-                </div>
-                <span className="inline-block text-xs font-bold text-jecrc-red tracking-[0.3em] uppercase mb-2 sm:mb-3">
-                  Student Services
-                </span>
-                <h1 className={`font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-3 transition-all duration-700
-                  ${isDark
-                    ? 'bg-gradient-to-r from-white via-gray-100 via-pink-200 via-pink-300 to-jecrc-red bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(255,255,255,0.3)]'
-                    : 'bg-gradient-to-r from-[#8B0000] via-jecrc-red to-gray-800 to-gray-700 bg-clip-text text-transparent'
-                  }`}>
-                  Submit No Dues Form
-                </h1>
-                <p className={`text-sm font-medium transition-colors duration-700 ease-smooth
-                  ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Fill in your details to apply for no dues clearance
-                </p>
-              </motion.div>
+          {/* Form Surface */}
+          <div className={`
+                    rounded-[28px] overflow-hidden transition-all duration-300
+                    ${isDark ? 'hero-info-panel-dark' : 'hero-info-panel-light'}
+                `}>
+            <SubmitForm />
+          </div>
 
-              {/* Decorative Line */}
-              <motion.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="h-[1px] w-24 mx-auto mt-6 bg-gradient-to-r from-transparent via-jecrc-red to-transparent"
-              />
-            </div>
-
-            {/* Form */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            >
-              <SubmitForm />
-            </motion.div>
-          </motion.div>
-
-          {/* Info Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className={`mt-6 p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
-              ${isDark
-                ? 'bg-white/[0.02] border border-white/10'
-                : 'bg-white border border-black/5 shadow-sm'
-              }`}
-          >
-            <h3 className={`font-serif text-lg font-semibold mb-3 transition-all duration-700
-              ${isDark
-                ? 'bg-gradient-to-r from-white via-pink-200 to-jecrc-red bg-clip-text text-transparent'
-                : 'bg-gradient-to-r from-[#8B0000] to-jecrc-red bg-clip-text text-transparent'
-              }`}>
-              Important Information
-            </h3>
-            <ul className={`space-y-2 text-sm transition-colors duration-700 ease-smooth
-              ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              <li className="flex gap-2">
-                <span className="text-jecrc-red">•</span>
-                <span>You can only submit one form per registration number</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-jecrc-red">•</span>
-                <span>All required fields must be filled accurately</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-jecrc-red">•</span>
-                <span>Your form will be sent to all 10 departments for approval</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-jecrc-red">•</span>
-                <span>You can track your form status anytime using your registration number</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="text-jecrc-red">•</span>
-                <span>Certificate will be auto-generated once all departments approve</span>
-              </li>
-            </ul>
-          </motion.div>
-        </div>
-        </div>
-      </>
+          {/* Info Card (Subtle) */}
+          <div className={`mt-8 text-center text-sm ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+            <p>Need help? Contact the administrative office.</p>
+          </div>
+        </motion.div>
+      </div>
+    </>
   );
 }
 
