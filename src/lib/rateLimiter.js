@@ -16,17 +16,17 @@ const requestStore = new Map();
 export const RATE_LIMITS = {
   // Student endpoints - moderate limits
   SUBMIT: {  // Used in /api/student route
-    maxRequests: 5,
+    maxRequests: 20, // Increased from 5 to 20 for lab usage
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many form submissions. Please try again in 1 minute.'
   },
   STUDENT_SUBMIT: {  // Alias for consistency
-    maxRequests: 5,
+    maxRequests: 20,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many form submissions. Please try again in 1 minute.'
   },
   READ: {  // Used in /api/student GET route
-    maxRequests: 30,
+    maxRequests: 100, // Increased from 30 to 100 for lab usage
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many requests. Please try again in 1 minute.'
   },
@@ -45,42 +45,42 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many status checks. Please try again in 1 minute.'
   },
-  
+
   // Staff endpoints - higher limits
   STAFF_ACTION: {
     maxRequests: 50,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many actions. Please try again in 1 minute.'
   },
-  
+
   // File upload - stricter limits
   UPLOAD: {
     maxRequests: 10,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many upload attempts. Please try again in 1 minute.'
   },
-  
+
   // Admin endpoints - higher limits
   ADMIN_STATS: {
     maxRequests: 100,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many requests. Please try again in 1 minute.'
   },
-  
+
   // Support endpoints
   SUPPORT_SUBMIT: {
     maxRequests: 5,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many support requests. Please try again in 1 minute.'
   },
-  
+
   // Certificate generation - very strict
   CERTIFICATE_GENERATE: {
     maxRequests: 2,
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many certificate generation requests. Please try again in 1 minute.'
   },
-  
+
   // Default fallback
   DEFAULT: {
     maxRequests: 20,
@@ -98,20 +98,20 @@ function getClientIP(request) {
   const forwarded = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
   const cfIP = request.headers.get('cf-connecting-ip'); // Cloudflare
-  
+
   if (forwarded) {
     // x-forwarded-for can contain multiple IPs, take the first one
     return forwarded.split(',')[0].trim();
   }
-  
+
   if (realIP) {
     return realIP;
   }
-  
+
   if (cfIP) {
     return cfIP;
   }
-  
+
   // Fallback (shouldn't happen in production)
   return 'unknown';
 }
@@ -150,10 +150,10 @@ export async function rateLimit(request, config = RATE_LIMITS.DEFAULT) {
     const clientIP = getClientIP(request);
     const now = Date.now();
     const key = `${clientIP}`;
-    
+
     // Get or create store entry for this IP
     let record = requestStore.get(key);
-    
+
     if (!record || now > record.resetTime) {
       // First request or window expired - create new record
       record = {
@@ -161,18 +161,18 @@ export async function rateLimit(request, config = RATE_LIMITS.DEFAULT) {
         resetTime: now + config.windowMs
       };
       requestStore.set(key, record);
-      
+
       return {
         success: true,
         remaining: config.maxRequests - 1,
         resetTime: record.resetTime
       };
     }
-    
+
     // Check if limit exceeded
     if (record.count >= config.maxRequests) {
       const timeUntilReset = Math.ceil((record.resetTime - now) / 1000);
-      
+
       return {
         success: false,
         error: config.message,
@@ -180,17 +180,17 @@ export async function rateLimit(request, config = RATE_LIMITS.DEFAULT) {
         resetTime: record.resetTime
       };
     }
-    
+
     // Increment count
     record.count++;
     requestStore.set(key, record);
-    
+
     return {
       success: true,
       remaining: config.maxRequests - record.count,
       resetTime: record.resetTime
     };
-    
+
   } catch (error) {
     console.error('Rate limiter error:', error);
     // On error, allow the request (fail open)
@@ -214,21 +214,21 @@ export async function rateLimit(request, config = RATE_LIMITS.DEFAULT) {
  */
 export function addRateLimitHeaders(response, rateLimitResult) {
   if (!rateLimitResult) return response;
-  
+
   const headers = new Headers(response.headers);
-  
+
   if (rateLimitResult.remaining !== undefined) {
     headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
   }
-  
+
   if (rateLimitResult.resetTime) {
     headers.set('X-RateLimit-Reset', rateLimitResult.resetTime.toString());
   }
-  
+
   if (rateLimitResult.retryAfter) {
     headers.set('Retry-After', rateLimitResult.retryAfter.toString());
   }
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

@@ -19,9 +19,9 @@ function SubmitFormPageContent() {
       {/* Enterprise Backdrop */}
       {!isDark && <div className="light-backdrop" />}
 
-      <div className="relative z-10 min-h-screen py-12 px-4 sm:px-6 flex flex-col items-center">
+      <div className="relative z-10 min-h-screen pt-20 pb-24 sm:py-20 px-4 sm:px-6 flex flex-col items-center">
         {/* Back Button */}
-        <div className="w-full max-w-3xl mb-8">
+        <div className="w-full max-w-7xl mb-8 pl-4 lg:pl-0">
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -43,7 +43,7 @@ function SubmitFormPageContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-3xl"
+          className="w-full max-w-7xl"
         >
           {/* Header Section (Locked Center) */}
           <div className="title-wrap mb-10">

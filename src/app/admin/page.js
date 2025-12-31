@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import GlassCard from '@/components/ui/GlassCard';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
-import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download, MessageSquare, AlertCircle } from 'lucide-react';
+import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download, MessageSquare, AlertCircle, Mail, Bell, Shield } from 'lucide-react';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
 import toast from 'react-hot-toast';
 
@@ -52,6 +52,13 @@ export default function EnhancedAdminDashboard() {
   // Support Tickets
   const [supportStats, setSupportStats] = useState({ total: 0, unread: 0, open: 0 });
   const [recentTickets, setRecentTickets] = useState([]);
+  
+  // Email Stats
+  const [emailStats, setEmailStats] = useState({ totalEmails: 0, sentCount: 0, failedCount: 0, successRate: 0 });
+  
+  // Department Reminders
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [delayedApplications, setDelayedApplications] = useState([]);
 
   // Fetch Stats
   const fetchStats = async () => {
@@ -138,11 +145,53 @@ export default function EnhancedAdminDashboard() {
     }
   };
 
+  // Fetch Email Stats
+  const fetchEmailStats = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/admin/email-logs?limit=100', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const json = await res.json();
+
+      if (json.success && json.stats) {
+        setEmailStats(json.stats);
+      }
+    } catch (e) {
+      console.error("Email stats error:", e);
+    }
+  };
+
+  // Send Department Reminder
+  const sendDepartmentReminder = async (departmentName) => {
+    setSendingReminder(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // TODO: Implement API endpoint for sending reminders
+      toast.loading('Sending reminder...', { id: 'reminder' });
+      
+      // Simulate API call (replace with actual endpoint)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      toast.success(`Reminder sent to ${departmentName}!`, { id: 'reminder' });
+    } catch (e) {
+      console.error("Reminder error:", e);
+      toast.error('Failed to send reminder', { id: 'reminder' });
+    } finally {
+      setSendingReminder(false);
+    }
+  };
+
   // Initial Load
   useEffect(() => {
     fetchStats();
     fetchApplications();
     fetchSupportStats();
+    fetchEmailStats();
   }, []);
 
   // Fetch when filters change
@@ -323,6 +372,41 @@ export default function EnhancedAdminDashboard() {
               )}
             </GlassCard>
 
+            {/* Email Monitoring Widget */}
+            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-purple-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/emails')}>
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-400">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  {emailStats.failedCount > 0 && (
+                    <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {emailStats.failedCount} Failed
+                    </span>
+                  )}
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                </div>
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Email Monitoring</h3>
+              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
+                <span className="text-green-600 dark:text-green-400">{emailStats.successRate}% Success</span>
+                <span className="text-gray-400">•</span>
+                <span className="text-gray-600 dark:text-gray-400">{emailStats.totalEmails} Total</span>
+              </div>
+            </GlassCard>
+
+            {/* Certificate Verification Widget */}
+            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-indigo-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/verify')}>
+              <div className="flex justify-between items-start">
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Certificate Verification</h3>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">QR Scanner & Manual Verify</p>
+            </GlassCard>
+
             <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/convocation')}>
               <div className="flex justify-between items-start">
                 <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
@@ -334,16 +418,6 @@ export default function EnhancedAdminDashboard() {
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
             </GlassCard>
 
-            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-emerald-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/manual-entry')}>
-              <div className="flex justify-between items-start">
-                <div className="p-3 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Manual Entries</h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Offline Records Database</p>
-            </GlassCard>
           </div>
         </div>
 

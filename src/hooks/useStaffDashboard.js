@@ -24,11 +24,11 @@ export function useStaffDashboard() {
   // Use refs to store latest functions and avoid stale closures
   const fetchDashboardDataRef = useRef(null);
   const fetchStatsRef = useRef(null);
-  
+
   // ✅ REQUEST DEDUPLICATION: Prevent multiple simultaneous fetches
   const pendingDashboardRequest = useRef(null);
   const pendingStatsRequest = useRef(null);
-  
+
   // ✅ TIMEOUT PROTECTION: Prevent infinite loading states
   const loadingTimeoutRef = useRef(null);
   const statsTimeoutRef = useRef(null);
@@ -147,9 +147,10 @@ export function useStaffDashboard() {
             return true;
           });
 
-          const formattedRequests = validApplications.map(item => item.no_dues_forms);
-          setRequests(formattedRequests);
-          
+          // Preserve full application object (contains status, department_name, etc.)
+          // AND the nested no_dues_forms
+          setRequests(validApplications);
+
           // ⚡ PERFORMANCE: Set stats from same response (if included)
           if (result.data.stats) {
             console.log('📊 Staff dashboard stats received:', {
@@ -164,7 +165,7 @@ export function useStaffDashboard() {
           } else {
             console.warn('⚠️ No stats included in dashboard response');
           }
-          
+
           setLastUpdate(new Date());
         }
       } catch (error) {
@@ -197,7 +198,7 @@ export function useStaffDashboard() {
     }
 
     setStatsLoading(true);
-    
+
     // ✅ TIMEOUT PROTECTION: Clear loading after 20 seconds max (reduced from 30s)
     if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
     statsTimeoutRef.current = setTimeout(() => {
@@ -260,14 +261,14 @@ export function useStaffDashboard() {
   // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
   const refreshData = useCallback(() => {
     const promises = [];
-    
+
     // Use refs to get latest functions
     if (fetchDashboardDataRef.current) {
       promises.push(fetchDashboardDataRef.current(currentSearchRef.current, true));
     }
-    
+
     // ⚡ PERFORMANCE: No separate stats fetch - included in dashboard response
-    
+
     // ✅ CRITICAL: Return Promise.all() so manager knows when refresh completes
     return Promise.all(promises);
   }, []); // Empty deps - stable function using refs
@@ -342,7 +343,7 @@ export function useStaffDashboard() {
       if (unsubscribeRealtime) unsubscribeRealtime();
       if (unsubscribeDeptAction) unsubscribeDeptAction();
       if (unsubscribeGlobal) unsubscribeGlobal();
-      
+
       // ✅ CLEANUP: Clear all timeouts
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);

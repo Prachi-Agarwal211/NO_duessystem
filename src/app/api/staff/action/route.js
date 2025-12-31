@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendStatusUpdateNotification } from '@/lib/emailService';
+// Email notifications are imported dynamically when needed
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
@@ -36,7 +36,7 @@ export async function PUT(request) {
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Invalid or expired session' },
@@ -49,11 +49,11 @@ export async function PUT(request) {
     // ==================== ZOD VALIDATION ====================
     const body = await request.json();
     const validation = validateWithZod(body, staffActionSchema);
-    
+
     if (!validation.success) {
       const errorFields = Object.keys(validation.errors);
       const firstError = validation.errors[errorFields[0]];
-      
+
       return NextResponse.json(
         {
           success: false,
@@ -127,7 +127,7 @@ export async function PUT(request) {
     // For department staff, verify they are assigned to this department via UUID
     if (profile.role === 'department') {
       const isAuthorized = profile.assigned_department_ids?.includes(department.id);
-      
+
       if (!isAuthorized) {
         console.error('❌ Authorization failed:', {
           authUserId,
@@ -136,7 +136,7 @@ export async function PUT(request) {
           requestedDepartmentId: department.id,
           assignedDepartmentIds: profile.assigned_department_ids
         });
-        
+
         return NextResponse.json({
           success: false,
           error: `You are not authorized to manage ${department.display_name}`,
@@ -146,7 +146,7 @@ export async function PUT(request) {
           }
         }, { status: 403 });
       }
-      
+
       console.log('✅ Authorization passed:', {
         authUserId,
         profileId: userId,
@@ -259,7 +259,7 @@ export async function PUT(request) {
     // Don't await - let it happen asynchronously to not block the response
     if (currentForm?.status === 'completed') {
       console.log(`🎓 Form completed - triggering background certificate generation for ${formId}`);
-      
+
       // Fire and forget - certificate generation happens in background
       // Use proper error handling with catch to prevent unhandled promise rejections
       fetch(
@@ -294,7 +294,7 @@ export async function PUT(request) {
     // 1. ANY rejection (immediate notification)
     // 2. ALL departments approved (certificate ready)
     // ❌ NO emails on individual department approvals
-    
+
     const { data: formWithEmail, error: emailFetchError } = await supabaseAdmin
       .from('no_dues_forms')
       .select('personal_email, college_email, student_name, registration_no, status')
@@ -303,14 +303,14 @@ export async function PUT(request) {
 
     if (formWithEmail && (formWithEmail.personal_email || formWithEmail.college_email)) {
       const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
-      
+
       try {
         const { EMAIL_URLS } = await import('@/lib/urlHelper');
-        
+
         // CASE 1: Department REJECTED - Send immediate notification
         if (action === 'reject') {
           const { sendRejectionNotification } = await import('@/lib/emailService');
-          
+
           const emailResult = await sendRejectionNotification({
             studentEmail,
             studentName: formWithEmail.student_name,
@@ -326,11 +326,11 @@ export async function PUT(request) {
             console.warn(`📧 ⚠️ Rejection email ${emailResult.queued ? 'queued' : 'failed'}: ${studentEmail}`);
           }
         }
-        
+
         // CASE 2: Department APPROVED + ALL completed - Send certificate ready email
         else if (action === 'approve' && currentForm?.status === 'completed') {
           const { sendCertificateReadyNotification } = await import('@/lib/emailService');
-          
+
           const emailResult = await sendCertificateReadyNotification({
             studentEmail,
             studentName: formWithEmail.student_name,
@@ -344,12 +344,12 @@ export async function PUT(request) {
             console.warn(`📧 ⚠️ Certificate email ${emailResult.queued ? 'queued' : 'failed'}: ${studentEmail}`);
           }
         }
-        
+
         // CASE 3: Individual department approval - NO EMAIL (silent approval)
         else {
           console.log(`ℹ️ Individual approval by ${departmentName} - No email sent (waiting for all departments)`);
         }
-        
+
       } catch (emailError) {
         console.error('❌ Failed to send email notification:', emailError);
         // Don't fail the request if email fails

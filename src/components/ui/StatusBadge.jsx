@@ -1,92 +1,31 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * StatusBadge - Consistent status indicator with proper theming
+ * Uses Tailwind's dark: classes instead of theme context for better performance
  *
  * @param {string} status - Status type (pending, approved, rejected, etc.)
  * @param {string} className - Additional classes
  */
 function StatusBadge({ status, className = "" }) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
-  // Unified status color configurations
-  const statusConfig = {
-    pending: {
-      lightBg: 'bg-yellow-100',
-      lightText: 'text-yellow-800',
-      lightBorder: 'border-yellow-200',
-      darkBg: 'bg-yellow-500/20',
-      darkText: 'text-yellow-400',
-      darkBorder: 'border-yellow-500/30',
-    },
-    approved: {
-      lightBg: 'bg-green-100',
-      lightText: 'text-green-800',
-      lightBorder: 'border-green-200',
-      darkBg: 'bg-green-500/20',
-      darkText: 'text-green-400',
-      darkBorder: 'border-green-500/30',
-    },
-    rejected: {
-      lightBg: 'bg-red-100',
-      lightText: 'text-red-800',
-      lightBorder: 'border-red-200',
-      darkBg: 'bg-red-500/20',
-      darkText: 'text-red-400',
-      darkBorder: 'border-red-500/30',
-    },
-    in_progress: {
-      lightBg: 'bg-blue-100',
-      lightText: 'text-blue-800',
-      lightBorder: 'border-blue-200',
-      darkBg: 'bg-blue-500/20',
-      darkText: 'text-blue-400',
-      darkBorder: 'border-blue-500/30',
-    },
-    completed: {
-      lightBg: 'bg-purple-100',
-      lightText: 'text-purple-800',
-      lightBorder: 'border-purple-200',
-      darkBg: 'bg-purple-500/20',
-      darkText: 'text-purple-400',
-      darkBorder: 'border-purple-500/30',
-    },
-    screenshot_uploaded: {
-      lightBg: 'bg-orange-100',
-      lightText: 'text-orange-800',
-      lightBorder: 'border-orange-200',
-      darkBg: 'bg-orange-500/20',
-      darkText: 'text-orange-400',
-      darkBorder: 'border-orange-500/30',
-    },
+  // Unified status color configurations using Tailwind dark: classes
+  const statusClasses = {
+    pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30',
+    approved: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
+    rejected: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+    in_progress: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
+    completed: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30',
+    screenshot_uploaded: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30',
   };
 
-  const config = statusConfig[status] || {
-    lightBg: 'bg-gray-100',
-    lightText: 'text-gray-800',
-    lightBorder: 'border-gray-200',
-    darkBg: 'bg-gray-500/20',
-    darkText: 'text-gray-400',
-    darkBorder: 'border-gray-500/30',
-  };
+  const classes = statusClasses[status] || 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30';
 
   return (
     <span
-      className={`
-        inline-flex items-center justify-center
-        rounded-full px-3 py-1 border
-        text-xs font-semibold
-        transition-all duration-200
-        ${isDark
-          ? `${config.darkBg} ${config.darkText} ${config.darkBorder}`
-          : `${config.lightBg} ${config.lightText} ${config.lightBorder}`
-        }
-        ${className}
-      `}
+      className={`inline-flex items-center justify-center rounded-full px-3 py-1 border text-xs font-semibold transition-all duration-200 ${classes} ${className}`}
     >
       {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
     </span>

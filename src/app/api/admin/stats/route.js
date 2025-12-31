@@ -83,16 +83,9 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('❌ Admin Stats API Error:', error);
-    // Return fallback zeros so frontend doesn't crash
     return NextResponse.json({
-      overallStats: {
-        totalApplications: 0,
-        pendingApplications: 0,
-        approvedApplications: 0,
-        rejectedApplications: 0
-      },
-      departmentStats: [],
-      recentActivity: []
+      error: 'Failed to fetch admin statistics',
+      message: error.message
     }, { status: 500 });
   }
 }

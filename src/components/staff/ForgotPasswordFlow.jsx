@@ -348,7 +348,7 @@ export default function ForgotPasswordFlow({ isOpen, onClose, onSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-jecrc-red dark:focus:ring-red-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="your.email@jecrc.ac.in"
+                  placeholder="your.email@jecrcuniversity.edu.in"
                   disabled={loading}
                   required
                 />

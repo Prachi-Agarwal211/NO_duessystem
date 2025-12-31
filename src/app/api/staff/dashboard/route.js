@@ -28,6 +28,12 @@ export async function GET(request) {
   try {
     const startTime = Date.now(); // ⚡ Performance tracking
     
+    // 📄 PAGINATION: Extract page and limit from query params
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 20;
+    const offset = (page - 1) * limit;
+    
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { data: { user } } = await supabaseAdmin.auth.getUser(authHeader.replace('Bearer ', ''));
@@ -82,34 +88,9 @@ export async function GET(request) {
       approvedCountResult,
       rejectedCountResult
     ] = await Promise.all([
-      // Get pending applications
+      // Get pending applications with PAGINATION
       (async () => {
-        console.log('🔍 DEBUG - Querying with department names:', myDeptNames);
-        
-        // First check what's in no_dues_status WITHOUT JOIN
-        const { data: rawStatus, error: rawError } = await supabaseAdmin
-          .from('no_dues_status')
-          .select('id, department_name, form_id, status')
-          .in('department_name', myDeptNames)
-          .eq('status', 'pending')
-          .limit(5);
-        
-        console.log('🔍 DEBUG - Raw no_dues_status records:', rawStatus);
-        console.log('🔍 DEBUG - Raw query error:', rawError);
-
-        // Now check if those form_ids exist in no_dues_forms
-        if (rawStatus && rawStatus.length > 0) {
-          const formIds = rawStatus.map(s => s.form_id);
-          const { data: forms, error: formsError } = await supabaseAdmin
-            .from('no_dues_forms')
-            .select('id, registration_no, student_name')
-            .in('id', formIds);
-          
-          console.log('🔍 DEBUG - Matching forms in no_dues_forms:', forms);
-          console.log('🔍 DEBUG - Forms query error:', formsError);
-        }
-
-        // Now do the actual query with INNER JOIN
+        // Production-ready query with INNER JOIN + PAGINATION
         let query = supabaseAdmin
           .from('no_dues_status')
           .select(`
@@ -128,7 +109,7 @@ export async function GET(request) {
               status,
               school_id
             )
-          `)
+          `, { count: 'exact' }) // ✅ Get total count for pagination
           .in('department_name', myDeptNames)
           .eq('status', 'pending');
 
@@ -153,10 +134,12 @@ export async function GET(request) {
           query = query.in('no_dues_forms.branch_id', profile.branch_ids);
         }
 
-        const result = await query;
-        console.log('🔍 DEBUG - Final query result:', result);
-        
-        return result;
+        // 📄 APPLY PAGINATION with range
+        query = query
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        return await query;
       })(),
 
       // Count pending (with HOD scoping)
@@ -229,19 +212,23 @@ export async function GET(request) {
     ]);
 
     // Extract results
-    const { data: applications, error: queryError } = applicationsResult;
+    const { data: applications, error: queryError, count: totalApplications } = applicationsResult;
     const { count: pendingCount } = pendingCountResult;
     const { count: approvedCount } = approvedCountResult;
     const { count: rejectedCount } = rejectedCountResult;
 
     console.log('📊 Dashboard Debug - Applications Query Error:', queryError);
     console.log('📊 Dashboard Debug - Applications Found:', applications?.length || 0);
+    console.log('📊 Dashboard Debug - Total Pending:', totalApplications);
     if (applications && applications.length > 0) {
       console.log('📊 Dashboard Debug - First Application:', applications[0]);
     }
 
     const endTime = Date.now();
-    console.log(`⚡ Dashboard loaded in ${endTime - startTime}ms (optimized)`);
+    console.log(`⚡ Dashboard loaded in ${endTime - startTime}ms (optimized with pagination)`);
+
+    // 📄 Calculate pagination metadata
+    const totalPages = Math.ceil((totalApplications || 0) / limit);
 
     return NextResponse.json({
         success: true,
@@ -253,7 +240,16 @@ export async function GET(request) {
                 total: (approvedCount || 0) + (rejectedCount || 0)
             },
             applications: applications || [],
-            departments: deptInfo
+            departments: deptInfo,
+            // 📄 Pagination metadata
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalRecords: totalApplications || 0,
+                recordsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
         }
     }, {
         headers: {

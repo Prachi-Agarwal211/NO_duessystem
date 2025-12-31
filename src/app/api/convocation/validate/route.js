@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { NextResponse } from 'next/server'
 import { convocationValidateSchema, validateWithZod } from '@/lib/zodSchemas'
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter'
 
 /**
  * POST /api/convocation/validate
@@ -15,12 +16,25 @@ import { convocationValidateSchema, validateWithZod } from '@/lib/zodSchemas'
  */
 export async function POST(request) {
   try {
+    // Rate limiting: Prevent enumeration attacks
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ)
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: rateLimitCheck.error || 'Too many requests',
+          retryAfter: rateLimitCheck.retryAfter
+        },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
-    
+
     // ==================== ZOD VALIDATION ====================
     // Validates, trims, and uppercases registration number
     const validation = validateWithZod(body, convocationValidateSchema)
-    
+
     if (!validation.success) {
       return NextResponse.json(
         {
@@ -45,9 +59,9 @@ export async function POST(request) {
       // If no student found, return not eligible
       if (error.code === 'PGRST116') {
         return NextResponse.json(
-          { 
-            valid: false, 
-            error: 'Registration number not eligible for convocation' 
+          {
+            valid: false,
+            error: 'Registration number not eligible for convocation'
           },
           { status: 404 }
         )
@@ -56,9 +70,9 @@ export async function POST(request) {
       // Database error
       console.error('Database error:', error)
       return NextResponse.json(
-        { 
-          valid: false, 
-          error: 'Database error occurred' 
+        {
+          valid: false,
+          error: 'Database error occurred'
         },
         { status: 500 }
       )
@@ -79,9 +93,9 @@ export async function POST(request) {
   } catch (error) {
     console.error('Validation error:', error)
     return NextResponse.json(
-      { 
-        valid: false, 
-        error: 'Server error occurred' 
+      {
+        valid: false,
+        error: 'Server error occurred'
       },
       { status: 500 }
     )

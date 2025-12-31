@@ -24,14 +24,14 @@ const GOLD_ACCENT = [218, 165, 32]; // #DAA520
 export const generateCertificate = async (certificateData, blockchainRecord) => {
   try {
     // blockchainRecord is now passed as parameter (created before certificate generation)
-    
+
     // Generate QR code data with correct two-parameter signature
     const qrData = generateQRData(blockchainRecord, {
       formId: certificateData.formId,
       registrationNo: certificateData.registrationNo,
       studentName: certificateData.studentName
     });
-    
+
     // Generate QR code image as base64
     const qrCodeImage = await QRCode.toDataURL(JSON.stringify(qrData), {
       width: 120,
@@ -41,7 +41,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
         light: '#FFFFFF'
       }
     });
-    
+
     // Create a new PDF document
     const pdf = new jsPDF({
       orientation: 'landscape',
@@ -52,7 +52,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     // Set up dimensions
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    
+
     // --- 1. Ornamental Border ---
     // Outer Border (Gold)
     pdf.setDrawColor(...GOLD_ACCENT);
@@ -63,7 +63,7 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(2.5);
     pdf.rect(13, 13, pageWidth - 26, pageHeight - 26);
-    
+
     // Inner Thin Border (Gold)
     pdf.setDrawColor(...GOLD_ACCENT);
     pdf.setLineWidth(0.5);
@@ -71,31 +71,31 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
 
     // Corner Accents (Artistic)
     const drawCorner = (x, y, rotation) => {
-        pdf.setDrawColor(...JECRC_RED);
-        pdf.setLineWidth(1.5);
-        const len = 15;
-        // Simple L-shape with a dot
-        if (rotation === 0) { // Top-Left
-            pdf.line(x, y, x + len, y);
-            pdf.line(x, y, x, y + len);
-            pdf.setFillColor(...JECRC_RED);
-            pdf.circle(x + 2, y + 2, 1, 'F');
-        } else if (rotation === 90) { // Top-Right
-            pdf.line(x, y, x - len, y);
-            pdf.line(x, y, x, y + len);
-            pdf.setFillColor(...JECRC_RED);
-            pdf.circle(x - 2, y + 2, 1, 'F');
-        } else if (rotation === 180) { // Bottom-Right
-            pdf.line(x, y, x - len, y);
-            pdf.line(x, y, x, y - len);
-            pdf.setFillColor(...JECRC_RED);
-            pdf.circle(x - 2, y - 2, 1, 'F');
-        } else if (rotation === 270) { // Bottom-Left
-            pdf.line(x, y, x + len, y);
-            pdf.line(x, y, x, y - len);
-            pdf.setFillColor(...JECRC_RED);
-            pdf.circle(x + 2, y - 2, 1, 'F');
-        }
+      pdf.setDrawColor(...JECRC_RED);
+      pdf.setLineWidth(1.5);
+      const len = 15;
+      // Simple L-shape with a dot
+      if (rotation === 0) { // Top-Left
+        pdf.line(x, y, x + len, y);
+        pdf.line(x, y, x, y + len);
+        pdf.setFillColor(...JECRC_RED);
+        pdf.circle(x + 2, y + 2, 1, 'F');
+      } else if (rotation === 90) { // Top-Right
+        pdf.line(x, y, x - len, y);
+        pdf.line(x, y, x, y + len);
+        pdf.setFillColor(...JECRC_RED);
+        pdf.circle(x - 2, y + 2, 1, 'F');
+      } else if (rotation === 180) { // Bottom-Right
+        pdf.line(x, y, x - len, y);
+        pdf.line(x, y, x, y - len);
+        pdf.setFillColor(...JECRC_RED);
+        pdf.circle(x - 2, y - 2, 1, 'F');
+      } else if (rotation === 270) { // Bottom-Left
+        pdf.line(x, y, x + len, y);
+        pdf.line(x, y, x, y - len);
+        pdf.setFillColor(...JECRC_RED);
+        pdf.circle(x + 2, y - 2, 1, 'F');
+      }
     };
 
     drawCorner(18, 18, 0);
@@ -106,43 +106,41 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     // --- 2. Logo & Header ---
     // Load logo using fetch API (works in all serverless environments)
     try {
-        // Use absolute URL for production, relative for local
-        const logoUrl = process.env.NEXT_PUBLIC_APP_URL
-            ? `${process.env.NEXT_PUBLIC_APP_URL}/assets/logo light.png`
-            : '/assets/logo light.png';
-        
-        const response = await fetch(logoUrl);
-        const logoBuffer = await response.arrayBuffer();
-        const logoBase64 = Buffer.from(logoBuffer).toString('base64');
-        const logoData = `data:image/png;base64,${logoBase64}`;
-        
-        // Logo centered at top
-        // Actual dimensions are 1280x310 (Ratio ~4.13)
-        const logoWidth = 90;
-        const logoHeight = 22; // 90 / 4.13 approx
-        pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight);
+      // Use hardcoded production URL for logo
+      const logoUrl = 'https://nodues.jecrcuniversity.edu.in/assets/logo light.png';
+
+      const response = await fetch(logoUrl);
+      const logoBuffer = await response.arrayBuffer();
+      const logoBase64 = Buffer.from(logoBuffer).toString('base64');
+      const logoData = `data:image/png;base64,${logoBase64}`;
+
+      // Logo centered at top
+      // Actual dimensions are 1280x310 (Ratio ~4.13)
+      const logoWidth = 90;
+      const logoHeight = 22; // 90 / 4.13 approx
+      pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight);
     } catch (e) {
-        console.error("Error loading logo:", e);
-        // Fallback to text-based header if logo fails
-        pdf.setFontSize(24);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(...JECRC_RED);
-        pdf.text('JECRC UNIVERSITY', pageWidth / 2, 35, { align: 'center' });
-        
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(100, 100, 100);
-        pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 42, { align: 'center' });
+      console.error("Error loading logo:", e);
+      // Fallback to text-based header if logo fails
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...JECRC_RED);
+      pdf.text('JECRC UNIVERSITY', pageWidth / 2, 35, { align: 'center' });
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 42, { align: 'center' });
     }
 
     // --- 3. Certificate Title ---
     const titleY = 58; // Adjusted for text-based header
-    
+
     // Decorative lines around title
     pdf.setDrawColor(...GOLD_ACCENT);
     pdf.setLineWidth(0.5);
     pdf.line(pageWidth / 2 - 65, titleY - 8, pageWidth / 2 + 65, titleY - 8);
-    
+
     pdf.setFontSize(32);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
@@ -156,55 +154,55 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(80, 80, 80);
     pdf.text('This is to certify that', pageWidth / 2, 68, { align: 'center' });
-    
+
     // Student Name
     pdf.setFontSize(32);
     pdf.setFont('times', 'bolditalic');
     pdf.setTextColor(0, 0, 0);
     pdf.text(certificateData.studentName, pageWidth / 2, 82, { align: 'center' });
-    
+
     // Underline for name
     pdf.setLineWidth(0.5);
     pdf.setDrawColor(0, 0, 0);
     pdf.line(pageWidth / 2 - 55, 84, pageWidth / 2 + 55, 84);
-    
+
     // Registration No
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(60, 60, 60);
     pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 94, { align: 'center' });
-    
+
     // Body Text
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(60, 60, 60);
     pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 106, { align: 'center' });
     pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 112, { align: 'center' });
-    
+
     // Clearance Status (Stamp style)
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
     pdf.text('NO DUES CLEARANCE', pageWidth / 2, 122, { align: 'center' });
-    
+
     // --- 5. Academic Details (No Box) ---
     const detailsY = 135;
-    
+
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    
+
     // Details Text
     const courseText = `Course: ${certificateData.course || 'N/A'}`;
     const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
     const sessionText = `Session: ${certificateData.admissionYear || 'N/A'} - ${certificateData.passingYear || 'N/A'}`;
-    
+
     pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, detailsY, { align: 'center' });
     pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
-    
+
     // --- 6. Date & Signature ---
     const footerY = 160;
-    
+
     // Date (Left)
     const issueDate = new Date().toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -215,57 +213,35 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
     pdf.text(`Date of Issue: ${issueDate}`, 45, footerY, { align: 'left' });
-    
+
     // Registration Office Signature (Right)
     pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(0.5);
     pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6); // Line above text
-    
+
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Registration Office', pageWidth - 60, footerY, { align: 'center' });
-    
+
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(100, 100, 100);
     pdf.text('JECRC University', pageWidth - 60, footerY + 5, { align: 'center' });
 
-    // --- 7. QR Code & Blockchain Verification (Bottom Left) ---
+    // --- 7. QR Code (Bottom Left) ---
     const qrX = 25;
-    const qrY = footerY - 35; // Adjusted for new footerY position
+    const qrY = footerY - 35;
     const qrSize = 28;
-    
-    // Add QR Code
-    pdf.addImage(qrCodeImage, 'PNG', qrX, qrY, qrSize, qrSize);
-    
-    // QR Label
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...JECRC_RED);
-    pdf.text('SCAN TO VERIFY', qrX + qrSize / 2, qrY + qrSize + 4, { align: 'center' });
-    
-    pdf.setFontSize(6);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('Blockchain Secured', qrX + qrSize / 2, qrY + qrSize + 8, { align: 'center' });
 
-    // --- 8. Footer (Certificate ID & Transaction ID) ---
-    pdf.setFontSize(7);
-    pdf.setTextColor(180, 180, 180);
-    const certId = `Certificate ID: JECRC-ND-${certificateData.formId.substring(0, 8).toUpperCase()}`;
-    pdf.text(certId, pageWidth / 2, pageHeight - 18, { align: 'center' });
-    
-    // Transaction ID (Blockchain) - use from blockchainRecord
-    pdf.setFontSize(6);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text(`Blockchain TX: ${blockchainRecord.transactionId}`, pageWidth / 2, pageHeight - 14, { align: 'center' });
+    // Add QR Code (no labels - clean design)
+    pdf.addImage(qrCodeImage, 'PNG', qrX, qrY, qrSize, qrSize);
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
 
     // Generate filename
     const fileName = `no-dues-certificate-${certificateData.formId}-${Date.now()}.pdf`;
-    
+
     // Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage
       .from('certificates')
@@ -273,17 +249,17 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
         contentType: 'application/pdf',
         cacheControl: '3600',
       });
-    
+
     if (error) {
       console.error('Storage upload error:', error);
       throw new Error('Failed to save certificate to storage');
     }
-    
+
     // Get public URL
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from('certificates')
       .getPublicUrl(fileName);
-    
+
     return {
       success: true,
       certificateUrl: publicUrl,
@@ -307,16 +283,16 @@ export const saveCertificate = async (certificateBuffer, fileName, formId) => {
         contentType: 'application/pdf',
         cacheControl: '3600',
       });
-    
+
     if (error) {
       throw new Error('Failed to save certificate to storage');
     }
-    
+
     // Get public URL
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from('certificates')
       .getPublicUrl(fileName);
-    
+
     return publicUrl;
   } catch (error) {
     console.error('Error saving certificate:', error);
@@ -328,7 +304,7 @@ export const saveCertificate = async (certificateBuffer, fileName, formId) => {
 export const finalizeCertificate = async (formId) => {
   try {
     console.log('🔵 Step 1: Fetching form data for formId:', formId);
-    
+
     // STEP 1: Get form data with department statuses
     const { data: formData, error } = await supabaseAdmin
       .from('no_dues_forms')
@@ -343,21 +319,21 @@ export const finalizeCertificate = async (formId) => {
       `)
       .eq('id', formId)
       .single();
-    
+
     if (error) {
       console.error('❌ Error fetching form data:', error);
       throw new Error(`Form fetch error: ${error.message}`);
     }
-    
+
     if (!formData) {
       console.error('❌ Form not found');
       throw new Error('Form not found');
     }
-    
+
     console.log('✅ Form data fetched successfully');
-    
+
     console.log('🔵 Step 2: Creating blockchain record');
-    
+
     // STEP 2: Create blockchain record FIRST (with correct data structure and department statuses)
     const blockchainRecord = await createBlockchainRecord({
       student_id: formId,  // Use formId as student_id
@@ -369,16 +345,16 @@ export const finalizeCertificate = async (formId) => {
       completed_at: new Date().toISOString(),
       department_statuses: formData.no_dues_status || []  // Include actual department statuses
     });
-    
+
     if (!blockchainRecord || !blockchainRecord.success) {
       console.error('❌ Blockchain record creation failed:', blockchainRecord);
       throw new Error('Failed to create blockchain record');
     }
-    
+
     console.log('✅ Blockchain record created:', blockchainRecord.transactionId);
-    
+
     console.log('🔵 Step 3: Generating certificate PDF');
-    
+
     // STEP 3: Generate certificate WITH blockchain data
     const certificateResult = await generateCertificate({
       studentName: formData.student_name,
@@ -389,16 +365,16 @@ export const finalizeCertificate = async (formId) => {
       passingYear: formData.passing_year,
       formId
     }, blockchainRecord);  // Pass blockchain record as second parameter
-    
+
     if (!certificateResult || !certificateResult.success) {
       console.error('❌ Certificate generation failed:', certificateResult);
       throw new Error('Failed to generate certificate PDF');
     }
-    
+
     console.log('✅ Certificate generated:', certificateResult.certificateUrl);
-    
+
     console.log('🔵 Step 4: Updating database with certificate info');
-    
+
     // STEP 4: Update form record with certificate URL, blockchain info, and final status
     const { error: updateError } = await supabaseAdmin
       .from('no_dues_forms')
@@ -413,24 +389,16 @@ export const finalizeCertificate = async (formId) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', formId);
-    
+
     if (updateError) {
       console.error('❌ Database update failed:', updateError);
       throw new Error(`Database update error: ${updateError.message}`);
     }
-    
+
     console.log('✅ Database updated successfully');
-    
-    return {
-      success: true,
-      message: 'Certificate generated successfully with blockchain verification',
-      formId,
-      certificateUrl: certificateResult.certificateUrl,
-      blockchainHash: blockchainRecord.certificateHash,
-      transactionId: blockchainRecord.transactionId
-    };
+
     console.log('🎉 Certificate generation completed successfully!');
-    
+
     return {
       success: true,
       message: 'Certificate generated successfully with blockchain verification',

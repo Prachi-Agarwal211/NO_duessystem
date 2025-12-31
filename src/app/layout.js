@@ -65,7 +65,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-title" content="JECRC NO DUES" />
         <link rel="apple-touch-icon" href="/assets/logo.png" />
       </head>
-      <body className="antialiased font-sans">
+      <body className="antialiased font-sans overflow-x-hidden">
         <ErrorBoundary>
           <ClientProviders>
             {children}

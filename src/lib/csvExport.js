@@ -17,7 +17,7 @@ export async function exportApplicationsToCSV(applications) {
     // Fetch active departments dynamically from database
     const response = await fetch('/api/admin/config/departments');
     const result = await response.json();
-    
+
     let departments = [];
     if (result.success && result.departments) {
       // Sort by display_order and get department names
@@ -137,4 +137,127 @@ function downloadCSV(csvContent, filename) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/**
+ * Export staff dashboard data to CSV (current page only)
+ * Simplified stats for department view
+ */
+export function exportStaffDataToCSV(requests, departmentName) {
+  if (!requests || requests.length === 0) {
+    alert('No data to export');
+    return;
+  }
+
+  const headers = [
+    'Student Name',
+    'Registration No',
+    'Course',
+    'Branch',
+    'Submitted Date',
+    'Status',
+    'Rejection Reason',
+    'Action Date'
+  ];
+
+  const rows = requests.map(item => {
+    const form = item.no_dues_forms;
+    return [
+      form.student_name,
+      form.registration_no,
+      form.course || 'N/A',
+      form.branch || 'N/A',
+      new Date(form.created_at).toLocaleDateString(),
+      item.status,
+      item.rejection_reason || 'N/A',
+      item.action_at ? new Date(item.action_at).toLocaleDateString() : 'Pending'
+    ].map(cell => `"${cell}"`).join(',');
+  });
+
+  const csvContent = [
+    headers.join(','),
+    ...rows
+  ].join('\n');
+
+  downloadCSV(csvContent, `${departmentName || 'department'}_no_dues_${new Date().toISOString().split('T')[0]}.csv`);
+}
+
+/**
+ * Export ALL staff dashboard data to CSV (fetches all records from API)
+ * This function fetches ALL matching records, not just the current page
+ */
+export async function exportAllStaffDataToCSV(filters, departmentName, supabase) {
+  try {
+    // Show loading indicator
+    const loadingToast = { id: 'export-loading' };
+    
+    // Build query parameters
+    const params = new URLSearchParams({
+      status: filters.activeTab || 'pending',
+      ...(filters.course && filters.course !== 'All' && { course: filters.course }),
+      ...(filters.branch && filters.branch !== 'All' && { branch: filters.branch }),
+      ...(filters.search && { search: filters.search })
+    });
+
+    // Fetch ALL matching records from export API
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(`/api/staff/export?${params.toString()}`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` }
+    });
+
+    const result = await response.json();
+    
+    if (!result.success || !result.data || result.data.length === 0) {
+      alert('No data to export');
+      return false;
+    }
+
+    // Generate CSV
+    const headers = [
+      'Student Name',
+      'Registration No',
+      'Course',
+      'Branch',
+      'Submitted Date',
+      'Status',
+      'Rejection Reason',
+      'Action Date'
+    ];
+
+    const rows = result.data.map(item => {
+      const form = item.no_dues_forms;
+      return [
+        form.student_name,
+        form.registration_no,
+        form.course || 'N/A',
+        form.branch || 'N/A',
+        new Date(form.created_at).toLocaleDateString(),
+        item.status,
+        item.rejection_reason || 'N/A',
+        item.action_at ? new Date(item.action_at).toLocaleDateString() : 'Pending'
+      ].map(cell => `"${cell}"`).join(',');
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows
+    ].join('\n');
+
+    // Create filename with record count and filters
+    const filterSuffix = [
+      filters.activeTab !== 'pending' ? filters.activeTab : '',
+      filters.course !== 'All' ? filters.course : '',
+      filters.branch !== 'All' ? filters.branch : ''
+    ].filter(Boolean).join('_');
+    
+    const filename = `${departmentName || 'department'}_${result.count}_records${filterSuffix ? '_' + filterSuffix : ''}_${new Date().toISOString().split('T')[0]}.csv`;
+    
+    downloadCSV(csvContent, filename);
+    return true;
+
+  } catch (error) {
+    console.error('Error exporting all staff data:', error);
+    alert('Failed to export data. Please try again.');
+    return false;
+  }
 }

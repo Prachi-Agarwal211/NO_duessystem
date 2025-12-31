@@ -1,7 +1,11 @@
 /**
- * Email Service using Nodemailer (Vercel Compatible)
+ * Email Service using Nodemailer
  * Handles all email notifications for the JECRC UNIVERSITY NO DUES System
- * Features: SMTP connection pooling, email queue, retry logic
+ * 
+ * Features:
+ * - SMTP connection pooling
+ * - Inline retry with exponential backoff (no cron dependency)
+ * - Graceful failure handling
  * 
  * OPTIMIZED: Reduced from 15 emails per student to just 3:
  * 1. One combined email to ALL departments (not individual)
@@ -10,13 +14,6 @@
  */
 
 import nodemailer from 'nodemailer';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client for queue management
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 // Email configuration
 const SMTP_CONFIG = {
@@ -28,83 +25,104 @@ const SMTP_CONFIG = {
     pass: process.env.SMTP_PASS
   },
   pool: true, // Use connection pooling
-  maxConnections: 5,
-  maxMessages: 100,
-  rateLimit: 10, // 10 emails per second
-  connectionTimeout: 10000, // 10 seconds (default: 2 minutes)
-  greetingTimeout: 10000,   // 10 seconds (default: 30 seconds)
-  socketTimeout: 10000       // 10 seconds (default: unlimited)
+  maxConnections: 3, // Reduced for stability
+  maxMessages: 50,
+  connectionTimeout: 15000, // 15 seconds
+  greetingTimeout: 15000,
+  socketTimeout: 15000
 };
 
-const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC UNIVERSITY NO DUES <noreply@jecrc.ac.in>';
+const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC UNIVERSITY NO DUES <noreply@jecrcuniversity.edu.in>';
 
-// Create transporter with connection pooling
+// Transporter with lazy initialization and health tracking
 let transporter = null;
+let transporterCreatedAt = 0;
+const TRANSPORTER_MAX_AGE = 10 * 60 * 1000; // Recreate transporter every 10 minutes
 
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport(SMTP_CONFIG);
-    
-    // Verify connection on first use
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ SMTP connection failed:', error);
-      } else {
-        console.log('✅ SMTP server ready to send emails');
+/**
+ * Get or create SMTP transporter with connection health management
+ */
+async function getTransporter() {
+  const now = Date.now();
+
+  // Recreate transporter if too old or doesn't exist
+  if (!transporter || (now - transporterCreatedAt > TRANSPORTER_MAX_AGE)) {
+    if (transporter) {
+      try {
+        transporter.close();
+      } catch (e) {
+        // Ignore close errors
       }
-    });
+    }
+
+    transporter = nodemailer.createTransport(SMTP_CONFIG);
+    transporterCreatedAt = now;
+
+    // Verify connection (async, but we don't wait)
+    transporter.verify()
+      .then(() => console.log('✅ SMTP connection verified'))
+      .catch(err => console.warn('⚠️ SMTP verification failed:', err.message));
   }
+
   return transporter;
 }
 
 /**
  * Strip HTML tags for plain text fallback
- * @param {string} html - HTML content
- * @returns {string} - Plain text
  */
 function stripHtml(html) {
   return html
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/g, ' ')
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
     .trim();
 }
 
 /**
- * Add email to queue for later processing
- * @param {Object} emailData - Email data
- * @returns {Promise<Object>} - Result with queue ID
+ * Sleep utility for retry delays
  */
-async function addToQueue(emailData) {
-  try {
-    const { data, error } = await supabase
-      .from('email_queue')
-      .insert([{
-        recipient_email: Array.isArray(emailData.to) ? emailData.to.join(',') : emailData.to,
-        subject: emailData.subject,
-        html_body: emailData.html,
-        text_body: emailData.text || stripHtml(emailData.html),
-        template_data: emailData.metadata || {},
-        scheduled_for: emailData.scheduledFor || new Date().toISOString()
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    console.log(`📥 Email added to queue: ${data.id}`);
-    return { success: true, queueId: data.id };
-  } catch (error) {
-    console.error('❌ Failed to add email to queue:', error);
-    return { success: false, error: error.message };
-  }
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * Send email directly using Nodemailer
+ * Send email with inline retry logic
+ * Attempts up to 3 times with exponential backoff: 1s, 2s, 4s
+ */
+async function sendWithRetry(mailOptions, maxRetries = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const transport = await getTransporter();
+      const info = await transport.sendMail(mailOptions);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      lastError = error;
+      console.warn(`⚠️ Email attempt ${attempt}/${maxRetries} failed:`, error.message);
+
+      // If transporter error, recreate it
+      if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
+        transporter = null;
+      }
+
+      // Don't retry on final attempt
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        console.log(`⏳ Retrying in ${delay}ms...`);
+        await sleep(delay);
+      }
+    }
+  }
+
+  return { success: false, error: lastError?.message || 'Max retries exceeded' };
+}
+
+/**
+ * Send email directly using Nodemailer with retry logic
  * @param {Object} params - Email parameters
  * @param {string|string[]} params.to - Recipient email(s)
  * @param {string|string[]} params.cc - CC recipient email(s) (optional)
@@ -112,79 +130,55 @@ async function addToQueue(emailData) {
  * @param {string} params.subject - Email subject
  * @param {string} params.html - HTML content
  * @param {string} params.text - Plain text content (optional)
- * @param {boolean} params.queueOnFailure - Add to queue if sending fails (default: true)
  * @returns {Promise<Object>} - { success: boolean, messageId?: string, error?: string }
  */
-export async function sendEmail({ to, cc, bcc, subject, html, text, queueOnFailure = true, metadata = {} }) {
-  try {
-    // Validate inputs
-    if (!to || !subject || !html) {
-      throw new Error('Missing required email parameters');
-    }
+export async function sendEmail({ to, cc, bcc, subject, html, text, metadata = {} }) {
+  // Validate inputs
+  if (!to || !subject || !html) {
+    console.error('❌ Missing required email parameters');
+    return { success: false, error: 'Missing required email parameters' };
+  }
 
-    // Check if SMTP is configured
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.warn('⚠️ SMTP not configured. Adding email to queue...');
-      if (queueOnFailure) {
-        return await addToQueue({ to, subject, html, text, metadata });
-      }
-      return { success: false, error: 'SMTP not configured' };
-    }
+  // Check if SMTP is configured
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error('❌ SMTP not configured. SMTP_USER and SMTP_PASS are required.');
+    return { success: false, error: 'SMTP not configured' };
+  }
 
-    // Get transporter
-    const transport = getTransporter();
+  // Prepare email options
+  const mailOptions = {
+    from: FROM_EMAIL,
+    to: Array.isArray(to) ? to.join(', ') : to,
+    subject,
+    html,
+    text: text || stripHtml(html)
+  };
 
-    // Prepare email options
-    const mailOptions = {
-      from: FROM_EMAIL,
-      to: Array.isArray(to) ? to.join(', ') : to,
-      subject,
-      html,
-      text: text || stripHtml(html)
-    };
+  // Add CC if provided
+  if (cc) {
+    mailOptions.cc = Array.isArray(cc) ? cc.join(', ') : cc;
+  }
 
-    // Add CC if provided
-    if (cc) {
-      mailOptions.cc = Array.isArray(cc) ? cc.join(', ') : cc;
-    }
+  // Add BCC if provided
+  if (bcc) {
+    mailOptions.bcc = Array.isArray(bcc) ? bcc.join(', ') : bcc;
+  }
 
-    // Add BCC if provided
-    if (bcc) {
-      mailOptions.bcc = Array.isArray(bcc) ? bcc.join(', ') : bcc;
-    }
+  // Send with inline retry logic
+  const result = await sendWithRetry(mailOptions, 3);
 
-    // Send email
-    const info = await transport.sendMail(mailOptions);
-
-    console.log(`✅ Email sent successfully - ID: ${info.messageId}`);
+  if (result.success) {
+    console.log(`✅ Email sent successfully - ID: ${result.messageId}`);
     console.log(`   TO: ${mailOptions.to}`);
     if (cc) console.log(`   CC: ${mailOptions.cc}`);
     if (bcc) console.log(`   BCC: ${mailOptions.bcc}`);
-    
-    return { success: true, messageId: info.messageId };
-
-  } catch (error) {
-    console.error('❌ Email send error:', error);
+  } else {
+    console.error(`❌ Email failed after retries: ${result.error}`);
     console.error('   SMTP Host:', process.env.SMTP_HOST || 'smtp.gmail.com');
-    console.error('   SMTP Port:', process.env.SMTP_PORT || '587');
     console.error('   SMTP User:', process.env.SMTP_USER ? 'SET' : 'NOT SET');
-    console.error('   Error Code:', error.code);
-    console.error('   Error Command:', error.command);
-    
-    // Add to queue on failure if enabled
-    if (queueOnFailure) {
-      console.log('📥 Adding failed email to queue for retry...');
-      const queueResult = await addToQueue({ to, subject, html, text, metadata });
-      return {
-        success: false,
-        error: error.message,
-        queued: queueResult.success,
-        queueId: queueResult.queueId
-      };
-    }
-    
-    return { success: false, error: error.message };
   }
+
+  return result;
 }
 
 /**
@@ -553,6 +547,139 @@ export async function sendReapplicationNotification({
   });
 }
 
+/**
+ * Send support ticket response to user
+ * @param {Object} params - Response parameters
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendSupportTicketResponse({
+  userEmail,
+  ticketNumber,
+  subject,
+  adminResponse,
+  status,
+  resolvedBy
+}) {
+  const statusMessages = {
+    'resolved': 'Your ticket has been resolved.',
+    'closed': 'Your ticket has been closed.',
+    'in_progress': 'Your ticket is being worked on.'
+  };
+
+  const content = `
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+      <div style="font-size: 40px; margin-bottom: 10px;">💬</div>
+      <h2 style="color: white; margin: 0; font-size: 22px;">Support Update</h2>
+    </div>
+    
+    <p style="color: #374151; line-height: 1.8; font-size: 15px;">
+      Hello,<br><br>
+      ${statusMessages[status] || 'There is an update on your support ticket.'}
+    </p>
+    
+    <div style="background: #f9fafb; border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 4px solid #C41E3A;">
+      <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">Ticket #${ticketNumber}</p>
+      <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">Subject: ${subject}</p>
+    </div>
+    
+    ${adminResponse ? `
+    <div style="background: #ffffff; border-radius: 12px; padding: 20px; margin: 20px 0; border: 1px solid #e5e7eb;">
+      <p style="font-weight: 600; color: #1f2937; margin: 0 0 12px 0;">📝 Response from Support Team:</p>
+      <p style="color: #374151; line-height: 1.8; margin: 0; white-space: pre-wrap;">${adminResponse}</p>
+    </div>
+    ` : ''}
+    
+    <p style="color: #6b7280; font-size: 13px; margin-top: 25px;">
+      If you have further questions, please submit a new support request.
+    </p>
+  `;
+
+  const html = generateEmailTemplate({
+    title: `Ticket Update: ${ticketNumber}`,
+    content,
+    actionUrl: 'https://nodues.jecrcuniversity.edu.in/student/check-status',
+    actionText: 'Check Your Status',
+    footerText: `Resolved by: ${resolvedBy || 'Support Team'}`
+  });
+
+  return sendEmail({
+    to: userEmail,
+    subject: `[Ticket ${ticketNumber}] ${statusMessages[status] || 'Update'} - ${subject}`,
+    html,
+    metadata: { type: 'support_response', ticketNumber, status }
+  });
+}
+
+/**
+ * Send gentle reminder to department staff about pending applications
+ * @param {Object} params - Reminder parameters
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendDepartmentReminder({
+  staffEmails,
+  studentName,
+  registrationNo,
+  departmentName,
+  daysPending,
+  customMessage,
+  dashboardUrl
+}) {
+  const urgencyLevel = daysPending >= 7 ? 'high' : daysPending >= 3 ? 'medium' : 'low';
+  const urgencyColors = {
+    high: { bg: '#fef2f2', border: '#ef4444', text: '#dc2626' },
+    medium: { bg: '#fffbeb', border: '#f59e0b', text: '#d97706' },
+    low: { bg: '#f0fdf4', border: '#22c55e', text: '#16a34a' }
+  };
+  const colors = urgencyColors[urgencyLevel];
+
+  const content = `
+    <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+      <div style="font-size: 40px; margin-bottom: 10px;">⏰</div>
+      <h2 style="color: white; margin: 0; font-size: 22px;">Gentle Reminder</h2>
+    </div>
+    
+    <p style="color: #374151; line-height: 1.8; font-size: 15px;">
+      Hello ${departmentName} Team,<br><br>
+      This is a friendly reminder about a pending no-dues application that requires your attention.
+    </p>
+    
+    <div style="background: ${colors.bg}; border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 4px solid ${colors.border};">
+      <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">📋 Student: ${studentName}</p>
+      <p style="margin: 0 0 8px 0; color: #6b7280;">Registration No: ${registrationNo}</p>
+      <p style="margin: 0; color: ${colors.text}; font-weight: 600;">
+        ⏱️ Pending for: ${daysPending} day${daysPending !== 1 ? 's' : ''}
+      </p>
+    </div>
+    
+    ${customMessage ? `
+    <div style="background: #f3f4f6; border-radius: 12px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #374151; font-style: italic;">"${customMessage}"</p>
+      <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 12px;">— Registration Office</p>
+    </div>
+    ` : ''}
+    
+    <p style="color: #374151; line-height: 1.8; margin: 20px 0;">
+      Please review this application at your earliest convenience. Timely processing helps students complete their clearance smoothly.
+    </p>
+  `;
+
+  const html = generateEmailTemplate({
+    title: 'Pending Application Reminder',
+    content,
+    actionUrl: dashboardUrl || 'https://nodues.jecrcuniversity.edu.in/staff/dashboard',
+    actionText: 'Review Application',
+    footerText: 'This is an automated reminder from the Registration Office.'
+  });
+
+  return sendEmail({
+    to: staffEmails[0],
+    cc: staffEmails.slice(1),
+    subject: `⏰ Reminder: ${studentName} (${registrationNo}) - Pending ${daysPending} days`,
+    html,
+    metadata: { type: 'department_reminder', departmentName, daysPending, registrationNo }
+  });
+}
+
 // Export all functions
 export default {
   sendEmail,
@@ -560,5 +687,6 @@ export default {
   sendRejectionNotification,
   sendCertificateReadyNotification,
   sendReapplicationNotification,
-  addToQueue
+  sendSupportTicketResponse,
+  sendDepartmentReminder
 };

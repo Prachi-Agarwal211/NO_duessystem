@@ -402,6 +402,11 @@ export default function SubmitForm() {
         throw new Error(`College email must end with ${collegeDomain}`);
       }
 
+      // Mandatory checks for fields that might be missing validation
+      if (!formData.admission_year?.trim()) throw new Error('Admission Year is required');
+      if (!formData.passing_year?.trim()) throw new Error('Passing Year is required');
+      if (!formData.parent_name?.trim()) throw new Error('Parent Name is required');
+
       // Admission/Passing year validation
       if (formData.admission_year) {
         // Validate YYYY format
@@ -610,6 +615,40 @@ export default function SubmitForm() {
         </motion.div>
       )}
 
+      {/* Important Instructions Block */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`p-6 sm:p-8 rounded-xl border mb-8 ${isDark
+          ? 'bg-blue-900/10 border-blue-500/20'
+          : 'bg-blue-50 border-blue-100'
+          }`}
+      >
+        <h3 className={`text-base font-bold mb-3 flex items-center gap-2 ${isDark ? 'text-blue-400' : 'text-blue-700'
+          }`}>
+          <AlertCircle className="w-5 h-5" />
+          Important Instructions
+        </h3>
+        <ul className={`space-y-2.5 text-sm list-disc pl-5 ${isDark ? 'text-blue-200/70' : 'text-blue-600'
+          }`}>
+          <li>All fields marked with <span className="text-red-500 font-bold">*</span> are mandatory.</li>
+          <li>Please ensure all details match your official college records.</li>
+          <li>After submission, you can track your application status using your Registration Number.</li>
+          <li className="font-semibold text-amber-500 dark:text-amber-400">
+            If you haven't created an Alumni account yet, please register at{' '}
+            <a
+              href="https://jualumni.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
+            >
+              jualumni.in
+            </a>
+            . Failure to register may lead to rejection of your No Dues application.
+          </li>
+        </ul>
+      </motion.div>
+
       {/* Registration Number with Check Button AND Fetch Details Button */}
       <motion.div
         className="space-y-2"
@@ -767,15 +806,17 @@ export default function SubmitForm() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
       >
-        <FormInput
-          label="Student Name"
-          name="student_name"
-          value={formData.student_name}
-          onChange={handleInputChange}
-          required
-          placeholder="Full Name"
-          disabled={loading}
-        />
+        <div className="md:col-span-2">
+          <FormInput
+            label="Student Name"
+            name="student_name"
+            value={formData.student_name}
+            onChange={handleInputChange}
+            required
+            placeholder="Full Name"
+            disabled={loading}
+          />
+        </div>
 
         {/* Country Code */}
         <FormInput
@@ -812,6 +853,7 @@ export default function SubmitForm() {
           placeholder="e.g., 2020"
           maxLength={4}
           pattern="\d{4}"
+          required
           disabled={loading}
         />
 
@@ -823,36 +865,42 @@ export default function SubmitForm() {
           placeholder="e.g., 2024"
           maxLength={4}
           pattern="\d{4}"
+          required
           disabled={loading}
         />
 
-        <FormInput
-          label="Parent Name"
-          name="parent_name"
-          value={formData.parent_name}
-          onChange={handleInputChange}
-          placeholder="Father's/Mother's Name"
-          disabled={loading}
-        />
-
-        <DropdownWithErrorBoundary
-          componentName="SchoolDropdown"
-          dropdownType="schools"
-          onReset={() => window.location.reload()}
-        >
+        <div className="md:col-span-2">
           <FormInput
-            label="School"
-            name="school"
-            type="select"
-            value={formData.school}
+            label="Parent Name"
+            name="parent_name"
+            value={formData.parent_name}
             onChange={handleInputChange}
+            placeholder="Father's/Mother's Name"
             required
-            disabled={loading || configLoading}
-            loading={configLoading}
-            placeholder={configLoading ? "Loading schools..." : "Select School"}
-            options={schools.map(s => ({ value: s.id, label: s.name }))}
+            disabled={loading}
           />
-        </DropdownWithErrorBoundary>
+        </div>
+
+        <div className="md:col-span-2">
+          <DropdownWithErrorBoundary
+            componentName="SchoolDropdown"
+            dropdownType="schools"
+            onReset={() => window.location.reload()}
+          >
+            <FormInput
+              label="School"
+              name="school"
+              type="select"
+              value={formData.school}
+              onChange={handleInputChange}
+              required
+              disabled={loading || configLoading}
+              loading={configLoading}
+              placeholder={configLoading ? "Loading schools..." : "Select School"}
+              options={schools.map(s => ({ value: s.id, label: s.name }))}
+            />
+          </DropdownWithErrorBoundary>
+        </div>
 
         <DropdownWithErrorBoundary
           componentName="CourseDropdown"

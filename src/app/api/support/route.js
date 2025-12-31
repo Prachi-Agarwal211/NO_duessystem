@@ -110,7 +110,7 @@ export async function GET(request) {
   }
 }
 
-// PATCH - Admin update ticket status
+// PATCH - Admin update ticket status with optional response
 export async function PATCH(request) {
   // ✅ FIX: Extract token from Authorization header
   const authHeader = request.headers.get('Authorization');
@@ -129,7 +129,7 @@ export async function PATCH(request) {
   // Get user's profile to verify admin role
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("role, email")
+    .select("role, email, full_name")
     .eq("id", user.id)
     .single();
 
@@ -139,7 +139,7 @@ export async function PATCH(request) {
 
   try {
     const body = await request.json();
-    const { ticketId, status } = body;
+    const { ticketId, status, adminResponse } = body;
 
     if (!ticketId || !status) {
       return NextResponse.json(
@@ -157,28 +157,32 @@ export async function PATCH(request) {
       );
     }
 
+    // Build update object
+    const updateData = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Add response data if provided
+    if (adminResponse) {
+      updateData.admin_response = adminResponse;
+      updateData.responded_at = new Date().toISOString();
+      updateData.responded_by = user.id;
+    }
+
+    // Add resolved info if resolving or closing
+    if (status === 'resolved' || status === 'closed') {
+      updateData.resolved_at = new Date().toISOString();
+      updateData.resolved_by = profile.full_name || profile.email;
+      updateData.is_read = true;
+      updateData.read_at = new Date().toISOString();
+      updateData.read_by = user.id;
+    }
+
     // Update ticket status using admin client
-    // Auto-mark as read when closing or resolving
     const { data: updatedTicket, error: updateError } = await supabaseAdmin
       .from('support_tickets')
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-        ...(status === 'resolved' && {
-          resolved_at: new Date().toISOString(),
-          resolved_by: profile.email,
-          is_read: true,
-          read_at: new Date().toISOString(),
-          read_by: user.id
-        }),
-        ...(status === 'closed' && {
-          resolved_at: new Date().toISOString(),
-          resolved_by: profile.email,
-          is_read: true,
-          read_at: new Date().toISOString(),
-          read_by: user.id
-        })
-      })
+      .update(updateData)
       .eq('id', ticketId)
       .select()
       .single();
@@ -187,10 +191,30 @@ export async function PATCH(request) {
       throw updateError;
     }
 
+    // 🆕 Send email notification if status changed to resolved/closed or response provided
+    if ((status === 'resolved' || status === 'closed' || adminResponse) && updatedTicket.user_email) {
+      try {
+        const { sendSupportTicketResponse } = await import('@/lib/emailService');
+        await sendSupportTicketResponse({
+          userEmail: updatedTicket.user_email,
+          ticketNumber: updatedTicket.ticket_number,
+          subject: updatedTicket.subject,
+          adminResponse: adminResponse || null,
+          status: status,
+          resolvedBy: profile.full_name || profile.email
+        });
+        console.log(`📧 Support ticket response email sent to ${updatedTicket.user_email}`);
+      } catch (emailError) {
+        console.error('Failed to send support email:', emailError);
+        // Don't fail the request if email fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       ticket: updatedTicket,
-      message: 'Ticket status updated successfully'
+      message: 'Ticket updated successfully',
+      emailSent: (status === 'resolved' || status === 'closed' || adminResponse) && updatedTicket.user_email
     });
 
   } catch (error) {

@@ -80,7 +80,7 @@ export async function PUT(request) {
 
     // ==================== CHECK REAPPLICATION ELIGIBILITY ====================
     const hasRejection = form.no_dues_status.some(s => s.status === 'rejected');
-    
+
     if (!hasRejection) {
       return NextResponse.json({
         success: false,
@@ -134,7 +134,7 @@ export async function PUT(request) {
     ];
 
     let sanitizedData = {};
-    
+
     if (updated_form_data) {
       // Check for attempts to modify protected fields
       for (const field of PROTECTED_FIELDS) {
@@ -158,7 +158,7 @@ export async function PUT(request) {
     if (sanitizedData && Object.keys(sanitizedData).length > 0) {
       // Validate email formats if updated
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      
+
       if (sanitizedData.personal_email && !emailPattern.test(sanitizedData.personal_email)) {
         return NextResponse.json({
           success: false,
@@ -214,7 +214,7 @@ export async function PUT(request) {
 
     if (validateError || !formExists) {
       console.error(`❌ Form ID validation failed for ${form.id}:`, validateError);
-      
+
       // Try to find the current form by registration number
       const { data: freshForm, error: freshError } = await supabaseAdmin
         .from('no_dues_forms')
@@ -292,7 +292,7 @@ export async function PUT(request) {
       console.error('Error resetting department statuses:', statusResetError);
       throw new Error('Failed to reset all department statuses');
     }
-    
+
     console.log(`♻️ Reset all 7 department statuses to pending for form ${form.id}`);
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
@@ -318,12 +318,12 @@ export async function PUT(request) {
           }
           return true; // All other departments see all students
         });
-        
+
         if (staffToNotify.length > 0) {
           // 🆕 OPTIMIZED: Send ONE combined email for reapplication
           const { sendReapplicationNotification } = await import('@/lib/emailService');
           const allStaffEmails = staffToNotify.map(staff => staff.email);
-          
+
           const emailResult = await sendReapplicationNotification({
             allStaffEmails,
             studentName: form.student_name,
@@ -342,18 +342,6 @@ export async function PUT(request) {
             console.error(`📧 ❌ Failed to send reapplication notification: ${emailResult.error}`);
           }
         }
-        
-        // ==================== AUTO-PROCESS EMAIL QUEUE ====================
-        try {
-          console.log('🔄 Triggering email queue processor...');
-          
-          fetch(APP_URLS.emailQueue(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          }).catch(err => console.log('Queue processing will retry later:', err.message));
-        } catch (queueError) {
-          console.log('Queue trigger skipped:', queueError.message);
-        }
       } catch (emailError) {
         console.error('Failed to send reapplication notifications:', emailError);
         // Don't fail the request if email fails
@@ -364,7 +352,7 @@ export async function PUT(request) {
 
     // ==================== SUCCESS RESPONSE ====================
     console.log(`✅ Reapplication #${form.reapplication_count + 1} processed for ${form.registration_no}`);
-    
+
     return NextResponse.json({
       success: true,
       message: 'Reapplication submitted successfully. All departments will review your updated application.',

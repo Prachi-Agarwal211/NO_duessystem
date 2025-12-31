@@ -74,9 +74,9 @@ export const emailSchema = z
 
 /**
  * JECRC College Email Schema
- * Must end with @jecrc.ac.in or configured domain
+ * Must end with @jecrcuniversity.edu.in or configured domain
  */
-export const collegeEmailSchema = (domain = '@jecrc.ac.in') => z
+export const collegeEmailSchema = (domain = '@jecrcuniversity.edu.in') => z
   .string()
   .email('Invalid email format')
   .refine(
@@ -163,27 +163,6 @@ export const studentFormSchema = z.object({
 });
 
 /**
- * Manual Entry Form Schema
- * Used in /api/manual-entry POST
- */
-export const manualEntrySchema = z.object({
-  registration_no: registrationNoSchema,
-  student_name: nameSchema.optional().nullable(),
-  admission_year: z.string().optional().nullable(),
-  passing_year: z.string().min(4, 'Passing year is required'),
-  personal_email: emailSchema, // ✅ NOW MANDATORY - no optional, no nullable
-  college_email: emailSchema, // ✅ NOW MANDATORY - no optional, no nullable
-  contact_no: phoneSchema,     // ✅ NOW MANDATORY - no optional, no nullable
-  school: z.string().min(1, 'School is required'),
-  school_id: uuidSchema,
-  course: z.string().min(1, 'Course is required'),
-  course_id: uuidSchema,
-  branch: z.string().optional().nullable(),
-  branch_id: uuidSchema.optional().nullable(),
-  certificate_url: urlSchema
-});
-
-/**
  * Student Reapplication Schema
  * Used in /api/student/reapply POST
  */
@@ -217,22 +196,6 @@ export const staffActionSchema = z.object({
     .max(500, 'Reason must be at most 500 characters')
     .optional()
     .or(z.literal(''))
-});
-
-/**
- * Manual Entry Action Schema (Admin)
- * Used in /api/manual-entry/action POST
- */
-export const manualEntryActionSchema = z.object({
-  entry_id: uuidSchema,
-  action: z.enum(['approve', 'reject'], {
-    errorMap: () => ({ message: 'Action must be approve or reject' })
-  }),
-  reason: z
-    .string()
-    .min(1, 'Rejection reason must be at least 1 character')
-    .max(500, 'Reason must be at most 500 characters')
-    .optional()
 });
 
 /**
@@ -427,10 +390,8 @@ export default {
 
   // Form schemas
   studentFormSchema,
-  manualEntrySchema,
   reapplySchema,
   staffActionSchema,
-  manualEntryActionSchema,
   supportTicketSchema,
   convocationValidateSchema,
   fileUploadSchema,

@@ -10,8 +10,7 @@ import {
   Settings,
   LogOut,
   X,
-  GraduationCap,
-  FileText
+  GraduationCap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -70,7 +69,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   ] : isAdmin ? [
     { name: 'Overview', icon: LayoutDashboard, href: '/admin' },
     { name: 'Convocation', icon: GraduationCap, href: '/admin/convocation' },
-    { name: 'Manual Entries', icon: FileText, href: '/admin/manual-entry' },
     { name: 'Support Tickets', icon: MessageSquare, href: '/admin/support', badge: unreadCount },
     { name: 'Settings', icon: Settings, href: '/admin/settings' },
   ] : [];

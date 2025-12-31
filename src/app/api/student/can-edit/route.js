@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -24,6 +25,16 @@ const supabaseAdmin = createClient(
  */
 export async function GET(request) {
   try {
+    // Rate limiting: Prevent enumeration attacks
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.CHECK_STATUS);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.error || 'Too many status check attempts',
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 

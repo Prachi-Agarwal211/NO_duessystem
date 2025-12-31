@@ -45,11 +45,11 @@ export async function POST(request) {
     // ==================== ZOD VALIDATION ====================
     // Replaces 200+ lines of manual validation with type-safe Zod schemas
     const validation = validateWithZod(body, studentFormSchema);
-    
+
     if (!validation.success) {
       const errorFields = Object.keys(validation.errors);
       const firstError = validation.errors[errorFields[0]];
-      
+
       return NextResponse.json(
         {
           success: false,
@@ -67,7 +67,7 @@ export async function POST(request) {
     // ==================== CHECK FOR DUPLICATES ====================
     // registration_no is already uppercase from Zod transformation
     const registrationNo = formData.registration_no;
-    
+
     const { data: existingForm, error: duplicateError } = await supabaseAdmin
       .from('no_dues_forms')
       .select('id')
@@ -76,11 +76,11 @@ export async function POST(request) {
 
     if (existingForm) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'A form with this registration number already exists',
           duplicate: true,
-          registrationNo 
+          registrationNo
         },
         { status: 409 }
       );
@@ -96,13 +96,13 @@ export async function POST(request) {
     }
 
     // ==================== VALIDATE FOREIGN KEY RELATIONSHIPS ====================
-    
+
     // Get the UUIDs for school, course, and branch from the form data
     // These are already UUIDs from the frontend dropdown selections
     const school_id = formData.school; // This is the UUID
     const course_id = formData.course; // This is the UUID
     const branch_id = formData.branch; // This is the UUID
-    
+
     // OPTIMIZATION: Parallelize school/course/branch validation for faster form submission
     const [
       { data: schoolData, error: schoolError },
@@ -130,7 +130,7 @@ export async function POST(request) {
         .eq('is_active', true)
         .single()
     ]);
-    
+
     if (schoolError || !schoolData) {
       console.error('Invalid school ID:', school_id, schoolError);
       return NextResponse.json(
@@ -138,7 +138,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     if (courseError || !courseData) {
       console.error('Invalid course ID or school mismatch:', course_id, courseError);
       return NextResponse.json(
@@ -146,7 +146,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     if (branchError || !branchData) {
       console.error('Invalid branch ID or course mismatch:', branch_id, branchError);
       return NextResponse.json(
@@ -154,13 +154,13 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     console.log('✅ Validated:', {
       school: schoolData.name,
       course: courseData.name,
       branch: branchData.name
     });
-    
+
     // ==================== PREPARE SANITIZED DATA ====================
     // All data is already sanitized by Zod (trimmed, cased, validated)
     const sanitizedData = {
@@ -185,7 +185,7 @@ export async function POST(request) {
     };
 
     // ==================== INSERT FORM ====================
-    
+
     const { data: form, error: insertError } = await supabaseAdmin
       .from('no_dues_forms')
       .insert([sanitizedData])
@@ -194,20 +194,20 @@ export async function POST(request) {
 
     if (insertError) {
       console.error('Form insertion error:', insertError);
-      
+
       // Handle specific database errors
       if (insertError.code === '23505') {
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: 'A form with this registration number already exists',
             duplicate: true,
-            registrationNo 
+            registrationNo
           },
           { status: 409 }
         );
       }
-      
+
       return NextResponse.json(
         { success: false, error: 'Failed to create form record' },
         { status: 500 }
@@ -225,12 +225,12 @@ export async function POST(request) {
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
     // Note: Email failures are non-fatal - form is already created successfully
-    
+
     try {
       // IMPORTANT: Fetch staff based on department scope rules:
       // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
       // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
-      
+
       const { data: allStaff, error: staffError } = await supabaseAdmin
         .from('profiles')
         .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
@@ -255,24 +255,24 @@ export async function POST(request) {
             } else if (staff.school_id && staff.school_id !== school_id) {
               return false; // Backward compatibility: single school_id doesn't match
             }
-            
+
             // Check course scope (using UUID arrays)
             if (staff.course_ids && staff.course_ids.length > 0) {
               if (!staff.course_ids.includes(course_id)) {
                 return false; // Student's course not in HOD's course array
               }
             }
-            
+
             // Check branch scope (using UUID arrays)
             if (staff.branch_ids && staff.branch_ids.length > 0) {
               if (!staff.branch_ids.includes(branch_id)) {
                 return false; // Student's branch not in HOD's branch array
               }
             }
-            
+
             return true; // Matches scope, notify this HOD
           }
-          
+
           // For all other 10 departments (non-HOD), notify everyone
           return true;
         });
@@ -280,7 +280,7 @@ export async function POST(request) {
         if (staffToNotify.length > 0) {
           // 🆕 OPTIMIZED: Send ONE combined email to all departments instead of individual emails
           const allStaffEmails = staffToNotify.map(staff => staff.email);
-          
+
           const emailResult = await sendCombinedDepartmentNotification({
             allStaffEmails,
             studentName: form.student_name,
@@ -297,23 +297,6 @@ export async function POST(request) {
           } else {
             console.error(`📧 ❌ Failed to send combined notification: ${emailResult.error}`);
           }
-          
-          // ==================== AUTO-PROCESS EMAIL QUEUE ====================
-          // Trigger queue processing immediately after sending emails
-          // This ensures any queued emails are sent without waiting for cron
-          try {
-            console.log('🔄 Triggering email queue processor...');
-            
-            // Fire and forget - don't wait for response
-            fetch(APP_URLS.emailQueue(), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            }).catch(err => {
-              console.log('Queue processing will retry later:', err.message);
-            });
-          } catch (queueError) {
-            console.log('Queue trigger skipped:', queueError.message);
-          }
         } else {
           console.warn('⚠️ No staff members match the scope for this student');
         }
@@ -322,12 +305,11 @@ export async function POST(request) {
       }
     } catch (emailError) {
       console.error('❌ Email notification failed (non-fatal):', emailError);
-      console.log('📝 Form created successfully. Email will be queued for retry.');
       // Continue - form submission should not fail if emails fail
     }
 
     // ==================== RETURN SUCCESS ====================
-    
+
     return NextResponse.json({
       success: true,
       data: form,
@@ -337,10 +319,10 @@ export async function POST(request) {
   } catch (error) {
     console.error('Student API Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Internal server error',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );

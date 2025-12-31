@@ -7,73 +7,68 @@
 
 import crypto from 'crypto';
 
+// Production URL - Hardcoded for reliability
+const PRODUCTION_URL = 'https://nodues.jecrcuniversity.edu.in';
+
 /**
  * Generate QR data for certificate
- * @param {Object} certificateData - Certificate information
- * @returns {string} QR code data string
+ * @param {Object} blockchainRecord - Blockchain record with transaction info
+ * @param {Object} certificateData - Certificate information (formId, registrationNo, studentName)
+ * @returns {Object} QR code data object
  */
-export function generateQRData(certificateData) {
-  const { id, student_name, enrollment_no, issued_at } = certificateData;
-  
-  // Create verification URL with certificate ID
-  const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://nodues.jecrc.ac.in'}/verify/${id}`;
-  
-  // Generate hash for tamper detection
-  const dataString = `${id}|${student_name}|${enrollment_no}|${issued_at}`;
-  const hash = crypto.createHash('sha256').update(dataString).digest('hex');
-  
-  return JSON.stringify({
+export function generateQRData(blockchainRecord, certificateData) {
+  const { formId, registrationNo, studentName } = certificateData;
+
+  // Create verification URL with form ID
+  const verificationUrl = `${PRODUCTION_URL}/verify/${formId}`;
+
+  return {
     url: verificationUrl,
-    id,
-    hash: hash.substring(0, 16), // Shortened hash for QR
-    timestamp: new Date(issued_at).getTime()
-  });
+    id: formId,
+    regNo: registrationNo,
+    name: studentName,
+    txId: blockchainRecord.transactionId,
+    hash: blockchainRecord.certificateHash.substring(0, 16), // Shortened hash for QR
+    timestamp: Date.now()
+  };
 }
 
 /**
- * Verify certificate authenticity
- * @param {string} certificateId - Certificate ID to verify
- * @param {Object} supabase - Supabase client
- * @returns {Promise<Object>} Verification result
+ * Verify certificate authenticity by comparing stored hash
+ * @param {Object} certificateData - Certificate data to verify
+ * @param {string} storedHash - Hash stored in database
+ * @returns {Object} Verification result
  */
-export async function verifyCertificate(certificateId, supabase) {
+export function verifyCertificate(certificateData, storedHash) {
   try {
-    // Query certificate from database
-    const { data: certificate, error } = await supabase
-      .from('certificates')
-      .select(`
-        id,
-        student_name,
-        enrollment_no,
-        issued_at,
-        certificate_type,
-        student:student_id (
-          email,
-          phone
-        )
-      `)
-      .eq('id', certificateId)
-      .single();
+    // Recalculate hash from certificate data
+    // IMPORTANT: Must match the structure in generateCertificateHash() exactly
+    const dataToHash = {
+      student_id: certificateData.formId,
+      registration_no: certificateData.registrationNo,
+      full_name: certificateData.studentName,
+      course: certificateData.course,
+      branch: certificateData.branch,
+      status: 'completed'
+      // NOTE: completed_at is intentionally excluded to match generateCertificateHash
+    };
 
-    if (error || !certificate) {
+    const dataString = JSON.stringify(dataToHash);
+    const computedHash = crypto.createHash('sha256').update(dataString).digest('hex');
+
+    // Compare first 64 chars (full SHA256)
+    const hashMatch = computedHash === storedHash;
+
+    if (!hashMatch) {
       return {
         valid: false,
-        message: 'Certificate not found or has been revoked'
+        message: 'Certificate data has been tampered with',
+        tamperedFields: ['hash_mismatch']
       };
     }
 
-    // Certificate is valid
     return {
       valid: true,
-      certificate: {
-        id: certificate.id,
-        studentName: certificate.student_name,
-        enrollmentNo: certificate.enrollment_no,
-        issuedAt: certificate.issued_at,
-        certificateType: certificate.certificate_type,
-        studentEmail: certificate.student?.email,
-        studentPhone: certificate.student?.phone
-      },
       message: 'Certificate is authentic and valid'
     };
 
@@ -87,62 +82,72 @@ export async function verifyCertificate(certificateId, supabase) {
 }
 
 /**
- * Verify QR code data
- * @param {string} qrData - QR code data string
- * @param {Object} supabase - Supabase client
- * @returns {Promise<Object>} Verification result
+ * Verify QR code data structure (synchronous validation)
+ * @param {Object} parsedData - Parsed QR code data object
+ * @returns {Object} Validation result
  */
-export async function verifyQRData(qrData, supabase) {
+export function verifyQRData(parsedData) {
   try {
-    // Parse QR data
-    const parsedData = JSON.parse(qrData);
-    const { id, hash, timestamp } = parsedData;
+    // Check for required fields based on our QR data structure
+    const { id, url, hash, timestamp, txId } = parsedData;
 
-    if (!id || !hash || !timestamp) {
+    // Check required fields
+    if (!id) {
       return {
         valid: false,
-        message: 'Invalid QR code format'
+        error: 'Missing certificate ID in QR code'
       };
     }
 
-    // Check if timestamp is reasonable (not too old, not in future)
+    if (!hash) {
+      return {
+        valid: false,
+        error: 'Missing hash in QR code'
+      };
+    }
+
+    if (!timestamp) {
+      return {
+        valid: false,
+        error: 'Missing timestamp in QR code'
+      };
+    }
+
+    // Check if timestamp is reasonable (not in future)
     const now = Date.now();
     const qrAge = now - timestamp;
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
 
-    if (qrAge < 0 || qrAge > oneYear) {
+    if (qrAge < -60000) { // Allow 1 minute clock skew
       return {
         valid: false,
-        message: 'QR code timestamp is invalid'
+        error: 'QR code timestamp is in the future'
       };
     }
 
-    // Verify certificate exists and matches hash
-    const verificationResult = await verifyCertificate(id, supabase);
-    
-    if (!verificationResult.valid) {
-      return verificationResult;
+    // NOTE: Removed 2-year expiry check - certificates are permanent documents
+    // QR codes should remain valid indefinitely for archival purposes
+
+    // Extract formId from the id field or url
+    let formId = id;
+    if (url && url.includes('/verify/')) {
+      const urlParts = url.split('/verify/');
+      if (urlParts[1]) {
+        formId = urlParts[1].split('?')[0];
+      }
     }
 
-    // Verify hash matches
-    const cert = verificationResult.certificate;
-    const dataString = `${cert.id}|${cert.studentName}|${cert.enrollmentNo}|${cert.issuedAt}`;
-    const computedHash = crypto.createHash('sha256').update(dataString).digest('hex').substring(0, 16);
-
-    if (computedHash !== hash) {
-      return {
-        valid: false,
-        message: 'Certificate data has been tampered with'
-      };
-    }
-
-    return verificationResult;
+    return {
+      valid: true,
+      formId,
+      transactionId: txId,
+      hash
+    };
 
   } catch (error) {
-    console.error('[blockchainService] QR verification error:', error);
+    console.error('[blockchainService] QR validation error:', error);
     return {
       valid: false,
-      message: 'QR code verification failed'
+      error: 'QR code validation failed'
     };
   }
 }
@@ -153,16 +158,18 @@ export async function verifyQRData(qrData, supabase) {
  * @returns {string} SHA-256 hash
  */
 export function generateCertificateHash(certificateData) {
+  // Generate consistent hash WITHOUT completed_at to avoid timestamp mismatches
+  // This hash is used for tamper detection, not time validation
   const dataString = JSON.stringify({
     student_id: certificateData.student_id,
     registration_no: certificateData.registration_no,
     full_name: certificateData.full_name,
     course: certificateData.course,
     branch: certificateData.branch,
-    status: certificateData.status,
-    completed_at: certificateData.completed_at
+    status: certificateData.status
+    // NOTE: completed_at is intentionally excluded for consistency
   });
-  
+
   return crypto.createHash('sha256').update(dataString).digest('hex');
 }
 
@@ -185,13 +192,13 @@ export async function createBlockchainRecord(certificateData) {
   try {
     // Generate certificate hash
     const certificateHash = generateCertificateHash(certificateData);
-    
+
     // Generate transaction ID
     const transactionId = generateTransactionId();
-    
+
     // Generate block number (simulated)
     const blockNumber = Math.floor(Date.now() / 1000);
-    
+
     // Create blockchain record
     const blockchainRecord = {
       success: true,
@@ -208,9 +215,9 @@ export async function createBlockchainRecord(certificateData) {
       },
       department_statuses: certificateData.department_statuses || []
     };
-    
+
     console.log('[blockchainService] Blockchain record created:', transactionId);
-    
+
     return blockchainRecord;
   } catch (error) {
     console.error('[blockchainService] Error creating blockchain record:', error);
@@ -223,8 +230,8 @@ export async function createBlockchainRecord(certificateData) {
  * Currently a placeholder for future blockchain integration
  */
 export async function storeOnBlockchain(certificateData) {
-  // TODO: Implement actual blockchain storage
-  // For now, just log for future implementation
+  // Blockchain storage - Currently using simulated ledger
+  // Future: Integrate with Ethereum/Polygon for production
   console.log('[blockchainService] Blockchain storage not yet implemented for:', certificateData.id);
   return { success: true, txHash: 'mock-tx-hash' };
 }

@@ -23,6 +23,8 @@ export default function AdminSupportPage() {
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [markedAsRead, setMarkedAsRead] = useState(new Set());
+  const [adminResponses, setAdminResponses] = useState({}); // Store response text for each ticket
+  const [expandedTicket, setExpandedTicket] = useState(null); // Track which ticket response box is open
 
   const statusOptions = [
     { id: 'all', label: 'All Tickets' },
@@ -176,11 +178,16 @@ export default function AdminSupportPage() {
     };
   }, [activeTab, statusFilter]); // Re-subscribe when filters change
 
-  const updateTicketStatus = async (ticketId, newStatus) => {
+  const updateTicketStatus = async (ticketId, newStatus, adminResponse = null) => {
     setUpdatingStatus(ticketId);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
+
+      const body = { ticketId, status: newStatus };
+      if (adminResponse) {
+        body.adminResponse = adminResponse;
+      }
 
       const res = await fetch('/api/support', {
         method: 'PATCH',
@@ -188,12 +195,17 @@ export default function AdminSupportPage() {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ ticketId, status: newStatus })
+        body: JSON.stringify(body)
       });
 
       const result = await res.json();
       if (result.success) {
-        toast.success('Status updated successfully');
+        toast.success(result.emailSent ? 'Status updated & email sent ✓' : 'Status updated successfully');
+        // Clear the response text after sending
+        if (adminResponse) {
+          setAdminResponses(prev => ({ ...prev, [ticketId]: '' }));
+          setExpandedTicket(null);
+        }
         // No need to manually update - realtime will handle it
       } else {
         toast.error('Failed to update status');
@@ -487,23 +499,73 @@ export default function AdminSupportPage() {
                   </div>
 
                   {/* Ticket Footer */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-white/5">
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-medium">{ticket.user_name}</span>
-                      <span>•</span>
-                      <span>{ticket.user_email}</span>
+                  <div className="pt-4 border-t border-gray-100 dark:border-white/5 space-y-3">
+                    {/* User Info & Quick Status Update */}
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="font-medium">{ticket.user_name}</span>
+                        <span>•</span>
+                        <span>{ticket.user_email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={ticket.status}
+                          onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
+                          disabled={updatingStatus === ticket.id}
+                          className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 cursor-pointer hover:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        >
+                          <option value="open">Open</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                        <button
+                          onClick={() => setExpandedTicket(expandedTicket === ticket.id ? null : ticket.id)}
+                          className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:border-blue-500 transition-all"
+                        >
+                          {expandedTicket === ticket.id ? 'Cancel' : 'Send Response'}
+                        </button>
+                      </div>
                     </div>
-                    <select
-                      value={ticket.status}
-                      onChange={(e) => updateTicketStatus(ticket.id, e.target.value)}
-                      disabled={updatingStatus === ticket.id}
-                      className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 cursor-pointer hover:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="closed">Closed</option>
-                    </select>
+
+                    {/* Response Textarea (Expandable) */}
+                    {expandedTicket === ticket.id && (
+                      <div className="space-y-2 animate-in slide-in-from-top-2 fade-in duration-200">
+                        <textarea
+                          value={adminResponses[ticket.id] || ''}
+                          onChange={(e) => setAdminResponses(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                          placeholder="Type your response to the student/staff member..."
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all"
+                          rows="3"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              const response = adminResponses[ticket.id]?.trim();
+                              if (!response) {
+                                toast.error('Please enter a response message');
+                                return;
+                              }
+                              updateTicketStatus(ticket.id, 'resolved', response);
+                            }}
+                            disabled={updatingStatus === ticket.id || !adminResponses[ticket.id]?.trim()}
+                            className="px-4 py-2 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                          >
+                            {updatingStatus === ticket.id ? (
+                              <>
+                                <RefreshCcw className="w-3 h-3 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <MessageSquare className="w-3 h-3" />
+                                Send Response & Resolve
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

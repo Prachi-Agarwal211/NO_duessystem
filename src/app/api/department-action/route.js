@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { jwtVerify, importJWK } from 'jose';
 import { NextResponse } from 'next/server';
 import { sendRejectionNotification, sendCertificateReadyNotification } from '@/lib/emailService';
-import { APP_URLS } from '@/lib/urlHelper';
+import { APP_URLS, EMAIL_URLS } from '@/lib/urlHelper';
 
 // Initialize Supabase Admin Client to bypass RLS for server-side actions
 const supabaseAdmin = createClient(
@@ -215,7 +215,7 @@ export async function POST(request) {
                     registrationNo: formData.registration_no,
                     departmentName: departmentDisplayName,
                     rejectionReason: reason,
-                    statusUrl: APP_URLS.studentCheckStatus(formData.registration_no)
+                    statusUrl: EMAIL_URLS.studentCheckStatus(formData.registration_no)
                 });
 
                 console.log(`✅ Sent rejection notification to ${formData.personal_email}`);
@@ -245,7 +245,7 @@ export async function POST(request) {
                             studentEmail: formData.personal_email,
                             studentName: formData.student_name,
                             registrationNo: formData.registration_no,
-                            certificateUrl: APP_URLS.studentCheckStatus(formData.registration_no)
+                            certificateUrl: EMAIL_URLS.studentCheckStatus(formData.registration_no)
                         });
 
                         console.log(`🎓 Certificate ready email sent to ${formData.personal_email}`);

@@ -94,45 +94,6 @@ export async function verifyPasswordResetToken(token) {
 }
 
 /**
- * Generate a manual entry action token (for approval/rejection)
- * @param {string} requestId - Manual entry request ID
- * @param {string} adminId - Admin user ID
- * @param {string} action - Action type ('approve' or 'reject')
- * @returns {Promise<string>} Action token
- */
-export async function generateManualEntryActionToken(requestId, adminId, action) {
-  return generateToken(
-    {
-      requestId,
-      adminId,
-      action,
-      type: 'manual-entry-action'
-    },
-    '24h' // Token expires in 24 hours
-  );
-}
-
-/**
- * Verify a manual entry action token
- * @param {string} token - Action token
- * @returns {Promise<Object>} Token payload
- * @throws {Error} If token is invalid
- */
-export async function verifyManualEntryActionToken(token) {
-  const payload = await verifyToken(token);
-  
-  if (payload.type !== 'manual-entry-action') {
-    throw new Error('Invalid token type');
-  }
-  
-  return {
-    requestId: payload.requestId,
-    adminId: payload.adminId,
-    action: payload.action
-  };
-}
-
-/**
  * Generate a certificate verification token
  * @param {string} certificateId - Certificate ID
  * @returns {Promise<string>} Verification token

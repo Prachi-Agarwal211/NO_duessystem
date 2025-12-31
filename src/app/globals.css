@@ -9,33 +9,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Better scrollbar for webkit browsers */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(196, 30, 58, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(196, 30, 58, 0.5);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(196, 30, 58, 0.4);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(196, 30, 58, 0.6);
-}
-
 /* Shake animation for form validation errors */
 @keyframes shake {
 
@@ -140,9 +113,7 @@ html {
   --info-dark: #4D9FFF;
 }
 
-/* Ensure smooth scrolling globally */
 html {
-  scroll-behavior: smooth;
   height: 100%;
 }
 
@@ -233,11 +204,6 @@ body.dark {
   transition: all 300ms ease;
 }
 
-/* Hide default scrollbar */
-::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
-}
 
 /* ========================================
    AUTOFILL OVERRIDES FOR DARK MODE
@@ -723,39 +689,24 @@ select {
    GLASS MORPHISM
    ======================================== */
 
-/* ========================================
-   GLASS MORPHISM (THICK GLASS v2)
-   ======================================== */
-
 .glass-card {
   background: rgba(255, 255, 255, 0.08);
-  /* More subtle base */
   backdrop-filter: blur(16px);
-  /* Heavier blur for depth */
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-top: 1px solid rgba(255, 255, 255, 0.35);
-  /* Top highlight */
   border-radius: 16px;
-
-  /* Thick Glass Logic: Inner light + Deep outer shadow */
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    /* Top edge light */
     inset 0 -1px 1px rgba(0, 0, 0, 0.05),
-    /* Bottom edge dim */
     0 8px 32px -4px rgba(0, 0, 0, 0.15),
-    /* Drop shadow */
     0 24px 60px -8px rgba(0, 0, 0, 0.2);
-  /* Deep ambient shadow */
-
   transform: translateZ(0);
   transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px) translateZ(0);
-  /* Stronger lift shadows on hover */
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.5),
     0 12px 40px -4px rgba(0, 0, 0, 0.2),
@@ -821,14 +772,14 @@ select {
   @apply surface-light;
   position: relative;
   z-index: 10;
-  max-width: 520px;
   /* Reducing Dominance */
+  max-width: 100%;
   width: 100%;
 }
 
 .hero-info-panel-dark {
   @apply surface-dark;
-  max-width: 520px;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -1045,31 +996,6 @@ select {
   }
 }
 
-/* Existing Glass Card Styles (Kept as fallback/dark base) */
-.glass-card {
-  @apply backdrop-blur-xl border border-white/10 shadow-xl;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-/* Dark Mode: Premium Glass */
-.glass-card-dark {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  /* Matched blur (was 10px vs 20px) */
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease-out;
-}
-
-.glass-card-dark:hover {
-  background: rgba(255, 255, 255, 0.06);
-  /* Lighter on hover to invite click */
-  border-color: rgba(255, 255, 255, 0.2);
-  /* Glow effect on border */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
-}
 
 .hero-info-panel-dark {
   background: rgba(0, 0, 0, 0.4);
@@ -1640,211 +1566,4 @@ textarea:focus-visible,
   h3.mobile-responsive {
     font-size: 1.125rem !important;
   }
-}
-
-/* ========================================
-   2026 ADVANCED ANIMATIONS & EFFECTS
-   Award-Winning Visual Enhancements
-   ======================================== */
-
-/* Holographic foil shift - Rainbow reflection effect */
-@keyframes holographic-shift {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-    filter: hue-rotate(0deg);
-  }
-
-  50% {
-    background-position: 100% 50%;
-    filter: hue-rotate(10deg);
-  }
-}
-
-.animate-holographic {
-  animation: holographic-shift 4s ease-in-out infinite;
-}
-
-/* Metallic border sweep - Flowing border animation */
-@keyframes border-sweep {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-.animate-border-sweep {
-  animation: border-sweep 3s linear infinite;
-}
-
-/* Caustic water light flow - Organic light patterns */
-@keyframes caustic-flow {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.1;
-  }
-
-  33% {
-    transform: translate(20px, -15px) scale(1.05);
-    opacity: 0.13;
-  }
-
-  66% {
-    transform: translate(-15px, 20px) scale(0.98);
-    opacity: 0.12;
-  }
-}
-
-.animate-caustic {
-  animation: caustic-flow 15s ease-in-out infinite;
-}
-
-/* Chrome metallic text shine - Premium metallic effect */
-@keyframes chrome-shine {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.animate-chrome {
-  animation: chrome-shine 6s ease-in-out infinite;
-}
-
-/* Morphing blob animation - Organic shape transformation */
-@keyframes morph-blob {
-
-  0%,
-  100% {
-    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-    transform: translate(0, 0) rotate(0deg) scale(1);
-  }
-
-  33% {
-    border-radius: 40% 60% 50% 50% / 70% 40% 60% 30%;
-    transform: translate(15px, -10px) rotate(60deg) scale(1.05);
-  }
-
-  66% {
-    border-radius: 50% 50% 60% 40% / 40% 70% 30% 60%;
-    transform: translate(-10px, 15px) rotate(120deg) scale(0.98);
-  }
-}
-
-.animate-morph-blob {
-  animation: morph-blob 20s ease-in-out infinite;
-}
-
-/* Prismatic light ray shimmer */
-@keyframes prismatic-shimmer {
-
-  0%,
-  100% {
-    opacity: 0.05;
-    transform: translateY(0) rotate(-15deg);
-  }
-
-  50% {
-    opacity: 0.12;
-    transform: translateY(-20px) rotate(-12deg);
-  }
-}
-
-.animate-prismatic {
-  animation: prismatic-shimmer 8s ease-in-out infinite;
-}
-
-/* Halo pulse - Soft glowing aura */
-@keyframes halo-pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.2;
-  }
-
-  50% {
-    transform: scale(1.2);
-    opacity: 0.4;
-  }
-}
-
-.animate-halo {
-  animation: halo-pulse 4s ease-in-out infinite;
-}
-
-/* Iridescent wave - Color shifting animation */
-@keyframes iridescent-wave {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-    filter: hue-rotate(0deg) saturate(1);
-  }
-
-  25% {
-    filter: hue-rotate(5deg) saturate(1.1);
-  }
-
-  50% {
-    background-position: 100% 50%;
-    filter: hue-rotate(10deg) saturate(1.2);
-  }
-
-  75% {
-    filter: hue-rotate(5deg) saturate(1.1);
-  }
-}
-
-.animate-iridescent {
-  animation: iridescent-wave 10s ease-in-out infinite;
-}
-
-/* Liquid flow - Smooth gradient movement */
-@keyframes liquid-flow {
-
-  0%,
-  100% {
-    background-position: 0% 50%;
-    transform: scale(1);
-  }
-
-  50% {
-    background-position: 100% 50%;
-    transform: scale(1.05);
-  }
-}
-
-.animate-liquid {
-  animation: liquid-flow 8s ease-in-out infinite;
-}
-
-/* Depth layers - 3D depth effect */
-@keyframes depth-layers {
-
-  0%,
-  100% {
-    transform: translateZ(0) scale(1);
-    opacity: 0.8;
-  }
-
-  50% {
-    transform: translateZ(20px) scale(1.05);
-    opacity: 1;
-  }
-}
-
-.animate-depth {
-  animation: depth-layers 6s ease-in-out infinite;
 }

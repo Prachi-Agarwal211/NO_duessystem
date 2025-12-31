@@ -17,7 +17,7 @@ import DepartmentPerformanceChart from '@/components/admin/DepartmentPerformance
 import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
-import ManualEntriesTable from '@/components/admin/ManualEntriesTable';
+
 import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
 import TabbedSupportTickets from '@/components/admin/TabbedSupportTickets';
 import FilterPills from '@/components/ui/FilterPills';
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   } = useAdminDashboard();
 
   // State for manual entries stats
-  const [manualEntriesStats, setManualEntriesStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+
 
   // Load departments for filter dropdown
   const { departments } = useDepartmentsConfig();
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       const { registrationNo, studentName } = event.detail;
       toast.success(
         `New application received!\n${studentName || 'Student'} (${registrationNo})`,
-        { 
+        {
           duration: 5000,
           icon: '🔔',
           style: {
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (userId) {
       console.log('📥 Initial admin dashboard data load (parallel)');
-      
+
       // Fetch all data in parallel to minimize load time
       const loadData = async () => {
         try {
@@ -126,8 +126,7 @@ export default function AdminDashboard() {
               search: '',
               department: departmentFilter
             }),
-            fetchStats(),
-            fetchManualEntriesStats()
+            fetchStats()
           ]);
           console.log('✅ All dashboard data loaded successfully');
         } catch (error) {
@@ -135,7 +134,7 @@ export default function AdminDashboard() {
           toast.error('Failed to load dashboard data');
         }
       };
-      
+
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -156,29 +155,7 @@ export default function AdminDashboard() {
   }, [currentPage, statusFilter, departmentFilter, debouncedSearch]); // ✅ Removed searchTerm from deps
   // Now API is only called 500ms AFTER user stops typing, not on every keystroke!
 
-  // Fetch manual entries stats
-  const fetchManualEntriesStats = async () => {
-    if (!userId) return;
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      const response = await fetch('/api/admin/manual-entries-stats', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setManualEntriesStats(data.stats);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching manual entries stats:', error);
-    }
-  };
+
 
   // ✅ FIX: Properly extract stats data
   const statusCounts = stats?.overallStats?.[0] || {
@@ -187,7 +164,7 @@ export default function AdminDashboard() {
     completed_requests: 0,
     rejected_requests: 0
   };
-  
+
   // ✅ FIX: Check if stats object exists and has valid data
   const statsLoaded = Boolean(
     stats &&
@@ -197,7 +174,7 @@ export default function AdminDashboard() {
     stats.overallStats[0] &&
     typeof stats.overallStats[0].total_forms !== 'undefined'
   );
-  
+
   // Debug logging for stats
   useEffect(() => {
     console.log('📊 Stats State Updated:', {
@@ -249,53 +226,40 @@ export default function AdminDashboard() {
             <div className="flex gap-1">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
-                  activeTab === 'dashboard'
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${activeTab === 'dashboard'
                     ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => setActiveTab('convocation')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${
-                  activeTab === 'convocation'
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${activeTab === 'convocation'
                     ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <GraduationCap className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">9th</span> Convocation
               </button>
-              <button
-                onClick={() => setActiveTab('manual-entries')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
-                  activeTab === 'manual-entries'
-                    ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                }`}
-              >
-                Manual
-              </button>
+
               <button
                 onClick={() => setActiveTab('support')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${
-                  activeTab === 'support'
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${activeTab === 'support'
                     ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                }`}
+                  }`}
               >
                 <Headphones className="w-4 h-4 flex-shrink-0" />
                 Support
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${
-                  activeTab === 'settings'
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap min-h-[44px] flex items-center justify-center ${activeTab === 'settings'
                     ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Settings
               </button>
@@ -332,7 +296,7 @@ export default function AdminDashboard() {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        
+
         {/* Real-time Status & Refresh */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -345,8 +309,8 @@ export default function AdminDashboard() {
             onClick={refreshData}
             disabled={refreshing}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-              ${isDark 
-                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
+              ${isDark
+                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
               } disabled:opacity-50`}
           >
@@ -360,22 +324,8 @@ export default function AdminDashboard() {
         <div className="space-y-8 animate-fade-in">
           {/* Stats Grid - Always renders with fallback values */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div
-              onClick={() => {
-                setActiveTab('manual-entries');
-              }}
-              className="cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
-              title="Click to view manual entries"
-            >
-              <StatsCard
-                title="Manual Entries (Pending)"
-                value={manualEntriesStats.pending || 0}
-                change={`${manualEntriesStats.total || 0} total entries`}
-                trend="up"
-                color="bg-purple-500"
-              />
-            </div>
-            
+
+
             <div
               onClick={() => {
                 setStatusFilter('completed');
@@ -395,7 +345,7 @@ export default function AdminDashboard() {
                 color="bg-green-500"
               />
             </div>
-            
+
             <div
               onClick={() => {
                 setStatusFilter('pending');
@@ -415,7 +365,7 @@ export default function AdminDashboard() {
                 color="bg-yellow-500"
               />
             </div>
-            
+
             <div
               onClick={() => {
                 setStatusFilter('rejected');
@@ -504,7 +454,7 @@ export default function AdminDashboard() {
                   ))}
               </select>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -541,12 +491,6 @@ export default function AdminDashboard() {
       ) : activeTab === 'convocation' ? (
         <div className="animate-fade-in">
           <ConvocationDashboard />
-        </div>
-      ) : activeTab === 'manual-entries' ? (
-        <div className="animate-fade-in">
-          <GlassCard className="p-6">
-            <ManualEntriesTable />
-          </GlassCard>
         </div>
       ) : activeTab === 'support' ? (
         <div className="animate-fade-in">
