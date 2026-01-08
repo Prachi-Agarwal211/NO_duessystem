@@ -27,7 +27,7 @@ export async function exportApplicationsToCSV(applications) {
     } else {
       // Fallback to default departments if API fails (Updated: 9 departments)
       console.warn('Failed to fetch departments, using fallback list');
-      departments = ['school_hod', 'library', 'it_department', 'hostel', 'mess', 'canteen', 'tpo', 'alumni_association', 'accounts_department', 'registrar'];
+      departments = ['school_hod', 'library', 'it_department', 'hostel', 'accounts_department', 'registrar', 'alumni_association'];
     }
 
     // Build headers with country code
@@ -190,7 +190,7 @@ export async function exportAllStaffDataToCSV(filters, departmentName, supabase)
   try {
     // Show loading indicator
     const loadingToast = { id: 'export-loading' };
-    
+
     // Build query parameters
     const params = new URLSearchParams({
       status: filters.activeTab || 'pending',
@@ -206,7 +206,7 @@ export async function exportAllStaffDataToCSV(filters, departmentName, supabase)
     });
 
     const result = await response.json();
-    
+
     if (!result.success || !result.data || result.data.length === 0) {
       alert('No data to export');
       return false;
@@ -249,9 +249,9 @@ export async function exportAllStaffDataToCSV(filters, departmentName, supabase)
       filters.course !== 'All' ? filters.course : '',
       filters.branch !== 'All' ? filters.branch : ''
     ].filter(Boolean).join('_');
-    
+
     const filename = `${departmentName || 'department'}_${result.count}_records${filterSuffix ? '_' + filterSuffix : ''}_${new Date().toISOString().split('T')[0]}.csv`;
-    
+
     downloadCSV(csvContent, filename);
     return true;
 

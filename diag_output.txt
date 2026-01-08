@@ -1,0 +1,23 @@
+--- Database Deep Diagnostic ---
+✅ Table [profiles]: Online
+   Columns: id, email, full_name, registration_no, role, department_name, assigned_department_ids, school_id, school_ids, course_ids, branch_ids, is_active, metadata, created_at, updated_at
+✅ Table [departments]: Online
+   Columns: id, name, display_name, email, is_school_specific, is_active, display_order, created_at, updated_at
+✅ Table [no_dues_forms]: Online
+   Columns: (No data to infer columns)
+   Structure (RPC): [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object]
+✅ Table [no_dues_status]: Online
+   Columns: (No data to infer columns)
+   Structure (RPC): [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object]
+✅ Table [config_schools]: Online
+   Columns: id, name, display_order, is_active, created_at, updated_at
+✅ Table [config_courses]: Online
+   Columns: id, school_id, name, display_order, is_active, created_at, updated_at
+✅ Table [config_branches]: Online
+   Columns: id, course_id, name, display_order, is_active, created_at, updated_at
+✅ Table [convocation_eligible_students]: Online
+   Columns: id, registration_no, student_name, school, admission_year, status, created_at
+❌ Table [system_config]: Could not find the table 'public.system_config' in the schema cache (PGRST205)
+✅ Table [support_tickets]: Online
+   Columns: (No data to infer columns)
+   Structure (RPC): [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object], [object Object]

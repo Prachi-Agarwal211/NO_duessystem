@@ -12,12 +12,9 @@ export const DEPARTMENT_NAMES = {
   'library': 'Central Library',
   'it_department': 'IT Services',
   'hostel': 'Hostel Management',
-  'mess': 'Mess Committee',
-  'canteen': 'Canteen Services',
-  'tpo': 'Training & Placement Office',
-  'alumni_association': 'Alumni Relations',
   'accounts_department': 'Accounts & Finance',
-  'registrar': 'Office of the Registrar'
+  'registrar': 'Office of the Registrar',
+  'alumni_association': 'Alumni Relations'
 };
 
 // Short form for mobile/compact views
@@ -26,12 +23,9 @@ export const DEPARTMENT_SHORT_NAMES = {
   'library': 'Library',
   'it_department': 'IT',
   'hostel': 'Hostel',
-  'mess': 'Mess',
-  'canteen': 'Canteen',
-  'tpo': 'TPO',
-  'alumni_association': 'Alumni',
   'accounts_department': 'Accounts',
-  'registrar': 'Registrar'
+  'registrar': 'Registrar',
+  'alumni_association': 'Alumni'
 };
 
 // ============================================================================
@@ -98,7 +92,7 @@ export function getPriorityDisplay(priority) {
  */
 export function getSchoolDisplay(schoolName, short = false) {
   if (!schoolName) return 'School Not Specified';
-  
+
   if (short && schoolName.length > 40) {
     // Abbreviate long names: "School of Engineering & Technology" → "SOE&T"
     return schoolName
@@ -107,7 +101,7 @@ export function getSchoolDisplay(schoolName, short = false) {
       .map(word => word[0])
       .join('');
   }
-  
+
   return schoolName;
 }
 
@@ -119,22 +113,22 @@ export function getSchoolDisplay(schoolName, short = false) {
  */
 export function getDateDisplay(dateString, relative = false) {
   if (!dateString) return 'Date not available';
-  
+
   const date = new Date(dateString);
-  
+
   if (relative) {
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
     if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
     if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
   }
-  
+
   return date.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'short',
@@ -151,7 +145,7 @@ export function getDateDisplay(dateString, relative = false) {
  */
 export function transformDepartmentsForDisplay(departments) {
   if (!Array.isArray(departments)) return [];
-  
+
   return departments.map(dept => ({
     ...dept,
     displayName: getDepartmentDisplay(dept.name || dept.department_name),
@@ -168,7 +162,7 @@ export function transformDepartmentsForDisplay(departments) {
  */
 export function transformFormForDisplay(form) {
   if (!form) return null;
-  
+
   return {
     ...form,
     schoolDisplay: getSchoolDisplay(form.school),

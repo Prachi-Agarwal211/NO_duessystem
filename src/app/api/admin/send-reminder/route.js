@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { APP_URLS } from '@/lib/urlHelper';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,109 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     { auth: { persistSession: false } }
 );
+
+/**
+ * Handle bulk department reminders (no formId, just department-level)
+ */
+async function handleBulkReminder(userId, departmentName, departmentStats, customMessage) {
+    try {
+        // Get pending counts per department
+        const { data: pendingCounts, error: countError } = await supabaseAdmin
+            .from('no_dues_status')
+            .select('department_name')
+            .eq('status', 'pending');
+
+        if (countError) {
+            throw new Error('Failed to fetch pending counts');
+        }
+
+        // Group by department
+        const pendingByDept = {};
+        pendingCounts?.forEach(row => {
+            pendingByDept[row.department_name] = (pendingByDept[row.department_name] || 0) + 1;
+        });
+
+        // Determine which departments to notify
+        let departmentsToNotify = [];
+
+        if (departmentName === 'all') {
+            // Get all departments with pending
+            departmentsToNotify = Object.entries(pendingByDept)
+                .filter(([_, count]) => count > 0)
+                .map(([name, count]) => ({ name, count }));
+        } else {
+            // Single department
+            const count = pendingByDept[departmentName] || 0;
+            if (count > 0) {
+                departmentsToNotify = [{ name: departmentName, count }];
+            }
+        }
+
+        if (departmentsToNotify.length === 0) {
+            return NextResponse.json({
+                success: true,
+                message: 'No pending applications to remind about',
+                sentCount: 0
+            });
+        }
+
+        // Import email service dynamically
+        const { sendDepartmentReminder } = await import('@/lib/emailService');
+
+        let sentCount = 0;
+        const errors = [];
+
+        for (const dept of departmentsToNotify) {
+            const { data: staffMembers } = await supabaseAdmin
+                .from('profiles')
+                .select('email, full_name')
+                .eq('role', 'department')
+                .eq('department_name', dept.name)
+                .not('email', 'is', null);
+
+            if (!staffMembers || staffMembers.length === 0) {
+                errors.push(`No staff found for ${dept.name}`);
+                continue;
+            }
+
+            const staffEmails = staffMembers.map(s => s.email);
+
+            try {
+                const result = await sendDepartmentReminder({
+                    staffEmails,
+                    departmentName: dept.name.replace(/_/g, ' '),
+                    pendingCount: dept.count,
+                    customMessage: customMessage || `You have ${dept.count} pending No Dues application${dept.count > 1 ? 's' : ''} awaiting your review.`,
+                    dashboardUrl: APP_URLS.staffLogin()
+                });
+
+                if (result.success) {
+                    sentCount++;
+                    console.log(`✅ Bulk reminder sent to ${dept.name}: ${staffEmails.join(', ')}`);
+                } else {
+                    errors.push(`Failed to send to ${dept.name}: ${result.error}`);
+                }
+            } catch (emailError) {
+                console.error(`Email error for ${dept.name}:`, emailError);
+                errors.push(`Email error for ${dept.name}`);
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: `Reminders sent to ${sentCount} of ${departmentsToNotify.length} departments`,
+            sentCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (error) {
+        console.error('Bulk reminder error:', error);
+        return NextResponse.json({
+            success: false,
+            error: error.message || 'Failed to send bulk reminders'
+        }, { status: 500 });
+    }
+}
 
 /**
  * POST /api/admin/send-reminder
@@ -39,7 +143,13 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
         }
 
-        const { formId, departmentName, customMessage } = await request.json();
+        const body = await request.json();
+        const { formId, departmentName, customMessage, departmentStats } = body;
+
+        // Handle bulk department reminders (departmentName: 'all' or specific department without formId)
+        if (departmentName && !formId) {
+            return await handleBulkReminder(user.id, departmentName, departmentStats, customMessage);
+        }
 
         if (!formId || !departmentName) {
             return NextResponse.json({ error: 'Missing formId or departmentName' }, { status: 400 });

@@ -7,6 +7,7 @@ import StatsGrid from '@/components/dashboard/StatsGrid';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import { RefreshCcw, TrendingUp, Settings, GraduationCap, FileText, ChevronRight, Clock, Search, Download, MessageSquare, AlertCircle, Mail, Bell, Shield } from 'lucide-react';
 import { exportApplicationsToCSV, exportStatsToCSV } from '@/lib/csvExport';
+import AdminNotificationBell from '@/components/admin/AdminNotificationBell';
 import toast from 'react-hot-toast';
 
 // Performance Chart Component
@@ -34,17 +35,17 @@ const PerformanceBar = ({ label, pending, approved, timeTaken }) => (
 export default function EnhancedAdminDashboard() {
   const router = useRouter();
   const debounceTimer = useRef(null);
-  
+
   // Stats & Department Performance
   const [data, setData] = useState({ overallStats: {}, departmentStats: [] });
   const [loading, setLoading] = useState(true);
-  
+
   // Applications Table
   const [applications, setApplications] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -52,10 +53,10 @@ export default function EnhancedAdminDashboard() {
   // Support Tickets
   const [supportStats, setSupportStats] = useState({ total: 0, unread: 0, open: 0 });
   const [recentTickets, setRecentTickets] = useState([]);
-  
+
   // Email Stats
   const [emailStats, setEmailStats] = useState({ totalEmails: 0, sentCount: 0, failedCount: 0, successRate: 0 });
-  
+
   // Department Reminders
   const [sendingReminder, setSendingReminder] = useState(false);
   const [delayedApplications, setDelayedApplications] = useState([]);
@@ -88,7 +89,7 @@ export default function EnhancedAdminDashboard() {
         page: currentPage.toString(),
         limit: '20'
       });
-      
+
       if (statusFilter) params.append('status', statusFilter);
       if (searchTerm.trim()) params.append('search', searchTerm.trim());
 
@@ -96,7 +97,7 @@ export default function EnhancedAdminDashboard() {
         headers: { 'Authorization': `Bearer ${session.access_token}` },
         cache: 'no-store'
       });
-      
+
       const json = await res.json();
       if (json.applications) {
         setApplications(json.applications);
@@ -173,10 +174,10 @@ export default function EnhancedAdminDashboard() {
 
       // TODO: Implement API endpoint for sending reminders
       toast.loading('Sending reminder...', { id: 'reminder' });
-      
+
       // Simulate API call (replace with actual endpoint)
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       toast.success(`Reminder sent to ${departmentName}!`, { id: 'reminder' });
     } catch (e) {
       console.error("Reminder error:", e);
@@ -202,7 +203,7 @@ export default function EnhancedAdminDashboard() {
   // ⚡⚡ FIXED REALTIME - Separate from filters (never recreates) ⚡⚡
   useEffect(() => {
     console.log("🔌 Admin Realtime: Connecting...");
-    
+
     const channel = supabase.channel('admin_realtime_v3_fixed')
       .on('postgres_changes', {
         event: '*',
@@ -239,7 +240,7 @@ export default function EnhancedAdminDashboard() {
       }, (payload) => {
         console.log('💬 Admin: Support ticket event detected:', payload.eventType);
         fetchSupportStats(); // Refresh support stats
-        
+
         // Add toast notifications based on event type
         if (payload.eventType === 'INSERT') {
           const ticket = payload.new;
@@ -250,7 +251,7 @@ export default function EnhancedAdminDashboard() {
         } else if (payload.eventType === 'UPDATE') {
           const ticket = payload.new;
           const oldTicket = payload.old;
-          
+
           // Only show notification if status changed
           if (oldTicket.status !== ticket.status) {
             toast.info(
@@ -275,217 +276,218 @@ export default function EnhancedAdminDashboard() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto min-h-screen space-y-6 sm:space-y-8">
-        
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-400">Live</span>
-              </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-xs font-medium text-green-700 dark:text-green-400">Live</span>
             </div>
-          </div>
-          <div className="flex gap-2 sm:gap-3">
-            <button onClick={() => router.push('/admin/settings')} className="p-3 min-h-[44px] min-w-[44px] bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group active:scale-95">
-              <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-            </button>
-            <button
-              onClick={() => {
-                setLoading(true);
-                fetchStats();
-                fetchApplications();
-              }}
-              className="p-3 min-h-[44px] min-w-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95"
-            >
-              <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Realtime Updates Active</span>
           </div>
         </div>
+        <div className="flex gap-2 sm:gap-3">
+          <AdminNotificationBell departmentStats={data.departmentStats} />
+          <button onClick={() => router.push('/admin/settings')} className="p-3 min-h-[44px] min-w-[44px] bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white group active:scale-95">
+            <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+          </button>
+          <button
+            onClick={() => {
+              setLoading(true);
+              fetchStats();
+              fetchApplications();
+            }}
+            className="p-3 min-h-[44px] min-w-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95"
+          >
+            <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      </div>
 
-        {/* 1. KEY METRICS */}
-        <StatsGrid stats={data.overallStats} loading={loading} />
+      {/* 1. KEY METRICS */}
+      <StatsGrid stats={data.overallStats} loading={loading} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          
-          {/* 2. DEPARTMENT PERFORMANCE */}
-          <GlassCard className="lg:col-span-2 p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 dark:border-white/5 pb-3 sm:pb-4">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-jecrc-red dark:text-jecrc-red-bright" />
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+
+        {/* 2. DEPARTMENT PERFORMANCE */}
+        <GlassCard className="lg:col-span-2 p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 dark:border-white/5 pb-3 sm:pb-4">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-jecrc-red dark:text-jecrc-red-bright" />
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {data.departmentStats.length === 0 ? (
+              <div className="col-span-2 text-center py-10 text-gray-400">No active data</div>
+            ) : (
+              data.departmentStats.map((dept) => (
+                <PerformanceBar
+                  key={dept.department_name}
+                  label={dept.department_name}
+                  pending={dept.pending_count}
+                  approved={dept.approved_count}
+                  timeTaken={dept.avg_hours || 12}
+                />
+              ))
+            )}
+          </div>
+        </GlassCard>
+
+        {/* 3. QUICK ACTIONS */}
+        <div className="space-y-3 sm:space-y-4">
+          {/* Support Tickets Widget */}
+          <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-blue-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/support')}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {supportStats.unread > 0 && (
+                  <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                    {supportStats.unread} New
+                  </span>
+                )}
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              {data.departmentStats.length === 0 ? (
-                <div className="col-span-2 text-center py-10 text-gray-400">No active data</div>
-              ) : (
-                data.departmentStats.map((dept) => (
-                  <PerformanceBar 
-                    key={dept.department_name}
-                    label={dept.department_name} 
-                    pending={dept.pending_count} 
-                    approved={dept.approved_count}
-                    timeTaken={dept.avg_hours || 12}
-                  />
-                ))
-              )}
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Support Tickets</h3>
+            <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
+              <span className="text-yellow-600 dark:text-yellow-400">{supportStats.open} Open</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-600 dark:text-gray-400">{supportStats.total} Total</span>
+            </div>
+
+            {/* Recent Tickets Preview */}
+            {recentTickets.length > 0 && (
+              <div className="mt-4 space-y-2 border-t border-gray-100 dark:border-white/5 pt-4">
+                {recentTickets.map((ticket) => (
+                  <div key={ticket.id} className="flex items-center gap-2 text-xs">
+                    {!ticket.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
+                    <span className="text-gray-600 dark:text-gray-400 truncate flex-1">
+                      {ticket.message?.substring(0, 40)}...
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+
+          {/* Email Monitoring Widget */}
+          <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-purple-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/emails')}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-400">
+                <Mail className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {emailStats.failedCount > 0 && (
+                  <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
+                    {emailStats.failedCount} Failed
+                  </span>
+                )}
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+              </div>
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Email Monitoring</h3>
+            <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
+              <span className="text-green-600 dark:text-green-400">{emailStats.successRate}% Success</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-600 dark:text-gray-400">{emailStats.totalEmails} Total</span>
             </div>
           </GlassCard>
 
-          {/* 3. QUICK ACTIONS */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Support Tickets Widget */}
-            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-blue-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/support')}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-xl text-blue-600 dark:text-blue-400">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {supportStats.unread > 0 && (
-                    <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
-                      {supportStats.unread} New
-                    </span>
-                  )}
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                </div>
+          {/* Certificate Verification Widget */}
+          <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-indigo-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/verify')}>
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Shield className="w-6 h-6" />
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Support Tickets</h3>
-              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
-                <span className="text-yellow-600 dark:text-yellow-400">{supportStats.open} Open</span>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-600 dark:text-gray-400">{supportStats.total} Total</span>
-              </div>
-              
-              {/* Recent Tickets Preview */}
-              {recentTickets.length > 0 && (
-                <div className="mt-4 space-y-2 border-t border-gray-100 dark:border-white/5 pt-4">
-                  {recentTickets.map((ticket) => (
-                    <div key={ticket.id} className="flex items-center gap-2 text-xs">
-                      {!ticket.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />}
-                      <span className="text-gray-600 dark:text-gray-400 truncate flex-1">
-                        {ticket.message?.substring(0, 40)}...
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </GlassCard>
-
-            {/* Email Monitoring Widget */}
-            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-purple-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/emails')}>
-              <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-purple-100 dark:bg-purple-500/20 rounded-xl text-purple-600 dark:text-purple-400">
-                  <Mail className="w-6 h-6" />
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {emailStats.failedCount > 0 && (
-                    <span className="px-2.5 py-1 bg-red-500 text-white text-xs font-bold rounded-full">
-                      {emailStats.failedCount} Failed
-                    </span>
-                  )}
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
-                </div>
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Email Monitoring</h3>
-              <div className="flex items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm">
-                <span className="text-green-600 dark:text-green-400">{emailStats.successRate}% Success</span>
-                <span className="text-gray-400">•</span>
-                <span className="text-gray-600 dark:text-gray-400">{emailStats.totalEmails} Total</span>
-              </div>
-            </GlassCard>
-
-            {/* Certificate Verification Widget */}
-            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-indigo-500/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/verify')}>
-              <div className="flex justify-between items-start">
-                <div className="p-3 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl text-indigo-600 dark:text-indigo-400">
-                  <Shield className="w-6 h-6" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Certificate Verification</h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">QR Scanner & Manual Verify</p>
-            </GlassCard>
-
-            <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/convocation')}>
-              <div className="flex justify-between items-start">
-                <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
-                  <GraduationCap className="w-6 h-6" />
-                </div>
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-jecrc-red transition-colors" />
-              </div>
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Convocation 2024</h3>
-              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
-            </GlassCard>
-
-          </div>
-        </div>
-
-        {/* 4. SEARCH & FILTER */}
-        <GlassCard className="p-3 sm:p-4">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search by name or registration..."
-                className="w-full pl-10 pr-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
             </div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Certificate Verification</h3>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">QR Scanner & Manual Verify</p>
+          </GlassCard>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-auto px-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
-              >
+          <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/convocation')}>
+            <div className="flex justify-between items-start">
+              <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-jecrc-red transition-colors" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Convocation 2024</h3>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
+          </GlassCard>
+
+        </div>
+      </div>
+
+      {/* 4. SEARCH & FILTER */}
+      <GlassCard className="p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by name or registration..."
+              className="w-full pl-10 pr-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-auto px-4 py-3 min-h-[44px] rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm sm:text-base text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red/40 focus:border-jecrc-red transition-all"
+            >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
               <option value="rejected">Rejected</option>
-              </select>
+            </select>
 
-              {/* Export Buttons */}
-              <button
-                onClick={() => {
-                  exportStatsToCSV(data);
-                  toast.success("Stats exported!");
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all font-medium shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95 text-sm sm:text-base whitespace-nowrap"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export Stats</span>
-                <span className="sm:hidden">Stats</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  exportApplicationsToCSV(applications);
-                  toast.success("Data exported!");
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg shadow-green-600/20 active:scale-95 text-sm sm:text-base whitespace-nowrap"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export Data</span>
-                <span className="sm:hidden">Data</span>
-              </button>
-            </div>
+            {/* Export Buttons */}
+            <button
+              onClick={() => {
+                exportStatsToCSV(data);
+                toast.success("Stats exported!");
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl transition-all font-medium shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red active:scale-95 text-sm sm:text-base whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export Stats</span>
+              <span className="sm:hidden">Stats</span>
+            </button>
+
+            <button
+              onClick={() => {
+                exportApplicationsToCSV(applications);
+                toast.success("Data exported!");
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg shadow-green-600/20 active:scale-95 text-sm sm:text-base whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export Data</span>
+              <span className="sm:hidden">Data</span>
+            </button>
           </div>
-        </GlassCard>
+        </div>
+      </GlassCard>
 
-        {/* 5. APPLICATIONS TABLE WITH PAGINATION */}
-        <ApplicationsTable
-          key={`apps-${applications.length}-${currentPage}-${Date.now()}`}
-          applications={applications}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          onPageChange={setCurrentPage}
-        />
+      {/* 5. APPLICATIONS TABLE WITH PAGINATION */}
+      <ApplicationsTable
+        key={`apps-${applications.length}-${currentPage}-${Date.now()}`}
+        applications={applications}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

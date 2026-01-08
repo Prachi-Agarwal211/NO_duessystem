@@ -7,7 +7,8 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown } from 'lucide-react';
+import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User } from 'lucide-react';
+import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import toast from 'react-hot-toast';
 
 export default function StaffDashboard() {
@@ -44,6 +45,43 @@ export default function StaffDashboard() {
   const [rejectedFetched, setRejectedFetched] = useState(false);
 
   // Effects
+  useEffect(() => {
+    // 🔔 REAL-TIME NOTIFICATIONS: Show toast alerts even if user is on another tab
+    const handleNewSubmission = (e) => {
+      const { studentName, registrationNo } = e.detail;
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">New Application Received!</p>
+          <p className="text-xs opacity-90">{studentName} ({registrationNo})</p>
+        </div>,
+        {
+          duration: 5000,
+          icon: '📝',
+          id: `new-sub-${registrationNo}` // Prevent duplicate toasts
+        }
+      );
+    };
+
+    const handleNewTicket = (e) => {
+      const { ticketNumber, requesterType } = e.detail;
+      toast.success(
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">New Support Ticket!</p>
+          <p className="text-xs opacity-90">Ticket #{ticketNumber} (${requesterType})</p>
+        </div>,
+        { duration: 5000, icon: '🎫' }
+      );
+    };
+
+    window.addEventListener('new-submission', handleNewSubmission);
+    window.addEventListener('support-ticket-created', handleNewTicket);
+
+    return () => {
+      window.removeEventListener('new-submission', handleNewSubmission);
+      window.removeEventListener('support-ticket-created', handleNewTicket);
+    };
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'rejected' && !rejectedFetched) fetchRejectedForms();
     if (activeTab === 'history' && !historyFetched) fetchHistory();
@@ -144,9 +182,21 @@ export default function StaffDashboard() {
 
   // Actions
   const handleBulkAction = async (action) => {
-    if (selectedItems.size === 0) return;
-    if (!confirm(`Are you sure you want to ${action} ${selectedItems.size} items?`)) return;
+    console.log('🔵 handleBulkAction called:', { action, selectedCount: selectedItems.size, departmentName: user?.department_name });
 
+    if (selectedItems.size === 0) {
+      console.log('❌ No items selected');
+      toast.error('No items selected');
+      return;
+    }
+
+    if (!user?.department_name) {
+      toast.error('Department not found. Please refresh the page.');
+      console.error('❌ user.department_name is undefined:', user);
+      return;
+    }
+
+    // Proceed directly with action - no popup confirmation
     setBulkActionLoading(true);
     toast.loading(`Processing ${selectedItems.size} items...`, { id: 'bulk-toast' });
 
@@ -202,7 +252,7 @@ export default function StaffDashboard() {
 
   const handleExport = async () => {
     toast.loading('Fetching all records for export...', { id: 'export-toast' });
-    
+
     try {
       const success = await exportAllStaffDataToCSV(
         {
@@ -214,7 +264,7 @@ export default function StaffDashboard() {
         user?.department_name,
         supabase
       );
-      
+
       if (success) {
         toast.success('Export completed successfully!', { id: 'export-toast' });
       } else {
@@ -255,11 +305,58 @@ export default function StaffDashboard() {
               <Download className="w-4 h-4" /> Export
             </button>
             <button
+              onClick={() => router.push('/staff/profile')}
+              className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              title="My Profile"
+            >
+              <User className="w-5 h-5" />
+            </button>
+            <button
               onClick={refreshData}
               className="p-3 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push('/staff/login');
+              }}
+              className="p-3 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Guidelines Card */}
+        <div className="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-500/20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-purple-900/20">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex-shrink-0">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-2">Quick Guidelines</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                  <span>Approve students with no pending dues</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <XCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                  <span>Reject with valid reason for reapplication</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <Clock className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
+                  <span>Process pending requests within 24-48 hours</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <AlertTriangle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+                  <span>Verify student details before taking action</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -377,6 +474,7 @@ export default function StaffDashboard() {
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Student</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Course / Branch</th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Date</th>
+                    {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">SLA</th>}
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
                     {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
                   </tr>
@@ -410,6 +508,22 @@ export default function StaffDashboard() {
                           <div className="text-xs text-gray-500">{item.no_dues_forms.branch}</div>
                         </td>
                         <td className="px-4 py-3 text-gray-500">{formatDate(item.no_dues_forms.created_at)}</td>
+                        {activeTab === 'pending' && (
+                          <td className="px-4 py-3">
+                            {(() => {
+                              const sla = getSLAStatus(item.no_dues_forms.created_at);
+                              if (sla.level === 'normal') return <span className="text-xs text-gray-400">{sla.text}</span>;
+                              return (
+                                <span className={getSLABadgeClasses(sla, true)} title={sla.text}>
+                                  {sla.level === 'warning' && '⚠️'}
+                                  {sla.level === 'slow' && '🐌'}
+                                  {sla.level === 'critical' && '🚨'}
+                                  {sla.text}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                        )}
                         <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
 
                         {/* Individual Actions */}

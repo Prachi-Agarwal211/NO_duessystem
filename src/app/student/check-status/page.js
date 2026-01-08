@@ -6,7 +6,7 @@ import { useState, useEffect, Suspense, memo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
+import { Search, AlertCircle, FileText, ArrowLeft, Info, CheckCircle2 } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
 import FormInput from '@/components/student/FormInput';
 import StatusTracker from '@/components/student/StatusTracker';
@@ -305,40 +305,80 @@ function CheckStatusContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className="glass-card p-8 rounded-2xl border border-white/20 dark:border-gray-700/50 mb-8"
+              className="space-y-6"
             >
-              <form onSubmit={handleSearch} className="space-y-6">
-                <FormInput
-                  label="Registration Number"
-                  type="text"
-                  value={registrationNumber}
-                  onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())}
-                  placeholder="e.g., 21EJECS001"
-                  error={error}
-                  disabled={loading}
-                  icon={<Search className="w-5 h-5" />}
-                />
+              {/* Instructions Card */}
+              <div className={`rounded-2xl border p-6 transition-all duration-700 ${isDark
+                  ? 'bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-500/20'
+                  : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'
+                }`}>
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-xl flex-shrink-0 ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'
+                    }`}>
+                    <Info className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg mb-3 ${isDark ? 'text-white' : 'text-gray-900'
+                      }`}>
+                      Important Instructions
+                    </h3>
+                    <ul className="space-y-2">
+                      {[
+                        'Enter your registration number exactly as it appears on your ID card',
+                        'Status updates may take 24-48 hours after department verification',
+                        'If rejected, you can reapply after addressing the mentioned concerns',
+                        'Download your No Dues Certificate once all departments approve',
+                        'For any queries, contact the respective department or support'
+                      ].map((instruction, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDark ? 'text-green-400' : 'text-green-600'
+                            }`} />
+                          <span className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
+                            {instruction}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
 
-                <motion.button
-                  type="submit"
-                  disabled={loading}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-4 bg-gradient-to-r from-jecrc-red to-jecrc-red/80 text-white rounded-xl font-manrope font-semibold text-lg hover:shadow-xl hover:shadow-jecrc-red/25 transition-all duration-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Searching...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="w-5 h-5" />
-                      Check Status
-                    </>
-                  )}
-                </motion.button>
-              </form>
+              {/* Search Form Card */}
+              <div className="glass-card p-8 rounded-2xl border border-white/20 dark:border-gray-700/50">
+                <form onSubmit={handleSearch} className="space-y-6">
+                  <FormInput
+                    label="Registration Number"
+                    type="text"
+                    value={registrationNumber}
+                    onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())}
+                    placeholder="e.g., 21EJECS001"
+                    error={error}
+                    disabled={loading}
+                    icon={<Search className="w-5 h-5" />}
+                  />
+
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-4 bg-gradient-to-r from-jecrc-red to-jecrc-red/80 text-white rounded-xl font-manrope font-semibold text-lg hover:shadow-xl hover:shadow-jecrc-red/25 transition-all duration-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-5 h-5" />
+                        Check Status
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+              </div>
             </motion.div>
           )}
 

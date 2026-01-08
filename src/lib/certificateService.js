@@ -104,34 +104,17 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     drawCorner(18, pageHeight - 18, 270);
 
     // --- 2. Logo & Header ---
-    // Load logo using fetch API (works in all serverless environments)
-    try {
-      // Use hardcoded production URL for logo
-      const logoUrl = 'https://nodues.jecrcuniversity.edu.in/assets/logo light.png';
+    // Using text-based header for smaller file size (works better with Supabase storage limits)
+    pdf.setFontSize(28);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...JECRC_RED);
+    pdf.text('JECRC UNIVERSITY', pageWidth / 2, 32, { align: 'center' });
 
-      const response = await fetch(logoUrl);
-      const logoBuffer = await response.arrayBuffer();
-      const logoBase64 = Buffer.from(logoBuffer).toString('base64');
-      const logoData = `data:image/png;base64,${logoBase64}`;
-
-      // Logo centered at top
-      // Actual dimensions are 1280x310 (Ratio ~4.13)
-      const logoWidth = 90;
-      const logoHeight = 22; // 90 / 4.13 approx
-      pdf.addImage(logoData, 'PNG', (pageWidth / 2) - (logoWidth / 2), 25, logoWidth, logoHeight);
-    } catch (e) {
-      console.error("Error loading logo:", e);
-      // Fallback to text-based header if logo fails
-      pdf.setFontSize(24);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...JECRC_RED);
-      pdf.text('JECRC UNIVERSITY', pageWidth / 2, 35, { align: 'center' });
-
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(100, 100, 100);
-      pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 42, { align: 'center' });
-    }
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 40, { align: 'center' });
+    pdf.text('An Autonomous University | NAAC A+ Accredited', pageWidth / 2, 46, { align: 'center' });
 
     // --- 3. Certificate Title ---
     const titleY = 58; // Adjusted for text-based header

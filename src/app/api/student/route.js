@@ -224,89 +224,16 @@ export async function POST(request) {
     console.log(`✅ Form created successfully - ID: ${form.id}, Reg: ${form.registration_no}`);
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // Note: Email failures are non-fatal - form is already created successfully
-
+    // 🔕 DISABLED: Moved to Daily Email Digest at 3:00 PM
+    /*
     try {
-      // IMPORTANT: Fetch staff based on department scope rules:
-      // - Non-HOD departments (Library, Hostel, Accounts, etc.): See ALL students
-      // - HOD departments (school_hod): Only see students matching their school/course/branch arrays
-
-      const { data: allStaff, error: staffError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, email, full_name, department_name, school_id, school_ids, course_ids, branch_ids')
-        .eq('role', 'department')
-        .not('email', 'is', null);
-
-      if (staffError) {
-        console.error('Failed to fetch staff members:', staffError);
-        // Continue even if email fails - form is already created
-      } else if (allStaff && allStaff.length > 0) {
-        // Filter staff based on scope:
-        // - school_hod staff: Only those matching student's school/course/branch (using UUID arrays)
-        // - All other departments: No filtering, all staff get notified
-        const staffToNotify = allStaff.filter(staff => {
-          // If school_hod staff (HOD/Dean), apply scope filtering using UUID arrays
-          if (staff.department_name === 'school_hod') {
-            // Check school scope (using UUID arrays OR single school_id for backward compatibility)
-            if (staff.school_ids && staff.school_ids.length > 0) {
-              if (!staff.school_ids.includes(school_id)) {
-                return false; // Student's school not in HOD's school array
-              }
-            } else if (staff.school_id && staff.school_id !== school_id) {
-              return false; // Backward compatibility: single school_id doesn't match
-            }
-
-            // Check course scope (using UUID arrays)
-            if (staff.course_ids && staff.course_ids.length > 0) {
-              if (!staff.course_ids.includes(course_id)) {
-                return false; // Student's course not in HOD's course array
-              }
-            }
-
-            // Check branch scope (using UUID arrays)
-            if (staff.branch_ids && staff.branch_ids.length > 0) {
-              if (!staff.branch_ids.includes(branch_id)) {
-                return false; // Student's branch not in HOD's branch array
-              }
-            }
-
-            return true; // Matches scope, notify this HOD
-          }
-
-          // For all other 10 departments (non-HOD), notify everyone
-          return true;
-        });
-
-        if (staffToNotify.length > 0) {
-          // 🆕 OPTIMIZED: Send ONE combined email to all departments instead of individual emails
-          const allStaffEmails = staffToNotify.map(staff => staff.email);
-
-          const emailResult = await sendCombinedDepartmentNotification({
-            allStaffEmails,
-            studentName: form.student_name,
-            registrationNo: form.registration_no,
-            school: sanitizedData.school,
-            course: sanitizedData.course,
-            branch: sanitizedData.branch,
-            formId: form.id,
-            dashboardUrl: APP_URLS.staffLogin()
-          });
-
-          if (emailResult.success) {
-            console.log(`📧 ✅ Combined notification sent to ${staffToNotify.length} staff members (1 email total)`);
-          } else {
-            console.error(`📧 ❌ Failed to send combined notification: ${emailResult.error}`);
-          }
-        } else {
-          console.warn('⚠️ No staff members match the scope for this student');
-        }
-      } else {
-        console.warn('⚠️ No staff members found to notify. Please add staff accounts in admin panel.');
-      }
+      // ... existing notification logic ...
     } catch (emailError) {
       console.error('❌ Email notification failed (non-fatal):', emailError);
-      // Continue - form submission should not fail if emails fail
     }
+    */
+
+    console.log(`✅ Form submitted - Digest notification will be sent at 3:00 PM`);
 
     // ==================== RETURN SUCCESS ====================
 

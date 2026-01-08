@@ -49,7 +49,7 @@ export async function PUT(request) {
         // 4. Get Staff Profile & Authorize
         const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
-            .select('id, role, assigned_department_ids')
+            .select('id, role, assigned_department_ids, department_name')
             .eq('id', user.id)
             .single();
 
@@ -69,11 +69,30 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, error: 'Invalid department' }, { status: 400 });
         }
 
+        // For department staff, verify authorization via either method
         if (profile.role === 'department') {
-            const isAuthorized = profile.assigned_department_ids?.includes(department.id);
+            // Method 1: Check assigned_department_ids array (UUID-based)
+            const hasAssignment = profile.assigned_department_ids?.includes(department.id);
+
+            // Method 2: Check department_name field (legacy/direct assignment)
+            const hasNameMatch = profile.department_name === departmentName;
+
+            const isAuthorized = hasAssignment || hasNameMatch;
+
             if (!isAuthorized) {
-                return NextResponse.json({ success: false, error: `Not authorized for ${department.display_name}` }, { status: 403 });
+                console.error('❌ Bulk action authorization failed:', {
+                    userId: user.id,
+                    requestedDepartment: departmentName,
+                    profileDepartmentName: profile.department_name,
+                    assignedDepartmentIds: profile.assigned_department_ids
+                });
+                return NextResponse.json({
+                    success: false,
+                    error: `Not authorized for ${department.display_name}. Make sure your account is assigned to this department.`
+                }, { status: 403 });
             }
+
+            console.log('✅ Bulk action authorized:', { userId: user.id, department: departmentName });
         }
 
         // 5. Perform Bulk Updates

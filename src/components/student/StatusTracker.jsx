@@ -9,6 +9,7 @@ import ProgressBar from './ProgressBar';
 import DepartmentStatus from './DepartmentStatus';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ReapplyModal from './ReapplyModal';
+import ReapplicationHistory from './ReapplicationHistory';
 
 export default function StatusTracker({ registrationNo }) {
   const { theme } = useTheme();
@@ -20,6 +21,7 @@ export default function StatusTracker({ registrationNo }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showReapplyModal, setShowReapplyModal] = useState(false);
+  const [reapplicationHistory, setReapplicationHistory] = useState([]);
 
   const fetchData = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
@@ -55,11 +57,11 @@ export default function StatusTracker({ registrationNo }) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         if (response.status === 404 || errorData.notFound) {
           throw new Error('No form found for this registration number');
         }
-        
+
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
@@ -80,6 +82,24 @@ export default function StatusTracker({ registrationNo }) {
       });
       setFormData(result.data.form);
       setStatusData(result.data.statusData);
+
+      // Fetch reapplication history if student has reapplied
+      if (result.data.form.reapplication_count > 0 && result.data.form.id) {
+        try {
+          const historyResponse = await fetch(
+            `/api/student/reapply?formId=${result.data.form.id}`,
+            { cache: 'no-store' }
+          );
+          if (historyResponse.ok) {
+            const historyResult = await historyResponse.json();
+            if (historyResult.success && historyResult.data?.history) {
+              setReapplicationHistory(historyResult.data.history);
+            }
+          }
+        } catch (histErr) {
+          console.warn('Could not fetch reapplication history:', histErr);
+        }
+      }
 
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -213,20 +233,20 @@ export default function StatusTracker({ registrationNo }) {
 
   // ✅ Check if this is a manual entry (admin-only workflow)
   const isManualEntry = formData.is_manual_entry === true;
-  
+
   const approvedCount = statusData.filter(s => s.status === 'approved').length;
   const rejectedCount = statusData.filter(s => s.status === 'rejected').length;
   const totalCount = statusData.length;
-  
+
   // ✅ For manual entries, base status on form completion/approval, not department count
   const allApproved = isManualEntry
     ? (formData.status === 'completed' || formData.status === 'approved')
     : approvedCount === totalCount;
-    
+
   const hasRejection = isManualEntry
     ? formData.status === 'rejected'
     : rejectedCount > 0;
-    
+
   const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
   const canReapply = hasRejection && formData.status !== 'completed';
 
@@ -296,25 +316,23 @@ export default function StatusTracker({ registrationNo }) {
           {isManualEntry ? (
             // ✅ Manual entry: Show simple admin status badge
             <div className="text-center py-4">
-              <span className={`inline-flex items-center px-6 py-3 rounded-full text-base font-bold uppercase tracking-wide transition-all duration-700 ease-smooth ${
-                (formData.status === 'completed' || formData.status === 'approved')
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-500'
-                  : formData.status === 'rejected'
+              <span className={`inline-flex items-center px-6 py-3 rounded-full text-base font-bold uppercase tracking-wide transition-all duration-700 ease-smooth ${(formData.status === 'completed' || formData.status === 'approved')
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-2 border-green-500'
+                : formData.status === 'rejected'
                   ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-2 border-red-500'
                   : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-2 border-yellow-500'
-              }`}>
+                }`}>
                 {(formData.status === 'completed' || formData.status === 'approved') ? '✅ Completed' :
-                 formData.status === 'rejected' ? '❌ Admin Rejected' :
-                 '⏳ Pending Admin Review'}
+                  formData.status === 'rejected' ? '❌ Admin Rejected' :
+                    '⏳ Pending Admin Review'}
               </span>
-              <p className={`text-sm mt-3 transition-colors duration-700 ease-smooth ${
-                isDark ? 'text-gray-400' : 'text-gray-600'
-              }`}>
+              <p className={`text-sm mt-3 transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                 {(formData.status === 'completed' || formData.status === 'approved')
                   ? 'Your offline certificate has been verified and approved'
                   : formData.status === 'rejected'
-                  ? 'Your offline certificate submission was rejected'
-                  : 'Your offline certificate is awaiting admin verification'}
+                    ? 'Your offline certificate submission was rejected'
+                    : 'Your offline certificate is awaiting admin verification'}
               </p>
             </div>
           ) : (
@@ -329,11 +347,10 @@ export default function StatusTracker({ registrationNo }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth border-2 ${
-            isDark
-              ? 'bg-red-500/10 border-red-500/30'
-              : 'bg-red-50 border-red-200'
-          }`}
+          className={`p-6 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth border-2 ${isDark
+            ? 'bg-red-500/10 border-red-500/30'
+            : 'bg-red-50 border-red-200'
+            }`}
         >
           <div className="flex items-start gap-4">
             <XCircle className="w-8 h-8 text-red-500 flex-shrink-0" />
@@ -341,31 +358,27 @@ export default function StatusTracker({ registrationNo }) {
               <h3 className="text-red-500 font-bold text-xl mb-2 flex items-center gap-2">
                 Application Rejected by {rejectedCount} Department{rejectedCount > 1 ? 's' : ''}
               </h3>
-              
+
               {/* 🔥 NEW: Show cascade context explanation */}
               {formData.rejection_context && formData.rejection_context.cascade_count > 0 && (
-                <div className={`mb-4 p-3 rounded-lg transition-all duration-700 ease-smooth ${
-                  isDark ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'
-                }`}>
-                  <p className={`text-sm font-medium transition-colors duration-700 ease-smooth ${
-                    isDark ? 'text-yellow-400' : 'text-yellow-700'
+                <div className={`mb-4 p-3 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'
                   }`}>
+                  <p className={`text-sm font-medium transition-colors duration-700 ease-smooth ${isDark ? 'text-yellow-400' : 'text-yellow-700'
+                    }`}>
                     ⚠️ <strong>Cascade Rejection:</strong> {formData.rejection_context.primary_rejector} rejected your application,
                     which automatically rejected {formData.rejection_context.cascade_count} other pending department{formData.rejection_context.cascade_count > 1 ? 's' : ''}.
                   </p>
                   {formData.rejection_context.cascade_departments && formData.rejection_context.cascade_departments.length > 0 && (
-                    <p className={`text-xs mt-2 transition-colors duration-700 ease-smooth ${
-                      isDark ? 'text-yellow-300/70' : 'text-yellow-600'
-                    }`}>
+                    <p className={`text-xs mt-2 transition-colors duration-700 ease-smooth ${isDark ? 'text-yellow-300/70' : 'text-yellow-600'
+                      }`}>
                       Auto-rejected: {formData.rejection_context.cascade_departments.join(', ')}
                     </p>
                   )}
                 </div>
               )}
-              
-              <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth ${
-                isDark ? 'text-gray-300' : 'text-gray-700'
-              }`}>
+
+              <p className={`text-sm mb-4 transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                 Your application has been rejected. Please review the rejection reasons below and reapply with the necessary corrections.
               </p>
 
@@ -374,16 +387,14 @@ export default function StatusTracker({ registrationNo }) {
                 {rejectedDepartments.map((dept, index) => (
                   <div
                     key={index}
-                    className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${
-                      isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
-                    }`}
+                    className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
+                      }`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <p className="font-bold text-red-400">{dept.display_name}</p>
                       {dept.action_at && (
-                        <p className={`text-xs transition-colors duration-700 ease-smooth ${
-                          isDark ? 'text-gray-500' : 'text-gray-500'
-                        }`}>
+                        <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
+                          }`}>
                           {new Date(dept.action_at).toLocaleDateString('en-IN', {
                             day: 'numeric',
                             month: 'short',
@@ -393,9 +404,8 @@ export default function StatusTracker({ registrationNo }) {
                         </p>
                       )}
                     </div>
-                    <p className={`text-sm transition-colors duration-700 ease-smooth ${
-                      isDark ? 'text-red-300' : 'text-red-600'
-                    }`}>
+                    <p className={`text-sm transition-colors duration-700 ease-smooth ${isDark ? 'text-red-300' : 'text-red-600'
+                      }`}>
                       <span className="font-medium">Reason: </span>
                       {dept.rejection_reason}
                     </p>
@@ -405,18 +415,16 @@ export default function StatusTracker({ registrationNo }) {
 
               {/* Current Reply Message if exists */}
               {formData.student_reply_message && formData.reapplication_count > 0 && (
-                <div className={`p-4 rounded-lg mb-4 transition-all duration-700 ease-smooth ${
-                  isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
-                }`}>
+                <div className={`p-4 rounded-lg mb-4 transition-all duration-700 ease-smooth ${isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+                  }`}>
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="w-4 h-4 text-blue-400" />
                     <p className="text-sm font-medium text-blue-400">
                       Your Previous Response (Reapplication #{formData.reapplication_count}):
                     </p>
                   </div>
-                  <p className={`text-sm italic transition-colors duration-700 ease-smooth ${
-                    isDark ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
+                  <p className={`text-sm italic transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
                     "{formData.student_reply_message}"
                   </p>
                 </div>
@@ -434,9 +442,8 @@ export default function StatusTracker({ registrationNo }) {
               )}
 
               {!canReapply && formData.status === 'completed' && (
-                <div className={`text-center text-sm transition-colors duration-700 ease-smooth ${
-                  isDark ? 'text-gray-500' : 'text-gray-500'
-                }`}>
+                <div className={`text-center text-sm transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
+                  }`}>
                   Form is completed. Reapplication not allowed.
                 </div>
               )}
@@ -507,6 +514,14 @@ export default function StatusTracker({ registrationNo }) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Reapplication History - Show if student has reapplied */}
+      {formData.reapplication_count > 0 && (
+        <ReapplicationHistory
+          history={reapplicationHistory}
+          reapplicationCount={formData.reapplication_count}
+        />
       )}
 
       {/* Manual Entry Certificate View */}

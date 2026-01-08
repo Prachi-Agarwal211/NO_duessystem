@@ -680,10 +680,123 @@ export async function sendDepartmentReminder({
   });
 }
 
+/**
+ * 🆕 OPTIMIZED: Send a DAILY SUMMARY of all pending applications to each department
+ * This replaces high-frequency immediate emails. Triggered lazily @ 3:00 PM.
+ * @param {Object} params - Digest parameters
+ * @returns {Promise<Object>} - Digest result
+ */
+export async function sendDailyDepartmentDigest({
+  pendingApplications, // Array of applications grouped by department
+  allStaff,            // Array of staff profiles
+  dashboardUrl
+}) {
+  if (!pendingApplications || pendingApplications.length === 0) {
+    console.log('📝 No pending applications for today\'s digest.');
+    return { success: true, skipped: true };
+  }
+
+  console.log(`📧 Preparing Daily Digest for ${pendingApplications.length} pending items...`);
+
+  // Group staff by department for CCing correctly
+  const staffByDept = allStaff.reduce((acc, staff) => {
+    const dept = staff.department_name;
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(staff.email);
+    return acc;
+  }, {});
+
+  // Group applications by department
+  const appsByDept = pendingApplications.reduce((acc, app) => {
+    const dept = app.department_name;
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(app);
+    return acc;
+  }, {});
+
+  const results = [];
+
+  for (const deptName of Object.keys(appsByDept)) {
+    const deptApps = appsByDept[deptName];
+    const deptEmails = staffByDept[deptName] || [];
+
+    if (deptEmails.length === 0) continue;
+
+    const deptDisplayName = (deptName === 'school_hod' ? 'Academic (HOD)' : deptName).replace(/_/g, ' ').toUpperCase();
+
+    // Create HTML Table for applications
+    const tableRows = deptApps.map(app => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 12px 8px; font-size: 14px; color: #1f2937;">${app.no_dues_forms.student_name}</td>
+        <td style="padding: 12px 8px; font-size: 14px; color: #1f2937; font-family: monospace;">${app.no_dues_forms.registration_no}</td>
+        <td style="padding: 12px 8px; font-size: 14px; color: #6b7280;">${app.no_dues_forms.course}</td>
+        <td style="padding: 12px 8px; font-size: 13px; color: #6b7280;">${new Date(app.no_dues_forms.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+
+    const content = `
+      <p style="margin: 0 0 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
+        Hello <strong>${deptDisplayName}</strong> Team,
+      </p>
+      
+      <p style="margin: 0 0 20px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+        This is your daily summary of <strong>pending No Dues applications</strong> requiring your department's review as of 3:00 PM today.
+      </p>
+      
+      <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin: 20px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <thead style="background-color: #f9fafb;">
+            <tr>
+              <th align="left" style="padding: 12px 8px; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">Student Name</th>
+              <th align="left" style="padding: 12px 8px; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">Reg No</th>
+              <th align="left" style="padding: 12px 8px; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">Course</th>
+              <th align="left" style="padding: 12px 8px; font-size: 12px; font-weight: 600; color: #4b5563; text-transform: uppercase;">Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+      
+      <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
+        <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
+          <strong>⚡ Action Required:</strong> Please log in to your dashboard to process these applications. 
+          Prompt approval helps ensure students receive their certificates on time.
+        </p>
+      </div>
+    `;
+
+    const html = generateEmailTemplate({
+      title: 'Daily Department Digest',
+      content,
+      actionUrl: dashboardUrl,
+      actionText: 'Go to Dashboard',
+      footerText: `This is a daily summary sent to the ${deptDisplayName} department. Total pending: ${deptApps.length}`
+    });
+
+    const result = await sendEmail({
+      to: deptEmails[0],
+      cc: deptEmails.slice(1),
+      subject: `📋 Daily Digest: ${deptApps.length} Pending Applications - ${deptDisplayName}`,
+      html
+    });
+
+    results.push({ dept: deptName, success: result.success });
+  }
+
+  return {
+    success: results.every(r => r.success),
+    summary: results,
+    totalSent: results.filter(r => r.success).length
+  };
+}
+
 // Export all functions
 export default {
   sendEmail,
   sendCombinedDepartmentNotification,
+  sendDailyDepartmentDigest,
   sendRejectionNotification,
   sendCertificateReadyNotification,
   sendReapplicationNotification,

@@ -1,0 +1,15 @@
+--- Table Data Counts ---
+✅ profiles: 8 rows
+✅ departments: 7 rows
+✅ no_dues_forms: 0 rows
+✅ no_dues_status: 0 rows
+✅ config_schools: 13 rows
+✅ config_courses: 31 rows
+✅ config_branches: 145 rows
+✅ convocation_eligible_students: 3181 rows
+✅ config_emails: 5 rows
+✅ config_validation_rules: 6 rows
+✅ config_country_codes: 2 rows
+✅ support_tickets: 0 rows
+✅ email_logs: 0 rows
+✅ certificate_verifications: 0 rows

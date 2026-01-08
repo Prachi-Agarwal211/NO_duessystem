@@ -12,6 +12,49 @@ const supabaseAdmin = createClient(
 );
 
 /**
+ * GET /api/student/reapply?formId=xxx
+ * Fetch reapplication history for a student
+ */
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const formId = searchParams.get('formId');
+
+    if (!formId) {
+      return NextResponse.json({
+        success: false,
+        error: 'formId is required'
+      }, { status: 400 });
+    }
+
+    const { data: history, error } = await supabaseAdmin
+      .from('no_dues_reapplication_history')
+      .select('*')
+      .eq('form_id', formId)
+      .order('reapplication_number', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching reapplication history:', error);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to fetch history'
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { history: history || [] }
+    });
+  } catch (error) {
+    console.error('Reapply GET API Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Internal server error'
+    }, { status: 500 });
+  }
+}
+
+/**
  * PUT /api/student/reapply
  * Handle student reapplication after rejection
  * 
@@ -96,12 +139,17 @@ export async function PUT(request) {
       }, { status: 403 });
     }
 
-    // Optional: Limit number of reapplications
-    const MAX_REAPPLICATIONS = 5;
-    if (form.reapplication_count >= MAX_REAPPLICATIONS) {
+    // ==================== MAX REAPPLICATIONS CHECK ====================
+    // Default limit: 5 reapplications
+    // Admin can override by setting max_reapplications_override column
+    const DEFAULT_MAX_REAPPLICATIONS = 5;
+    const maxAllowed = form.max_reapplications_override ?? DEFAULT_MAX_REAPPLICATIONS;
+
+    if (form.reapplication_count >= maxAllowed) {
       return NextResponse.json({
         success: false,
-        error: `Maximum reapplication limit (${MAX_REAPPLICATIONS}) reached. Please contact administration.`
+        error: `Maximum reapplication limit (${maxAllowed}) reached. Please contact administration to request additional attempts.`,
+        canRequestOverride: true
       }, { status: 403 });
     }
 
@@ -275,9 +323,9 @@ export async function PUT(request) {
       throw new Error('Failed to update form');
     }
 
-    // ==================== RESET ALL 7 DEPARTMENT STATUSES ====================
-    // ✅ MASTER CYCLE FIX: Reset ALL departments, not just rejected ones
-    // This ensures the student reappears in EVERY department's dashboard
+    // ==================== SMART RESET: ONLY REJECTED DEPARTMENTS ====================
+    // ✅ IMPROVEMENT: Only reset rejected departments, keep approved ones as-is
+    // This reduces workload - approved departments don't need to re-review
     const { error: statusResetError } = await supabaseAdmin
       .from('no_dues_status')
       .update({
@@ -286,21 +334,24 @@ export async function PUT(request) {
         action_at: null,
         action_by_user_id: null
       })
-      .eq('form_id', form.id); // No .in() filter - reset ALL departments
+      .eq('form_id', form.id)
+      .in('department_name', rejectedDeptNames); // Only reset rejected departments
 
     if (statusResetError) {
       console.error('Error resetting department statuses:', statusResetError);
-      throw new Error('Failed to reset all department statuses');
+      throw new Error('Failed to reset rejected department statuses');
     }
 
-    console.log(`♻️ Reset all 7 department statuses to pending for form ${form.id}`);
+    console.log(`♻️ Smart Reset: Reset ${rejectedDeptNames.length} rejected departments to pending for form ${form.id}`);
+    console.log(`   Kept approved: ${form.no_dues_status.filter(s => s.status === 'approved').map(s => s.department_name).join(', ') || 'none'}`);
 
     // ==================== SEND EMAIL NOTIFICATIONS ====================
-    // ✅ MASTER CYCLE FIX: Notify ALL department staff, not just rejected ones
+    // ✅ SMART NOTIFY: Only notify staff from rejected departments
     const { data: staffMembers, error: staffError } = await supabaseAdmin
       .from('profiles')
       .select('id, email, full_name, department_name, school_ids, course_ids, branch_ids')
       .eq('role', 'department')
+      .in('department_name', rejectedDeptNames) // Only rejected departments' staff
       .not('email', 'is', null);
 
     if (!staffError && staffMembers && staffMembers.length > 0) {
@@ -337,7 +388,7 @@ export async function PUT(request) {
           });
 
           if (emailResult.success) {
-            console.log(`📧 ✅ Combined reapplication notification sent to ${staffToNotify.length} staff members (1 email total)`);
+            console.log(`📧 ✅ Reapplication notification sent to ${staffToNotify.length} staff (rejected depts only)`);
           } else {
             console.error(`📧 ❌ Failed to send reapplication notification: ${emailResult.error}`);
           }
