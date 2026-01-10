@@ -575,23 +575,45 @@ export default function SubmitForm() {
   if (success) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`max-w-md mx-auto text-center p-8 rounded-2xl transition-all duration-300
-          ${isDark ? 'bg-white/5 border border-white/10' : 'bg-gray-50 border border-gray-100'}`}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className={`max-w-lg mx-auto text-center p-8 sm:p-12 rounded-3xl shadow-2xl transition-all duration-300
+          ${isDark ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' : 'bg-white border border-gray-100'}`}
       >
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
-        </div>
-        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Form Submitted!
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center shadow-inner"
+        >
+          <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
+        </motion.div>
+
+        <h2 className={`text-3xl font-extrabold mb-4 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+          Application Submitted!
         </h2>
-        <p className={`text-sm mb-6 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
-          Your no dues application has been submitted. You can track its status using your registration number.
+
+        <p className={`text-base mb-8 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          Your no dues application has been successfully recorded. You can track its live status using your Registration Number.
         </p>
-        <div className={`inline-flex items-center gap-2 text-sm font-medium ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Redirecting to status page...
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={() => router.push(`/student/check-status?reg=${formData.registration_no}`)}
+            className="px-6 py-3.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl font-semibold shadow-lg shadow-jecrc-red/25 transition-all active:scale-95"
+          >
+            Track Status
+          </button>
+          <button
+            onClick={() => window.location.reload()}
+            className={`px-6 py-3.5 rounded-xl font-semibold transition-all active:scale-95 border ${isDark
+              ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+              : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+              }`}
+          >
+            Submit Another
+          </button>
         </div>
       </motion.div>
     );
@@ -697,17 +719,18 @@ export default function SubmitForm() {
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {/* Auto-Fill Button - Convocation Validation */}
             {/* Auto-Fill Button - Convocation Validation */}
+            {/* Auto-Fill Button */}
             <button
               type="button"
               onClick={() => validateConvocation(formData.registration_no)}
               disabled={validatingConvocation || !formData.registration_no}
               className={`
-                sm:mt-6 px-4 py-3 rounded-lg font-medium transition-all duration-200 
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto min-h-[50px]
-                disabled:opacity-50 disabled:cursor-not-allowed
+                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-200 
+                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
+                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
                 ${isDark
-                  ? 'bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 border border-blue-500/30'
-                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+                  ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30'
+                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                 }
               `}
               title="Auto-fill student details from convocation database"
@@ -715,13 +738,11 @@ export default function SubmitForm() {
               {validatingConvocation ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="hidden sm:inline">Loading...</span>
-                  <span className="sm:hidden">Loading...</span>
+                  <span>Fetching...</span>
                 </>
               ) : (
                 <>
-                  <span className="hidden sm:inline">Auto-Fill from Convocation</span>
-                  <span className="sm:hidden">Auto-Fill</span>
+                  <span>Auto-Fill</span>
                 </>
               )}
             </button>
@@ -732,12 +753,12 @@ export default function SubmitForm() {
               onClick={checkExistingForm}
               disabled={checking || !formData.registration_no}
               className={`
-                sm:mt-6 px-4 py-3 rounded-lg font-medium transition-all duration-200 
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto min-h-[50px]
-                disabled:opacity-50 disabled:cursor-not-allowed
+                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-200 
+                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
+                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
                 ${isDark
                   ? 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
-                  : 'bg-gray-100 text-slate-700 hover:bg-gray-200 border border-gray-200'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
                 }
               `}
               title="Check if application already exists"
@@ -745,13 +766,10 @@ export default function SubmitForm() {
               {checking ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="hidden sm:inline">Verifying...</span>
-                  <span className="sm:hidden">Verifying...</span>
                 </>
               ) : (
                 <>
-                  <span className="hidden sm:inline">Verify Status</span>
-                  <span className="sm:hidden">Verify</span>
+                  <span>Check Status</span>
                 </>
               )}
             </button>

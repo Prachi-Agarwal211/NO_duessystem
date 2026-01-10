@@ -33,9 +33,9 @@ export async function GET() {
   );
 
   // 1. Check if a user is logged in
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (sessionError || !session) {
+  if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -43,7 +43,7 @@ export async function GET() {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single();
 
   if (profileError || !profile || profile.role !== 'admin') {

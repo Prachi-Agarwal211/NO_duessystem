@@ -8,6 +8,9 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import { ApiResponse } from '@/lib/apiResponse';
+
 // ✅ STRICT STORAGE LIMITS (enforced at API level)
 const LIMITS = {
   'alumni-screenshots': 100 * 1024, // 100 KB for Alumni
@@ -32,6 +35,15 @@ const LIMITS = {
  */
 export async function POST(request) {
   try {
+    // Rate limit check
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.UPLOAD);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        { error: rateLimitCheck.error || 'Too many uploads. Please wait.' },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file');
     const bucket = formData.get('bucket') || 'no-dues-files';
@@ -39,13 +51,10 @@ export async function POST(request) {
 
     // Validation
     if (!file) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No file provided'
-        },
-        { status: 400 }
-      );
+      // Validation
+      if (!file) {
+        return ApiResponse.error('No file provided', 400);
+      }
     }
 
     // Validate bucket name (security check)
@@ -62,13 +71,13 @@ export async function POST(request) {
 
     // ✅ VALIDATE FILE SIZE - Bucket-specific limits
     const maxLimit = LIMITS[bucket] || LIMITS['default'];
-    
+
     // For non-PDF files, reject immediately if over limit
     if (file.type !== 'application/pdf' && file.size > maxLimit) {
       return NextResponse.json(
         {
           success: false,
-          error: `File too large! Maximum size for this upload is ${(maxLimit/1024).toFixed(0)}KB. Please compress your file.`
+          error: `File too large! Maximum size for this upload is ${(maxLimit / 1024).toFixed(0)}KB. Please compress your file.`
         },
         { status: 400 }
       );
@@ -106,7 +115,7 @@ export async function POST(request) {
 
     // ✅ COMPRESS PDF if it exceeds bucket limit
     if (file.type === 'application/pdf' && fileBuffer.length > maxLimit) {
-      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <${(maxLimit/1024).toFixed(0)}KB`);
+      console.log(`📦 Compressing PDF: ${(fileBuffer.length / 1024).toFixed(2)}KB -> target: <${(maxLimit / 1024).toFixed(0)}KB`);
 
       try {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
@@ -130,7 +139,7 @@ export async function POST(request) {
         if (currentSize > maxLimit && compressionAttempt < maxAttempts) {
           compressionAttempt++;
           const reloadedDoc = await PDFDocument.load(compressedPdfBytes);
-          
+
           // Flatten form fields and annotations to reduce size
           const pages = reloadedDoc.getPages();
           for (const page of pages) {
@@ -152,7 +161,7 @@ export async function POST(request) {
         if (currentSize > maxLimit && compressionAttempt < maxAttempts) {
           compressionAttempt++;
           const finalDoc = await PDFDocument.load(compressedPdfBytes);
-          
+
           compressedPdfBytes = await finalDoc.save({
             useObjectStreams: false,
             addDefaultPage: false,
@@ -254,14 +263,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('❌ Upload API error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        details: error.message
-      },
-      { status: 500 }
-    );
+    return ApiResponse.error('Internal server error', 500, error.message);
   }
 }
 

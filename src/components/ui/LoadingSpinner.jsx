@@ -13,10 +13,15 @@ export default function LoadingSpinner({ size = 'md', className = "" }) {
   };
 
   return (
-    <div
-      className={`${sizes[size]} border-jecrc-red border-t-transparent rounded-full animate-spin ${className}`}
-      role="status"
-      aria-label="Loading"
-    />
+    <div className="relative inline-flex items-center justify-center">
+      <div
+        className={`${sizes[size]} border-gray-200 border-2 rounded-full absolute opacity-25`}
+      />
+      <div
+        className={`${sizes[size]} border-jecrc-red border-t-transparent rounded-full animate-spin ${className}`}
+        role="status"
+        aria-label="Loading"
+      />
+    </div>
   );
 }

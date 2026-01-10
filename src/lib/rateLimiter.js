@@ -137,19 +137,24 @@ setInterval(cleanupStore, 5 * 60 * 1000);
  * 
  * @param {Request} request - The incoming request
  * @param {Object} config - Rate limit configuration
+ * @param {string} [identifier] - Optional unique identifier (e.g., userID) to track instead of IP
  * @returns {Object} { success: boolean, remaining?: number, error?: string }
  * 
  * @example
- * const result = await rateLimit(request, RATE_LIMITS.STUDENT_SUBMIT);
- * if (!result.success) {
- *   return NextResponse.json({ error: result.error }, { status: 429 });
- * }
+ * // With User ID (Authenticated)
+ * const result = await rateLimit(request, RATE_LIMITS.STAFF_ACTION, user.id);
+ * 
+ * // Default (IP-based)
+ * const result = await rateLimit(request, RATE_LIMITS.SUBMIT);
  */
-export async function rateLimit(request, config = RATE_LIMITS.DEFAULT) {
+export async function rateLimit(request, config = RATE_LIMITS.DEFAULT, identifier = null) {
   try {
     const clientIP = getClientIP(request);
     const now = Date.now();
-    const key = `${clientIP}`;
+
+    // Use identifier (UserId) if provided, otherwise fallback to IP
+    // Prefix with type to prevent collisions
+    const key = identifier ? `user:${identifier}` : `ip:${clientIP}`;
 
     // Get or create store entry for this IP
     let record = requestStore.get(key);

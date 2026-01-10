@@ -7,14 +7,16 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User } from 'lucide-react';
+import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User, HelpCircle } from 'lucide-react';
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
+import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
 
 export default function StaffDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('pending');
   const [search, setSearch] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
 
   // Filters State
   const [filters, setFilters] = useState({
@@ -299,6 +301,12 @@ export default function StaffDashboard() {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowGuide(true)}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-all active:scale-95 flex items-center gap-2"
+            >
+              <HelpCircle className="w-4 h-4" /> Guidelines
+            </button>
+            <button
               onClick={handleExport}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all active:scale-95 flex items-center gap-2"
             >
@@ -306,14 +314,14 @@ export default function StaffDashboard() {
             </button>
             <button
               onClick={() => router.push('/staff/profile')}
-              className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
               title="My Profile"
             >
               <User className="w-5 h-5" />
             </button>
             <button
               onClick={refreshData}
-              className="p-3 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
+              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -322,13 +330,52 @@ export default function StaffDashboard() {
                 await supabase.auth.signOut();
                 router.push('/staff/login');
               }}
-              className="p-3 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
+              className="p-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
             </button>
           </div>
         </div>
+
+        {/* Guidelines Modal */}
+        {showGuide && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
+              <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-white/5">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Info className="w-5 h-5 text-blue-500" />
+                  {user?.department_name} Guidelines
+                </h2>
+                <button
+                  onClick={() => setShowGuide(false)}
+                  className="p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <XCircle className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-6 max-h-[60vh] overflow-y-auto">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Checklist for Approval</h3>
+                <ul className="space-y-3">
+                  {(DEPARTMENT_GUIDELINES[user?.department_name] || DEPARTMENT_GUIDELINES['default']).map((rule, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-sm leading-relaxed">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 text-right">
+                <button
+                  onClick={() => setShowGuide(false)}
+                  className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black font-medium rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Guidelines Card */}
         <div className="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-500/20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-purple-900/20">
@@ -454,105 +501,128 @@ export default function StaffDashboard() {
               {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse" />)}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[700px]">
-                <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
-                  <tr>
-                    {/* Checkbox Column for Bulk Actions (Only on Pending Tab) */}
-                    {activeTab === 'pending' && (
-                      <th className="w-12 px-4 py-3">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded border-gray-300 text-jecrc-red focus:ring-jecrc-red"
-                            checked={currentData.length > 0 && selectedItems.size === currentData.length}
-                            onChange={handleSelectAll}
-                          />
-                        </div>
-                      </th>
-                    )}
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Student</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Course / Branch</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Date</th>
-                    {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">SLA</th>}
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
-                    {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
-                  {currentData.length === 0 ? (
-                    <tr><td colSpan="6" className="p-12 text-center text-gray-400">No records found</td></tr>
-                  ) : (
-                    currentData.map(item => (
-                      <tr
-                        key={item.id}
-                        className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedItems.has(item.no_dues_forms.id) ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
-                        onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
-                      >
-                        {activeTab === 'pending' && (
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+            <>
+              {/* MOBILE VIEW cards (< 768px) */}
+              <div className="block md:hidden bg-gray-50 dark:bg-black/20 p-4">
+                {currentData.length === 0 ? (
+                  <div className="text-center py-10 text-gray-400">No records found</div>
+                ) : (
+                  currentData.map(item => (
+                    <MobileCard
+                      key={item.id}
+                      item={item}
+                      activeTab={activeTab}
+                      selected={selectedItems.has(item.no_dues_forms.id)}
+                      onSelect={() => handleSelectItem(item.no_dues_forms.id)}
+                      onAction={handleAction}
+                      onNavigate={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
+                      formatDate={formatDate}
+                    />
+                  ))
+                )}
+              </div>
+
+              {/* DESKTOP VIEW Table (>= 768px) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left min-w-[700px]">
+                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+                    <tr>
+                      {/* Checkbox Column for Bulk Actions (Only on Pending Tab) */}
+                      {activeTab === 'pending' && (
+                        <th className="w-12 px-4 py-3">
+                          <div className="flex items-center">
                             <input
                               type="checkbox"
                               className="w-4 h-4 rounded border-gray-300 text-jecrc-red focus:ring-jecrc-red"
-                              checked={selectedItems.has(item.no_dues_forms.id)}
-                              onChange={() => handleSelectItem(item.no_dues_forms.id)}
+                              checked={currentData.length > 0 && selectedItems.size === currentData.length}
+                              onChange={handleSelectAll}
                             />
-                          </td>
-                        )}
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
-                          <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-900 dark:text-white">{item.no_dues_forms.course}</div>
-                          <div className="text-xs text-gray-500">{item.no_dues_forms.branch}</div>
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">{formatDate(item.no_dues_forms.created_at)}</td>
-                        {activeTab === 'pending' && (
+                          </div>
+                        </th>
+                      )}
+                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Student</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Course / Branch</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Date</th>
+                      {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">SLA</th>}
+                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
+                      {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
+                    {currentData.length === 0 ? (
+                      <tr><td colSpan="6" className="p-12 text-center text-gray-400">No records found</td></tr>
+                    ) : (
+                      currentData.map(item => (
+                        <tr
+                          key={item.id}
+                          className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedItems.has(item.no_dues_forms.id) ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
+                          onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
+                        >
+                          {activeTab === 'pending' && (
+                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-gray-300 text-jecrc-red focus:ring-jecrc-red"
+                                checked={selectedItems.has(item.no_dues_forms.id)}
+                                onChange={() => handleSelectItem(item.no_dues_forms.id)}
+                              />
+                            </td>
+                          )}
                           <td className="px-4 py-3">
-                            {(() => {
-                              const sla = getSLAStatus(item.no_dues_forms.created_at);
-                              if (sla.level === 'normal') return <span className="text-xs text-gray-400">{sla.text}</span>;
-                              return (
-                                <span className={getSLABadgeClasses(sla, true)} title={sla.text}>
-                                  {sla.level === 'warning' && '⚠️'}
-                                  {sla.level === 'slow' && '🐌'}
-                                  {sla.level === 'critical' && '🚨'}
-                                  {sla.text}
-                                </span>
-                              );
-                            })()}
+                            <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
+                            <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
                           </td>
-                        )}
-                        <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
+                          <td className="px-4 py-3">
+                            <div className="text-gray-900 dark:text-white">{item.no_dues_forms.course}</div>
+                            <div className="text-xs text-gray-500">{item.no_dues_forms.branch}</div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">{formatDate(item.no_dues_forms.created_at)}</td>
+                          {activeTab === 'pending' && (
+                            <td className="px-4 py-3">
+                              {(() => {
+                                const sla = getSLAStatus(item.no_dues_forms.created_at);
+                                if (sla.level === 'normal') return <span className="text-xs text-gray-400">{sla.text}</span>;
+                                return (
+                                  <span className={getSLABadgeClasses(sla, true)} title={sla.text}>
+                                    {sla.level === 'warning' && '⚠️'}
+                                    {sla.level === 'slow' && '🐌'}
+                                    {sla.level === 'critical' && '🚨'}
+                                    {sla.text}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          )}
+                          <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
 
-                        {/* Individual Actions */}
-                        {activeTab === 'pending' && (
-                          <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
-                                className="p-2 text-green-600 bg-green-100 dark:bg-green-500/20 rounded-lg hover:bg-green-200"
-                                title="Approve"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`) }}
-                                className="p-2 text-red-600 bg-red-100 dark:bg-red-500/20 rounded-lg hover:bg-red-200"
-                                title="Reject"
-                              >
-                                <XCircle className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          {/* Individual Actions */}
+                          {activeTab === 'pending' && (
+                            <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
+                                  className="p-2 text-green-600 bg-green-100 dark:bg-green-500/20 rounded-lg hover:bg-green-200"
+                                  title="Approve"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`) }}
+                                  className="p-2 text-red-600 bg-red-100 dark:bg-red-500/20 rounded-lg hover:bg-red-200"
+                                  title="Reject"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </GlassCard>
 
@@ -590,7 +660,7 @@ export default function StaffDashboard() {
   );
 }
 
-// Stats Card Component for cleaner code
+// Status Card Component
 function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   const colors = {
     yellow: "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-500/20",
@@ -600,12 +670,12 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   };
 
   return (
-    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95">
-      <GlassCard className="p-4 sm:p-5">
+    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full">
+      <GlassCard className="p-4 sm:p-5 h-full">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{label}</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{value || 0}</p>
             <p className="text-xs text-gray-400 mt-1">{sub}</p>
           </div>
           <div className={`p-3 rounded-xl ${colors[color]}`}>
@@ -614,5 +684,78 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
         </div>
       </GlassCard>
     </button>
+  );
+}
+
+// Mobile Card Component for Data Items
+function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate, formatDate }) {
+  const sla = activeTab === 'pending' ? getSLAStatus(item.no_dues_forms.created_at) : null;
+
+  return (
+    <div
+      onClick={onNavigate}
+      className={`bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 mb-3 shadow-sm hover:shadow-md transition-all ${selected ? 'ring-2 ring-jecrc-red bg-red-50 dark:bg-red-900/10' : ''}`}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex gap-3">
+          {activeTab === 'pending' && (
+            <div onClick={(e) => e.stopPropagation()} className="pt-1">
+              <input
+                type="checkbox"
+                className="w-5 h-5 rounded border-gray-300 text-jecrc-red focus:ring-jecrc-red"
+                checked={selected}
+                onChange={onSelect}
+              />
+            </div>
+          )}
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base">
+              {item.no_dues_forms.student_name}
+            </h3>
+            <span className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded mt-1 font-mono">
+              {item.no_dues_forms.registration_no}
+            </span>
+          </div>
+        </div>
+        <StatusBadge status={item.status} className="scale-90 origin-top-right" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <div>
+          <span className="text-gray-400 text-xs block">Course</span>
+          {item.no_dues_forms.course}
+        </div>
+        <div className="text-right">
+          <span className="text-gray-400 text-xs block">Date</span>
+          {formatDate(item.no_dues_forms.created_at)}
+        </div>
+      </div>
+
+      {activeTab === 'pending' && sla && (
+        <div className="flex items-center gap-2 mb-4 bg-gray-50 dark:bg-black/20 p-2 rounded-lg">
+          <span className="text-xs text-gray-500 font-medium">SLA:</span>
+          <span className={`text-xs ${getSLABadgeClasses(sla).split(' ').filter(c => c.startsWith('text-')).join(' ')} font-bold`}>
+            {sla.text}
+          </span>
+        </div>
+      )}
+
+      {activeTab === 'pending' && (
+        <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-white/5" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={(e) => onAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
+            className="flex-1 py-2 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <CheckCircle className="w-4 h-4" /> Approve
+          </button>
+          <button
+            onClick={(e) => onAction(e, item.no_dues_forms.id, item.department_name, 'reject')}
+            className="flex-1 py-2 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <XCircle className="w-4 h-4" /> Reject
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

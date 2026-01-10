@@ -7,6 +7,9 @@ import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
+import { ApiResponse } from '@/lib/apiResponse';
+import { AuditLogger } from '@/lib/auditLogger';
+import { SmsService } from '@/lib/smsService';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -45,6 +48,16 @@ export async function PUT(request) {
     }
 
     const authUserId = user.id; // Auth user ID from Supabase Auth
+
+    // ==================== USER-BASED RATE LIMITING ====================
+    // Check limit for this specific user to prevent account abuse (e.g. from multiple IPs)
+    const userRateLimit = await rateLimit(request, RATE_LIMITS.ACTION, authUserId);
+    if (!userRateLimit.success) {
+      return NextResponse.json(
+        { error: userRateLimit.error || 'Rate limit exceeded for your account' },
+        { status: 429 }
+      );
+    }
 
     // ==================== ZOD VALIDATION ====================
     const body = await request.json();
@@ -254,14 +267,36 @@ export async function PUT(request) {
       console.error('Error fetching form after status update:', formFetchError);
     }
 
+    // ==================== AUDIT LOGGING ====================
+    // Log the action (async)
+    AuditLogger.log(
+      action === 'approve' ? AuditLogger.ACTIONS.APPROVE_FORM : AuditLogger.ACTIONS.REJECT_FORM,
+      userId,
+      {
+        department: departmentName,
+        reason: reason || null,
+        studentName: form.student_name,
+        registrationNo: form.registration_no
+      },
+      formId,
+      request.headers.get('x-forwarded-for') || 'unknown'
+    );
+
     // ==================== ASYNC CERTIFICATE GENERATION ====================
     // If form is now completed (trigger updated it), generate certificate in background
     // Don't await - let it happen asynchronously to not block the response
     if (currentForm?.status === 'completed') {
       console.log(`🎓 Form completed - triggering background certificate generation for ${formId}`);
 
-      // Fire and forget - certificate generation happens in background
-      // Use proper error handling with catch to prevent unhandled promise rejections
+      // Log certificate generation attempt
+      AuditLogger.log(
+        AuditLogger.ACTIONS.GENERATE_CERTIFICATE,
+        userId, // Triggered by this user's action
+        { registrationNo: form.registration_no },
+        formId
+      );
+
+      // Fire and forget - certificate generation happens in background<
       fetch(
         APP_URLS.certificateGenerateApi(),
         {
@@ -311,6 +346,14 @@ export async function PUT(request) {
         if (action === 'reject') {
           const { sendRejectionNotification } = await import('@/lib/emailService');
 
+          // Send SMS Alert
+          if (formWithEmail.contact_no) {
+            SmsService.sendSMS(
+              formWithEmail.contact_no,
+              SmsService.TEMPLATES.REJECTION_ALERT(formWithEmail.student_name, departmentName)
+            ).catch(console.error);
+          }
+
           const emailResult = await sendRejectionNotification({
             studentEmail,
             studentName: formWithEmail.student_name,
@@ -330,6 +373,14 @@ export async function PUT(request) {
         // CASE 2: Department APPROVED + ALL completed - Send certificate ready email
         else if (action === 'approve' && currentForm?.status === 'completed') {
           const { sendCertificateReadyNotification } = await import('@/lib/emailService');
+
+          // Send SMS Alert
+          if (formWithEmail.contact_no) {
+            SmsService.sendSMS(
+              formWithEmail.contact_no,
+              SmsService.TEMPLATES.CERTIFICATE_READY(formWithEmail.student_name)
+            ).catch(console.error);
+          }
 
           const emailResult = await sendCertificateReadyNotification({
             studentEmail,
@@ -358,25 +409,13 @@ export async function PUT(request) {
       console.log('ℹ️ Student email not available - skipping email notification');
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        status: updatedStatus,
-        form: currentForm || form,
-        message: `Successfully ${action}d the no dues request for ${form.student_name}`
-      }
-    }, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+    return ApiResponse.success({
+      status: updatedStatus,
+      form: currentForm || form,
+    }, `Successfully ${action}d the no dues request for ${form.student_name}`);
+
   } catch (error) {
     console.error('Staff Action API Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
-    }, { status: 500 });
+    return ApiResponse.error('Internal server error', 500, error.message);
   }
 }

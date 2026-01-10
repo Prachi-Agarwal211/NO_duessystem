@@ -4,6 +4,8 @@ import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
+import { ApiResponse } from '@/lib/apiResponse';
+import { SmsService } from '@/lib/smsService';
 
 // Create Supabase admin client for server-side operations
 const supabaseAdmin = createClient(
@@ -233,26 +235,24 @@ export async function POST(request) {
     }
     */
 
+    // ==================== SEND CONFIRMATION SMS ====================
+    if (form.contact_no) {
+      // Fire and forget SMS
+      SmsService.sendSMS(
+        form.contact_no,
+        SmsService.TEMPLATES.SUBMISSION_CONFIRMED(form.student_name, form.registration_no)
+      ).catch(err => console.error('SMS Failed:', err));
+    }
+
     console.log(`✅ Form submitted - Digest notification will be sent at 3:00 PM`);
 
     // ==================== RETURN SUCCESS ====================
 
-    return NextResponse.json({
-      success: true,
-      data: form,
-      message: 'Application submitted successfully'
-    }, { status: 201 });
+    return ApiResponse.success(form, 'Application submitted successfully', 201);
 
   } catch (error) {
     console.error('Student API Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        details: error.message
-      },
-      { status: 500 }
-    );
+    return ApiResponse.error('Internal server error', 500, error.message);
   }
 }
 

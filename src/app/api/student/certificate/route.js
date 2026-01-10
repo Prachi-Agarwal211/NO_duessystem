@@ -19,16 +19,16 @@ export async function GET(request) {
     const registrationNo = searchParams.get('registrationNo');
 
     // ==================== VALIDATION ====================
-    
+
     if (!formId && !registrationNo) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Either Form ID or Registration Number is required' 
+        error: 'Either Form ID or Registration Number is required'
       }, { status: 400 });
     }
 
     // ==================== FETCH FORM DATA ====================
-    
+
     let query = supabase
       .from('no_dues_forms')
       .select(`
@@ -56,44 +56,45 @@ export async function GET(request) {
 
     if (formError) {
       if (formError.code === 'PGRST116') {
-        return NextResponse.json({ 
+        return NextResponse.json({
           success: false,
-          error: 'Application not found' 
+          error: 'Application not found'
         }, { status: 404 });
       }
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Failed to fetch application data' 
+        error: 'Failed to fetch application data'
       }, { status: 500 });
     }
 
     if (!formData) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Application not found' 
+        error: 'Application not found'
       }, { status: 404 });
     }
 
     // ==================== AUTHORIZATION (Phase 1 Compatible) ====================
-    
+
     // Phase 1: Students don't have authentication
     // Authorization is done by providing the correct registration number
     // This is secure enough for Phase 1 since:
     // 1. Registration numbers are not publicly listed
     // 2. Students need to know their own registration number
     // 3. Certificates are not sensitive documents (they're proof of clearance)
-    
+
     let canAccess = false;
 
     // Check if user is authenticated (staff/admin)
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session) {
+    // ✅ SECURE: Use getUser() for server-side session validation
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (user && !authError) {
       // Authenticated users: check if they're staff or admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, department_name, id')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
 
       if (!profileError && profile) {
@@ -115,14 +116,14 @@ export async function GET(request) {
     }
 
     if (!canAccess) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: false,
-        error: 'Unauthorized to access this certificate' 
+        error: 'Unauthorized to access this certificate'
       }, { status: 403 });
     }
 
     // ==================== CHECK CERTIFICATE EXISTS ====================
-    
+
     // Check if system-generated certificate exists
     if (!formData.final_certificate_generated || !formData.certificate_url) {
       return NextResponse.json({
@@ -134,7 +135,7 @@ export async function GET(request) {
     }
 
     // ==================== RETURN CERTIFICATE INFO ====================
-    
+
     return NextResponse.json({
       success: true,
       certificateReady: true,
@@ -152,9 +153,9 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Certificate API Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
-      error: 'Internal server error' 
+      error: 'Internal server error'
     }, { status: 500 });
   }
 }

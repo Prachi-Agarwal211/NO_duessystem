@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { APP_URLS } from '@/lib/urlHelper';
+import { ApiResponse } from '@/lib/apiResponse';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -464,22 +465,14 @@ export async function PUT(request) {
     // ==================== SUCCESS RESPONSE ====================
     console.log(`✅ Reapplication #${form.reapplication_count + 1} processed for ${form.registration_no}`);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Reapplication submitted successfully. All departments will review your updated application.',
-      data: {
-        reapplication_number: form.reapplication_count + 1,
-        reset_departments: 7, // ✅ MASTER CYCLE FIX: Always 7 departments
-        form_status: 'pending'
-      }
-    }, { status: 200 });
+    return ApiResponse.success({
+      reapplication_number: form.reapplication_count + 1,
+      reset_departments: 7, // ✅ MASTER CYCLE FIX: Always 7 departments
+      form_status: 'pending'
+    }, 'Reapplication submitted successfully. All departments will review your updated application.');
 
   } catch (error) {
     console.error('Reapplication API Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error.message
-    }, { status: 500 });
+    return ApiResponse.error('Internal server error', 500, error.message);
   }
 }
