@@ -28,7 +28,7 @@ export default function Home() {
         - Toned Down Panels
         - Card Group Grid matches Left Panel Centerline
       */}
-      <div className="min-h-screen lg:h-screen w-full flex flex-col relative overflow-y-auto lg:overflow-hidden bg-transparent">
+      <div className="min-h-screen w-full flex flex-col relative overflow-x-hidden bg-transparent">
 
         {/* Light Mode Backdrop Fade (Only visible in light mode) */}
         {!isDark && <div className="light-backdrop lg:w-1/2" />}

@@ -45,7 +45,8 @@ export default function PublicVerifyPage() {
           issueDate: data.certificate?.updated_at || new Date().toISOString(),
           transactionId: data.certificate?.blockchain_tx || 'N/A',
           certificateUrl: null,
-          verificationCount: data.totalVerifications || 0
+          verificationCount: data.totalVerifications || 0,
+          departmentStatuses: data.departmentStatuses || [] // Store fetched statuses
         });
       } else {
         setVerificationResult({
@@ -99,11 +100,10 @@ export default function PublicVerifyPage() {
           <div className="space-y-6">
             {/* Verification Status Card */}
             <div
-              className={`rounded-xl shadow-lg p-8 ${
-                verificationResult.valid
-                  ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500'
-                  : 'bg-red-50 dark:bg-red-900/20 border-2 border-red-500'
-              }`}
+              className={`rounded-xl shadow-lg p-8 ${verificationResult.valid
+                ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500'
+                : 'bg-red-50 dark:bg-red-900/20 border-2 border-red-500'
+                }`}
             >
               <div className="flex items-start gap-4">
                 {verificationResult.valid ? (
@@ -113,22 +113,20 @@ export default function PublicVerifyPage() {
                 )}
                 <div className="flex-1">
                   <h2
-                    className={`text-2xl font-bold mb-2 ${
-                      verificationResult.valid
-                        ? 'text-green-900 dark:text-green-100'
-                        : 'text-red-900 dark:text-red-100'
-                    }`}
+                    className={`text-2xl font-bold mb-2 ${verificationResult.valid
+                      ? 'text-green-900 dark:text-green-100'
+                      : 'text-red-900 dark:text-red-100'
+                      }`}
                   >
                     {verificationResult.valid
                       ? '✓ Certificate Verified'
                       : '✗ Verification Failed'}
                   </h2>
                   <p
-                    className={`text-lg ${
-                      verificationResult.valid
-                        ? 'text-green-700 dark:text-green-300'
-                        : 'text-red-700 dark:text-red-300'
-                    }`}
+                    className={`text-lg ${verificationResult.valid
+                      ? 'text-green-700 dark:text-green-300'
+                      : 'text-red-700 dark:text-red-300'
+                      }`}
                   >
                     {verificationResult.message}
                   </p>
@@ -193,6 +191,31 @@ export default function PublicVerifyPage() {
                     </p>
                   </div>
                 </div>
+
+                {/* ✅ Department Clearance Breakdown */}
+                {certificate.departmentStatuses && certificate.departmentStatuses.length > 0 && (
+                  <div className="mt-6 p-6 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <h4 className="font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      Departmental Clearance Status
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {certificate.departmentStatuses.map((dept, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 shadow-sm">
+                          <span className="text-sm font-medium capitalize text-slate-700 dark:text-slate-300">
+                            {dept.department_name ? dept.department_name.replace(/_/g, ' ') : 'Department'}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${dept.status === 'approved'
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            }`}>
+                            {dept.status === 'approved' ? 'CLEARED' : dept.status.toUpperCase()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Blockchain Info */}
                 {certificate.transactionId && certificate.transactionId !== 'N/A' && (

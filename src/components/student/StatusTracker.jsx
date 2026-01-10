@@ -10,6 +10,9 @@ import DepartmentStatus from './DepartmentStatus';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ReapplyModal from './ReapplyModal';
 import ReapplicationHistory from './ReapplicationHistory';
+import SupportButton from '@/components/support/SupportButton';
+import { realtimeManager } from '@/lib/realtimeManager';
+import { subscribeToRealtime } from '@/lib/supabaseRealtime';
 
 export default function StatusTracker({ registrationNo }) {
   const { theme } = useTheme();
@@ -128,80 +131,45 @@ export default function StatusTracker({ registrationNo }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [registrationNo]); // fetchData is stable, only re-run when registrationNo changes
 
-  // Separate effect for real-time subscriptions after form data is loaded
+  // Unified Realtime Subscription
   useEffect(() => {
     if (!formData?.id) return;
 
-    let isSubscribed = false;
-    let intervalId = null;
+    let unsubscribeDeptAction;
+    let unsubscribeGlobal;
+    let unsubscribeRealtime;
 
-    // Set up real-time subscription with proper filtering
-    const channel = supabase
-      .channel(`form-${registrationNo}-${formData.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'no_dues_status',
-          filter: `form_id=eq.${formData.id}`
-        },
-        (payload) => {
-          // Only refresh if it's for our form
-          if (payload.new?.form_id === formData.id) {
-            console.log('Real-time status update received:', payload);
-            fetchData(true);
-          }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to status updates');
-          isSubscribed = true;
-          // Clear interval once subscription is active
-          if (intervalId) {
-            clearInterval(intervalId);
-            intervalId = null;
-          }
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Subscription error - falling back to polling');
-          isSubscribed = false;
-          // Restart polling if subscription fails
-          if (!intervalId) {
-            intervalId = setInterval(() => {
-              if (!refreshing) {
-                fetchData(true);
-              }
-            }, 60000);
-          }
+    const setupRealtime = async () => {
+      // Ensure global connection is active
+      unsubscribeRealtime = await subscribeToRealtime();
+
+      // Subscribe to simplified event streams via Manager
+      unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
+        // Check if OUR form is involved
+        if (analysis.formIds.includes(formData.id)) {
+          console.log('⚡ Student tracker received relevant update, refreshing...');
+          fetchData(true);
         }
       });
 
-    // Fallback polling - only if subscription not active after 5 seconds
-    const fallbackTimeout = setTimeout(() => {
-      if (!isSubscribed && !intervalId) {
-        console.log('Subscription not active, starting fallback polling');
-        intervalId = setInterval(() => {
-          if (!refreshing) {
-            fetchData(true);
-          }
-        }, 60000);
-      }
-    }, 5000);
+      unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
+        // Check for general updates to our form (completion, etc)
+        if (analysis.formIds.includes(formData.id)) {
+          console.log('⚡ Student tracker received global update, refreshing...');
+          fetchData(true);
+        }
+      });
+    };
+
+    setupRealtime();
 
     return () => {
-      try {
-        clearTimeout(fallbackTimeout);
-        if (intervalId) {
-          clearInterval(intervalId);
-        }
-        supabase.removeChannel(channel);
-      } catch (error) {
-        console.error('Error during cleanup:', error);
-      }
+      if (unsubscribeDeptAction) unsubscribeDeptAction();
+      if (unsubscribeGlobal) unsubscribeGlobal();
+      if (unsubscribeRealtime) unsubscribeRealtime();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData?.id, registrationNo]); // Dependencies: formData.id and registrationNo for channel name
+  }, [formData?.id]);
 
   if (loading) {
     return (
@@ -470,7 +438,7 @@ export default function StatusTracker({ registrationNo }) {
                       setSelectedDeptForReapply(null); // null = reapply to all
                       setShowReapplyModal(true);
                     }}
-                    className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${isDark
+                    className={`w-full py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${isDark
                       ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                       : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
                       }`}
@@ -516,7 +484,7 @@ export default function StatusTracker({ registrationNo }) {
               href={isManualEntry ? formData.manual_certificate_url : formData.certificate_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="interactive inline-flex items-center gap-2 px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40"
+              className="interactive inline-flex items-center gap-2 px-6 py-2.5 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40"
             >
               <Download size={20} />
               Download Certificate
@@ -613,6 +581,9 @@ export default function StatusTracker({ registrationNo }) {
           }}
         />
       )}
+
+      {/* ✅ FEAT: Floating Support Button for Easy Help Access */}
+      <SupportButton className="!fixed !bottom-6 !right-6 opacity-80 hover:opacity-100 shadow-xl" />
     </motion.div>
   );
 }

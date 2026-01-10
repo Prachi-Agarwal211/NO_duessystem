@@ -30,7 +30,7 @@ export async function POST(request) {
       parsedData = typeof qrData === 'string' ? JSON.parse(qrData) : qrData;
     } catch (e) {
       return NextResponse.json(
-        { 
+        {
           valid: false,
           error: 'Invalid QR code format',
           message: 'This does not appear to be a valid JECRC certificate QR code'
@@ -236,16 +236,31 @@ export async function GET(request) {
       throw error;
     }
 
-    // Fetch certificate info
-    const { data: formData } = await supabaseAdmin
+    // Fetch certificate info with department statuses
+    const { data: formData, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
-      .select('student_name, registration_no, blockchain_tx')
+      .select(`
+        student_name, 
+        registration_no, 
+        blockchain_tx, 
+        updated_at,
+        no_dues_status (
+          department_name,
+          status,
+          action_at
+        )
+      `)
       .eq('id', formId)
       .single();
+
+    if (formError) {
+      throw formError;
+    }
 
     return NextResponse.json({
       success: true,
       certificate: formData,
+      departmentStatuses: formData.no_dues_status || [],
       verifications: verifications || [],
       totalVerifications: verifications?.length || 0
     });

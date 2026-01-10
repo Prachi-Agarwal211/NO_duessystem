@@ -309,12 +309,15 @@ class SupabaseRealtimeService {
     this.reconnectAttempts++;
 
     // Exponential backoff with cap: 1s, 2s, 4s, 8s, 16s, 30s (max)
-    const delay = Math.min(
+    // Add jitter (random 0-1000ms) to prevent thundering herd
+    const backoff = Math.min(
       1000 * Math.pow(2, Math.min(this.reconnectAttempts - 1, 5)),
       this.MAX_RECONNECT_DELAY
     );
+    const jitter = Math.random() * 1000;
+    const delay = backoff + jitter;
 
-    console.log(`🔄 Scheduling reconnect attempt #${this.reconnectAttempts} in ${delay}ms`);
+    console.log(`🔄 Scheduling reconnect attempt #${this.reconnectAttempts} in ${Math.round(delay)}ms`);
 
     // Notify subscribers of reconnection attempt
     if (typeof window !== 'undefined') {

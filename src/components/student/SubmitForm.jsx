@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useFormConfig } from '@/hooks/useFormConfig';
 import { DropdownWithErrorBoundary } from '@/components/ui/DropdownErrorBoundary';
 import { createLogger } from '@/lib/errorLogger';
+import FormInstructions from './FormInstructions';
 // Removed: FireNebulaBackground and PearlGradientOverlay - animations too intense
 
 const logger = createLogger('SubmitForm');
@@ -50,13 +51,14 @@ export default function SubmitForm() {
     contact_no: '',
     personal_email: '',
     college_email: '',
+    alumni_profile_link: '',
   });
 
   // Filtered options based on selections
   const [availableCourses, setAvailableCourses] = useState([]);
   const [availableBranches, setAvailableBranches] = useState([]);
 
-  const [file, setFile] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
@@ -843,6 +845,8 @@ export default function SubmitForm() {
           required
           placeholder="6-15 digits (without country code)"
           disabled={loading}
+          pattern="[0-9]{6,15}"
+          inputMode="tel"
         />
 
         <FormInput
@@ -983,20 +987,24 @@ export default function SubmitForm() {
           placeholder={`yourname${collegeDomain}`}
           disabled={loading}
         />
+
+        {/* ALUMNI PROFILE LINK (MANDATORY) */}
+        <div className="md:col-span-2">
+          <FormInput
+            label="Alumni Profile Link (Mandatory)"
+            name="alumni_profile_link"
+            type="url"
+            value={formData.alumni_profile_link}
+            onChange={handleInputChange}
+            required
+            placeholder="https://jualumni.in/profile/123456"
+            disabled={loading}
+            hint="You MUST register on jualumni.in and provide your profile link here."
+          />
+        </div>
       </motion.div>
 
-      {/* TEMPORARILY HIDDEN - Alumni Screenshot Upload */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.6, type: "spring", stiffness: 100 }}
-      >
-        <FileUpload
-          onFileSelect={setFile}
-          accept="image/*"
-          maxSize={1 * 1024 * 1024}
-        />
-      </motion.div> */}
+      {/* Alumni Screenshot Upload Removed as per requirement */}
 
       {/* Form Actions */}
       <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">

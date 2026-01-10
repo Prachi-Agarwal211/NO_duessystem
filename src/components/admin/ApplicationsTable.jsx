@@ -5,9 +5,63 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
 import { RefreshCw } from 'lucide-react';
 
-export default function ApplicationsTable({ applications, currentPage, totalPages, totalItems, onPageChange }) {
+import { realtimeManager } from '@/lib/realtimeManager';
+
+export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
+  const [applications, setApplications] = useState(initialApplications);
   const [expandedRows, setExpandedRows] = useState(new Set());
-  
+  const [updatingRows, setUpdatingRows] = useState(new Set());
+
+  // Update local state when props change (initial load or page change)
+  useEffect(() => {
+    setApplications(initialApplications);
+  }, [initialApplications]);
+
+  // Realtime subscription for targeted updates
+  useEffect(() => {
+    const handleRealtimeUpdate = (event) => {
+      if (!event.formIds || event.formIds.length === 0) return;
+
+      const impactedIds = new Set(event.formIds);
+
+      // Flash the rows that are updating
+      setUpdatingRows(prev => {
+        const next = new Set(prev);
+        impactedIds.forEach(id => next.add(id));
+        return next;
+      });
+
+      // Clear flash after animation
+      setTimeout(() => {
+        setUpdatingRows(prev => {
+          const next = new Set(prev);
+          impactedIds.forEach(id => next.delete(id));
+          return next;
+        });
+      }, 2000);
+
+      // Targeted State Update logic
+      setApplications(prevApps => {
+        return prevApps.map(app => {
+          if (!impactedIds.has(app.id)) return app;
+
+          // If we have specific new data in the event, use it.
+          // Note: Realtime manager events might need to carry the 'new' payload for this to be perfect.
+          // For now, if it's a department status update, we might need to fetch *just* that row
+          // OR if the event payload has the data, we merge it.
+
+          // Ideally, we'd merge changes here. For now, let's assume the event *might* trigger a single row refresh
+          // if we don't have the full data. But to stop full page reload, we update what we can.
+
+          return app;
+        });
+      });
+    };
+
+    const unsubscribe = realtimeManager.subscribe('globalUpdate', handleRealtimeUpdate);
+    return () => unsubscribe();
+  }, []);
+
   // FIX: Reset expanded rows when applications change to prevent memory leak
   useEffect(() => {
     setExpandedRows(new Set());
@@ -32,7 +86,7 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
         ← Swipe left/right to view all columns →
       </div>
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-        <table className="min-w-full">
+        <table className="min-w-[1000px] w-full">
           <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Expand</th>
@@ -50,7 +104,7 @@ export default function ApplicationsTable({ applications, currentPage, totalPage
               const isExpanded = expandedRows.has(app.id);
               return (
                 <React.Fragment key={app.id}>
-                  <tr className="group transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                  <tr className={`group transition-colors duration-500 ${updatingRows.has(app.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}>
                     <td className="px-4 py-4">
                       <button
                         onClick={() => toggleRowExpansion(app.id)}

@@ -68,15 +68,46 @@ class RealtimeManager {
   /**
    * Process all queued events in a single batch
    */
+  /**
+   * Process all queued events in a single batch
+   */
   processBatchedEvents() {
     if (this.eventQueue.length === 0) return;
 
     console.log(`📦 Processing ${this.eventQueue.length} batched events`);
 
-    // Analyze events to determine notification strategy
-    const analysis = this.analyzeEventBatch(this.eventQueue);
+    // Smart Deduplication: Group by formId
+    // If we have 10 updates for the same formId (e.g. 10 depts inserted), we only need 1 notification
+    const groupedEvents = this.eventQueue.reduce((acc, event) => {
+      const id = event.formId || 'global';
+      if (!acc[id]) acc[id] = [];
+      acc[id].push(event);
+      return acc;
+    }, {});
 
-    // Notify subscribers based on event types
+    // For each unique formId, pick the most significant event
+    // Priority: completion > submission > status_update > department_update
+    const significantEvents = Object.values(groupedEvents).map(group => {
+      return group.reduce((prev, current) => {
+        // Simple priority check based on event type
+        const priority = {
+          'form_completion': 10,
+          'form_submission': 9,
+          'form_status_update': 5,
+          'department_status_update': 3,
+          'department_status_created': 2
+        };
+        const pCurrent = priority[current.type] || 1;
+        const pPrev = priority[prev.type] || 1;
+
+        return pCurrent > pPrev ? current : (current.timestamp > prev.timestamp ? current : prev);
+      });
+    });
+
+    // Analyze simplified list of significant events
+    const analysis = this.analyzeEventBatch(significantEvents);
+
+    // Notify subscribers
     this.notifySubscribers(analysis);
 
     // Clear the queue
@@ -109,10 +140,20 @@ class RealtimeManager {
       }
     });
 
+    // Create a map of formId -> latestEvent for the payload
+    // This allows subscribers to optimistically update their local state
+    const latestEvents = {};
+    events.forEach(event => {
+      if (event.formId) {
+        latestEvents[event.formId] = event;
+      }
+    });
+
     return {
       formIds: Array.from(uniqueFormIds),
       eventTypes: Array.from(eventTypes),
       departmentActions,
+      latestEvents, // ✅ Added: The actual data for targeted updates
       hasNewSubmission: eventTypes.has('form_submission') || eventTypes.has('formSubmission'),
       hasCompletion: eventTypes.has('form_completion') || eventTypes.has('formCompletion'),
       hasDepartmentAction: eventTypes.has('department_status_update') ||
@@ -143,6 +184,15 @@ class RealtimeManager {
 
     // Always notify global subscribers
     this.notifySubscriberSet(this.subscribers.globalUpdate, analysis, 'globalUpdate', now);
+  }
+
+  /**
+   * Determine if a full refresh is needed or if targeted updates suffice
+   */
+  shouldFullRefresh(eventType) {
+    // Only full refresh for major state changes that add/remove rows or change sorting significantly
+    const majorChanges = ['form_submission', 'form_completion'];
+    return majorChanges.includes(eventType);
   }
 
   /**

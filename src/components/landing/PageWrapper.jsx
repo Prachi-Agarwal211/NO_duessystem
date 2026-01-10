@@ -10,7 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
  */
 export default function PageWrapper({ children, showThemeToggle = true, showSupportButton = true }) {
   const { theme } = useTheme();
-  
+
   // Provide default theme during SSR/initial render
   const currentTheme = theme || 'dark';
   const isDark = currentTheme === 'dark';
@@ -18,11 +18,11 @@ export default function PageWrapper({ children, showThemeToggle = true, showSupp
   return (
     <>
       {showThemeToggle && <ThemeToggle />}
-      
+
       {/* Floating Support Button - Shows on all pages by default */}
       {showSupportButton && <EnhancedSupportButton />}
-      
-      <div className={`relative transition-colors duration-700 min-h-screen
+
+      <div className={`relative transition-colors duration-700 min-h-screen px-4 sm:px-6 lg:px-8
         ${isDark ? 'text-white' : 'text-ink-black'
         }`}>
         {children}

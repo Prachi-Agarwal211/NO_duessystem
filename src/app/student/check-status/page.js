@@ -309,8 +309,8 @@ function CheckStatusContent() {
             >
               {/* Instructions Card */}
               <div className={`rounded-2xl border p-6 transition-all duration-700 ${isDark
-                  ? 'bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-500/20'
-                  : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'
+                ? 'bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-500/20'
+                : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200'
                 }`}>
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl flex-shrink-0 ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'
@@ -363,7 +363,7 @@ function CheckStatusContent() {
                     disabled={loading}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full py-4 bg-gradient-to-r from-jecrc-red to-jecrc-red/80 text-white rounded-xl font-manrope font-semibold text-lg hover:shadow-xl hover:shadow-jecrc-red/25 transition-all duration-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                    className="w-full py-3 bg-gradient-to-r from-jecrc-red to-jecrc-red/80 text-white rounded-xl font-manrope font-semibold hover:shadow-xl hover:shadow-jecrc-red/25 transition-all duration-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
                     {loading ? (
                       <>

@@ -304,16 +304,56 @@ export function useStaffDashboard() {
 
       // Subscribe to specific events via RealtimeManager
       unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
-        console.log('📋 Staff dashboard received department action:', {
-          affectedForms: analysis.formIds.length,
-          departments: Array.from(analysis.departmentActions.keys()),
-          ourDepartment: user.department_name,
-          match: analysis.departmentActions.has(user.department_name)
-        });
+        // Targeted Update Logic for Department Actions
+        const relevantUpdates = Object.values(analysis.latestEvents || {}).filter(event =>
+          event.data?.new?.department_name === user.department_name
+        );
 
-        // ALWAYS refresh when any department action occurs (with debounce)
-        if (analysis.formIds.length > 0) {
-          console.log('🔄 Scheduling debounced refresh from department action...');
+        if (relevantUpdates.length > 0) {
+          console.log('⚡ Performing TARGETED update for', relevantUpdates.length, 'items');
+
+          setRequests(prevRequests => {
+            const newRequests = [...prevRequests];
+            let needsRefresh = false;
+
+            relevantUpdates.forEach(event => {
+              const formId = event.formId;
+              const newStatus = event.data.new?.status;
+              const index = newRequests.findIndex(r => r.no_dues_forms.id === formId);
+
+              if (index !== -1) {
+                // Update existing item locally
+                newRequests[index] = {
+                  ...newRequests[index],
+                  status: newStatus, // Update the department-specific status if this is that table
+                  // Note: 'requests' logic is complex, might need deeper merge.
+                  // For now, if we match, we try to update.
+                };
+
+                // If status changed to something that moves it out of 'pending', we might want to just refresh
+                // or filter it out. 
+                if (activeTab === 'pending' && newStatus !== 'pending') {
+                  // It moved out of pending!
+                  // We could filter it out: newRequests.splice(index, 1);
+                  needsRefresh = true; // Simpler to refresh for now to be safe
+                }
+              } else {
+                // New item for us?
+                needsRefresh = true;
+              }
+            });
+
+            if (needsRefresh) {
+              debouncedRefresh();
+              return prevRequests;
+            }
+
+            return newRequests;
+          });
+        }
+
+        // Fallback: If we didn't handle it precisely or unsure, refresh
+        if (relevantUpdates.length === 0 && analysis.formIds.length > 0) {
           debouncedRefresh();
         }
       });
@@ -322,12 +362,6 @@ export function useStaffDashboard() {
       unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
         // Only refresh for new submissions or completions that might affect us
         if (analysis.hasNewSubmission || analysis.hasCompletion) {
-          console.log('📊 Staff dashboard received global update:', {
-            newSubmission: analysis.hasNewSubmission,
-            completion: analysis.hasCompletion,
-            affectedForms: analysis.formIds.length
-          });
-
           console.log('🚀 Scheduling debounced refresh from global update');
           debouncedRefresh();
         }

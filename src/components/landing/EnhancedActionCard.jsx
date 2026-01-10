@@ -26,24 +26,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index, varia
   const [deviceTier, setDeviceTier] = useState('high');
 
   useEffect(() => {
-    const detectDevice = () => {
-      const isMobile = window.innerWidth < 768;
-      const isVeryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
-        (navigator.connection && navigator.connection.saveData);
-      const isLowEnd = isMobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
-
-      if (isVeryLowEnd) {
-        setDeviceTier('very-low');
-      } else if (isLowEnd) {
-        setDeviceTier('low');
-      } else {
-        setDeviceTier('high');
-      }
-    };
-
-    detectDevice();
-    window.addEventListener('resize', detectDevice);
-    return () => window.removeEventListener('resize', detectDevice);
+    // Force high-end graphics for all users as requested
+    setDeviceTier('high');
   }, []);
 
   // Wait for gradient to be ready before applying transparency

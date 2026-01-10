@@ -13,7 +13,7 @@ const supabaseAdmin = createClient(
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { email, message, requesterType } = body;
+    const { email, message, requesterType, subject, category, priority, department } = body;
 
     // Simple validation
     if (!email || !email.trim()) {
@@ -51,7 +51,13 @@ export async function POST(request) {
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const ticketNumber = `TKT-${timestamp}${random}`;
 
-    // Insert support ticket - SIMPLIFIED
+    // Format Subject (Prefix with Department if provided)
+    let finalSubject = subject || 'Support Request';
+    if (department && department !== 'general') {
+      finalSubject = `[${department}] ${finalSubject}`;
+    }
+
+    // Insert support ticket
     const { data, error } = await supabaseAdmin
       .from('support_tickets')
       .insert([
@@ -60,11 +66,11 @@ export async function POST(request) {
           user_name: email.split('@')[0].replace(/[._-]/g, ' ').trim(),
           user_type: requesterType,
           requester_type: requesterType,
-          subject: 'Support Request', // Simple default
+          subject: finalSubject,
           message: message.trim(),
-          category: 'other', // Default category
+          category: category || 'general',
           status: 'open',
-          priority: 'medium', // Default priority
+          priority: priority || 'normal',
           ticket_number: ticketNumber
         }
       ])

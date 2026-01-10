@@ -97,6 +97,8 @@ export default function FormInput({
             disabled={disabled || loading}
             required={required}
             placeholder={placeholder}
+            inputMode={type === 'tel' ? 'tel' : type === 'number' ? 'numeric' : undefined}
+            autoComplete={type === 'tel' ? 'tel' : type === 'email' ? 'email' : undefined}
             className={`
               w-full px-4 py-3 rounded-lg outline-none transition-all duration-200
               font-medium text-sm

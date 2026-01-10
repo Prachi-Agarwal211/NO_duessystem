@@ -19,24 +19,8 @@ export default function LiquidTitle() {
   const titleRef = useRef(null);
 
   useEffect(() => {
-    const detectDevice = () => {
-      const isMobile = window.innerWidth < 768;
-      const isVeryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
-        (navigator.connection && navigator.connection.saveData);
-      const isLowEnd = isMobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
-
-      if (isVeryLowEnd) {
-        setDeviceTier('very-low');
-      } else if (isLowEnd) {
-        setDeviceTier('low');
-      } else {
-        setDeviceTier('high');
-      }
-    };
-
-    detectDevice();
-    window.addEventListener('resize', detectDevice);
-    return () => window.removeEventListener('resize', detectDevice);
+    // Force high-end graphics for all users as requested
+    setDeviceTier('high');
   }, []);
 
   // Wait for gradient to be ready before applying transparency
@@ -115,7 +99,7 @@ export default function LiquidTitle() {
         {/* Chrome Metallic Title Text - FIXED: Only apply transparent when gradient is ready */}
         <h1
           ref={titleRef}
-          className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${isDark ? 'text-chrome-emboss' : 'text-hero-light'
+          className={`font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${isDark ? 'text-chrome-emboss' : 'text-hero-light'
             }`}
         >
           NO DUES
@@ -133,7 +117,7 @@ export default function LiquidTitle() {
           animate={{ x: '100%' }}
           transition={{
             repeat: Infinity,
-            duration: deviceTier === 'very-low' ? 3 : 2,
+            duration: 2,
             ease: "linear"
           }}
           className="absolute inset-0"
@@ -141,7 +125,7 @@ export default function LiquidTitle() {
             background: isDark
               ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.7) 30%, rgba(255, 51, 102, 0.9) 50%, rgba(196, 30, 58, 0.7) 70%, transparent 100%)'
               : 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.5) 30%, rgba(196, 30, 58, 0.8) 50%, rgba(196, 30, 58, 0.5) 70%, transparent 100%)',
-            boxShadow: isDark && deviceTier === 'high'
+            boxShadow: isDark
               ? '0 0 6px rgba(196, 30, 58, 0.4)'
               : 'none'
           }}
