@@ -112,6 +112,17 @@ export async function GET(request) {
     }
 
     // ==================== PREPARE RESPONSE ====================
+    // Build per-department reapplication info
+    const perDeptInfo = form.no_dues_status.map(dept => ({
+      department_name: dept.department_name,
+      status: dept.status,
+      rejection_reason: dept.rejection_reason,
+      rejection_count: dept.rejection_count || 0,
+      remaining_attempts: Math.max(0, MAX_REAPPLICATIONS - (dept.rejection_count || 0)),
+      can_reapply: dept.status === 'rejected' && (dept.rejection_count || 0) < MAX_REAPPLICATIONS,
+      action_at: dept.action_at
+    }));
+
     const response = {
       success: true,
       data: {
@@ -135,6 +146,9 @@ export async function GET(request) {
           rejected_departments: rejectedDepartments.map(d => ({
             department_name: d.department_name,
             rejection_reason: d.rejection_reason,
+            rejection_count: d.rejection_count || 0,
+            remaining_attempts: Math.max(0, MAX_REAPPLICATIONS - (d.rejection_count || 0)),
+            can_reapply: (d.rejection_count || 0) < MAX_REAPPLICATIONS,
             action_at: d.action_at
           }))
         } : {
@@ -143,11 +157,12 @@ export async function GET(request) {
           pending_count: pendingDepartments.length
         },
         limitations: {
-          max_reapplications: MAX_REAPPLICATIONS,
-          current_count: form.reapplication_count,
-          remaining: Math.max(0, MAX_REAPPLICATIONS - form.reapplication_count),
-          has_reached_limit: hasReachedLimit
-        }
+          max_reapplications_per_dept: MAX_REAPPLICATIONS,
+          global_reapplication_count: form.reapplication_count,
+          has_reached_global_limit: hasReachedLimit
+        },
+        // NEW: Per-department status for UI
+        per_department_status: perDeptInfo
       }
     };
 

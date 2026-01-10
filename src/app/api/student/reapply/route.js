@@ -12,25 +12,85 @@ const supabaseAdmin = createClient(
 );
 
 /**
- * GET /api/student/reapply?formId=xxx
+ * GET /api/student/reapply
  * Fetch reapplication history for a student
+ * Supports both ?formId=xxx or ?registration_no=xxx
  */
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const formId = searchParams.get('formId');
-
-    if (!formId) {
+    // Rate limiting for reapplication history queries
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
+    if (!rateLimitCheck.success) {
       return NextResponse.json({
         success: false,
-        error: 'formId is required'
+        error: rateLimitCheck.error || 'Too many requests',
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const formId = searchParams.get('formId');
+    const registrationNo = searchParams.get('registration_no');
+
+    // Support both query param styles
+    if (!formId && !registrationNo) {
+      return NextResponse.json({
+        success: false,
+        error: 'Either formId or registration_no is required'
       }, { status: 400 });
     }
 
+    let targetFormId = formId;
+
+    // If registration_no provided, look up the form first
+    if (!formId && registrationNo) {
+      const { data: form, error: formError } = await supabaseAdmin
+        .from('no_dues_forms')
+        .select('id, registration_no, reapplication_count, student_reply_message, last_reapplied_at')
+        .eq('registration_no', registrationNo.trim().toUpperCase())
+        .single();
+
+      if (formError) {
+        if (formError.code === 'PGRST116') {
+          return NextResponse.json({
+            success: false,
+            error: 'Form not found'
+          }, { status: 404 });
+        }
+        throw formError;
+      }
+
+      targetFormId = form.id;
+
+      // Return extended info for registration_no queries
+      const { data: history, error: historyError } = await supabaseAdmin
+        .from('no_dues_reapplication_history')
+        .select('*')
+        .eq('form_id', targetFormId)
+        .order('reapplication_number', { ascending: false });
+
+      if (historyError) throw historyError;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          form: {
+            id: form.id,
+            registration_no: form.registration_no,
+            reapplication_count: form.reapplication_count,
+            current_message: form.student_reply_message,
+            last_reapplied_at: form.last_reapplied_at
+          },
+          history: history || []
+        }
+      }, { status: 200 });
+    }
+
+    // Simple formId query - just return history
     const { data: history, error } = await supabaseAdmin
       .from('no_dues_reapplication_history')
       .select('*')
-      .eq('form_id', formId)
+      .eq('form_id', targetFormId)
       .order('reapplication_number', { ascending: false });
 
     if (error) {
@@ -420,83 +480,6 @@ export async function PUT(request) {
       success: false,
       error: 'Internal server error',
       details: error.message
-    }, { status: 500 });
-  }
-}
-
-/**
- * GET /api/student/reapply?registration_no=XXX
- * Get reapplication history for a form
- */
-export async function GET(request) {
-  try {
-    // Rate limiting for reapplication history queries
-    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
-    if (!rateLimitCheck.success) {
-      return NextResponse.json({
-        success: false,
-        error: rateLimitCheck.error || 'Too many requests',
-        retryAfter: rateLimitCheck.retryAfter
-      }, { status: 429 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const registrationNo = searchParams.get('registration_no');
-
-    if (!registrationNo) {
-      return NextResponse.json({
-        success: false,
-        error: 'Registration number is required'
-      }, { status: 400 });
-    }
-
-    // Get form
-    const { data: form, error: formError } = await supabaseAdmin
-      .from('no_dues_forms')
-      .select('id, registration_no, reapplication_count, student_reply_message, last_reapplied_at')
-      .eq('registration_no', registrationNo.trim().toUpperCase())
-      .single();
-
-    if (formError) {
-      if (formError.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Form not found'
-        }, { status: 404 });
-      }
-      throw formError;
-    }
-
-    // Get reapplication history
-    const { data: history, error: historyError } = await supabaseAdmin
-      .from('no_dues_reapplication_history')
-      .select('*')
-      .eq('form_id', form.id)
-      .order('reapplication_number', { ascending: false });
-
-    if (historyError) {
-      throw historyError;
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        form: {
-          id: form.id,
-          registration_no: form.registration_no,
-          reapplication_count: form.reapplication_count,
-          current_message: form.student_reply_message,
-          last_reapplied_at: form.last_reapplied_at
-        },
-        history: history || []
-      }
-    }, { status: 200 });
-
-  } catch (error) {
-    console.error('Get Reapplication History Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error'
     }, { status: 500 });
   }
 }

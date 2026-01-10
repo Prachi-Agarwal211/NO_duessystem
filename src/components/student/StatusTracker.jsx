@@ -21,6 +21,7 @@ export default function StatusTracker({ registrationNo }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showReapplyModal, setShowReapplyModal] = useState(false);
+  const [selectedDeptForReapply, setSelectedDeptForReapply] = useState(null); // NEW: Per-department reapply
   const [reapplicationHistory, setReapplicationHistory] = useState([]);
 
   const fetchData = async (showRefreshing = false) => {
@@ -382,35 +383,66 @@ export default function StatusTracker({ registrationNo }) {
                 Your application has been rejected. Please review the rejection reasons below and reapply with the necessary corrections.
               </p>
 
-              {/* Rejected Departments List */}
+              {/* Rejected Departments List with Per-Department Reapply */}
               <div className="space-y-3 mb-4">
-                {rejectedDepartments.map((dept, index) => (
-                  <div
-                    key={index}
-                    className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
-                      }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="font-bold text-red-400">{dept.display_name}</p>
-                      {dept.action_at && (
-                        <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
-                          }`}>
-                          {new Date(dept.action_at).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      )}
+                {rejectedDepartments.map((dept, index) => {
+                  const rejectionCount = dept.rejection_count || 0;
+                  const maxAttempts = 5;
+                  const canReapplyToDept = rejectionCount < maxAttempts;
+                  const remainingAttempts = maxAttempts - rejectionCount;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
+                        }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="font-bold text-red-400">{dept.display_name}</p>
+                        {dept.action_at && (
+                          <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
+                            }`}>
+                            {new Date(dept.action_at).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <p className={`text-sm transition-colors duration-700 ease-smooth ${isDark ? 'text-red-300' : 'text-red-600'
+                        }`}>
+                        <span className="font-medium">Reason: </span>
+                        {dept.rejection_reason}
+                      </p>
+
+                      {/* Per-Department Reapply Button */}
+                      <div className="mt-3 flex items-center justify-between">
+                        <button
+                          onClick={() => {
+                            setSelectedDeptForReapply(dept);
+                            setShowReapplyModal(true);
+                          }}
+                          disabled={!canReapplyToDept}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${canReapplyToDept
+                            ? 'bg-jecrc-red hover:bg-red-700 text-white shadow-md hover:shadow-lg'
+                            : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            }`}
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          Reapply to {dept.display_name}
+                        </button>
+                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {canReapplyToDept
+                            ? `${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining`
+                            : 'Limit reached'
+                          }
+                        </span>
+                      </div>
                     </div>
-                    <p className={`text-sm transition-colors duration-700 ease-smooth ${isDark ? 'text-red-300' : 'text-red-600'
-                      }`}>
-                      <span className="font-medium">Reason: </span>
-                      {dept.rejection_reason}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Current Reply Message if exists */}
@@ -430,15 +462,23 @@ export default function StatusTracker({ registrationNo }) {
                 </div>
               )}
 
-              {/* Reapply Button */}
-              {canReapply && (
-                <button
-                  onClick={() => setShowReapplyModal(true)}
-                  className="w-full bg-jecrc-red hover:bg-red-700 text-white py-4 rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40 flex items-center justify-center gap-2"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  Reapply with Corrections
-                </button>
+              {/* Reapply All Button - shown when multiple rejections */}
+              {canReapply && rejectedDepartments.length > 1 && (
+                <div className={`mt-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
+                  <button
+                    onClick={() => {
+                      setSelectedDeptForReapply(null); // null = reapply to all
+                      setShowReapplyModal(true);
+                    }}
+                    className={`w-full py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 ${isDark
+                      ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                      : 'bg-gray-100 hover:bg-gray-200 text-ink-black border border-black/10'
+                      }`}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Reapply to All {rejectedDepartments.length} Departments
+                  </button>
+                </div>
               )}
 
               {!canReapply && formData.status === 'completed' && (
@@ -558,11 +598,15 @@ export default function StatusTracker({ registrationNo }) {
         <ReapplyModal
           formData={formData}
           rejectedDepartments={rejectedDepartments}
-          onClose={() => setShowReapplyModal(false)}
+          selectedDepartment={selectedDeptForReapply}  // NEW: Per-department mode
+          onClose={() => {
+            setShowReapplyModal(false);
+            setSelectedDeptForReapply(null);  // Reset selection
+          }}
           onSuccess={(result) => {
             setShowReapplyModal(false);
+            setSelectedDeptForReapply(null);  // Reset selection
             // Add delay to ensure database updates have fully propagated
-            // Increased to 1500ms to handle Supabase replication lag
             setTimeout(() => {
               fetchData(true);
             }, 1500);
