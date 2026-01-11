@@ -168,12 +168,7 @@ export const studentFormSchema = z.object({
     )
     .min(1, 'Alumni profile link is mandatory')
 });
-    .regex(
-  /^https?:\/\/(www\.)?jualumni\.in\/profile\/.*$/,
-  'Link must be from jualumni.in/profile/...'
-)
-  .min(1, 'Alumni profile link is mandatory')
-});
+
 
 /**
  * Student Reapplication Schema
