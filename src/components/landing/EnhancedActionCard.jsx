@@ -143,7 +143,7 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index, varia
       }}
       className={`
         interactive group relative
-        w-full min-h-[280px]
+        w-full min-h-[240px] sm:min-h-[280px]
         overflow-hidden text-left
         ${!isDark ? 'card-light-surface' : 'glass-card-dark'}
         touch-manipulation

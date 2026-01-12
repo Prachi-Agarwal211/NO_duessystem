@@ -22,7 +22,7 @@ export default function PageWrapper({ children, showThemeToggle = true, showSupp
       {/* Floating Support Button - Shows on all pages by default */}
       {showSupportButton && <EnhancedSupportButton />}
 
-      <div className={`relative transition-colors duration-700 min-h-screen px-4 sm:px-6 lg:px-8
+      <div className={`relative transition-colors duration-700 min-h-screen
         ${isDark ? 'text-white' : 'text-ink-black'
         }`}>
         {children}

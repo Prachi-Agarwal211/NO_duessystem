@@ -33,7 +33,7 @@ export default function Home() {
         {/* Light Mode Backdrop Fade (Only visible in light mode) */}
         {!isDark && <div className="light-backdrop lg:w-1/2" />}
 
-        <main className="flex-1 w-full max-w-[1400px] mx-auto px-6 lg:px-12 py-8 lg:py-0 flex items-center relative z-10">
+        <main className="flex-1 w-full max-w-[1400px] mx-auto px-0 lg:px-12 py-8 lg:py-0 flex items-center relative z-10">
 
           <div className="hero-grid gap-x-16">
 

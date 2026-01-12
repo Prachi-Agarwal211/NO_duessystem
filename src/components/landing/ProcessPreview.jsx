@@ -21,7 +21,7 @@ export default function ProcessPreview({ mode = 'horizontal' }) {
             {/* Mobile: Scrollable, Desktop: Wrapped/Centered */}
             <div className={`
                 flex 
-                ${mode === 'compact' ? 'overflow-x-auto pb-4 px-2 justify-start no-scrollbar mask-gradient-x' : 'flex-wrap justify-center items-center'} 
+                ${mode === 'compact' ? 'overflow-x-auto pb-4 px-2 justify-center no-scrollbar mask-gradient-x' : 'flex-wrap justify-center items-center'} 
                 gap-3 relative
                 w-full
             `}>
