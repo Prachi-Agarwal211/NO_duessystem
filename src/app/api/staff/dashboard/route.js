@@ -114,7 +114,8 @@ export async function GET(request) {
               branch,
               created_at,
               status,
-              school_id
+              school_id,
+              alumni_profile_link
             )
           `, { count: 'exact' }) // ✅ Get total count for pagination
           .in('department_name', myDeptNames)

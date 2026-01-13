@@ -27,7 +27,7 @@ const supabaseAdmin = createClient(
 export async function GET(request, { params }) {
   try {
     const { id } = params;
-    
+
     // ✅ SECURE AUTH: Get userId from Authorization header token
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
@@ -36,7 +36,7 @@ export async function GET(request, { params }) {
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
     }
@@ -74,7 +74,7 @@ export async function GET(request, { params }) {
         course,
         branch,
         contact_no,
-        alumni_screenshot_url,
+        alumni_profile_link,
         certificate_url,
         status,
         created_at,
@@ -97,16 +97,16 @@ export async function GET(request, { params }) {
         .from('departments')
         .select('name')
         .in('id', profile.assigned_department_ids || []);
-      
+
       console.log('🔒 Auth Check - Form ID:', id);
       console.log('🔒 Auth Check - User ID:', userId);
       console.log('🔒 Auth Check - Assigned Dept IDs:', profile.assigned_department_ids);
       console.log('🔒 Auth Check - Dept Lookup Error:', deptLookupError);
       console.log('🔒 Auth Check - My Departments:', myDepartments);
-      
+
       const myDeptNames = myDepartments?.map(d => d.name) || [];
       console.log('🔒 Auth Check - My Dept Names:', myDeptNames);
-      
+
       // Check if this form has a status entry for ANY of the user's departments
       const { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')
@@ -137,7 +137,7 @@ export async function GET(request, { params }) {
           }
         }, { status: 403 });
       }
-      
+
       console.log('✅ Auth PASSED - User can access this form');
     }
 
@@ -212,7 +212,7 @@ export async function GET(request, { params }) {
         course: formData.course,
         branch: formData.branch,
         contact_no: formData.contact_no,
-        alumni_screenshot_url: formData.alumni_screenshot_url,
+        alumni_profile_link: formData.alumni_profile_link,
         certificate_url: formData.certificate_url,
         status: formData.status,
         created_at: formData.created_at,

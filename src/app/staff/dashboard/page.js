@@ -28,6 +28,16 @@ export default function StaffDashboard() {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
+  // Rejection Modal State
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectFormId, setRejectFormId] = useState(null);
+  const [rejectDeptName, setRejectDeptName] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
+  // Local requests state for optimistic updates
+  const [localRequests, setLocalRequests] = useState([]);
+
   // Hook Data
   const {
     user,
@@ -100,6 +110,11 @@ export default function StaffDashboard() {
     setSelectedItems(new Set());
   }, [activeTab]);
 
+  // Sync localRequests with requests from hook for optimistic updates
+  useEffect(() => {
+    setLocalRequests(requests);
+  }, [requests]);
+
   // Data Fetching
   const fetchRejectedForms = async () => {
     setRejectedLoading(true);
@@ -160,11 +175,11 @@ export default function StaffDashboard() {
   }, [search, filters]);
 
   const currentData = useMemo(() => {
-    if (activeTab === 'pending') return filterData(requests);
+    if (activeTab === 'pending') return filterData(localRequests);
     if (activeTab === 'rejected') return filterData(rejectedForms);
     if (activeTab === 'history') return filterData(historyData);
     return [];
-  }, [activeTab, requests, rejectedForms, historyData, filterData]);
+  }, [activeTab, localRequests, rejectedForms, historyData, filterData]);
 
   // Bulk Selection Logic
   const handleSelectAll = (e) => {
@@ -233,7 +248,22 @@ export default function StaffDashboard() {
 
   const handleAction = async (e, formId, departmentName, action) => {
     e.stopPropagation();
-    toast.loading('Processing...', { id: 'action-toast' });
+
+    // For REJECT: Open modal to get reason (one-by-one only)
+    if (action === 'reject') {
+      setRejectFormId(formId);
+      setRejectDeptName(departmentName);
+      setRejectionReason('');
+      setShowRejectModal(true);
+      return;
+    }
+
+    // For APPROVE: Quick action allowed
+    toast.loading('Approving...', { id: 'action-toast' });
+
+    // Optimistic update - remove from local state immediately
+    setLocalRequests(prev => prev.filter(r => r.no_dues_forms.id !== formId));
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/staff/action', {
@@ -242,13 +272,65 @@ export default function StaffDashboard() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ formId, departmentName, action, reason: "Quick Action" })
+        body: JSON.stringify({ formId, departmentName, action })
       });
-      if (!res.ok) throw new Error('Failed');
-      toast.success(action === 'approve' ? 'Approved ✓' : 'Rejected', { id: 'action-toast' });
+      if (!res.ok) {
+        // Revert optimistic update on failure
+        refreshData();
+        throw new Error('Failed');
+      }
+      toast.success('Approved ✓', { id: 'action-toast' });
+      // Background refresh to sync stats
       refreshData();
     } catch (err) {
-      toast.error("Action failed", { id: 'action-toast' });
+      toast.error('Action failed', { id: 'action-toast' });
+    }
+  };
+
+  // Handle rejection with reason (modal submit)
+  const confirmRejection = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error('Rejection reason is required');
+      return;
+    }
+
+    setRejecting(true);
+    toast.loading('Rejecting...', { id: 'reject-toast' });
+
+    // Optimistic update
+    setLocalRequests(prev => prev.filter(r => r.no_dues_forms.id !== rejectFormId));
+    setShowRejectModal(false);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/staff/action', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          formId: rejectFormId,
+          departmentName: rejectDeptName,
+          action: 'reject',
+          reason: rejectionReason.trim()
+        })
+      });
+
+      if (!res.ok) {
+        refreshData();
+        throw new Error('Failed');
+      }
+
+      toast.success('Rejected with reason', { id: 'reject-toast' });
+      refreshData();
+    } catch (err) {
+      toast.error('Rejection failed', { id: 'reject-toast' });
+    } finally {
+      setRejecting(false);
+      setRejectFormId(null);
+      setRejectDeptName('');
+      setRejectionReason('');
     }
   };
 
@@ -656,6 +738,57 @@ export default function StaffDashboard() {
           </div>
         )}
       </div>
+
+      {/* Rejection Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
+            <div className="p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-500" />
+                Reject Application
+              </h2>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Please provide a reason for rejection. This will be sent to the student.
+              </p>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Enter rejection reason..."
+                rows={4}
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+                autoFocus
+              />
+            </div>
+            <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setRejectionReason('');
+                  setRejectFormId(null);
+                }}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRejection}
+                disabled={!rejectionReason.trim() || rejecting}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {rejecting ? (
+                  <span className="animate-spin">⟳</span>
+                ) : (
+                  <XCircle className="w-4 h-4" />
+                )}
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageWrapper>
   );
 }

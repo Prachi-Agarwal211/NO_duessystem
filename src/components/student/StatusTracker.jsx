@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw, XCircle, AlertTriangle } from 'lucide-react';
+import { Download, RefreshCw, XCircle, AlertTriangle, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
 import ProgressBar from './ProgressBar';
 import DepartmentStatus from './DepartmentStatus';
@@ -385,8 +386,8 @@ export default function StatusTracker({ registrationNo }) {
                         {dept.rejection_reason}
                       </p>
 
-                      {/* Per-Department Reapply Button */}
-                      <div className="mt-3 flex items-center justify-between">
+                      {/* Per-Department Reapply and Chat Buttons */}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => {
                             setSelectedDeptForReapply(dept);
@@ -399,11 +400,21 @@ export default function StatusTracker({ registrationNo }) {
                             }`}
                         >
                           <RefreshCw className="w-4 h-4" />
-                          Reapply to {dept.display_name}
+                          Reapply
                         </button>
-                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+
+                        {/* Chat with Department Button */}
+                        <Link
+                          href={`/student/chat/${formData.id}/${encodeURIComponent(dept.department_name)}`}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Chat
+                        </Link>
+
+                        <span className={`text-xs ml-auto ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                           {canReapplyToDept
-                            ? `${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining`
+                            ? `${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} left`
                             : 'Limit reached'
                           }
                         </span>
