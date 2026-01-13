@@ -379,9 +379,9 @@ export default function SubmitForm() {
       }
 
       // Mandatory checks for fields that might be missing validation
-      if (!formData.admission_year?.trim()) throw new Error('Admission Year is required');
       if (!formData.passing_year?.trim()) throw new Error('Passing Year is required');
       if (!formData.parent_name?.trim()) throw new Error('Parent Name is required');
+      if (!formData.alumni_profile_link?.trim()) throw new Error('Alumni Profile Link is required');
 
       // Admission/Passing year validation
       if (formData.admission_year) {
@@ -423,9 +423,6 @@ export default function SubmitForm() {
       // Note: Detailed format validation (registration number, phone, names)
       // is handled by server using configurable database rules
 
-      // File upload logic removed
-      let fileUrl = null;
-
       // Sanitize and prepare data
       // Send UUIDs for school, course, branch - backend will look up names
       const sanitizedData = {
@@ -441,7 +438,7 @@ export default function SubmitForm() {
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
         college_email: formData.college_email.trim().toLowerCase(),
-        alumni_profile_link: formData.alumni_profile_link?.trim()
+        alumni_profile_link: (formData.alumni_profile_link || '').trim()
       };
 
       // ==================== SUBMIT VIA API ROUTE ====================

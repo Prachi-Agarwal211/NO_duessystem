@@ -159,14 +159,7 @@ export const studentFormSchema = z.object({
   school: uuidSchema, // UUID from dropdown selection
   course: uuidSchema, // UUID from dropdown selection
   branch: uuidSchema, // UUID from dropdown selection
-  alumni_profile_link: z
-    .string()
-    .url('Invalid URL format')
-    .regex(
-      /^https?:\/\/(www\.)?jualumni\.in\/profile\/.*$/,
-      'Link must be from jualumni.in/profile/...'
-    )
-    .min(1, 'Alumni profile link is mandatory')
+  alumni_profile_link: z.string().min(1, 'Alumni profile link is mandatory')
 });
 
 
