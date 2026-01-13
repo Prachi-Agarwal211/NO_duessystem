@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 import FormInput from './FormInput';
-import FileUpload from './FileUpload';
+
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
 import { useFormConfig } from '@/hooks/useFormConfig';
@@ -322,33 +322,7 @@ export default function SubmitForm() {
     }
   };
 
-  const uploadFile = async (file) => {
-    if (!file) return null;
 
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${formData.registration_no}-${Date.now()}.${fileExt}`;
-      const filePath = `alumni-screenshots/${fileName}`;
-
-      const { data, error } = await supabase.storage
-        .from('alumni-screenshots')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('alumni-screenshots')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('File upload error:', error);
-      throw new Error('Failed to upload file. Please try again.');
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -449,21 +423,8 @@ export default function SubmitForm() {
       // Note: Detailed format validation (registration number, phone, names)
       // is handled by server using configurable database rules
 
-      // Upload file if provided
+      // File upload logic removed
       let fileUrl = null;
-      if (file) {
-        // Validate file before upload (1MB limit)
-        if (file.size > 1 * 1024 * 1024) {
-          throw new Error('File size must be less than 1MB');
-        }
-
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!allowedTypes.includes(file.type)) {
-          throw new Error('Only JPEG, PNG, and WEBP images are allowed');
-        }
-
-        fileUrl = await uploadFile(file);
-      }
 
       // Sanitize and prepare data
       // Send UUIDs for school, course, branch - backend will look up names
@@ -479,8 +440,7 @@ export default function SubmitForm() {
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
-        college_email: formData.college_email.trim().toLowerCase(),
-        alumni_screenshot_url: fileUrl
+        college_email: formData.college_email.trim().toLowerCase()
       };
 
       // ==================== SUBMIT VIA API ROUTE ====================
