@@ -7,7 +7,7 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User, HelpCircle } from 'lucide-react';
+import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User, HelpCircle, MessageCircle } from 'lucide-react';
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
@@ -55,6 +55,9 @@ export default function StaffDashboard() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyFetched, setHistoryFetched] = useState(false);
   const [rejectedFetched, setRejectedFetched] = useState(false);
+
+  // Unread messages for chat notification badges
+  const [unreadMessages, setUnreadMessages] = useState({});
 
   // Effects
   useEffect(() => {
@@ -114,6 +117,36 @@ export default function StaffDashboard() {
   useEffect(() => {
     setLocalRequests(requests);
   }, [requests]);
+
+  // Fetch unread message counts for chat badges
+  const fetchUnreadMessages = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/chat/unread', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.success) {
+          // Create a map of form_id -> unread_count
+          const unreadMap = {};
+          (result.data.counts || []).forEach(item => {
+            unreadMap[item.form_id] = item.unread_count;
+          });
+          setUnreadMessages(unreadMap);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching unread messages:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadMessages();
+  }, [fetchUnreadMessages, lastUpdate]);
 
   // Data Fetching
   const fetchRejectedForms = async () => {
@@ -627,7 +660,7 @@ export default function StaffDashboard() {
                       <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Date</th>
                       {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">SLA</th>}
                       <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
-                      {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
+                      {(activeTab === 'pending' || activeTab === 'rejected') && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
@@ -651,8 +684,22 @@ export default function StaffDashboard() {
                             </td>
                           )}
                           <td className="px-4 py-3">
-                            <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
-                            <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
+                            <div className="flex items-center gap-2">
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
+                                <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
+                              </div>
+                              {/* Unread message badge */}
+                              {unreadMessages[item.no_dues_forms.id] > 0 && (
+                                <span
+                                  className="flex items-center gap-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full animate-pulse"
+                                  title={`${unreadMessages[item.no_dues_forms.id]} unread message(s)`}
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  {unreadMessages[item.no_dues_forms.id]}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-gray-900 dark:text-white">{item.no_dues_forms.course}</div>
@@ -689,11 +736,35 @@ export default function StaffDashboard() {
                                   <CheckCircle className="w-4 h-4" />
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`) }}
+                                  onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'reject')}
                                   className="p-2 text-red-600 bg-red-100 dark:bg-red-500/20 rounded-lg hover:bg-red-200"
                                   title="Reject"
                                 >
                                   <XCircle className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+
+                          {/* Rejected Tab Actions - Allow Approve after resolution */}
+                          {activeTab === 'rejected' && (
+                            <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
+                                  className="px-3 py-1.5 text-green-600 bg-green-100 dark:bg-green-500/20 rounded-lg hover:bg-green-200 text-xs font-medium flex items-center gap-1"
+                                  title="Approve (Resolved)"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`) }}
+                                  className="px-3 py-1.5 text-blue-600 bg-blue-100 dark:bg-blue-500/20 rounded-lg hover:bg-blue-200 text-xs font-medium flex items-center gap-1"
+                                  title="View & Chat"
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  Chat
                                 </button>
                               </div>
                             </td>

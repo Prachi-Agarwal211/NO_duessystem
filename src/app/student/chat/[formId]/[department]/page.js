@@ -61,7 +61,7 @@ export default function StudentChatPage() {
                 <div className="max-w-2xl mx-auto">
                     {/* Back Button */}
                     <button
-                        onClick={() => router.push('/student/status')}
+                        onClick={() => router.push('/student/check-status')}
                         className="mb-4 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
@@ -82,8 +82,8 @@ export default function StudentChatPage() {
                                 </div>
                                 <div className="text-right">
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${status?.status === 'rejected'
-                                            ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                                            : 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                        ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                        : 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
                                         }`}>
                                         {status?.status || 'Pending'}
                                     </span>
