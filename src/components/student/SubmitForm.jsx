@@ -440,7 +440,8 @@ export default function SubmitForm() {
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
-        college_email: formData.college_email.trim().toLowerCase()
+        college_email: formData.college_email.trim().toLowerCase(),
+        alumni_profile_link: formData.alumni_profile_link?.trim()
       };
 
       // ==================== SUBMIT VIA API ROUTE ====================
