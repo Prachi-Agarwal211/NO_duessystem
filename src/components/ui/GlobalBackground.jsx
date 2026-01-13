@@ -32,23 +32,27 @@ export default function GlobalBackground() {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
-      // ✅ PERFORMANCE: Progressive device detection for tiered optimization
-      // Very low-end: < 2GB RAM or slow connection
-      const veryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
-                         (navigator.connection && navigator.connection.saveData) ||
-                         (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
-      
-      // Low-end: < 4GB RAM or mobile
-      const lowEnd = mobile || (navigator.deviceMemory && navigator.deviceMemory < 4) || veryLowEnd;
-      
+
+      // More accurate device detection
+      const connection = navigator.connection;
+      const memory = navigator.deviceMemory || 8;
+      const cores = navigator.hardwareConcurrency || 8;
+
+      const isLowEndDevice =
+        (memory < 4) ||
+        (connection && (connection.saveData || connection.effectiveType?.includes('slow'))) ||
+        (cores < 4) ||
+        mobile;
+
+      const veryLowEnd = (memory < 2) || (cores < 2) || (connection && connection.saveData);
+
       setIsVeryLowEnd(veryLowEnd);
-      setIsLowEnd(lowEnd);
+      setIsLowEnd(isLowEndDevice);
     };
-    
+
     checkDevice();
     window.addEventListener('resize', checkDevice);
-    
+
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
@@ -56,9 +60,8 @@ export default function GlobalBackground() {
     <div className="fixed inset-0 w-full h-full pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
       {/* 1. Base Layer - Prevents white flashes */}
       <div
-        className={`absolute inset-0 transition-colors duration-700 z-0 ${
-          isDark ? 'bg-black' : 'bg-white'
-        }`}
+        className={`absolute inset-0 transition-colors duration-700 z-0 ${isDark ? 'bg-black' : 'bg-white'
+          }`}
       />
 
       {/* 2. JECRC Campus Image (Enhanced Visibility) - Optimized for mobile */}
@@ -79,10 +82,9 @@ export default function GlobalBackground() {
       />
 
       {/* 3. Enhanced Iridescent Gradient Mesh with Morphing - PROGRESSIVE OPTIMIZATION */}
-      {!isVeryLowEnd && (
-        <div className={`absolute inset-0 transition-opacity duration-700 z-20 ${
-          isDark ? 'opacity-70' : 'opacity-60'
-        }`}>
+      {!isMobile && !isLowEnd && !isVeryLowEnd && (
+        <div className={`absolute inset-0 transition-opacity duration-700 z-20 ${isDark ? 'opacity-70' : 'opacity-60'
+          }`}>
           {/* Top Iridescent Blob with Morphing */}
           <div
             className={`
@@ -98,7 +100,7 @@ export default function GlobalBackground() {
               willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
             }}
           />
-          
+
           {/* Top Right Iridescent Blob */}
           <div
             className={`
@@ -115,7 +117,7 @@ export default function GlobalBackground() {
               animationDelay: '5s'
             }}
           />
-          
+
           {/* Bottom Blob with Color Shifting - Desktop only */}
           {!isMobile && !isLowEnd && !isVeryLowEnd && (
             <div
@@ -135,13 +137,12 @@ export default function GlobalBackground() {
       )}
 
       {/* 4. Premium Aurora Wave Animation - Smooth flowing ribbons */}
-      {!isVeryLowEnd && (
+      {!isMobile && !isLowEnd && !isVeryLowEnd && (
         <div className="absolute inset-0 overflow-hidden z-30" style={{ opacity: isDark ? 0.5 : 0.35 }}>
           {/* Wave 1 - Top flowing ribbon */}
           <div
-            className={`absolute top-0 left-0 w-full h-full ${
-              isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-1-simple' : 'animate-aurora-wave-1'
-            }`}
+            className={`absolute top-0 left-0 w-full h-full ${isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-1-simple' : 'animate-aurora-wave-1'
+              }`}
             style={{
               background: isDark
                 ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.15) 20%, rgba(255, 105, 180, 0.12) 40%, rgba(196, 30, 58, 0.15) 60%, transparent 80%)'
@@ -152,12 +153,11 @@ export default function GlobalBackground() {
               willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
             }}
           />
-          
+
           {/* Wave 2 - Middle flowing ribbon */}
           <div
-            className={`absolute top-1/3 left-0 w-full h-full ${
-              isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-2-simple' : 'animate-aurora-wave-2'
-            }`}
+            className={`absolute top-1/3 left-0 w-full h-full ${isVeryLowEnd || isLowEnd ? 'animate-aurora-wave-2-simple' : 'animate-aurora-wave-2'
+              }`}
             style={{
               background: isDark
                 ? 'linear-gradient(90deg, transparent 0%, rgba(139, 0, 139, 0.1) 20%, rgba(196, 30, 58, 0.18) 50%, rgba(255, 105, 180, 0.1) 80%, transparent 100%)'
@@ -168,7 +168,7 @@ export default function GlobalBackground() {
               willChange: isVeryLowEnd || isLowEnd ? 'auto' : 'transform'
             }}
           />
-          
+
           {/* Wave 3 - Bottom flowing ribbon (Desktop only) */}
           {!isMobile && !isLowEnd && (
             <div
@@ -189,7 +189,7 @@ export default function GlobalBackground() {
               }}
             />
           )}
-          
+
           {/* Radial glow accent in center */}
           {!isLowEnd && !isVeryLowEnd && (
             <div
@@ -254,9 +254,8 @@ export default function GlobalBackground() {
       {/* 7. Subtle Grid Overlay - Desktop only, skip on low-end and very low-end */}
       {!isMobile && !isLowEnd && !isVeryLowEnd && (
         <div
-          className={`absolute inset-0 bg-center transition-opacity duration-700 z-40 ${
-            isDark ? 'opacity-5' : 'opacity-10'
-          }`}
+          className={`absolute inset-0 bg-center transition-opacity duration-700 z-40 ${isDark ? 'opacity-5' : 'opacity-10'
+            }`}
           style={{
             backgroundImage: "url('/grid.svg')",
             backgroundSize: '30px 30px',

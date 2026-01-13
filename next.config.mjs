@@ -6,30 +6,51 @@ const nextConfig = {
   compress: true,
 
   // Simplified webpack configuration
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     // Basic optimizations without aggressive code splitting
     config.optimization = {
       ...config.optimization,
       splitChunks: {
-        chunks: 'async',
-        minSize: 30000,
-        maxSize: 0,
-        minChunks: 1,
-        maxAsyncRequests: 5,
-        maxInitialRequests: 3,
-        automaticNameDelimiter: '~',
+        chunks: 'all',
         cacheGroups: {
+          // Separate React core (critical buffer)
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+            name: 'react-core',
+            chunks: 'all',
+            priority: 20
+          },
+          // Separate heavy animation libraries
+          animations: {
+            test: /[\\/]node_modules[\\/](framer-motion|@studio-freight\/react-lenis)[\\/]/,
+            name: 'animations',
+            chunks: 'all',
+            priority: 15
+          },
+          // Separate Chart.js and heavy visual libs
+          charts: {
+            test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2)[\\/]/,
+            name: 'charts',
+            chunks: 'all',
+            priority: 12
+          },
+          // Separate PDF generation libraries (very heavy)
+          pdf: {
+            test: /[\\/]node_modules[\\/](jspdf|pdf-lib|pdfkit|html2canvas)[\\/]/,
+            name: 'pdf-utils',
+            chunks: 'all',
+            priority: 10,
+            enforce: true
+          },
+          // Separate other vendors
           defaultVendors: {
             test: /[\\/]node_modules[\\/]/,
-            priority: -10,
-            reuseExistingChunk: true,
-          },
-          default: {
-            minChunks: 2,
-            priority: -20,
-            reuseExistingChunk: true,
-          },
-        },
+            name: 'vendors',
+            chunks: 'all',
+            priority: 5,
+            reuseExistingChunk: true
+          }
+        }
       },
     };
 

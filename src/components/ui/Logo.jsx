@@ -45,12 +45,11 @@ export default function Logo({
                 <Image
                     src={logoSrc}
                     alt="JECRC University"
-                    width={0}
-                    height={0}
-                    sizes="100vw"
+                    width={config.width}
+                    height={config.height}
+                    quality={90}
                     className={`object-contain transition-all duration-300 w-auto h-auto max-h-[50px] sm:max-h-[90px] ${mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
                         }`}
-                    style={{ width: 'auto', height: 'auto' }}
                     priority={priority}
                 />
             </div>

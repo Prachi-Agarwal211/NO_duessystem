@@ -174,12 +174,33 @@ body {
 }
 
 /* Mobile-specific optimizations */
+/* Mobile-specific optimizations */
 @media (max-width: 768px) {
+  .gpu-accelerated {
+    transform: none;
+    will-change: auto;
+  }
 
   .glass,
   .glass-card {
-    backdrop-filter: blur(8px) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.9) !important;
   }
+
+  /* Disable complex animations on mobile */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Improve scroll performance */
+body {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
 }
 
 /* Light Mode - Static gradient background */
@@ -1034,10 +1055,12 @@ select {
   }
 
   .card-stage {
-    padding: 8px !important; /* Reduced from 24px */
+    padding: 8px !important;
+    /* Reduced from 24px */
     margin: 0 !important;
     width: 100% !important;
-    background: transparent !important; /* Remove background on mobile to reduce boxiness */
+    background: transparent !important;
+    /* Remove background on mobile to reduce boxiness */
   }
 
   /* Fix Title Optical Alignment */
