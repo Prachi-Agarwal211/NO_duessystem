@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useChat } from '@/hooks/useChat';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -767,7 +768,25 @@ export default function StudentDetailView() {
 
 // Staff Chat Section Component
 function StaffChatSection({ formId, departmentName, staffName, rejectionReason, isDark }) {
-  const { messages, loading, sending, error, sendMessage } = useChat(formId, departmentName);
+  const {
+    messages,
+    loading,
+    sending,
+    error,
+    hasMore,
+    loadingMore,
+    sendMessage,
+    retryMessage,
+    loadMoreMessages
+  } = useChat(formId, departmentName, 'department');
+
+  // Typing indicators
+  const { typingUsers, startTyping, stopTyping } = useTypingIndicator(
+    formId,
+    departmentName,
+    'department',
+    staffName || 'Department Staff'
+  );
 
   return (
     <ChatBox
@@ -776,10 +795,18 @@ function StaffChatSection({ formId, departmentName, staffName, rejectionReason, 
       sending={sending}
       error={error}
       onSend={sendMessage}
+      onRetry={retryMessage}
+      onLoadMore={loadMoreMessages}
+      hasMore={hasMore}
+      loadingMore={loadingMore}
       currentUserType="department"
       currentUserName={staffName || 'Department Staff'}
       rejectionReason={rejectionReason}
       departmentName={departmentName}
+      typingUsers={typingUsers}
+      onTypingStart={startTyping}
+      onTypingStop={stopTyping}
     />
   );
 }
+

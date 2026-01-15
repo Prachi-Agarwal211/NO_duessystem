@@ -31,6 +31,9 @@ export default function EnhancedSupportButton() {
 
   if (pathname.startsWith('/admin')) return null;
 
+  // Hide on chat pages to prevent overlap with send button
+  if (pathname.includes('/chat/')) return null;
+
   return (
     <>
       <motion.button
@@ -93,8 +96,8 @@ export default function EnhancedSupportButton() {
         <div className="flex items-center gap-2 relative z-10">
           <Headphones
             className={`w-5 h-5 flex-shrink-0 transition-colors duration-300 ${isDark
-                ? 'text-gray-300 group-hover:text-jecrc-red'
-                : 'text-gray-600 group-hover:text-jecrc-red'
+              ? 'text-gray-300 group-hover:text-jecrc-red'
+              : 'text-gray-600 group-hover:text-jecrc-red'
               }`}
             strokeWidth={2}
           />

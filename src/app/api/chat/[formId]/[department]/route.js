@@ -15,31 +15,36 @@ const supabaseAdmin = createClient(
     }
 );
 
-// GET: Fetch chat messages for a form + department
+// GET: Fetch chat messages for a form + department (PUBLIC ACCESS - No auth required)
 export async function GET(request, { params }) {
     try {
         const { formId, department } = params;
+        const { searchParams } = new URL(request.url);
 
-        // Verify auth
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        // Pagination parameters
+        const limit = parseInt(searchParams.get('limit')) || 50;
+        const offset = parseInt(searchParams.get('offset')) || 0;
+
+        // Validate inputs
+        if (!formId || !department) {
+            return NextResponse.json({ error: 'Form ID and department are required' }, { status: 400 });
         }
 
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        // Get total count first for pagination
+        const { count: totalCount } = await supabaseAdmin
+            .from('no_dues_messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('form_id', formId)
+            .eq('department_name', department);
 
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-        }
-
-        // Get messages
+        // Get messages with pagination - PUBLIC ACCESS
         const { data: messages, error } = await supabaseAdmin
             .from('no_dues_messages')
             .select('*')
             .eq('form_id', formId)
             .eq('department_name', department)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: true })
+            .range(offset, offset + limit - 1);
 
         if (error) {
             console.error('Error fetching messages:', error);
@@ -66,7 +71,13 @@ export async function GET(request, { params }) {
             data: {
                 messages: messages || [],
                 form,
-                status
+                status,
+                pagination: {
+                    total: totalCount || 0,
+                    limit,
+                    offset,
+                    hasMore: offset + limit < (totalCount || 0)
+                }
             }
         });
 
@@ -83,27 +94,23 @@ export async function POST(request, { params }) {
         const body = await request.json();
         const { message, senderType, senderName } = body;
 
+        // Validate inputs
+        if (!formId || !department) {
+            return NextResponse.json({ error: 'Form ID and department are required' }, { status: 400 });
+        }
+
         if (!message?.trim()) {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });
         }
 
-        // Verify auth
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+        if (!senderType || !['student', 'department'].includes(senderType)) {
+            return NextResponse.json({ error: 'Valid sender type is required (student or department)' }, { status: 400 });
         }
 
         // Verify form exists
         const { data: form, error: formError } = await supabaseAdmin
             .from('no_dues_forms')
-            .select('id, user_id')
+            .select('id, user_id, registration_no, student_name')
             .eq('id', formId)
             .single();
 
@@ -111,14 +118,27 @@ export async function POST(request, { params }) {
             return NextResponse.json({ error: 'Form not found' }, { status: 404 });
         }
 
-        // Authorization check
+        // Authorization check based on sender type
+        let senderId = null;
+
         if (senderType === 'student') {
-            // Student must own the form
-            if (form.user_id !== user.id) {
-                return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
-            }
+            // STUDENTS: PUBLIC ACCESS - No authentication required
+            senderId = null;
         } else if (senderType === 'department') {
-            // Staff must be assigned to this department
+            // DEPARTMENT STAFF: MUST be authenticated and assigned to this department
+            const authHeader = request.headers.get('Authorization');
+            if (!authHeader) {
+                return NextResponse.json({ error: 'Department staff must be authenticated' }, { status: 401 });
+            }
+
+            const token = authHeader.replace('Bearer ', '');
+            const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+            if (authError || !user) {
+                return NextResponse.json({ error: 'Invalid session - please login again' }, { status: 401 });
+            }
+
+            // Verify staff is assigned to this department
             const { data: profile } = await supabaseAdmin
                 .from('profiles')
                 .select('assigned_department_ids')
@@ -134,8 +154,8 @@ export async function POST(request, { params }) {
             if (!profile?.assigned_department_ids?.includes(dept?.id)) {
                 return NextResponse.json({ error: 'Not authorized for this department' }, { status: 403 });
             }
-        } else {
-            return NextResponse.json({ error: 'Invalid sender type' }, { status: 400 });
+
+            senderId = user.id;
         }
 
         // Insert message
@@ -145,9 +165,10 @@ export async function POST(request, { params }) {
                 form_id: formId,
                 department_name: department,
                 sender_type: senderType,
-                sender_id: user.id,
-                sender_name: senderName,
-                message: message.trim()
+                sender_id: senderId,
+                sender_name: senderName || (senderType === 'student' ? form.student_name : 'Department Staff'),
+                message: message.trim(),
+                is_read: false
             })
             .select()
             .single();

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
 import { useChat } from '@/hooks/useChat';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import ChatBox from '@/components/chat/ChatBox';
@@ -14,38 +14,43 @@ export default function StudentChatPage() {
     const router = useRouter();
     const decodedDepartment = decodeURIComponent(department);
 
-    const [user, setUser] = useState(null);
-    const [studentName, setStudentName] = useState('');
-    const [authLoading, setAuthLoading] = useState(true);
+    const [studentName, setStudentName] = useState('Student');
+    const [pageLoading, setPageLoading] = useState(true);
 
-    const { messages, form, status, loading, sending, error, sendMessage } = useChat(formId, decodedDepartment);
+    const {
+        messages,
+        form,
+        status,
+        loading,
+        sending,
+        error,
+        hasMore,
+        loadingMore,
+        sendMessage,
+        retryMessage,
+        loadMoreMessages
+    } = useChat(formId, decodedDepartment, 'student');
 
-    // Check auth and get user info
+    // Typing indicators
+    const { typingUsers, startTyping, stopTyping } = useTypingIndicator(
+        formId,
+        decodedDepartment,
+        'student',
+        studentName
+    );
+
+    // Get student name from form data (no auth required)
     useEffect(() => {
-        const checkAuth = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+        if (form?.student_name) {
+            setStudentName(form.student_name);
+            setPageLoading(false);
+        } else if (!loading) {
+            setPageLoading(false);
+        }
+    }, [form, loading]);
 
-            if (!session) {
-                router.push('/student/login');
-                return;
-            }
-
-            // Get student profile
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name')
-                .eq('id', session.user.id)
-                .single();
-
-            setUser(session.user);
-            setStudentName(profile?.full_name || 'Student');
-            setAuthLoading(false);
-        };
-
-        checkAuth();
-    }, [router]);
-
-    if (authLoading) {
+    // Show loading while fetching form data
+    if (pageLoading && loading) {
         return (
             <PageWrapper>
                 <div className="min-h-screen flex items-center justify-center">
@@ -92,17 +97,24 @@ export default function StudentChatPage() {
                         </GlassCard>
                     )}
 
-                    {/* Chat Box */}
+                    {/* Chat Box with Typing Indicators */}
                     <ChatBox
                         messages={messages}
                         loading={loading}
                         sending={sending}
                         error={error}
                         onSend={sendMessage}
+                        onRetry={retryMessage}
+                        onLoadMore={loadMoreMessages}
+                        hasMore={hasMore}
+                        loadingMore={loadingMore}
                         currentUserType="student"
                         currentUserName={studentName}
                         rejectionReason={status?.rejection_reason}
                         departmentName={decodedDepartment}
+                        typingUsers={typingUsers}
+                        onTypingStart={startTyping}
+                        onTypingStop={stopTyping}
                     />
                 </div>
             </div>

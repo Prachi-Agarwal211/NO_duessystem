@@ -325,17 +325,12 @@ export function useStaffDashboard() {
                 // Update existing item locally
                 newRequests[index] = {
                   ...newRequests[index],
-                  status: newStatus, // Update the department-specific status if this is that table
-                  // Note: 'requests' logic is complex, might need deeper merge.
-                  // For now, if we match, we try to update.
+                  status: newStatus,
                 };
 
-                // If status changed to something that moves it out of 'pending', we might want to just refresh
-                // or filter it out. 
-                if (activeTab === 'pending' && newStatus !== 'pending') {
-                  // It moved out of pending!
-                  // We could filter it out: newRequests.splice(index, 1);
-                  needsRefresh = true; // Simpler to refresh for now to be safe
+                // If status changed, trigger refresh to update tabs
+                if (newRequests[index].status !== newStatus) {
+                  needsRefresh = true;
                 }
               } else {
                 // New item for us?
