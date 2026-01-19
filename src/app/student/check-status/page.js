@@ -452,6 +452,8 @@ function CheckStatusContent() {
   );
 }
 
+import StudentAuthGuard from '@/components/student/StudentAuthGuard';
+
 export default function CheckStatusPage() {
   return (
     <ErrorBoundary>
@@ -460,7 +462,9 @@ export default function CheckStatusPage() {
           <div className="w-8 h-8 border-4 border-jecrc-red/30 border-t-jecrc-red rounded-full animate-spin" />
         </div>
       }>
-        <CheckStatusContent />
+        <StudentAuthGuard>
+          <CheckStatusContent />
+        </StudentAuthGuard>
       </Suspense>
     </ErrorBoundary>
   );

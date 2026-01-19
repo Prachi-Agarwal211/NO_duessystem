@@ -975,8 +975,10 @@ export default function SubmitForm() {
             required
             placeholder="https://jualumni.in/profile/123456"
             disabled={loading}
-            hint="You MUST register on jualumni.in and provide your profile link here."
           />
+          <p className={`text-xs mt-2 ml-1 transition-colors duration-300 ${isDark ? 'text-amber-400/90' : 'text-amber-700/90'}`}>
+            <span className="font-bold">Instruction:</span> Please visit <a href="https://jualumni.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-500 font-medium">jualumni.in</a>, go to your profile section, copy your profile link, and paste it here.
+          </p>
         </div>
       </motion.div>
 

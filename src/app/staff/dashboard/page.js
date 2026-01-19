@@ -148,6 +148,55 @@ export default function StaffDashboard() {
     fetchUnreadMessages();
   }, [fetchUnreadMessages, lastUpdate]);
 
+  // 🔔 REALTIME: Subscribe to new chat messages for instant badge updates
+  useEffect(() => {
+    if (!user?.department_name) return;
+
+    console.log('🔌 Staff Dashboard: Setting up chat message realtime listener');
+
+    const channelName = `staff-chat-notifications-${user.department_name.replace(/\s+/g, '_')}-${Date.now()}`;
+
+    const channel = supabase
+      .channel(channelName)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'no_dues_messages'
+      }, (payload) => {
+        // Only care about student messages to our department
+        if (payload.new.sender_type === 'student' &&
+          payload.new.department_name === user.department_name) {
+
+          console.log('📨 New student message received:', payload.new);
+
+          // Update unread count for this form
+          setUnreadMessages(prev => ({
+            ...prev,
+            [payload.new.form_id]: (prev[payload.new.form_id] || 0) + 1
+          }));
+
+          // Show toast notification
+          toast.success(
+            <div className="flex flex-col gap-1">
+              <p className="font-bold">💬 New Chat Message!</p>
+              <p className="text-xs opacity-90">From: {payload.new.sender_name}</p>
+            </div>,
+            { duration: 4000, id: `chat-${payload.new.id}` }
+          );
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Staff chat notifications subscribed');
+        }
+      });
+
+    return () => {
+      console.log('🧹 Staff Dashboard: Cleaning up chat notification listener');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.department_name]);
+
   // Data Fetching
   const fetchRejectedForms = async () => {
     setRejectedLoading(true);

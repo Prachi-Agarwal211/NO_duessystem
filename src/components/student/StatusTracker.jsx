@@ -366,10 +366,10 @@ export default function StatusTracker({ registrationNo }) {
                       className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
                         }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <p className="font-bold text-red-400">{dept.display_name}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-1 sm:gap-0">
+                        <p className="font-bold text-red-400 break-words">{dept.display_name}</p>
                         {dept.action_at && (
-                          <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
+                          <p className={`text-xs whitespace-nowrap transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-500' : 'text-gray-500'
                             }`}>
                             {new Date(dept.action_at).toLocaleDateString('en-IN', {
                               day: 'numeric',

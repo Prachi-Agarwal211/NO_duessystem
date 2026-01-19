@@ -5,12 +5,64 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
 import { RefreshCw } from 'lucide-react';
 
+import { toast } from 'react-hot-toast';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { realtimeManager } from '@/lib/realtimeManager';
 
 export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
   const [applications, setApplications] = useState(initialApplications);
   const [expandedRows, setExpandedRows] = useState(new Set());
-  const [updatingRows, setUpdatingRows] = useState(new Set());
+  const [updatingRows, setUpdatingRows] = new Set());
+  const [generatingIds, setGeneratingIds] = useState(new Set());
+
+  const supabase = createClientComponentClient();
+
+  const handleGenerateCertificate = async (appId) => {
+    setGeneratingIds(prev => new Set(prev).add(appId));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Unauthorized');
+        return;
+      }
+
+      const res = await fetch('/api/admin/certificate/bulk-generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ formIds: [appId] })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Certificate generated successfully');
+        // Update local state immediately for better UX
+        setApplications(prev => prev.map(app =>
+          app.id === appId
+            ? { ...app, certificate_status: 'generated', certificate_generated_at: new Date().toISOString() }
+            : app
+        ));
+      } else {
+        toast.error(data.error || 'Failed to generate');
+        setApplications(prev => prev.map(app =>
+          app.id === appId
+            ? { ...app, certificate_status: 'failed' }
+            : app
+        ));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error generating certificate');
+    } finally {
+      setGeneratingIds(prev => {
+        const next = new Set(prev);
+        next.delete(appId);
+        return next;
+      });
+    }
+  };
 
   // Update local state when props change (initial load or page change)
   useEffect(() => {
@@ -95,6 +147,7 @@ export default function ApplicationsTable({ applications: initialApplications, c
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Course</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Overall Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Dept. Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Certificate</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Submitted</th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Actions</th>
             </tr>
@@ -139,6 +192,34 @@ export default function ApplicationsTable({ applications: initialApplications, c
                     </td>
                     <td className="px-4 py-4">
                       <DepartmentStatusSummary departmentStatuses={app.no_dues_status || []} />
+                    </td>
+                    <td className="px-4 py-4">
+                      {app.status === 'completed' ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                            ${app.certificate_status === 'generated' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              app.certificate_status === 'failed' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'}`}>
+                            {app.certificate_status || 'pending'}
+                          </span>
+
+                          {(app.certificate_status === 'pending' || app.certificate_status === 'failed') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent row expand
+                                handleGenerateCertificate(app.id);
+                              }}
+                              disabled={generatingIds.has(app.id)}
+                              className="p-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 transition-colors disabled:opacity-50"
+                              title={app.certificate_status === 'failed' ? 'Retry Generation' : 'Generate Certificate'}
+                            >
+                              <RefreshCw className={`w-3 h-3 ${generatingIds.has(app.id) ? 'animate-spin' : ''}`} />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">{new Date(app.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-4 text-sm">

@@ -15,7 +15,8 @@ const supabaseAdmin = createClient(
     }
 );
 
-// GET: Get all active chats for a department with last message preview
+// GET: Get all active chats for rejections made BY THIS USER
+// IMPORTANT: Only shows chats for students rejected by this specific staff member
 export async function GET(request) {
     try {
         // Verify auth
@@ -31,15 +32,15 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
         }
 
-        // Get user's departments
+        // Get user's departments and ID
         const { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('assigned_department_ids')
+            .select('id, assigned_department_ids')
             .eq('id', user.id)
             .single();
 
         if (!profile?.assigned_department_ids?.length) {
-            return NextResponse.json({ success: true, data: { chats: [], total: 0 } });
+            return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });
         }
 
         // Get department names
@@ -51,10 +52,34 @@ export async function GET(request) {
         const deptNames = depts?.map(d => d.name) || [];
 
         if (deptNames.length === 0) {
-            return NextResponse.json({ success: true, data: { chats: [], total: 0 } });
+            return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });
         }
 
-        // Get all messages for these departments with form info
+        // CRITICAL: Get only rejections made BY THIS USER
+        const { data: myRejections, error: rejectionsError } = await supabaseAdmin
+            .from('no_dues_status')
+            .select('form_id, department_name')
+            .eq('action_by_user_id', profile.id)
+            .eq('status', 'rejected')
+            .in('department_name', deptNames);
+
+        if (rejectionsError) {
+            console.error('Error fetching rejections:', rejectionsError);
+            return NextResponse.json({ error: rejectionsError.message }, { status: 500 });
+        }
+
+        if (!myRejections || myRejections.length === 0) {
+            // No rejections by this user - no chats
+            return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });
+        }
+
+        // Build form_id list and rejection map
+        const formIds = myRejections.map(r => r.form_id);
+        const myRejectionMap = new Set(
+            myRejections.map(r => `${r.form_id}|${r.department_name}`)
+        );
+
+        // Get messages only for forms this user rejected
         const { data: messages, error: messagesError } = await supabaseAdmin
             .from('no_dues_messages')
             .select(`
@@ -68,7 +93,7 @@ export async function GET(request) {
                 is_read,
                 no_dues_forms!inner(id, student_name, registration_no, status)
             `)
-            .in('department_name', deptNames)
+            .in('form_id', formIds)
             .order('created_at', { ascending: false });
 
         if (messagesError) {
@@ -76,13 +101,20 @@ export async function GET(request) {
             return NextResponse.json({ error: messagesError.message }, { status: 500 });
         }
 
-        // Group messages by form_id and get chat summary for each
+        // Group messages by form_id - only for rejections by this user
         const chatsByForm = {};
         (messages || []).forEach(msg => {
-            const key = `${msg.form_id}-${msg.department_name}`;
+            const key = `${msg.form_id}|${msg.department_name}`;
 
-            if (!chatsByForm[key]) {
-                chatsByForm[key] = {
+            // Only include if this user rejected this form+department combo
+            if (!myRejectionMap.has(key)) {
+                return;
+            }
+
+            const chatKey = `${msg.form_id}-${msg.department_name}`;
+
+            if (!chatsByForm[chatKey]) {
+                chatsByForm[chatKey] = {
                     form_id: msg.form_id,
                     department_name: msg.department_name,
                     student_name: msg.no_dues_forms?.student_name,
@@ -96,11 +128,11 @@ export async function GET(request) {
                 };
             }
 
-            chatsByForm[key].total_messages++;
+            chatsByForm[chatKey].total_messages++;
 
             // Count unread messages from students
             if (msg.sender_type === 'student' && !msg.is_read) {
-                chatsByForm[key].unread_count++;
+                chatsByForm[chatKey].unread_count++;
             }
         });
 

@@ -10,16 +10,29 @@ export function useChat(formId, department, readerType = 'student') {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState(null);
-    const [failedMessages, setFailedMessages] = useState([]); // Track failed messages for retry
+    const [failedMessages, setFailedMessages] = useState([]);
     const [hasMore, setHasMore] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [pagination, setPagination] = useState({ total: 0, limit: 50, offset: 0 });
 
     const channelRef = useRef(null);
+    const formIdRef = useRef(formId);
+    const departmentRef = useRef(department);
+    const readerTypeRef = useRef(readerType);
+
+    // Keep refs updated
+    useEffect(() => {
+        formIdRef.current = formId;
+        departmentRef.current = department;
+        readerTypeRef.current = readerType;
+    }, [formId, department, readerType]);
 
     // Fetch initial messages (no auth required for GET)
     const fetchMessages = useCallback(async (loadMore = false) => {
-        if (!formId || !department) return;
+        const currentFormId = formIdRef.current;
+        const currentDepartment = departmentRef.current;
+
+        if (!currentFormId || !currentDepartment) return;
 
         try {
             if (loadMore) {
@@ -30,9 +43,8 @@ export function useChat(formId, department, readerType = 'student') {
 
             const offset = loadMore ? pagination.offset + pagination.limit : 0;
 
-            // Public access - no authorization header needed
             const response = await fetch(
-                `/api/chat/${formId}/${encodeURIComponent(department)}?limit=50&offset=${offset}`
+                `/api/chat/${currentFormId}/${encodeURIComponent(currentDepartment)}?limit=50&offset=${offset}`
             );
 
             const result = await response.json();
@@ -42,7 +54,6 @@ export function useChat(formId, department, readerType = 'student') {
             }
 
             if (loadMore) {
-                // Prepend older messages
                 setMessages(prev => [...(result.data.messages || []), ...prev]);
             } else {
                 setMessages(result.data.messages || []);
@@ -53,9 +64,6 @@ export function useChat(formId, department, readerType = 'student') {
             setHasMore(result.data.pagination?.hasMore || false);
             setPagination(result.data.pagination || { total: 0, limit: 50, offset: 0 });
             setError(null);
-
-            // Mark messages as read
-            markMessagesAsRead();
         } catch (err) {
             console.error('Error fetching messages:', err);
             setError(err.message);
@@ -63,19 +71,22 @@ export function useChat(formId, department, readerType = 'student') {
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [formId, department, pagination.offset, pagination.limit]);
+    }, [pagination.offset, pagination.limit]);
 
     // Mark messages as read
     const markMessagesAsRead = useCallback(async () => {
-        if (!formId || !department) return;
+        const currentFormId = formIdRef.current;
+        const currentDepartment = departmentRef.current;
+        const currentReaderType = readerTypeRef.current;
+
+        if (!currentFormId || !currentDepartment) return;
 
         try {
             const headers = {
                 'Content-Type': 'application/json'
             };
 
-            // For department staff, include auth token
-            if (readerType === 'department') {
+            if (currentReaderType === 'department') {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session) {
                     headers['Authorization'] = `Bearer ${session.access_token}`;
@@ -86,35 +97,36 @@ export function useChat(formId, department, readerType = 'student') {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    formId,
-                    departmentName: department,
-                    readerType
+                    formId: currentFormId,
+                    departmentName: currentDepartment,
+                    readerType: currentReaderType
                 })
             });
         } catch (err) {
             console.error('Error marking messages as read:', err);
         }
-    }, [formId, department, readerType]);
+    }, []);
 
     // Send a message with retry support
     const sendMessage = useCallback(async (message, senderType, senderName, retryId = null) => {
-        if (!message?.trim() || !formId || !department) return;
+        const currentFormId = formIdRef.current;
+        const currentDepartment = departmentRef.current;
+
+        if (!message?.trim() || !currentFormId || !currentDepartment) return;
 
         const tempId = retryId || `temp-${Date.now()}`;
 
         try {
             setSending(true);
 
-            // Remove from failed messages if retrying
             if (retryId) {
                 setFailedMessages(prev => prev.filter(m => m.tempId !== retryId));
             }
 
-            // Optimistic update - add message with temp id
             const optimisticMessage = {
                 id: tempId,
-                form_id: formId,
-                department_name: department,
+                form_id: currentFormId,
+                department_name: currentDepartment,
                 sender_type: senderType,
                 sender_name: senderName,
                 message: message.trim(),
@@ -124,7 +136,6 @@ export function useChat(formId, department, readerType = 'student') {
 
             setMessages(prev => [...prev, optimisticMessage]);
 
-            // For department staff, include auth token
             const headers = {
                 'Content-Type': 'application/json'
             };
@@ -137,7 +148,7 @@ export function useChat(formId, department, readerType = 'student') {
                 headers['Authorization'] = `Bearer ${session.access_token}`;
             }
 
-            const response = await fetch(`/api/chat/${formId}/${encodeURIComponent(department)}`, {
+            const response = await fetch(`/api/chat/${currentFormId}/${encodeURIComponent(currentDepartment)}`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
@@ -163,12 +174,10 @@ export function useChat(formId, department, readerType = 'student') {
         } catch (err) {
             console.error('Error sending message:', err);
 
-            // Mark message as failed
             setMessages(prev => prev.map(m =>
                 m.id === tempId ? { ...m, is_sending: false, is_failed: true } : m
             ));
 
-            // Add to failed messages for retry
             setFailedMessages(prev => [...prev, {
                 tempId,
                 message: message.trim(),
@@ -182,13 +191,12 @@ export function useChat(formId, department, readerType = 'student') {
         } finally {
             setSending(false);
         }
-    }, [formId, department]);
+    }, []);
 
     // Retry a failed message
     const retryMessage = useCallback((tempId) => {
         const failed = failedMessages.find(m => m.tempId === tempId);
         if (failed) {
-            // Remove the failed message from the list first
             setMessages(prev => prev.filter(m => m.id !== tempId));
             sendMessage(failed.message, failed.senderType, failed.senderName, tempId);
         }
@@ -201,52 +209,88 @@ export function useChat(formId, department, readerType = 'student') {
         }
     }, [hasMore, loadingMore, fetchMessages]);
 
-    // Set up realtime subscription
+    // Set up realtime subscription - FIXED: Separate effect with proper cleanup
     useEffect(() => {
         if (!formId || !department) return;
+
+        console.log(`🔌 Chat Realtime: Setting up for form=${formId}, dept=${department}`);
 
         // Initial fetch
         fetchMessages();
 
-        // Subscribe to realtime updates
+        // Create unique channel name with timestamp to ensure fresh subscription
+        const channelName = `chat-realtime-${formId}-${department.replace(/\s+/g, '_')}-${Date.now()}`;
+
+        // Subscribe to realtime updates with proper filter
         const channel = supabase
-            .channel(`chat-${formId}-${department}`)
+            .channel(channelName)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'no_dues_messages',
                 filter: `form_id=eq.${formId}`
             }, (payload) => {
-                // Only add if for this department and not already in list
+                console.log('📨 New message received via realtime:', payload.new);
+
+                // Only add if for this department
                 if (payload.new.department_name === department) {
                     setMessages(prev => {
-                        // Avoid duplicates (including temp optimistic messages)
-                        if (prev.some(m => m.id === payload.new.id)) return prev;
-                        // Remove optimistic message if it exists
+                        // Check if message already exists (avoid duplicates)
+                        const exists = prev.some(m => m.id === payload.new.id);
+                        if (exists) {
+                            console.log('⏭️ Message already exists, skipping');
+                            return prev;
+                        }
+
+                        // Remove any optimistic message with same content
                         const filtered = prev.filter(m =>
                             !(m.is_sending && m.message === payload.new.message)
                         );
+
+                        console.log('✅ Adding new message to state');
                         return [...filtered, payload.new];
                     });
 
-                    // Mark new messages as read
+                    // Mark as read
                     markMessagesAsRead();
                 }
             })
-            .subscribe((status) => {
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'no_dues_messages',
+                filter: `form_id=eq.${formId}`
+            }, (payload) => {
+                console.log('📝 Message updated via realtime:', payload.new);
+
+                if (payload.new.department_name === department) {
+                    setMessages(prev => prev.map(m =>
+                        m.id === payload.new.id ? payload.new : m
+                    ));
+                }
+            })
+            .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('✅ Subscribed to chat realtime');
+                    console.log(`✅ Chat realtime SUBSCRIBED for ${department}`);
+                } else if (status === 'CHANNEL_ERROR') {
+                    console.error('❌ Chat realtime channel error:', err);
+                } else if (status === 'TIMED_OUT') {
+                    console.error('⏰ Chat realtime timed out');
+                } else {
+                    console.log(`📡 Chat realtime status: ${status}`);
                 }
             });
 
         channelRef.current = channel;
 
         return () => {
+            console.log(`🧹 Chat Realtime: Cleaning up for ${department}`);
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current);
+                channelRef.current = null;
             }
         };
-    }, [formId, department]);
+    }, [formId, department]); // Only depend on formId and department
 
     return {
         messages,

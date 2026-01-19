@@ -23,7 +23,7 @@ function DepartmentStatus({ departmentName, status, actionAt, rejectionReason })
 
   const getStatusBadge = () => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider";
-    
+
     switch (status) {
       case 'approved':
         return `${baseClasses} bg-green-500/20 text-green-500`;
@@ -48,12 +48,12 @@ function DepartmentStatus({ departmentName, status, actionAt, rejectionReason })
   };
 
   return (
-    <div className={`flex items-center justify-between p-4 rounded-lg transition-all duration-700 ease-smooth border
-      ${isDark 
-        ? 'bg-white/[0.02] hover:bg-white/[0.05] border-white/10' 
+    <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg transition-all duration-700 ease-smooth border gap-3 sm:gap-4
+      ${isDark
+        ? 'bg-white/[0.02] hover:bg-white/[0.05] border-white/10'
         : 'bg-white hover:bg-gray-50 border-black/5'
       }`}>
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
         {getStatusIcon()}
         <div className="flex-1 min-w-0">
           <h4 className={`font-medium truncate transition-colors duration-700 ease-smooth
@@ -68,7 +68,7 @@ function DepartmentStatus({ departmentName, status, actionAt, rejectionReason })
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pl-9 sm:pl-0">
         <span className={getStatusBadge()}>
           {status || 'pending'}
         </span>

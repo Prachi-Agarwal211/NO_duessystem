@@ -795,11 +795,54 @@ export async function sendDailyDepartmentDigest({
 // Export all functions
 export default {
   sendEmail,
-  sendCombinedDepartmentNotification,
   sendDailyDepartmentDigest,
   sendRejectionNotification,
-  sendCertificateReadyNotification,
-  sendReapplicationNotification,
-  sendSupportTicketResponse,
-  sendDepartmentReminder
+  sendOtpEmail
 };
+
+/**
+ * Send OTP Verification Email to Student
+ * @param {Object} params - OTP parameters
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendOtpEmail({ to, studentName, otp }) {
+  const content = `
+    <div style="text-align: center; padding: 20px 0;">
+      <div style="background-color: #f3f4f6; display: inline-block; padding: 16px; border-radius: 50%; margin-bottom: 20px;">
+        <span style="font-size: 32px;">🔐</span>
+      </div>
+      
+      <h2 style="color: #1f2937; margin: 0 0 10px 0; font-size: 24px;">Login Verification</h2>
+      
+      <p style="color: #4b5563; font-size: 16px; margin: 0 0 24px 0;">
+        Hello <strong>${studentName || 'Student'}</strong>,<br>
+        Use the code below to securely access your No Dues dashboard.
+      </p>
+      
+      <div style="background-color: #ffffff; border: 2px dashed #e5e7eb; border-radius: 12px; padding: 24px; display: inline-block; margin-bottom: 24px;">
+        <span style="font-family: monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #dc2626;">${otp}</span>
+      </div>
+      
+      <p style="color: #6b7280; font-size: 14px; margin: 0;">
+        This code will expire in 10 minutes.<br>
+        If you didn't request this code, please ignore this email.
+      </p>
+    </div>
+  `;
+
+  const html = generateEmailTemplate({
+    title: 'Your Login OTP',
+    content,
+    actionUrl: '', // No button needed for OTP
+    actionText: '',
+    footerText: 'This is a secure authentication message. Do not share this code.'
+  });
+
+  return sendEmail({
+    to,
+    subject: `🔐 Your Login OTP: ${otp}`,
+    html,
+    metadata: { type: 'otp_verification' }
+  });
+}
+;
