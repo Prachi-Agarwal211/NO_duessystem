@@ -6,7 +6,7 @@ import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './Department
 import { RefreshCw } from 'lucide-react';
 
 import { toast } from 'react-hot-toast';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabaseClient';
 import { realtimeManager } from '@/lib/realtimeManager';
 
 export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
@@ -14,8 +14,6 @@ export default function ApplicationsTable({ applications: initialApplications, c
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [updatingRows, setUpdatingRows] = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
-
-  const supabase = createClientComponentClient();
 
   const handleGenerateCertificate = async (appId) => {
     setGeneratingIds(prev => new Set(prev).add(appId));
