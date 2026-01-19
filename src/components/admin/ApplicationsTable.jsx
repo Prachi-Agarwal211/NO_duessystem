@@ -12,7 +12,7 @@ import { realtimeManager } from '@/lib/realtimeManager';
 export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
   const [applications, setApplications] = useState(initialApplications);
   const [expandedRows, setExpandedRows] = useState(new Set());
-  const [updatingRows, setUpdatingRows] = new Set());
+  const [updatingRows, setUpdatingRows] = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
 
   const supabase = createClientComponentClient();
