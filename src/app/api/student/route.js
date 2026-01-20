@@ -181,7 +181,7 @@ export async function POST(request) {
       contact_no: formData.contact_no,
       personal_email: formData.personal_email,
       college_email: formData.college_email,
-      alumni_screenshot_url: formData.alumni_screenshot_url,
+      alumni_profile_link: formData.alumni_profile_link,
       status: 'pending',
       user_id: null
     };

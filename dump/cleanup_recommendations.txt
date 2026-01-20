@@ -1,0 +1,73 @@
+# Recommendations for NoDues System Cleanup
+
+## Files to KEEP (Essential for the system):
+
+### Core Application Files:
+- package.json, package-lock.json - Essential for dependencies
+- next.config.mjs, middleware.js - Core Next.js configuration
+- postcss.config.js, tailwind.config.js - Styling configuration
+- eslint.config.mjs, .eslintrc.json - Linting configuration
+- .gitignore - Version control configuration
+- .env.example - Environment variable template
+
+### Source Code:
+- All files in src/app/ (admin, api, department, staff, student, unauthorized, verify)
+- All files in src/components/, src/contexts/, src/hooks/, src/lib/, src/styles/
+- globals.css, layout.js, page.js, template.js in src/app/
+
+### Public Assets:
+- All files in public/ directory (assets, grid.svg, manifest.json, sw.js)
+
+### Database Setup:
+- COMPLETE_DATABASE_SETUP.sql - Main database setup
+- COMPLETE_SYSTEM_SETUP.sql - Complete system setup
+
+### Documentation:
+- README.md - Main project documentation
+
+### Configuration:
+- vercel.json - Production deployment config
+
+## Files to MOVE to DUMP folder:
+
+### Temporary/Output Files:
+- All .txt files with diagnostic/output content (counts_output.txt, definitive_audit.txt, etc.)
+- Zero-byte files like 'accounts'
+
+### Potentially Duplicate/Obsolete SQL Files:
+- Individual fix scripts that may be superseded by complete setup scripts
+- Migration scripts that are outdated or replaced
+
+### Development/Debug Scripts:
+- All the individual script files in the scripts/ directory that appear to be for specific debugging or data import tasks
+- These should be kept in version control only if they serve as reference for future development
+
+### Build Artifacts:
+- Entire .next/ directory (should be in .gitignore, not committed)
+
+### Development Notes:
+- Detailed audit and plan documents that are no longer needed in active development
+
+## Additional Recommendations:
+
+### Immediate Actions:
+1. Add .next/ to .gitignore if not already present
+2. Move all diagnostic output files to dump/
+3. Move zero-byte placeholder files to dump/
+4. Move individual SQL fix scripts to dump/ (keep only main setup files)
+
+### Review Before Moving:
+1. Check if any of the script files in scripts/ directory are actively used by the application
+2. Verify that moving SQL files won't break existing database setups
+3. Confirm that diagnostic files don't contain important historical data
+
+### Git Ignore Updates:
+Consider adding these patterns to .gitignore:
+- *.txt (except important documentation)
+- .next/
+- node_modules/
+- *.log
+- dumps/
+
+## Rationale:
+The goal is to keep only the essential files needed for the application to run in production, while preserving important documentation and configuration. Temporary files, debug scripts, and output files clutter the repository and make it harder to understand the actual codebase. Moving these to a dump folder preserves them if needed later while cleaning up the main project structure.

@@ -1,0 +1,109 @@
+# Unnecessary Files List for NoDues System Cleanup
+
+## SQL Files (Potentially Redundant/Duplicates)
+- ADD_ALUMNI_LINK_COLUMN.sql
+- ADD_REAPPLICATION_OVERRIDE.sql
+- CLEANUP_LEGACY_TABLES.sql
+- CREATE_AUDIT_LOGS_TABLE.sql
+- FIX_DATABASE_ISSUES.sql
+- FIX_DATABASE_ISSUES_P2.sql
+- FIX_MISSING_COLUMN.sql
+- FIX_PROFILES_RLS.sql
+- FIX_REALTIME_PAYLOADS.sql
+- FIX_REAPPLICATION_TABLE.sql
+- FIX_RLS_INFINITE_RECURSION.sql
+- MIGRATION_PER_DEPT_REAPPLY.sql
+- OPTIMIZE_DATABASE_INDEXES.sql
+- REALTIME_DIAG_HELPERS.sql
+- RESET_FOR_TESTING.sql
+- SETUP_CERTIFICATE_MANAGEMENT.sql
+- SETUP_OTP_AUTH.sql
+- STAFF_PROFILE_MIGRATION.sql
+- VERIFY_RPC_AND_TRIGGERS.sql
+- VERIFY_SYSTEM_HEALTH.sql
+- add-new-branches.sql (in scripts/)
+- databaseTriggers.sql (in src/lib/)
+- FIXED_DATABASE_SCHEMA.sql (in src/lib/)
+- student_data_schema.sql (in src/lib/)
+- 20260113_create_messages_table.sql (in supabase/migrations/)
+
+## Diagnostic/Output Files (Temporary)
+- counts_output.txt
+- definitive_audit.txt
+- diagnostic_output.txt
+- diag_output.txt
+- realtime_test.txt
+- schema_report.txt
+
+## Documentation Files (Development Notes)
+- COMPREHENSIVE_SYSTEM_AUDIT.md
+- DEPARTMENT_STAFF_PROFILE_AND_STATS_PLAN.md
+- ENHANCED_DASHBOARD_STATISTICS_PLAN.md
+- ADD-NEW-BRANCHES-README.md (in scripts/)
+- databaseAnalysis.md (in src/lib/)
+
+## Zero-byte Files
+- accounts (main directory)
+
+## Potentially Obsolete Scripts
+- add-design-sciences-courses-and-branches.js (in scripts/)
+- add-mba-it-branch.js (in scripts/)
+- add-new-branches-runner.js (in scripts/)
+- analyze-data-structure.js (in scripts/)
+- analyze-excel-columns.js (in scripts/)
+- check-config-structure.js (in scripts/)
+- check-design-sciences-courses.js (in scripts/)
+- check-excel-structure.js (in scripts/)
+- check-msc.js (in scripts/)
+- check-pg-execute-sql.js (in scripts/)
+- check-recent-approvals.js (in scripts/)
+- check-roll-vs-enroll.js (in scripts/)
+- check-school-course-branch.js (in scripts/)
+- check-sciences.js (in scripts/)
+- check-trigger-setup.js (in scripts/)
+- complete-excel-import.js (in scripts/)
+- comprehensive-data-check.js (in scripts/)
+- debug-auth.js (in scripts/)
+- debug-certificate-issue.js (in scripts/)
+- debug-reapplication.js (in scripts/)
+- deploy-trigger-fix.js (in scripts/)
+- diagnose-smtp.js (in scripts/)
+- excel-to-db-mapping.js (in scripts/)
+- fetch-actual-db-schema.js (in scripts/)
+- fetch-db-schema-direct.js (in scripts/)
+- fetch-table-details.js (in scripts/)
+- fix-duplicate-msc.js (in scripts/)
+- fix-missing-columns.js (in scripts/)
+- fix-sciences-duplicate.js (in scripts/)
+- focused-excel-import.js (in scripts/)
+- full-auth-debug.js (in scripts/)
+- import-excel-to-student-data.js (in scripts/)
+- list-staff-accounts.js (in scripts/)
+- map-excel-to-form.js (in scripts/)
+- migrate_old_no_dues.js (in scripts/)
+- regenerate_certificates.js (in scripts/)
+- remove-convocation-final.js (in scripts/)
+- reset-all-forms-to-pending.js (in scripts/)
+- reset-test-accounts.js (in scripts/)
+- restore-design-msc.js (in scripts/)
+- simple-excel-import.js (in scripts/)
+- test-smtp-config.js (in scripts/)
+- verify-auth-profile.js (in scripts/)
+
+## Build Artifacts (in .next directory - should be in .gitignore)
+- All files in .next/ directory
+
+## Configuration Files (Duplicates/Alternatives)
+- vercel.yaml (alternative to vercel.json)
+
+## Development/Debug Files
+- JECRC-No-Dues-Staff-Guide.pdf
+
+## Summary
+Total estimated unnecessary files: ~50+ files
+These files fall into categories of:
+1. Temporary/output files
+2. Duplicate or obsolete SQL migration scripts
+3. Debugging/development scripts that are no longer needed
+4. Zero-byte placeholder files
+5. Build artifacts that should be in .gitignore
