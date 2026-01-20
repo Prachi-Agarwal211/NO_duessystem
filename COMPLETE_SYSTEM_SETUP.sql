@@ -300,17 +300,6 @@ CREATE TABLE public.support_tickets (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Convocation Eligible Students
-CREATE TABLE public.convocation_eligible_students (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    registration_no TEXT NOT NULL UNIQUE,
-    student_name TEXT NOT NULL,
-    school TEXT NOT NULL,
-    admission_year TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'not_started',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
 -- ============================================================================
 -- 1.7. ROW LEVEL SECURITY (RLS)
 -- ============================================================================
@@ -322,7 +311,6 @@ ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.no_dues_status ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.convocation_eligible_students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 
 -- Config tables

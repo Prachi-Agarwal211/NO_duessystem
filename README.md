@@ -11,9 +11,6 @@ Run these SQL files in Supabase SQL Editor in order:
 ```sql
 -- 1. Main database schema with all production data
 COMPLETE_DATABASE_SETUP.sql
-
--- 2. Import convocation eligible students (3,181 students)
-IMPORT_CONVOCATION_STUDENTS.sql
 ```
 
 ### 2. Environment Setup
@@ -53,7 +50,6 @@ Visit `http://localhost:3000`
 - ✅ 145 Branches
 - ✅ 8 Departments
 - ✅ 5 Country Codes
-- ✅ 3,181 Convocation Students
 
 ## Key Features
 
@@ -103,7 +99,6 @@ node scripts/generate-staff-guide-pdf.js
 ## Documentation
 
 - `COMPLETE_DATABASE_SETUP.sql` - Complete database schema with production data
-- `IMPORT_CONVOCATION_STUDENTS.sql` - Convocation students import
 - `JECRC-No-Dues-Staff-Guide.pdf` - Staff user guide
 
 ## Support

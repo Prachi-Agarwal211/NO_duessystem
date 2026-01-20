@@ -296,32 +296,52 @@ export async function PUT(request) {
         formId
       );
 
-      // Fire and forget - certificate generation happens in background<
-      fetch(
-        APP_URLS.certificateGenerateApi(),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ formId })
-        }
-      )
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      // Use the new certificate trigger service for more reliable generation
+      try {
+        const { triggerCertificateGeneration } = await import('@/lib/certificateTrigger');
+        
+        // Fire and forget - certificate generation happens in background
+        triggerCertificateGeneration(formId, userId)
+          .then(result => {
+            if (result.success) {
+              console.log(`✅ Certificate generated: ${result.certificateUrl}`);
+            } else {
+              console.error('❌ Certificate generation failed:', result.error);
+            }
+          })
+          .catch(error => {
+            // Log but don't throw - this is fire-and-forget
+            console.error('❌ Certificate generation error:', error.message || error);
+          });
+      } catch (importError) {
+        console.error('❌ Failed to import certificate trigger:', importError);
+        
+        // Fallback to the old fetch method
+        fetch(
+          APP_URLS.certificateGenerateApi(),
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ formId })
           }
-          return res.json();
-        })
-        .then(result => {
-          if (result.success) {
-            console.log(`✅ Certificate generated: ${result.certificateUrl}`);
-          } else {
-            console.error('❌ Certificate generation failed:', result.error);
-          }
-        })
-        .catch(error => {
-          // Log but don't throw - this is fire-and-forget
-          console.error('❌ Certificate generation error:', error.message || error);
-        });
+        )
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
+          })
+          .then(result => {
+            if (result.success) {
+              console.log(`✅ Certificate generated: ${result.certificateUrl}`);
+            } else {
+              console.error('❌ Certificate generation failed:', result.error);
+            }
+          })
+          .catch(error => {
+            console.error('❌ Fallback certificate generation error:', error.message || error);
+          });
+      }
     }
 
     // ==================== OPTIMIZED EMAIL NOTIFICATIONS ====================

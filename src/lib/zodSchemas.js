@@ -221,13 +221,7 @@ export const supportTicketSchema = z.object({
   })
 });
 
-/**
- * Convocation Validation Schema
- * Used in /api/convocation/validate POST
- */
-export const convocationValidateSchema = z.object({
-  registration_no: registrationNoSchema
-});
+
 
 /**
  * File Upload Schema
@@ -394,7 +388,6 @@ export default {
   reapplySchema,
   staffActionSchema,
   supportTicketSchema,
-  convocationValidateSchema,
   fileUploadSchema,
   forgotPasswordSchema,
   resetPasswordSchema,

@@ -15,7 +15,7 @@
 
 import nodemailer from 'nodemailer';
 
-// Email configuration
+// Email configuration optimized for Render deployment
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
@@ -25,11 +25,20 @@ const SMTP_CONFIG = {
     pass: process.env.SMTP_PASS
   },
   pool: true, // Use connection pooling
-  maxConnections: 3, // Reduced for stability
-  maxMessages: 50,
-  connectionTimeout: 15000, // 15 seconds
-  greetingTimeout: 15000,
-  socketTimeout: 15000
+  maxConnections: 2, // Reduced for Render stability
+  maxMessages: 20, // Reduced batch size for Render
+  connectionTimeout: 30000, // 30 seconds for Render network
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
+  // Render-specific optimizations
+  disableFileAccess: true,
+  disableUrlAccess: true,
+  // Additional Render network optimizations
+  requireTLS: true, // Force TLS for better security and compatibility
+  ignoreTLS: false,
+  // Connection retry settings
+  retryCount: 3,
+  retryDelay: 2000
 };
 
 const FROM_EMAIL = process.env.SMTP_FROM || 'JECRC UNIVERSITY NO DUES <noreply@jecrcuniversity.edu.in>';

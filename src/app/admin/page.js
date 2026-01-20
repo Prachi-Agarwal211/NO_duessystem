@@ -409,16 +409,7 @@ export default function EnhancedAdminDashboard() {
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">QR Scanner & Manual Verify</p>
           </GlassCard>
 
-          <GlassCard className="p-4 sm:p-6 cursor-pointer group hover:border-jecrc-red/50 transition-all active:scale-[0.98]" onClick={() => router.push('/admin/convocation')}>
-            <div className="flex justify-between items-start">
-              <div className="p-3 bg-jecrc-rose dark:bg-jecrc-red/20 rounded-xl text-jecrc-red dark:text-jecrc-red-bright">
-                <GraduationCap className="w-6 h-6" />
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-jecrc-red transition-colors" />
-            </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mt-3 sm:mt-4">Convocation 2024</h3>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Manage 9th Convocation List</p>
-          </GlassCard>
+
 
         </div>
       </div>

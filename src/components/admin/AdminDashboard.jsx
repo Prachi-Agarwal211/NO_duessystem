@@ -18,10 +18,9 @@ import RequestTrendChart from '@/components/admin/RequestTrendChart';
 import ApplicationsTable from '@/components/admin/ApplicationsTable';
 import AdminSettings from '@/components/admin/settings/AdminSettings';
 
-import ConvocationDashboard from '@/components/admin/ConvocationDashboard';
 import TabbedSupportTickets from '@/components/admin/TabbedSupportTickets';
 import FilterPills from '@/components/ui/FilterPills';
-import { LogOut, Shield, RefreshCw, GraduationCap, Headphones, Users } from 'lucide-react';
+import { LogOut, Shield, RefreshCw, Headphones, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -232,16 +231,6 @@ export default function AdminDashboard() {
                   }`}
               >
                 Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab('convocation')}
-                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap min-h-[44px] ${activeTab === 'convocation'
-                  ? 'bg-white dark:bg-jecrc-red text-black dark:text-white shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white'
-                  }`}
-              >
-                <GraduationCap className="w-4 h-4 flex-shrink-0" />
-                <span className="hidden sm:inline">9th</span> Convocation
               </button>
 
               <button
@@ -494,10 +483,6 @@ export default function AdminDashboard() {
               onPageChange={setCurrentPage}
             />
           </GlassCard>
-        </div>
-      ) : activeTab === 'convocation' ? (
-        <div className="animate-fade-in">
-          <ConvocationDashboard />
         </div>
       ) : activeTab === 'support' ? (
         <div className="animate-fade-in">

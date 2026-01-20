@@ -65,11 +65,10 @@ export default function SubmitForm() {
   const [success, setSuccess] = useState(false);
   const [formId, setFormId] = useState(null);
 
-  // Convocation validation states
-  const [validatingConvocation, setValidatingConvocation] = useState(false);
-  const [convocationValid, setConvocationValid] = useState(null); // null = not validated, true = valid, false = invalid
-  const [convocationData, setConvocationData] = useState(null);
-  const [convocationError, setConvocationError] = useState('');
+  // Student data fetching states
+  const [fetchingStudent, setFetchingStudent] = useState(false);
+  const [studentDataFound, setStudentDataFound] = useState(null);
+  const [studentFetchError, setStudentFetchError] = useState('');
 
   // Update available courses when school changes - Use API call for fresh data
   useEffect(() => {
@@ -151,132 +150,6 @@ export default function SubmitForm() {
 
     setError('');
 
-    // Clear convocation validation when registration number changes
-    if (name === 'registration_no') {
-      setConvocationValid(null);
-      setConvocationData(null);
-      setConvocationError('');
-    }
-  };
-
-  // Validate registration number against convocation database
-  const validateConvocation = async (registration_no) => {
-    if (!registration_no || !registration_no.trim()) {
-      return;
-    }
-
-    setValidatingConvocation(true);
-    setConvocationError('');
-
-    try {
-      const response = await fetch('/api/convocation/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registration_no: registration_no.trim().toUpperCase() })
-      });
-
-      const result = await response.json();
-
-      if (result.valid && result.student) {
-        setConvocationValid(true);
-        setConvocationData(result.student);
-
-        // ==================== AUTO-FILL FORM DATA WITH SANITIZATION ====================
-        // Sanitize and validate data before setting state
-        const sanitizedName = result.student.name ? result.student.name.trim() : formData.student_name;
-        const sanitizedYear = result.student.admission_year
-          ? result.student.admission_year.toString().trim().replace(/\D/g, '') // Remove non-digits and whitespace
-          : formData.admission_year;
-
-        // Validate sanitized year format BEFORE setting state
-        if (sanitizedYear && !/^\d{4}$/.test(sanitizedYear)) {
-          logger.warn('Invalid admission year from convocation', {
-            original: result.student.admission_year,
-            sanitized: sanitizedYear,
-            registration_no
-          });
-          setConvocationError('Invalid admission year format in convocation data. Please enter year manually.');
-          setConvocationValid(false);
-          setValidatingConvocation(false);
-          return;
-        }
-
-        const updates = {
-          student_name: sanitizedName,
-          admission_year: sanitizedYear
-        };
-
-        // Auto-fill school dropdown using fuzzy matching
-        if (result.student.school && schools.length > 0) {
-          const convocationSchoolName = result.student.school.toLowerCase().trim();
-
-          // Try exact match first
-          let matchedSchool = schools.find(s =>
-            s.name.toLowerCase().trim() === convocationSchoolName
-          );
-
-          // If no exact match, try partial match (contains)
-          if (!matchedSchool) {
-            matchedSchool = schools.find(s =>
-              s.name.toLowerCase().includes(convocationSchoolName) ||
-              convocationSchoolName.includes(s.name.toLowerCase())
-            );
-          }
-
-          // If school matched, set the UUID
-          if (matchedSchool) {
-            updates.school = matchedSchool.id;
-            logger.debug('School auto-filled', {
-              convocationSchool: result.student.school,
-              matchedSchool: matchedSchool.name,
-              schoolId: matchedSchool.id
-            });
-          } else {
-            logger.warn('Could not auto-fill school - no match found', {
-              convocationSchool: result.student.school,
-              availableSchools: schools.map(s => s.name)
-            });
-          }
-        }
-
-        // Apply all updates at once
-        setFormData(prev => ({
-          ...prev,
-          ...updates
-        }));
-
-        logger.success('Convocation validation successful - form auto-filled', {
-          registration_no,
-          autoFilled: Object.keys(updates),
-          sanitizedData: {
-            name: sanitizedName,
-            year: sanitizedYear,
-            school: updates.school || 'not matched'
-          }
-        });
-      } else {
-        setConvocationValid(false);
-        setConvocationError(result.error || 'Registration number not eligible for 9th convocation. Kindly contact admin');
-        logger.warn('Convocation validation failed', { registration_no, error: result.error });
-      }
-    } catch (error) {
-      console.error('Convocation validation error:', error);
-      setConvocationValid(false);
-      setConvocationError('Failed to validate registration number. Please try again.');
-      logger.error(error, {
-        action: 'validateConvocation',
-        registration_no
-      });
-    } finally {
-      setValidatingConvocation(false);
-    }
-  };
-
-  // Handle registration number blur - validate convocation
-  const handleRegistrationBlur = () => {
-    if (formData.registration_no && formData.registration_no.trim()) {
-      validateConvocation(formData.registration_no);
-    }
   };
 
   const checkExistingForm = async () => {
@@ -322,7 +195,65 @@ export default function SubmitForm() {
     }
   };
 
+  // Fetch student data from database
+  const fetchStudentData = async (registrationNo) => {
+    if (!registrationNo) {
+      setStudentFetchError('Please enter registration number first');
+      return;
+    }
 
+    setFetchingStudent(true);
+    setStudentFetchError('');
+    setStudentDataFound(null);
+
+    try {
+      const response = await fetch(`/api/student/lookup?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}`);
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Auto-fill form with student data
+        const studentData = result.data;
+        
+        setFormData(prev => ({
+          ...prev,
+          student_name: studentData.student_name || prev.student_name,
+          admission_year: studentData.admission_year || prev.admission_year,
+          passing_year: studentData.passing_year || prev.passing_year,
+          parent_name: studentData.parent_name || prev.parent_name,
+          school: studentData.school || prev.school,
+          course: studentData.course || prev.course,
+          branch: studentData.branch || prev.branch,
+          country_code: studentData.country_code || prev.country_code,
+          contact_no: studentData.contact_no || prev.contact_no,
+          personal_email: studentData.personal_email || prev.personal_email,
+          college_email: studentData.college_email || prev.college_email,
+          alumni_profile_link: studentData.alumni_profile_link || prev.alumni_profile_link
+        }));
+
+        setStudentDataFound(studentData);
+        setError('');
+        
+        // Load courses and branches if school/course data is available
+        if (studentData.school) {
+          const coursesForSchool = await fetchCoursesBySchool(studentData.school);
+          setAvailableCourses(coursesForSchool);
+          
+          if (studentData.course) {
+            const branchesForCourse = await fetchBranchesByCourse(studentData.course);
+            setAvailableBranches(branchesForCourse);
+          }
+        }
+
+      } else {
+        setStudentFetchError(result.message || 'Student not found in database');
+      }
+    } catch (err) {
+      console.error('Error fetching student data:', err);
+      setStudentFetchError('Failed to fetch student data. Please try again.');
+    } finally {
+      setFetchingStudent(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -650,38 +581,36 @@ export default function SubmitForm() {
               disabled={loading}
             />
 
-            {/* Convocation Validation Status */}
-            {validatingConvocation && (
+            {/* Student Data Fetch Status */}
+            {fetchingStudent && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                <span className="text-xs text-blue-500">Validating...</span>
+                <span className="text-xs text-blue-500">Fetching...</span>
               </div>
             )}
 
-            {!validatingConvocation && convocationValid === true && (
+            {!fetchingStudent && studentDataFound && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-500" />
-                <span className="text-xs text-green-500">Eligible</span>
+                <span className="text-xs text-green-500">Found</span>
               </div>
             )}
 
-            {!validatingConvocation && convocationValid === false && (
+            {!fetchingStudent && studentFetchError && (
               <div className="absolute right-3 top-11 flex items-center gap-2">
                 <X className="w-5 h-5 text-red-500" />
-                <span className="text-xs text-red-500">Not eligible</span>
+                <span className="text-xs text-red-500">Not found</span>
               </div>
             )}
           </div>
 
           {/* Buttons container - Stack vertically on mobile */}
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {/* Auto-Fill Button - Convocation Validation */}
-            {/* Auto-Fill Button - Convocation Validation */}
             {/* Auto-Fill Button */}
             <button
               type="button"
-              onClick={() => validateConvocation(formData.registration_no)}
-              disabled={validatingConvocation || !formData.registration_no}
+              onClick={() => fetchStudentData(formData.registration_no)}
+              disabled={fetchingStudent || !formData.registration_no}
               className={`
                 sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-200 
                 flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
@@ -691,9 +620,9 @@ export default function SubmitForm() {
                   : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                 }
               `}
-              title="Auto-fill student details from convocation database"
+              title="Auto-fill student details from database"
             >
-              {validatingConvocation ? (
+              {fetchingStudent ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Fetching...</span>
@@ -733,51 +662,51 @@ export default function SubmitForm() {
             </button>
           </div>
         </div>
-
-        {/* Show convocation details when validated */}
-        {convocationData && convocationValid && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-3 rounded-lg text-sm transition-all duration-700
-              ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
-          >
-            <div className={`font-medium mb-1 transition-colors duration-700
-              ${isDark ? 'text-green-400' : 'text-green-700'}`}>
-              ✓ Convocation Eligible - Details Fetched
-            </div>
-            <div className={`space-y-1 transition-colors duration-700
-              ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
-              <div><strong>Name:</strong> {convocationData.name}</div>
-              <div><strong>School:</strong> {convocationData.school}</div>
-              <div><strong>Year:</strong> {convocationData.admission_year}</div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Show helpful message for ineligible students */}
-        {convocationError && convocationValid === false && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-3 rounded-lg text-sm transition-all duration-700
-              ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}
-          >
-            <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-400' : 'text-amber-700'
-              }`}>
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium mb-1">Registration number not found in convocation list</p>
-                <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-300/70' : 'text-amber-600'
-                  }`}>
-                  You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
       </motion.div>
 
+      {/* Show student data when successfully fetched */}
+      {studentDataFound && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-3 rounded-lg text-sm transition-all duration-700
+            ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
+        >
+          <div className={`font-medium mb-1 transition-colors duration-700
+            ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+            ✓ Student Data Found - Details Fetched
+          </div>
+          <div className={`space-y-1 transition-colors duration-700
+            ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
+            <div><strong>Name:</strong> {studentDataFound.student_name}</div>
+            <div><strong>School:</strong> {studentDataFound.school}</div>
+            <div><strong>Course:</strong> {studentDataFound.course}</div>
+            {studentDataFound.branch && <div><strong>Branch:</strong> {studentDataFound.branch}</div>}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Show error message when student not found */}
+      {studentFetchError && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-3 rounded-lg text-sm transition-all duration-700
+            ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}
+        >
+          <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-400' : 'text-amber-700'
+            }`}>
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium mb-1">{studentFetchError}</p>
+              <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-300/70' : 'text-amber-600'
+                }`}>
+                You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
         initial={{ opacity: 0, y: 20 }}

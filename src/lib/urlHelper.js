@@ -55,7 +55,7 @@ export const APP_URLS = {
 
   // Admin pages
   ADMIN_DASHBOARD: '/admin/dashboard',
-  ADMIN_CONVOCATION: '/admin/convocation',
+
 
   // Department pages
   DEPARTMENT_DASHBOARD: (dept) => `/department/${dept}/dashboard`,
@@ -74,7 +74,7 @@ export const APP_URLS = {
     CERTIFICATE_GENERATE: '/api/certificate/generate',
     CERTIFICATE_VERIFY: '/api/certificate/verify',
     SUPPORT_SUBMIT: '/api/support/submit',
-    CONVOCATION_STUDENTS: '/api/convocation/students',
+
   },
 
   // Helper functions for API URLs (full URLs needed for fetch)

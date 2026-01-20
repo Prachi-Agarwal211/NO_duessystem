@@ -16,7 +16,6 @@ This document provides a comprehensive plan to enhance both Admin and Department
 4. **`email_logs`** - Email delivery tracking
 5. **`support_tickets`** - Support system with priority/status
 6. **`certificate_verifications`** - Certificate verification audit trail
-7. **`convocation_eligible_students`** - Convocation tracking
 
 **Key Tracking Fields:**
 - `created_at`, `updated_at`, `action_at` - Timeline tracking
@@ -27,21 +26,21 @@ This document provides a comprehensive plan to enhance both Admin and Department
 - `school_id`, `course_id`, `branch_id` - Academic hierarchy
 
 **Current Admin Dashboard Features:**
-- ✅ Overall stats (total/pending/completed/rejected)
-- ✅ Department workload breakdown
-- ✅ Real-time updates via Supabase realtime
-- ✅ Search & filtering
-- ✅ Export functionality
-- ✅ Support ticket monitoring
-- ✅ Email monitoring
+- Overall stats (total/pending/completed/rejected)
+- Department workload breakdown
+- Real-time updates via Supabase realtime
+- Search & filtering
+- Export functionality
+- Support ticket monitoring
+- Email monitoring
 
 **Current Department Dashboard Features:**
-- ✅ Pending/approved/rejected counts
-- ✅ Approval rate
-- ✅ Bulk actions
-- ✅ SLA indicators
-- ✅ Search & filtering
-- ✅ Export functionality
+- Pending/approved/rejected counts
+- Approval rate
+- Bulk actions
+- SLA indicators
+- Search & filtering
+- Export functionality
 
 ---
 
@@ -101,10 +100,10 @@ This document provides a comprehensive plan to enhance both Admin and Department
    | ...        | ...   | ...     | ...      | ...      | ...      | ...   |
 
 **Visualizations:**
-- 📊 Stacked Bar Chart: Form distribution by status per department
-- 🥧 Pie Chart: Overall workload distribution
-- 📈 Line Chart: Department response time trends
-- 🎯 Heatmap: Department activity by time of day/week
+- Stacked Bar Chart: Form distribution by status per department
+- Pie Chart: Overall workload distribution
+- Line Chart: Department response time trends
+- Heatmap: Department activity by time of day/week
 
 ---
 
@@ -266,29 +265,29 @@ This document provides a comprehensive plan to enhance both Admin and Department
 
 #### **New Widgets to Add:**
 
-1. **🔥 Live Activity Feed**
+1. **Live Activity Feed**
    - Real-time stream of recent actions (last 20)
    - Shows: Student name, action type, department, timestamp
    - Auto-scrolling with smooth animations
 
-2. **⚠️ Alert Center**
+2. **Alert Center**
    - Forms pending > 48 hours (SLA breach)
    - Departments with backlog > 20 forms
    - Failed email deliveries
    - Unread support tickets > 10
 
-3. **📊 Quick Stats Cards** (Enhanced)
+3. **Quick Stats Cards** (Enhanced)
    - Add: Average completion time
    - Add: Forms processed today
    - Add: Current backlog count
    - Add: Reapplication rate
 
-4. **🎯 Department Leaderboard**
+4. **Department Leaderboard**
    - Rank departments by approval speed
    - Show top 3 performing departments
    - Highlight slowest department
 
-5. **📅 Calendar Heatmap**
+5. **Calendar Heatmap**
    - Show submission density by date
    - Color-coded: Green (low), Yellow (medium), Red (high)
    - Last 30 days
@@ -299,29 +298,28 @@ This document provides a comprehensive plan to enhance both Admin and Department
 
 #### **New Features:**
 
-1. **📊 My Department Performance Card**
+1. **My Department Performance Card**
    - Your rank among all departments
    - Comparison vs. average department performance
    - Weekly/monthly targets and progress
 
-2. **📈 Personal Activity Dashboard**
+2. **Personal Activity Dashboard**
    - Forms I approved today/week/month
    - My average response time
    - My approval rate vs. department average
 
-3. **⏱️ Time-based Analytics**
+3. **Time-based Analytics**
    - Peak submission hours
    - My most active hours
    - Time taken per form (histogram)
 
-4. **🎓 Student Insights**
+4. **Student Insights**
    - Most common courses/branches in my queue
    - Reapplication patterns
    - Common issues (from rejection reasons)
 
-5. **🔔 Smart Notifications**
+5. **Smart Notifications**
    - Forms approaching SLA deadline
-   - High-priority students (e.g., convocation eligible)
    - Forms waiting > 24 hours
 
 ---

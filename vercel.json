@@ -1,9 +1,61 @@
 {
-  "version": 2,
-  "builds": [
+  "$schema": "https://vercel.com/schemas/2025-05-01",
+  "name": "jecrc-no-dues",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "envPreview": {
+    "NODE_ENV": "development"
+  },
+  "regions": ["iad1"],
+  "analytics": {
+    "enabled": true
+  },
+  "edgeNetwork": "sfo1",
+  "headers": [
     {
-      "src": "package.json",
-      "use": "@vercel/next"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/student",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/admin/send-reminder",
+      "schedule": "0 15 * * *"
     }
   ]
 }

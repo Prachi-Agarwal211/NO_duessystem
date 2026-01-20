@@ -1,0 +1,167 @@
+# Vercel Deployment Configuration for JECRC No Dues System
+# Optimized for Vercel's serverless environment and SMTP requirements
+
+version: 2
+
+# Project settings
+project:
+  name: jecrc-no-dues
+  region: iad1  # Virginia, USA (closest to India for better latency)
+  framework: nextjs
+
+# Build settings
+build:
+  command: npm run build
+  environment:
+    NODE_VERSION: "18.x"
+    NPM_VERSION: "9.x"
+  
+  # Vercel-specific optimizations
+  cacheDirectories:
+    - node_modules
+    - .next
+
+# Development settings
+dev:
+  command: npm run dev
+  environment:
+    NODE_ENV: development
+
+# Functions configuration
+functions:
+  # API routes with extended timeout for SMTP operations
+  "src/app/api/**/*.js":
+    maxDuration: 30  # 30 seconds for SMTP operations
+    memory: 1024     # 1GB memory for email processing
+    runtime: nodejs18.x
+  
+  # Health check endpoint
+  "src/app/api/health/route.js":
+    maxDuration: 10
+    memory: 512
+
+# Environment variables
+env:
+  # SMTP Configuration (Required)
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_SECURE: false
+  SMTP_USER: your-email@jecrcu.edu.in
+  SMTP_PASS: your-app-password
+  SMTP_FROM: JECRC No Dues <noreply@jecrcu.edu.in>
+  
+  # Email Queue Configuration
+  EMAIL_QUEUE_BATCH_SIZE: 20
+  EMAIL_MAX_RETRIES: 5
+  CRON_SECRET: your-random-secret-for-cron-auth
+  
+  # Application URLs
+  NEXT_PUBLIC_BASE_URL: https://your-app.vercel.app
+  
+  # Vercel-specific SMTP optimizations
+  SMTP_CONNECTION_TIMEOUT: 30000
+  SMTP_SOCKET_TIMEOUT: 30000
+  SMTP_GREETING_TIMEOUT: 30000
+  
+  # Connection pool settings for Vercel
+  SMTP_MAX_CONNECTIONS: 2
+  SMTP_MAX_MESSAGES: 20
+  
+  # Security settings
+  SMTP_REQUIRE_TLS: true
+  SMTP_IGNORE_TLS: false
+  SMTP_DISABLE_FILE_ACCESS: true
+  SMTP_DISABLE_URL_ACCESS: true
+
+# Environment variables for preview deployments
+envPreview:
+  NODE_ENV: development
+  SMTP_HOST: smtp.gmail.com
+  SMTP_PORT: 587
+  SMTP_SECURE: false
+  SMTP_USER: preview-email@jecrcu.edu.in
+  SMTP_PASS: preview-app-password
+  SMTP_FROM: JECRC No Dues Preview <noreply-preview@jecrcu.edu.in>
+  NEXT_PUBLIC_BASE_URL: https://your-app-preview.vercel.app
+
+# Headers and security
+headers:
+  - source: "/api/(.*)"
+    headers:
+      - key: "Access-Control-Allow-Origin"
+        value: "*"
+      - key: "Access-Control-Allow-Methods"
+        value: "GET, POST, PUT, DELETE, OPTIONS"
+      - key: "Access-Control-Allow-Headers"
+        value: "Content-Type, Authorization"
+      - key: "X-Content-Type-Options"
+        value: "nosniff"
+      - key: "X-Frame-Options"
+        value: "DENY"
+      - key: "X-XSS-Protection"
+        value: "1; mode=block"
+
+# Redirects
+redirects:
+  - source: "/"
+    destination: "/student"
+    permanent: true
+
+# Rewrites
+rewrites:
+  - source: "/api/health"
+    destination: "/api/health"
+
+# Cron jobs for automated tasks
+crons:
+  # Daily department reminders at 3:00 PM IST (9:30 AM UTC)
+  - path: "/api/admin/send-reminder"
+    schedule: "30 9 * * *"
+    # Alternative: Every 6 hours
+    # schedule: "0 */6 * * *"
+
+# Edge network settings
+edgeNetwork: sfo1  # San Francisco for better global performance
+
+# Analytics
+analytics:
+  enabled: true
+
+# Image optimization
+images:
+  domains:
+    - jecrcu.edu.in
+    - supabase.co
+  minimumCacheTTL: 60
+
+# Build outputs
+outputs:
+  static: true
+  server: true
+
+# Monitoring and logging
+logging:
+  format: json
+  level: info
+
+# Performance settings
+performance:
+  # Vercel-specific optimizations
+  bundleAnalyzer: false
+  sourceMapExcludeDecorators: true
+  # Enable for production builds
+  compression: gzip
+
+# Deployment settings
+deployment:
+  # Automatic deployments from main branch
+  autoDeploy: true
+  # Preview deployments for pull requests
+  previewDeploy: true
+  # Production deployment branch
+  productionBranch: main
+
+# Team settings (if using Vercel team)
+team:
+  # Add your team ID if applicable
+  # id: your-team-id
