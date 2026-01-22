@@ -241,6 +241,36 @@ export async function POST(request) {
 
     console.log(`✅ Form submitted - Digest notification will be sent at 3:00 PM`);
 
+    // ==================== SYNC MASTER DATA ====================
+    // Update the master student_data table with the latest details from this submission
+    const { error: syncError } = await supabaseAdmin
+      .from('student_data')
+      .update({
+        student_name: formData.student_name,
+        parent_name: formData.parent_name,
+        school_id: school_id,
+        school_name: school_name,
+        course_id: course_id,
+        course_name: course_name,
+        branch_id: branch_id,
+        branch_name: branch_name,
+        contact_no: formData.contact_no,
+        personal_email: formData.personal_email,
+        college_email: formData.college_email,
+        alumni_profile_link: formData.alumni_profile_link,
+        status: 'active', // Mark as active since they submitted
+        last_form_id: form.id,
+        no_dues_status: 'pending' // Update status
+      })
+      .eq('registration_no', formData.registration_no);
+
+    if (syncError) {
+      console.error('⚠️ Failed to sync student master data:', syncError);
+      // Non-fatal, proceeding...
+    } else {
+      console.log('✅ Student master data synced.');
+    }
+
     // ==================== RETURN SUCCESS ====================
 
     return ApiResponse.success(form, 'Application submitted successfully', 201);
