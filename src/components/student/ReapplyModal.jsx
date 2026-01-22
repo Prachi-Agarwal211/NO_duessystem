@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import FormInput from './FormInput';
+import Input from '@/components/ui/Input';
 import { useFormConfig } from '@/hooks/useFormConfig';
 
 // ESC key handler hook
@@ -269,9 +269,9 @@ export default function ReapplyModal({
         <motion.div
           className={`
             rounded-xl max-w-md w-full p-6 sm:p-8 text-center
-            ${isDark 
-                ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' 
-                : 'bg-white border border-gray-200'
+            ${isDark
+              ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10'
+              : 'bg-white border border-gray-200'
             }
           `}
           initial={{ scale: 0.9, opacity: 0 }}
@@ -314,9 +314,9 @@ export default function ReapplyModal({
         <motion.div
           className={`
             rounded-xl w-full max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col
-            ${isDark 
-                ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' 
-                : 'bg-white border border-gray-200'
+            ${isDark
+              ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10'
+              : 'bg-white border border-gray-200'
             }
           `}
           initial={{ scale: 0.9, opacity: 0 }}
@@ -347,9 +347,9 @@ export default function ReapplyModal({
               disabled={loading}
               className={`
                 p-2 rounded-lg transition-all duration-300
-                ${isDark 
-                    ? 'hover:bg-white/10 text-gray-400 hover:text-white' 
-                    : 'hover:bg-black/5 text-gray-600 hover:text-gray-900'
+                ${isDark
+                  ? 'hover:bg-white/10 text-gray-400 hover:text-white'
+                  : 'hover:bg-black/5 text-gray-600 hover:text-gray-900'
                 }
               `}
             >
@@ -437,7 +437,7 @@ export default function ReapplyModal({
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput
+                <Input
                   label="Student Name"
                   name="student_name"
                   value={editedData.student_name}
@@ -446,7 +446,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label="Parent Name"
                   name="parent_name"
                   value={editedData.parent_name}
@@ -454,7 +454,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label="Admission Year"
                   name="admission_year"
                   value={editedData.admission_year}
@@ -465,7 +465,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label="Passing Year"
                   name="passing_year"
                   value={editedData.passing_year}
@@ -476,7 +476,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label="School"
                   name="school"
                   type="select"
@@ -487,7 +487,7 @@ export default function ReapplyModal({
                   options={schools.map(s => ({ value: s.id, label: s.name }))}
                 />
 
-                <FormInput
+                <Input
                   label="Course"
                   name="course"
                   type="select"
@@ -498,7 +498,7 @@ export default function ReapplyModal({
                   options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
                 />
 
-                <FormInput
+                <Input
                   label="Branch"
                   name="branch"
                   type="select"
@@ -509,7 +509,7 @@ export default function ReapplyModal({
                   options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
                 />
 
-                <FormInput
+                <Input
                   label="Country Code"
                   name="country_code"
                   type="select"
@@ -523,7 +523,7 @@ export default function ReapplyModal({
                   }))}
                 />
 
-                <FormInput
+                <Input
                   label="Contact Number"
                   name="contact_no"
                   type="tel"
@@ -534,7 +534,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label="Personal Email"
                   name="personal_email"
                   type="email"
@@ -545,7 +545,7 @@ export default function ReapplyModal({
                   disabled={loading || configLoading}
                 />
 
-                <FormInput
+                <Input
                   label={`College Email (${collegeDomain})`}
                   name="college_email"
                   type="email"
