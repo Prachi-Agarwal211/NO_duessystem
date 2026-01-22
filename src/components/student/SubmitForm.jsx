@@ -849,32 +849,29 @@ export default function SubmitForm() {
           , go to your profile section, copy your profile link, and paste it here.
         </p>
       </div>
-    </motion.div>
 
-      {/* Alumni Screenshot Upload Removed as per requirement */ }
-
-  {/* Form Actions */ }
-  <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
-    <Button
-      type="submit"
-      disabled={loading}
-      loading={loading}
-      className="w-full py-4 text-base tracking-wide uppercase shadow-lg hover:shadow-xl bg-[#c41e3a] hover:bg-[#a01830] text-white"
-    >
-      {!loading && (
-        <>
-          <span>Submit Application</span>
-          <span className="ml-1 opacity-70">→</span>
-        </>
-      )}
-    </Button>
-    <p className={`
+      {/* Form Actions */}
+      <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
+        <Button
+          type="submit"
+          disabled={loading}
+          loading={loading}
+          className="w-full py-4 text-base tracking-wide uppercase shadow-lg hover:shadow-xl bg-[#c41e3a] hover:bg-[#a01830] text-white"
+        >
+          {!loading && (
+            <>
+              <span>Submit Application</span>
+              <span className="ml-1 opacity-70">→</span>
+            </>
+          )}
+        </Button>
+        <p className={`
           text-center mt-4 text-xs sm:text-sm
           ${isDark ? 'text-gray-500' : 'text-gray-400'}
         `}>
-      By clicking submit, you confirm all details are accurate.
-    </p>
-  </div>
-    </motion.form >
+          By clicking submit, you confirm all details are accurate.
+        </p>
+      </div>
+    </motion.form>
   );
 }
