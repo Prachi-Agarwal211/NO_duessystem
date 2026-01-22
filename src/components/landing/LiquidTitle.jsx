@@ -19,8 +19,15 @@ export default function LiquidTitle() {
   const titleRef = useRef(null);
 
   useEffect(() => {
-    // Force high-end graphics for all users as requested
-    setDeviceTier('high');
+    // Detect device capabilities for performance optimization
+    const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
+    const isLowEnd = navigator.deviceMemory && navigator.deviceMemory < 4;
+
+    if (isMobile || isLowEnd) {
+      setDeviceTier('low');
+    } else {
+      setDeviceTier('high');
+    }
   }, []);
 
   // Wait for gradient to be ready before applying transparency
@@ -34,7 +41,7 @@ export default function LiquidTitle() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: deviceTier === 'high' ? 0.8 : 0.3, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col items-center gap-2"
     >
       {/* Top Label - MINIMAL SHADOW */}
@@ -60,19 +67,19 @@ export default function LiquidTitle() {
           <motion.div
             className="absolute inset-0 -z-10"
             animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.2, 0.4, 0.2],
+              scale: [1, 1.1, 1],
+              opacity: [0.15, 0.25, 0.15],
             }}
             transition={{
-              duration: 4,
+              duration: 6,
               repeat: Infinity,
               ease: "easeInOut"
             }}
             style={{
               background: isDark
-                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.4) 0%, rgba(255,51,102,0.2) 40%, transparent 70%)'
-                : 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(139,0,0,0.15) 40%, transparent 70%)',
-              filter: 'blur(60px)',
+                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(255,51,102,0.15) 40%, transparent 70%)'
+                : 'radial-gradient(ellipse at center, rgba(196,30,58,0.2) 0%, rgba(139,0,0,0.1) 40%, transparent 70%)',
+              filter: 'blur(40px)',
             }}
           />
         )}
@@ -80,18 +87,18 @@ export default function LiquidTitle() {
         {/* Background Glow Layer - HIGH END ONLY */}
         {deviceTier === 'high' && isDark && (
           <motion.div
-            className="absolute inset-0 blur-3xl opacity-50 -z-10"
+            className="absolute inset-0 blur-2xl opacity-30 -z-10"
             animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.5, 0.3],
+              scale: [1, 1.05, 1],
+              opacity: [0.2, 0.3, 0.2],
             }}
             transition={{
-              duration: 3,
+              duration: 4,
               repeat: Infinity,
               ease: "easeInOut"
             }}
             style={{
-              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.6) 0%, rgba(255, 51, 102, 0.3) 50%, transparent 100%)',
+              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.4) 0%, rgba(255, 51, 102, 0.2) 50%, transparent 100%)',
             }}
           />
         )}

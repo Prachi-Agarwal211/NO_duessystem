@@ -14,11 +14,11 @@ export default function PageTransition({ children }) {
     <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
+        exit={{ opacity: 0, y: -10 }}
         transition={{
-          duration: 0.3,
+          duration: 0.2,
           ease: [0.4, 0, 0.2, 1]
         }}
       >
@@ -54,7 +54,7 @@ export function FadeTransition({ children, duration = 0.3 }) {
  */
 export function SlideTransition({ children, direction = 'right' }) {
   const pathname = usePathname();
-  
+
   const directions = {
     right: { initial: { x: 100 }, exit: { x: -100 } },
     left: { initial: { x: -100 }, exit: { x: 100 } },
@@ -91,11 +91,11 @@ export function ScaleTransition({ children }) {
     <AnimatePresence mode="wait">
       <motion.div
         key={pathname}
-        initial={{ scale: 0.95, opacity: 0 }}
+        initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 1.05, opacity: 0 }}
+        exit={{ scale: 1.02, opacity: 0 }}
         transition={{
-          duration: 0.3,
+          duration: 0.2,
           ease: [0.4, 0, 0.2, 1]
         }}
       >
@@ -121,7 +121,7 @@ export function ModalTransition({ isOpen, children }) {
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black z-40 backdrop-blur-sm"
           />
-          
+
           {/* Modal Content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}

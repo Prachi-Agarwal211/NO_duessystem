@@ -156,9 +156,9 @@ export const studentFormSchema = z.object({
   country_code: z.string().default('+91'),
   admission_year: yearSchema.optional().or(z.literal('')),
   passing_year: yearSchema.optional().or(z.literal('')),
-  school: uuidSchema, // UUID from dropdown selection
-  course: uuidSchema, // UUID from dropdown selection
-  branch: uuidSchema, // UUID from dropdown selection
+  school: z.string().min(1, 'School is required'), // UUID or Name
+  course: z.string().min(1, 'Course is required'), // UUID or Name
+  branch: z.string().min(1, 'Branch is required'), // UUID or Name
   alumni_profile_link: z.string().min(1, 'Alumni profile link is mandatory')
 });
 

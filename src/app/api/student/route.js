@@ -97,71 +97,66 @@ export async function POST(request) {
       );
     }
 
-    // ==================== VALIDATE FOREIGN KEY RELATIONSHIPS ====================
+    // ==================== VALIDATE / RESOLVE CONFIG IDS ====================
+    // These might be UUIDs (from dropdown) or Names (if manually entered/imported)
+    let school_id = formData.school;
+    let course_id = formData.course;
+    let branch_id = formData.branch;
+    let school_name = '';
+    let course_name = '';
+    let branch_name = '';
 
-    // Get the UUIDs for school, course, and branch from the form data
-    // These are already UUIDs from the frontend dropdown selections
-    const school_id = formData.school; // This is the UUID
-    const course_id = formData.course; // This is the UUID
-    const branch_id = formData.branch; // This is the UUID
+    const isUuid = (val) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-    // OPTIMIZATION: Parallelize school/course/branch validation for faster form submission
-    const [
-      { data: schoolData, error: schoolError },
-      { data: courseData, error: courseError },
-      { data: branchData, error: branchError }
-    ] = await Promise.all([
-      supabaseAdmin
-        .from('config_schools')
-        .select('id, name')
-        .eq('id', school_id)
-        .eq('is_active', true)
-        .single(),
-      supabaseAdmin
-        .from('config_courses')
-        .select('id, name, school_id')
-        .eq('id', course_id)
-        .eq('school_id', school_id)
-        .eq('is_active', true)
-        .single(),
-      supabaseAdmin
-        .from('config_branches')
-        .select('id, name, course_id')
-        .eq('id', branch_id)
-        .eq('course_id', course_id)
-        .eq('is_active', true)
-        .single()
-    ]);
-
-    if (schoolError || !schoolData) {
-      console.error('Invalid school ID:', school_id, schoolError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid school selection. Please refresh and try again.' },
-        { status: 400 }
-      );
+    // 1. Resolve School
+    if (isUuid(school_id)) {
+      const { data: s } = await supabaseAdmin.from('config_schools').select('name').eq('id', school_id).single();
+      if (s) school_name = s.name;
+      else return NextResponse.json({ success: false, error: 'Invalid school ID' }, { status: 400 });
+    } else {
+      school_name = school_id;
+      const { data: s } = await supabaseAdmin.from('config_schools').select('id').eq('name', school_name).single();
+      if (s) school_id = s.id;
+      else {
+        const { data: newS, error } = await supabaseAdmin.from('config_schools').insert({ name: school_name }).select('id').single();
+        if (error) throw error;
+        school_id = newS.id;
+      }
     }
 
-    if (courseError || !courseData) {
-      console.error('Invalid course ID or school mismatch:', course_id, courseError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid course selection or course does not belong to selected school. Please refresh and try again.' },
-        { status: 400 }
-      );
+    // 2. Resolve Course
+    if (isUuid(course_id)) {
+      const { data: c } = await supabaseAdmin.from('config_courses').select('name').eq('id', course_id).single();
+      if (c) course_name = c.name;
+      else return NextResponse.json({ success: false, error: 'Invalid course ID' }, { status: 400 });
+    } else {
+      course_name = course_id;
+      const { data: c } = await supabaseAdmin.from('config_courses').select('id').eq('school_id', school_id).eq('name', course_name).single();
+      if (c) course_id = c.id;
+      else {
+        const { data: newC, error } = await supabaseAdmin.from('config_courses').insert({ school_id, name: course_name }).select('id').single();
+        if (error) throw error;
+        course_id = newC.id;
+      }
     }
 
-    if (branchError || !branchData) {
-      console.error('Invalid branch ID or course mismatch:', branch_id, branchError);
-      return NextResponse.json(
-        { success: false, error: 'Invalid branch selection or branch does not belong to selected course. Please refresh and try again.' },
-        { status: 400 }
-      );
+    // 3. Resolve Branch
+    if (isUuid(branch_id)) {
+      const { data: b } = await supabaseAdmin.from('config_branches').select('name').eq('id', branch_id).single();
+      if (b) branch_name = b.name;
+      else return NextResponse.json({ success: false, error: 'Invalid branch ID' }, { status: 400 });
+    } else {
+      branch_name = branch_id;
+      const { data: b } = await supabaseAdmin.from('config_branches').select('id').eq('course_id', course_id).eq('name', branch_name).single();
+      if (b) branch_id = b.id;
+      else {
+        const { data: newB, error } = await supabaseAdmin.from('config_branches').insert({ course_id, name: branch_name }).select('id').single();
+        if (error) throw error;
+        branch_id = newB.id;
+      }
     }
 
-    console.log('✅ Validated:', {
-      school: schoolData.name,
-      course: courseData.name,
-      branch: branchData.name
-    });
+    console.log('✅ Config Resolved:', { school_name, course_name, branch_name });
 
     // ==================== PREPARE SANITIZED DATA ====================
     // All data is already sanitized by Zod (trimmed, cased, validated)
@@ -172,11 +167,11 @@ export async function POST(request) {
       passing_year: formData.passing_year,
       parent_name: formData.parent_name,
       school_id: school_id,
-      school: schoolData.name,
+      school: school_name,
       course_id: course_id,
-      course: courseData.name,
+      course: course_name,
       branch_id: branch_id,
-      branch: branchData.name,
+      branch: branch_name,
       country_code: formData.country_code,
       contact_no: formData.contact_no,
       personal_email: formData.personal_email,

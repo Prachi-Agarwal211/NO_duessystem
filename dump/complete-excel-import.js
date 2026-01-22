@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-dotenv.config({ path: './.env' });
+dotenv.config({ path: fs.existsSync('./.env.local') ? './.env.local' : './.env' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,7 +68,7 @@ function extractYearFromBatch(batch) {
 function excelDateToDate(excelDate) {
   if (!excelDate || excelDate === 'NULL') return null;
   if (isNaN(excelDate)) return null;
-  
+
   // Excel dates are days since 1900-01-01
   const date = new Date((excelDate - 25569) * 86400 * 1000);
   return date.toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -77,47 +77,47 @@ function excelDateToDate(excelDate) {
 // Generate college email from personal email
 function generateCollegeEmail(personalEmail) {
   if (!personalEmail) return null;
-  
+
   // Extract username from personal email
   const match = personalEmail.match(/^([^@]+)@/);
   if (!match) return null;
-  
+
   const username = match[1].toLowerCase().replace(/[^a-z0-9]/g, '');
   return `${username}@jecrcu.edu.in`;
 }
 
 async function completeExcelImport() {
   const excelFilePath = path.join(__dirname, '..', 'data', 'Student data JU Jan2026.xlsx');
-  
+
   console.log('🎯 COMPLETE EXCEL IMPORT (ENROLL + ROLL)');
   console.log('========================================\n');
-  
+
   try {
     // Read Excel file
     const workbook = XLSX.readFile(excelFilePath);
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    
+
     // Convert to JSON
     const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     const headers = data[0];
     const rows = data.slice(1);
-    
+
     console.log(`📊 Found ${rows.length} student records\n`);
-    
+
     let successCount = 0;
     let errorCount = 0;
     let rollNoOnlyCount = 0;
     let enrollNoOnlyCount = 0;
     let bothCount = 0;
     const errors = [];
-    
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.every(cell => cell === null || cell === undefined || cell === '')) {
         continue; // Skip empty rows
       }
-      
+
       try {
         // Extract data from Excel columns
         const enrollNo = cleanValue(row[16]); // EnrollNo (column 17)
@@ -135,11 +135,11 @@ async function completeExcelImport() {
         const personalEmail = cleanValue(row[12]); // EmailId (column 13)
         const motherName = cleanValue(row[13]); // MotherName (column 14)
         const semester = cleanValue(row[17]);   // Semester (column 18)
-        
+
         // Determine registration number (use EnrollNo first, then RollNo)
         let registrationNo = enrollNo;
         let registrationType = 'enroll';
-        
+
         if (!enrollNo || enrollNo === 'undefined' || enrollNo.toString().trim() === '') {
           if (rollNo && rollNo !== 'undefined' && rollNo.toString().trim() !== '') {
             registrationNo = rollNo;
@@ -151,37 +151,37 @@ async function completeExcelImport() {
         } else {
           enrollNoOnlyCount++;
         }
-        
+
         // Validate required fields
         if (!registrationNo || !name) {
           throw new Error(`Missing required fields: registration number or name`);
         }
-        
+
         // Build full name
         const fullName = [firstName, lastName].filter(Boolean).join(' ') || name;
-        
+
         // Extract admission year
         const admissionYear = extractYearFromBatch(admissionBatch) || extractYearFromBatch(year);
-        
+
         // Estimate passing year (typically 4 years after admission)
         const passingYear = admissionYear ? admissionYear + 4 : null;
-        
+
         // Map degree to school
         const school = SCHOOL_MAPPING[degree] || 'School of Engineering & Technology';
-        
+
         // Map degree to course (use degree as course)
         const course = degree;
-        
+
         // Generate college email
         const collegeEmail = generateCollegeEmail(personalEmail);
-        
+
         // Check if already exists
         const { data: existingRecord } = await supabaseAdmin
           .from('student_data')
           .select('id')
           .eq('registration_no', registrationNo)
           .single();
-        
+
         if (existingRecord) {
           // Update existing record
           const { data: result, error } = await supabaseAdmin
@@ -208,7 +208,7 @@ async function completeExcelImport() {
             .eq('registration_no', registrationNo)
             .select('id')
             .single();
-          
+
           if (error) throw new Error(`Update error: ${error.message}`);
         } else {
           // Insert new record
@@ -251,17 +251,17 @@ async function completeExcelImport() {
             })
             .select('id')
             .single();
-          
+
           if (error) throw new Error(`Insert error: ${error.message}`);
         }
-        
+
         successCount++;
-        
+
         // Progress indicator
         if ((i + 1) % 500 === 0 || i === rows.length - 1) {
           console.log(`✅ Processed ${i + 1}/${rows.length} records (${successCount} successful, ${errorCount} errors)`);
         }
-        
+
       } catch (error) {
         errorCount++;
         errors.push({
@@ -270,39 +270,39 @@ async function completeExcelImport() {
           rollNo: cleanValue(row[18]) || 'None',
           error: error.message
         });
-        
+
         // Log first 5 errors
         if (errors.length <= 5) {
           console.log(`❌ Row ${i + 2}: ${error.message}`);
         }
       }
     }
-    
+
     console.log('\n📊 IMPORT SUMMARY:');
     console.log('==================');
     console.log(`✅ Successfully processed: ${successCount} records`);
     console.log(`❌ Failed imports: ${errorCount} records`);
     console.log(`📋 EnrollNo only: ${enrollNoOnlyCount} records`);
     console.log(`📋 RollNo only: ${rollNoOnlyCount} records`);
-    
+
     if (errors.length > 0) {
       console.log('\n📝 First 5 errors:');
       errors.slice(0, 5).forEach(err => {
         console.log(`  Row ${err.row} (Enroll: ${err.enrollNo}, Roll: ${err.rollNo}): ${err.error}`);
       });
     }
-    
+
     // Verify import
     const { count } = await supabaseAdmin
       .from('student_data')
       .select('*', { count: 'exact', head: true });
-    
+
     console.log(`\n🎯 Total records in student_data table: ${count}`);
     console.log('\n🚀 Auto-fetch is now ready to use!');
     console.log('📝 Students can use either EnrollNo or RollNo to auto-fill the form.');
-    
+
     return { successCount, errorCount, totalRecords: count };
-    
+
   } catch (error) {
     console.error('💥 Import failed:', error.message);
     throw error;

@@ -22,75 +22,51 @@ export async function GET(request) {
     // Clean the registration number
     const cleanRegNo = registrationNo.trim().toUpperCase();
 
-    try {
-      // Search by registration number (supports both EnrollNo and RollNo)
-      const { data: studentData, error: fetchError } = await supabase
-        .rpc('search_student_data', {
-          search_term: registrationNo
-        });
-      
-      if (fetchError) {
-        console.error('Database error:', fetchError);
-        return NextResponse.json(
-          { error: 'Database error occurred' },
-          { status: 500 }
-        );
-      }
-      
-      if (!studentData || studentData.length === 0) {
-        return NextResponse.json(
-          { 
-            error: 'Student not found',
-            message: 'No student found with this registration number or roll number',
-            searchedFor: registrationNo
-          },
-          { status: 404 }
-        );
-      }
-      
-      // Get the first (best) match
-      const student = studentData[0];
-      
-      // Return the student data
-      return NextResponse.json({
-        success: true,
-        data: {
-          registration_no: student.registration_no,
-          student_name: student.student_name,
-          admission_year: student.admission_year,
-          passing_year: student.passing_year,
-          parent_name: student.parent_name,
-          school: student.school,
-          course: student.course,
-          branch: student.branch,
-          country_code: student.country_code || '+91',
-          contact_no: student.contact_no,
-          personal_email: student.personal_email,
-          college_email: student.college_email,
-          alumni_profile_link: student.alumni_profile_link,
-          // Additional fields available
-          batch: student.batch,
-          semester: student.semester,
-          cgpa: student.cgpa,
-          date_of_birth: student.date_of_birth,
-          gender: student.gender,
-          // Source information
-          data_source: student.data_source,
-          matched_as: student.registration_no === registrationNo ? 'registration_no' : 'roll_number'
-        },
-        message: 'Student data found successfully'
+    // Search by registration number (supports both EnrollNo and RollNo)
+    const { data: studentData, error: fetchError } = await supabase
+      .rpc('search_student_data', {
+        search_term: cleanRegNo
       });
-      
-    } catch (error) {
-      console.error('API error:', error);
+
+    if (fetchError) {
+      console.error('Database error:', fetchError);
       return NextResponse.json(
-        { error: 'Internal server error' },
+        { error: 'Database error occurred' },
         { status: 500 }
       );
     }
-      pin_code: student.pin_code || '',
-      emergency_contact_name: student.emergency_contact_name || '',
-      emergency_contact_no: student.emergency_contact_no || ''
+
+    if (!studentData || studentData.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'Student not found',
+          message: 'No student found with this registration number or roll number',
+          searchedFor: cleanRegNo
+        },
+        { status: 404 }
+      );
+    }
+
+    // Get the first (best) match
+    const student = studentData[0];
+
+    // Return all fields for the form
+    const formData = {
+      registration_no: student.registration_no,
+      student_name: student.student_name,
+      admission_year: student.admission_year?.toString() || '',
+      passing_year: student.passing_year?.toString() || '',
+      parent_name: student.parent_name || '',
+      school: student.school_id || student.school || '', // Send ID if available for dropdowns
+      course: student.course_id || student.course || '', // Send ID if available for dropdowns
+      branch: student.branch_id || student.branch || '', // Send ID if available for dropdowns
+      country_code: student.country_code || '+91',
+      contact_no: student.contact_no || '',
+      personal_email: student.personal_email || '',
+      college_email: student.college_email || '',
+      alumni_profile_link: student.alumni_profile_link || '',
+      no_dues_status: student.no_dues_status || 'not_applied',
+      certificate_url: student.certificate_url || null
     };
 
     return NextResponse.json({
@@ -135,7 +111,7 @@ export async function POST(request) {
 
     if (!studentData || studentData.length === 0) {
       return NextResponse.json(
-        { 
+        {
           success: false,
           message: 'Student not found in database',
           registration_no: cleanRegNo
@@ -152,18 +128,23 @@ export async function POST(request) {
       admission_year: student.admission_year?.toString() || '',
       passing_year: student.passing_year?.toString() || '',
       parent_name: student.parent_name || '',
-      school: student.school || '',
-      course: student.course || '',
-      branch: student.branch || '',
+
+      // UUIDs used for dropdown synchronization
+      school: student.school_id || student.school || '',
+      course: student.course_id || student.course || '',
+      branch: student.branch_id || student.branch || '',
+
       country_code: student.country_code || '+91',
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
       college_email: student.college_email || '',
       alumni_profile_link: student.alumni_profile_link || '',
-      
-      // Additional fields that might be useful
-      email: student.email || '',
-      alumni_screenshot_url: student.alumni_screenshot_url || '',
+
+      // Master Sync Fields
+      no_dues_status: student.no_dues_status || 'not_applied',
+      certificate_url: student.certificate_url || null,
+
+      // Additional fields from master record
       batch: student.batch || '',
       section: student.section || '',
       semester: student.semester?.toString() || '',

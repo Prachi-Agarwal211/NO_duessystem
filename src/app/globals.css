@@ -192,8 +192,23 @@ body {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.1s !important;
     animation-iteration-count: 1 !important;
+    transition-duration: 0.1s !important;
+  }
+
+  /* Optimize scroll performance */
+  body {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Reduce motion for better performance */
+  .animate-fade-in,
+  .animate-shake,
+  .animate-aurora-flow,
+  .animate-blob-slow {
+    animation: none !important;
   }
 }
 
@@ -201,6 +216,18 @@ body {
 body {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: auto;
+  overflow-x: hidden !important;
+}
+
+/* Ensure smooth scrolling on all devices */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 /* Light Mode - Static gradient background */

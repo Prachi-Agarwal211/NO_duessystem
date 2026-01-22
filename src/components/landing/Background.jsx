@@ -7,12 +7,11 @@ export default function Background({ theme }) {
   const canvasRef = useRef(null);
   const [shouldRender, setShouldRender] = useState(false);
 
-  // ✅ PERFORMANCE FIX #4: Detect mobile and disable canvas completely
+  // ✅ PERFORMANCE FIX: Detect mobile and disable canvas completely
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) {
-      setShouldRender(true);
-    }
+    const isMobile = window.innerWidth < 768 || 'ontouchstart' in window ||
+      window.matchMedia('(pointer: coarse)').matches;
+    setShouldRender(!isMobile);
   }, []);
 
   useEffect(() => {
@@ -47,14 +46,14 @@ export default function Background({ theme }) {
     const mouse = { x: -1000, y: -1000 };
 
     const handleMouseMove = (e) => {
-      if (!isTouchDevice) {
+      if (!isTouchDevice && !isMobile) {
         mouse.x = e.clientX;
         mouse.y = e.clientY;
       }
     };
 
-    // Only track mouse on non-touch devices
-    if (!isTouchDevice) {
+    // Only track mouse on non-touch, non-mobile devices
+    if (!isTouchDevice && !isMobile) {
       window.addEventListener('mousemove', handleMouseMove);
     }
 
@@ -170,8 +169,8 @@ export default function Background({ theme }) {
     }
 
     // Initialize with optimized counts
-    const orbCount = isMobile ? 3 : 6; // Reduce orbs on mobile
-    const particleCount = calculateOptimalParticleCount(width, isMobile);
+    const orbCount = isMobile ? 0 : (isTouchDevice ? 2 : 4); // Reduce orbs on mobile/touch
+    const particleCount = isMobile ? 0 : calculateOptimalParticleCount(width, isMobile);
 
     const orbs = Array.from({ length: orbCount }, () => new AmbientOrb());
     const particles = Array.from({ length: particleCount }, () => new Particle());
@@ -224,22 +223,22 @@ export default function Background({ theme }) {
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
-      // ✅ Parallax Logic (Only on desktop)
-      if (typeof window === 'undefined' || isMobile) return;
+      // ✅ Parallax Logic (Only on desktop, non-mobile, non-touch)
+      if (typeof window === 'undefined' || isMobile || isTouchDevice) return;
 
       const handleParallax = (e) => {
         if (prefersReducedMotion()) return;
 
         requestAnimationFrame(() => {
-          const x = (e.clientX / window.innerWidth - 0.5) * 20; // 20px movement
-          const y = (e.clientY / window.innerHeight - 0.5) * 20;
+          const x = (e.clientX / window.innerWidth - 0.5) * 10; // Reduced to 10px movement
+          const y = (e.clientY / window.innerHeight - 0.5) * 10;
           setParallax({ x, y });
         });
       };
 
       window.addEventListener('mousemove', handleParallax);
       return () => window.removeEventListener('mousemove', handleParallax);
-    }, [isMobile]);
+    }, [isMobile, isTouchDevice]);
 
     animate();
 

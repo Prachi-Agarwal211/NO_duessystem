@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-dotenv.config({ path: './.env' });
+dotenv.config({ path: fs.existsSync('./.env.local') ? './.env.local' : './.env' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,25 +142,25 @@ function cleanValue(value) {
 
 async function importExcelToDatabase(excelFilePath) {
   console.log('📊 Starting Excel import...');
-  
+
   try {
     // Read Excel file
     console.log(`📖 Reading Excel file: ${excelFilePath}`);
     const workbook = XLSX.readFile(excelFilePath);
     const sheetName = workbook.SheetNames[0]; // Use first sheet
     const worksheet = workbook.Sheets[sheetName];
-    
+
     // Convert to JSON
     const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    
+
     if (data.length < 2) {
       throw new Error('Excel file is empty or has no data');
     }
-    
+
     // Get headers (first row)
     const headers = data[0];
     console.log(`📋 Found ${headers.length} columns:`, headers);
-    
+
     // Map headers to database fields
     const fieldMapping = {};
     headers.forEach((header, index) => {
@@ -168,23 +168,25 @@ async function importExcelToDatabase(excelFilePath) {
       fieldMapping[index] = fieldName;
       console.log(`  ${header} → ${fieldName}`);
     });
-    
-    // Process data rows
-    const rows = data.slice(1); // Skip header row
-    console.log(`📈 Processing ${rows.length} student records...`);
-    
+
+    // Process data rows in batches for high performance
+    const rows = data.slice(1);
+    const totalRows = rows.length;
+    const batchSize = 1000;
     let successCount = 0;
     let errorCount = 0;
-    const errors = [];
-    
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.every(cell => cell === null || cell === undefined || cell === '')) {
-        continue; // Skip empty rows
-      }
-      
-      try {
-        // Map row data to database fields
+
+    console.log(`📈 Processing ${totalRows} records in batches of ${batchSize}...`);
+
+    for (let i = 0; i < totalRows; i += batchSize) {
+      const batchRows = rows.slice(i, i + batchSize);
+      const batchData = [];
+
+      for (const row of batchRows) {
+        if (!row || row.every(cell => cell === null || cell === undefined || cell === '')) {
+          continue;
+        }
+
         const studentData = {};
         headers.forEach((header, colIndex) => {
           const fieldName = fieldMapping[colIndex];
@@ -192,103 +194,83 @@ async function importExcelToDatabase(excelFilePath) {
             studentData[fieldName] = cleanValue(row[colIndex]);
           }
         });
-        
-        // Validate required fields
-        if (!studentData.registration_no && !studentData.enrollno) {
-          // Use EnrollNo as registration_no if registration_no is missing
-          studentData.registration_no = studentData.enrollno;
-        }
-        
-        if (!studentData.registration_no || !studentData.student_name) {
-          throw new Error(`Missing required fields: registration_no or student_name`);
-        }
-        
-        // Use the database mapping function
-        const { data: result, error } = await supabaseAdmin
-          .rpc('map_excel_to_student_data', {
-            excel_registration_no: studentData.registration_no,
-            excel_student_name: studentData.student_name,
-            excel_admission_year: studentData.admission_year || null,
-            excel_passing_year: studentData.passing_year || studentData.graduation_year || null,
-            excel_parent_name: studentData.parent_name || studentData.father_name || studentData.mother_name || null,
-            excel_school: studentData.school || studentData.department || studentData.faculty || null,
-            excel_course: studentData.course || studentData.program || studentData.degree || null,
-            excel_branch: studentData.branch || studentData.specialization || studentData.major || null,
-            excel_country_code: studentData.country_code || '+91',
-            excel_contact_no: studentData.contact_no || studentData.phone || studentData.mobile || null,
-            excel_personal_email: studentData.personal_email || studentData.email || null,
-            excel_college_email: studentData.college_email || studentData.official_email || null,
-            excel_alumni_profile_link: studentData.alumni_profile_link || studentData.alumni_link || null,
-            excel_alumni_screenshot_url: studentData.alumni_screenshot_url || null,
-            excel_batch: studentData.batch || studentData.class || studentData.section || null,
-            excel_section: studentData.section || null,
-            excel_semester: studentData.semester || studentData.sem || studentData.term || null,
-            excel_cgpa: studentData.cgpa || studentData.gpa || studentData.grade || studentData.percentage || null,
-            excel_backlogs: studentData.backlogs || '0',
-            excel_roll_number: studentData.roll_number || null,
-            excel_enrollment_number: studentData.enrollment_number || null,
-            excel_date_of_birth: studentData.date_of_birth || studentData.dob || studentData.birth_date || null,
-            excel_gender: studentData.gender || studentData.sex || null,
-            excel_category: studentData.category || studentData.caste || studentData.community || null,
-            excel_blood_group: studentData.blood_group || studentData.blood_type || studentData.blood || null,
-            excel_address: studentData.address || studentData.residential_address || studentData.home_address || null,
-            excel_city: studentData.city || studentData.town || studentData.location || null,
-            excel_state: studentData.state || studentData.region || studentData.province || null,
-            excel_pin_code: studentData.pin_code || studentData.postal_code || studentData.zipcode || studentData.zip || null,
-            excel_emergency_contact_name: studentData.emergency_contact_name || studentData.emergency_contact || studentData.emergency_name || null,
-            excel_emergency_contact_no: studentData.emergency_contact_no || studentData.emergency_phone || studentData.emergency_mobile || null
+
+        // Handle field aliasing and requirements
+        if (!studentData.registration_no) studentData.registration_no = studentData.enrollno;
+        if (studentData.registration_no && studentData.student_name) {
+          // Flatten/normalize data for the RPC
+          batchData.push({
+            registration_no: (studentData.registration_no || '').toString(),
+            student_name: (studentData.student_name || '').toString(),
+            school: (studentData.school || studentData.department || studentData.faculty || '').toString(),
+            course: (studentData.course || studentData.program || studentData.degree || '').toString(),
+            branch: (studentData.branch || studentData.specialization || studentData.major || '').toString(),
+            admission_year: (studentData.admission_year || '').toString(),
+            passing_year: (studentData.passing_year || studentData.graduation_year || '').toString(),
+            parent_name: (studentData.parent_name || studentData.father_name || studentData.mother_name || '').toString(),
+            country_code: (studentData.country_code || '+91').toString(),
+            contact_no: (studentData.contact_no || studentData.phone || studentData.mobile || '').toString(),
+            personal_email: (studentData.personal_email || studentData.email || '').toString(),
+            college_email: (studentData.college_email || studentData.official_email || '').toString(),
+            alumni_profile_link: (studentData.alumni_profile_link || studentData.alumni_link || '').toString(),
+            alumni_screenshot_url: (studentData.alumni_screenshot_url || '').toString(),
+            batch: (studentData.batch || studentData.class || studentData.section || '').toString(),
+            section: (studentData.section || '').toString(),
+            semester: (studentData.semester || studentData.sem || studentData.term || '').toString(),
+            cgpa: (studentData.cgpa || studentData.gpa || '').toString(),
+            backlogs: (studentData.backlogs || '0').toString(),
+            roll_number: (studentData.roll_number || '').toString(),
+            enrollment_number: (studentData.enrollment_number || '').toString(),
+            date_of_birth: (studentData.date_of_birth || studentData.dob || '').toString(),
+            gender: (studentData.gender || '').toString(),
+            category: (studentData.category || '').toString(),
+            blood_group: (studentData.blood_group || '').toString(),
+            address: (studentData.address || '').toString(),
+            city: (studentData.city || '').toString(),
+            state: (studentData.state || '').toString(),
+            pin_code: (studentData.pin_code || studentData.postal_code || studentData.zipcode || studentData.zip || '').toString(),
+            emergency_contact_name: (studentData.emergency_contact_name || '').toString(),
+            emergency_contact_no: (studentData.emergency_contact_no || '').toString()
           });
-        
-        if (error) {
-          throw new Error(`Database error: ${error.message}`);
         }
-        
-        successCount++;
-        
-        // Progress indicator
-        if ((i + 1) % 100 === 0 || i === rows.length - 1) {
-          console.log(`✅ Processed ${i + 1}/${rows.length} records (${successCount} successful, ${errorCount} errors)`);
-        }
-        
-      } catch (error) {
-        errorCount++;
-        errors.push({
-          row: i + 2, // +2 because Excel rows are 1-indexed and we skipped header
-          registration_no: studentData.registration_no || 'Unknown',
-          error: error.message
+      }
+
+      if (batchData.length > 0) {
+        process.stdout.write(`📤 Sending batch ${Math.floor(i / batchSize) + 1}... `);
+        const { data: result, error } = await supabaseAdmin.rpc('bulk_map_excel_to_student_data', {
+          student_records: batchData
         });
-        
-        // Log first 10 errors
-        if (errors.length <= 10) {
-          console.log(`❌ Row ${i + 2}: ${error.message}`);
+
+        if (error) {
+          console.error(`\n❌ Batch error: ${error.message}`);
+          errorCount += batchData.length;
+        } else {
+          // RPC returns table(success_count int, error_count int)
+          // Result is an array like [{success_count: 1000, error_count: 0}]
+          const res = result?.[0] || { success_count: 0, error_count: 0 };
+          successCount += res.success_count;
+          errorCount += res.error_count;
+          console.log(`✅ ${successCount}/${totalRows} records synced.`);
         }
       }
     }
-    
+
     console.log('\n📊 Import Summary:');
     console.log(`✅ Successfully imported: ${successCount} records`);
     console.log(`❌ Failed imports: ${errorCount} records`);
-    
-    if (errors.length > 0) {
-      console.log('\n📝 First 10 errors:');
-      errors.slice(0, 10).forEach(err => {
-        console.log(`  Row ${err.row} (${err.registration_no}): ${err.error}`);
-      });
-      
-      if (errors.length > 10) {
-        console.log(`  ... and ${errors.length - 10} more errors`);
-      }
-    }
-    
+
+
+    // Errors are already logged to console during processing
+
     // Verify import
     const { count } = await supabaseAdmin
       .from('student_data')
       .select('*', { count: 'exact', head: true });
-    
+
     console.log(`\n🎯 Total records in student_data table: ${count}`);
-    
+
     return { successCount, errorCount, totalRecords: count };
-    
+
   } catch (error) {
     console.error('💥 Import failed:', error.message);
     throw error;
@@ -299,23 +281,23 @@ async function importExcelToDatabase(excelFilePath) {
 // Run the import
 async function main() {
   const excelFilePath = path.join(__dirname, '..', 'data', 'Student data JU Jan2026.xlsx');
-  
+
   console.log('🚀 Starting automated Excel import...');
   console.log(`📁 Excel file: ${excelFilePath}`);
-  
+
   // Check if file exists
   if (!fs.existsSync(excelFilePath)) {
     console.error('❌ Excel file not found:', excelFilePath);
     console.error('Please make sure your Excel file is in the data folder.');
     process.exit(1);
   }
-  
+
   try {
     const result = await importExcelToDatabase(excelFilePath);
     console.log('\n🎉 Import completed successfully!');
     console.log(`📊 Results: ${result.successCount} imported, ${result.errorCount} failed`);
     console.log(`🎯 Total in database: ${result.totalRecords}`);
-    
+
   } catch (error) {
     console.error('\n💥 Import failed:', error.message);
     process.exit(1);

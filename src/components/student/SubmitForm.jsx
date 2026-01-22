@@ -213,7 +213,14 @@ export default function SubmitForm() {
       if (response.ok && result.success) {
         // Auto-fill form with student data
         const studentData = result.data;
-        
+
+        // Check if student already has a form or is completed
+        if (studentData.no_dues_status === 'pending') {
+          alert(`⚠️ Notice: You already have a pending application. You can view its status using the Check Status feature.`);
+        } else if (studentData.no_dues_status === 'completed') {
+          alert(`✅ Notice: Your No Dues process is already completed. You can download your certificate from the status page.`);
+        }
+
         setFormData(prev => ({
           ...prev,
           student_name: studentData.student_name || prev.student_name,
@@ -232,12 +239,13 @@ export default function SubmitForm() {
 
         setStudentDataFound(studentData);
         setError('');
-        
+
         // Load courses and branches if school/course data is available
+        // Note: studentData.school/course/branch might be UUIDs or names
         if (studentData.school) {
           const coursesForSchool = await fetchCoursesBySchool(studentData.school);
           setAvailableCourses(coursesForSchool);
-          
+
           if (studentData.course) {
             const branchesForCourse = await fetchBranchesByCourse(studentData.course);
             setAvailableBranches(branchesForCourse);
@@ -514,7 +522,7 @@ export default function SubmitForm() {
       className="space-y-8" // Increased spacing for comfort
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.2 }}
     >
       {error && (
         <motion.div
@@ -565,9 +573,9 @@ export default function SubmitForm() {
       {/* Registration Number with Check Button AND Fetch Details Button */}
       <motion.div
         className="space-y-2"
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 100 }}
+        transition={{ delay: 0.05, duration: 0.2, type: "spring", stiffness: 200 }}
       >
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
@@ -709,9 +717,9 @@ export default function SubmitForm() {
       )}
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6, type: "spring", stiffness: 100 }}
+        transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 200 }}
       >
         <div className="md:col-span-2">
           <FormInput
