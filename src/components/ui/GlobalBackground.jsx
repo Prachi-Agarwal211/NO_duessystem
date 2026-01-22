@@ -32,24 +32,20 @@ export default function GlobalBackground() {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-
-      // More accurate device detection
-      const connection = navigator.connection;
-      const memory = navigator.deviceMemory || 8;
-      const cores = navigator.hardwareConcurrency || 8;
-
-      const isLowEndDevice =
-        (memory < 4) ||
-        (connection && (connection.saveData || connection.effectiveType?.includes('slow'))) ||
-        (cores < 4) ||
-        mobile;
-
-      const veryLowEnd = (memory < 2) || (cores < 2) || (connection && connection.saveData);
-
+      
+      // PERFORMANCE: Progressive device detection for tiered optimization
+      // Very low-end: < 2GB RAM or slow connection
+      const veryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
+                         (navigator.connection && navigator.connection.saveData) ||
+                         (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
+      
+      // Low-end: < 4GB RAM or mobile
+      const lowEnd = mobile || (navigator.deviceMemory && navigator.deviceMemory < 4) || veryLowEnd;
+      
       setIsVeryLowEnd(veryLowEnd);
-      setIsLowEnd(isLowEndDevice);
+      setIsLowEnd(lowEnd);
     };
-
+    
     checkDevice();
     window.addEventListener('resize', checkDevice);
 

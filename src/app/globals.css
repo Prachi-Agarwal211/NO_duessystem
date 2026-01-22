@@ -1,3 +1,5 @@
+/* JECRC NO DUES SYSTEM - OPTIMIZED STYLES */
+/* Modernized & Performance Optimized: 2025-12-15 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,98 +8,516 @@
 @import '../styles/unified-design-system.css';
 @import '../styles/fonts.css';
 
-/* ========================================
-   BASE STYLES
-   ======================================== */
-
-:root {
-  /* JECRC Brand Colors (Primary) */
-  --jecrc-primary: #C41E3A;
-  --jecrc-primary-light: #E02849;
-  --jecrc-primary-dark: #8B0000;
-  --jecrc-primary-bright: #FF3366;
-  
-  /* Semantic Colors */
-  --color-primary: var(--jecrc-primary);
-  --color-primary-light: var(--jecrc-primary-light);
-  --color-primary-dark: var(--jecrc-primary-dark);
-  --color-secondary: #6366f1;
-  --color-accent: #8b5cf6;
-  --color-success: #10B981;
-  --color-success-light: #34D399;
-  --color-success-dark: #047857;
-  --color-warning: #F59E0B;
-  --color-warning-light: #FCD34D;
-  --color-warning-dark: #D97706;
-  --color-error: #EF4444;
-  --color-error-light: #F87171;
-  --color-error-dark: #DC2626;
-  --color-danger: #DC2626;
-  
-  /* Background Colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-dark: #1e293b;
-  --bg-darker: #0f172a;
-  
-  /* Text Colors */
-  --text-primary: #111827;
-  --text-secondary: #4B5563;
-  --text-tertiary: #6B7280;
-  --text-light: #9CA3AF;
-  --text-white: #ffffff;
-  
-  /* Border Colors */
-  --border-primary: #E5E7EB;
-  --border-secondary: #D1D5DB;
-  --border-tertiary: #9CA3AF;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  
-  /* Border Radius */
-  --radius-sm: 0.25rem;
-  --radius: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  
-  /* Transitions */
-  --transition-fast: 150ms ease-in-out;
-  --transition-base: 250ms ease-in-out;
-  --transition-slow: 350ms ease-in-out;
+/* Lightweight CSS Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
 }
 
-/* Dark theme variables */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #60a5fa;
-    --color-primary-dark: #3b82f6;
-    --color-secondary: #818cf8;
-    --color-accent: #a78bfa;
-    
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: #334155;
-    --bg-dark: #1e293b;
-    --bg-darker: #0f172a;
-    
-    --text-primary: #f8fafc;
-    --text-secondary: #e2e8f0;
-    --text-tertiary: #cbd5e1;
-    --text-light: #94a3b8;
-    --text-white: #ffffff;
-    
-    --border-primary: #334155;
-    --border-secondary: #475569;
-    --border-tertiary: #64748b;
+/* Better scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(196, 30, 58, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 30, 58, 0.5);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(196, 30, 58, 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 30, 58, 0.6);
+}
+
+/* Shake animation for form validation errors */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+:root {
+  /* ========================================
+     JECRC CORE BRAND COLORS (Black/Red/White)
+     ======================================== */
+  --jecrc-red: #C41E3A;
+  --jecrc-red-dark: #8B0000;
+  --jecrc-red-light: #E02849;
+  --jecrc-red-bright: #FF3366;
+  --jecrc-pink: #FFE5E9;
+  --jecrc-rose: #FFD1D9;
+  
+  --pure-black: #000000;
+  --deep-black: #050505;
+  --ink-black: #0A0A0A;
+  
+  --pure-white: #FFFFFF;
+  --off-white: #F8F8F8;
+  --soft-white: #F0F0F0;
+  --cream: #FFF8F8;
+  
+  /* ========================================
+     LIGHT MODE - "Classic Elegance"
+     ======================================== */
+  --light-bg-primary: #FFFFFF;
+  --light-bg-secondary: #F8F8F8;
+  --light-bg-tertiary: #F0F0F0;
+  
+  --light-text-primary: #000000;
+  --light-text-secondary: #333333;
+  --light-text-muted: #666666;
+  
+  --light-border: rgba(0, 0, 0, 0.1);
+  --light-border-strong: rgba(0, 0, 0, 0.2);
+  
+  /* Light Mode Shadows (Black-based, CONTROLLED) */
+  --light-shadow-soft: 0 1px 6px rgba(0, 0, 0, 0.08);
+  --light-shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --light-shadow-dramatic: 0 8px 24px rgba(0, 0, 0, 0.15);
+  
+  /* ========================================
+     DARK MODE - "Refined Darkness"
+     ======================================== */
+  --dark-bg-primary: #050505;
+  --dark-bg-secondary: #0A0A0A;
+  --dark-bg-tertiary: #141414;
+  
+  --dark-text-primary: #FFFFFF;
+  --dark-text-secondary: #CCCCCC;
+  --dark-text-muted: #888888;
+  
+  --dark-border: rgba(255, 255, 255, 0.1);
+  --dark-border-strong: rgba(255, 255, 255, 0.2);
+  
+  /* Dark Mode Shadows & Glows (Red-based, CONTROLLED) */
+  --dark-shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.6);
+  --dark-shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.8);
+  --dark-glow-red-soft: 0 0 12px rgba(196, 30, 58, 0.3);
+  --dark-glow-red-strong: 0 0 20px rgba(255, 51, 102, 0.4);
+  --dark-glow-white: 0 0 8px rgba(255, 255, 255, 0.15);
+  
+  /* ========================================
+     COMPLEMENTARY COLORS (Functional Only)
+     ======================================== */
+  --success-light: #2D7A45;
+  --success-dark: #00FF88;
+  
+  --warning-light: #D97706;
+  --warning-dark: #FFB020;
+  
+  --error-light: #C41E3A;
+  --error-dark: #FF3366;
+  
+  --info-light: #1E40C4;
+  --info-dark: #4D9FFF;
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATION FOR MOBILE
+   ======================================== */
+
+/* Reduce motion for accessibility & performance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .glass,
+  .glass-card {
+    backdrop-filter: blur(8px) !important;
+  }
+}
+
+/* ========================================
+   THEME APPLICATION
+   ======================================== */
+
+/* Light Mode - Elegant simple gradient */
+body:not(.dark) {
+  background: linear-gradient(145deg, 
+    #FFFFFF 0%, 
+    #FAFAFA 25%, 
+    #F8F9FA 50%, 
+    #FAFAFA 75%, 
+    #FFFFFF 100%);
+  color: var(--light-text-primary);
+}
+
+/* Dark Mode - Professional dark gradient */
+body.dark {
+  background: linear-gradient(145deg,
+    #0A0A0A 0%,
+    #0F0F0F 25%,
+    #050505 50%,
+    #0A0A0A 75%,
+    #0F0F0F 100%);
+  color: var(--dark-text-primary);
+}
+
+/* Theme-aware component styles */
+body:not(.dark) {
+  --bg-primary: var(--light-bg-primary);
+  --bg-secondary: var(--light-bg-secondary);
+  --bg-tertiary: var(--light-bg-tertiary);
+  --text-primary: var(--light-text-primary);
+  --text-secondary: var(--light-text-secondary);
+  --text-muted: var(--light-text-muted);
+  --border: var(--light-border);
+  --border-strong: var(--light-border-strong);
+  --shadow-soft: var(--light-shadow-soft);
+  --shadow-elevated: var(--light-shadow-elevated);
+  --shadow-dramatic: var(--light-shadow-dramatic);
+}
+
+body.dark {
+  --bg-primary: var(--dark-bg-primary);
+  --bg-secondary: var(--dark-bg-secondary);
+  --bg-tertiary: var(--dark-bg-tertiary);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --text-muted: var(--dark-text-muted);
+  --border: var(--dark-border);
+  --border-strong: var(--dark-border-strong);
+  --shadow-soft: var(--dark-shadow-soft);
+  --shadow-elevated: var(--dark-shadow-elevated);
+  --shadow-dramatic: var(--dark-shadow-elevated);
+}
+
+/* Dark mode - Logo blend mode */
+.logo-dark-mode {
+  mix-blend-mode: screen;
+  filter: brightness(0.9) contrast(1.4) saturate(1.1); 
+  transition: all 300ms ease;
+}
+
+/* Light mode - Logo blend mode */
+.logo-light-mode {
+  mix-blend-mode: multiply;
+  filter: brightness(1.05) contrast(1.05) saturate(1.05);
+  transition: all 300ms ease;
+}
+
+/* ========================================
+   AUTOFILL OVERRIDES FOR DARK MODE
+   ======================================== */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus, 
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
+  -webkit-text-fill-color: white !important;
+}
+
+/***** Glass Morphism with Glow *****/
+.glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.dark .glass {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form Input with Glow Effects */
+.input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 0.75rem;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+.dark .input {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+.dark .input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.input:not(.dark) {
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+  border-color: rgba(196, 30, 58, 0.2);
+}
+
+.input:not(.dark)::placeholder {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.input:focus {
+  border-color: var(--jecrc-red);
+  box-shadow: 0 0 0 2px rgba(196, 30, 58, 0.4);
+}
+
+.input:not(.dark):focus {
+  background: white;
+}
+
+.dark .input:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Professional Button System */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--jecrc-red) 0%, var(--jecrc-red-dark) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(196, 30, 58, 0.35);
+  background: linear-gradient(135deg, var(--jecrc-red-light) 0%, var(--jecrc-red) 100%);
+}
+
+.btn-secondary {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-1px);
+  border-color: var(--jecrc-red);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-secondary);
+  border-color: var(--jecrc-red);
+  transform: translateY(-1px);
+}
+
+/* Professional Card System */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  border-color: var(--border-strong);
+}
+
+.card-elevated {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.card-elevated:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* Professional Input System */
+.input-field {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--jecrc-red);
+  box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.1);
+  transform: translateY(-1px);
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ========================================
+   TEXT GLOW & HEADING STYLES (CONTROLLED)
+   ======================================== */
+
+/* Dark mode text glow - SELECTIVE ONLY for hero sections */
+.dark .hero-text,
+.dark .text-glow {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+/* Enhanced headings with animations - NO GLOBAL SHADOWS */
+h1, h2, h3 {
+  transition: text-shadow 300ms ease;
+}
+
+/* Hero text hover effects only */
+.dark .hero-text:hover {
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+/* JECRC Red accent text with glow */
+.text-accent {
+  color: var(--jecrc-red);
+}
+
+.dark .text-accent {
+  color: var(--jecrc-red-bright);
+  text-shadow: 0 0 8px rgba(255, 51, 102, 0.4);
+}
+
+/* ========================================
+   PROFESSIONAL TYPOGRAPHY SYSTEM
+   ======================================== */
+
+/* Import professional fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Professional heading hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+}
+
+h1 { 
+  font-size: 2.5rem; 
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+h2 { 
+  font-size: 2rem; 
+  font-weight: 600;
+}
+
+h3 { 
+  font-size: 1.5rem; 
+  font-weight: 600;
+}
+
+h4 { 
+  font-size: 1.25rem; 
+  font-weight: 500;
+}
+
+h5 { 
+  font-size: 1.125rem; 
+  font-weight: 500;
+}
+
+h6 { 
+  font-size: 1rem; 
+  font-weight: 500;
+}
+
+/* Professional text gradients */
+.text-gradient-primary {
+  background: linear-gradient(135deg, var(--jecrc-red) 0%, var(--jecrc-red-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-subtle {
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Enhanced body styles */
+body {
+  margin: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 /* ========================================
