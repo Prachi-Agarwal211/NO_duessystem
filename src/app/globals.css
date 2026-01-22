@@ -1,4 +1,4 @@
-/* JECRC NO DUES SYSTEM - OPTIMIZED STYLES */
+/* JECRC NO DUES SYSTEM - PREMIUM OPTIMIZED STYLES */
 /* Modernized & Performance Optimized: 2025-12-15 */
 @tailwind base;
 @tailwind components;
@@ -11,24 +11,13 @@ html {
 
 /* Shake animation for form validation errors */
 @keyframes shake {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translateX(0);
   }
-
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
+  10%, 30%, 50%, 70%, 90% {
     transform: translateX(-4px);
   }
-
-  20%,
-  40%,
-  60%,
-  80% {
+  20%, 40%, 60%, 80% {
     transform: translateX(4px);
   }
 }
@@ -47,7 +36,6 @@ html {
   body {
     height: 100%;
     overflow-x: hidden;
-    /* Prevent horizontal scroll globally */
   }
 
   /* Modern mobile viewport fix */
@@ -76,61 +64,6 @@ html {
   --off-white: #F8F8F8;
   --soft-white: #F0F0F0;
   --cream: #FFF8F8;
-
-  /* ========================================
-     LIGHT MODE - "Classic Elegance"
-     ======================================== */
-  --light-bg-primary: #FFFFFF;
-  --light-bg-secondary: #F8F8F8;
-  --light-bg-tertiary: #F0F0F0;
-
-  --light-text-primary: #000000;
-  --light-text-secondary: #333333;
-  --light-text-muted: #666666;
-
-  --light-border: rgba(0, 0, 0, 0.1);
-  --light-border-strong: rgba(0, 0, 0, 0.2);
-
-  /* Light Mode Shadows (Black-based, CONTROLLED) */
-  --light-shadow-soft: 0 1px 6px rgba(0, 0, 0, 0.08);
-  --light-shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --light-shadow-dramatic: 0 8px 24px rgba(0, 0, 0, 0.15);
-
-  /* ========================================
-     DARK MODE - "Refined Darkness"
-     ======================================== */
-  --dark-bg-primary: #050505;
-  --dark-bg-secondary: #0A0A0A;
-  --dark-bg-tertiary: #141414;
-
-  --dark-text-primary: #FFFFFF;
-  --dark-text-secondary: #CCCCCC;
-  --dark-text-muted: #888888;
-
-  --dark-border: rgba(255, 255, 255, 0.1);
-  --dark-border-strong: rgba(255, 255, 255, 0.2);
-
-  /* Dark Mode Shadows & Glows (Red-based, CONTROLLED) */
-  --dark-shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.6);
-  --dark-shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.8);
-  --dark-glow-red-soft: 0 0 12px rgba(196, 30, 58, 0.3);
-  --dark-glow-red-strong: 0 0 20px rgba(255, 51, 102, 0.4);
-  --dark-glow-white: 0 0 8px rgba(255, 255, 255, 0.15);
-
-  /* ========================================
-     COMPLEMENTARY COLORS (Functional Only)
-     ======================================== */
-  --success-light: #2D7A45;
-  --success-dark: #00FF88;
-
-  --warning-light: #D97706;
-  --warning-dark: #FFB020;
-
-  --error-light: #C41E3A;
-  --error-dark: #FF3366;
-
-  --info-light: #1E40C4;
-  --info-dark: #4D9FFF;
 }
 
 html {
@@ -138,8 +71,7 @@ html {
 }
 
 html,
-body,
-#__next {
+body {
   height: 100%;
 }
 
@@ -147,10 +79,9 @@ body {
   margin: 0;
   overflow-x: hidden;
   background: transparent;
-  /* GlobalBackground handles this */
   color: var(--pure-white);
   min-height: 100vh;
-  transition: background-color 700ms cubic-bezier(0.4, 0, 0.2, 1), color 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 300ms ease, color 300ms ease;
   position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -162,7 +93,6 @@ body {
 
 /* Reduce motion for accessibility & performance */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -174,20 +104,7 @@ body {
 }
 
 /* Mobile-specific optimizations */
-/* Mobile-specific optimizations */
 @media (max-width: 768px) {
-  .gpu-accelerated {
-    transform: none;
-    will-change: auto;
-  }
-
-  .glass,
-  .glass-card {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: rgba(255, 255, 255, 0.9) !important;
-  }
-
   /* Disable complex animations on mobile */
   *,
   *::before,
@@ -205,9 +122,7 @@ body {
 
   /* Reduce motion for better performance */
   .animate-fade-in,
-  .animate-shake,
-  .animate-aurora-flow,
-  .animate-blob-slow {
+  .animate-shake {
     animation: none !important;
   }
 }
@@ -230,26 +145,24 @@ html {
   }
 }
 
-/* Light Mode - Static gradient background */
+/* Light Mode - Premium gradient background */
 body:not(.dark) {
   background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(255, 248, 248, 0.92) 25%,
-      rgba(255, 229, 233, 0.90) 50%,
-      rgba(255, 248, 248, 0.92) 75%,
-      rgba(255, 255, 255, 0.95) 100%);
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 250, 250, 0.98) 50%,
+      rgba(255, 245, 245, 1) 100%);
   color: var(--pure-black);
 }
 
-/* Dark Mode - Deep Black (#050505) with Subtle Red Theme */
+/* Dark Mode - Deep Black (#050505) with Premium Red Theme */
 body.dark {
   background: radial-gradient(ellipse at top,
-      rgba(196, 30, 58, 0.15) 0%,
-      rgba(139, 0, 0, 0.08) 20%,
+      rgba(196, 30, 58, 0.12) 0%,
+      rgba(139, 0, 0, 0.06) 20%,
       rgba(5, 5, 5, 0.98) 40%,
       rgba(5, 5, 5, 1) 60%),
     radial-gradient(ellipse at bottom,
-      rgba(196, 30, 58, 0.12) 0%,
+      rgba(196, 30, 58, 0.1) 0%,
       rgba(5, 5, 5, 0.98) 30%,
       rgba(5, 5, 5, 1) 50%),
     linear-gradient(180deg,
@@ -257,21 +170,6 @@ body.dark {
       rgba(5, 5, 5, 1) 100%);
   color: var(--pure-white);
 }
-
-/* Dark mode - Logo blend mode */
-.logo-dark-mode {
-  mix-blend-mode: screen;
-  filter: brightness(0.9) contrast(1.4) saturate(1.1);
-  transition: all 300ms ease;
-}
-
-/* Light mode - Logo blend mode */
-.logo-light-mode {
-  mix-blend-mode: multiply;
-  filter: brightness(1.05) contrast(1.05) saturate(1.05);
-  transition: all 300ms ease;
-}
-
 
 /* ========================================
    AUTOFILL OVERRIDES FOR DARK MODE
@@ -293,449 +191,6 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: white !important;
 }
 
-/***** Glass Morphism with Glow *****/
-.glass {
-  @apply backdrop-blur-xl border;
-  @apply dark:bg-white/5 dark:border-white/10;
-  @apply bg-white/60 border-jecrc-red/10 shadow-lg;
-  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
-}
-
-/* Form Input with Glow Effects */
-.input {
-  @apply w-full rounded-lg border px-3 py-2 outline-none;
-  @apply dark:border-white/20 dark:bg-black/80 dark:text-white dark:placeholder-white/40;
-  @apply dark:focus:border-white/40;
-  @apply bg-white/90 text-black placeholder-black/50 border-jecrc-red/20;
-  @apply focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/40 focus:bg-white;
-  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
-}
-
-@layer utilities {
-  .text-shadow-black-sm {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
-
-  .text-jecrc-red-bright {
-    color: #ff3366;
-    /* Brighter red for dark mode contrast */
-  }
-
-  .text-hero-light {
-    @apply font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 drop-shadow-sm;
-  }
-}
-
-/* Primary Button with Glow & Animation */
-.btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white;
-  @apply bg-gradient-to-r from-jecrc-red to-jecrc-red-dark;
-  @apply hover:from-jecrc-red-light hover:to-jecrc-red;
-  position: relative;
-  overflow: hidden;
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-
-.btn-primary:hover {
-  transform: scale(1.05);
-}
-
-.btn-primary:active {
-  transform: scale(0.95);
-}
-
-.btn-primary::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease;
-}
-
-.btn-primary:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
-/* Ghost Button - Minimal Outline */
-.btn-ghost {
-  @apply inline-flex items-center justify-center rounded-lg border px-4 py-2 font-semibold;
-  @apply dark:border-white/20 dark:text-white dark:hover:bg-white/10 dark:hover:border-jecrc-red-bright;
-  @apply border-black/20 text-black hover:bg-black/5 hover:border-jecrc-red;
-  transition: background-color 200ms ease, border-color 200ms ease;
-}
-
-/* ========================================
-   TEXT GLOW & HEADING STYLES (CONTROLLED)
-   ======================================== */
-
-/* Dark mode text glow - SELECTIVE ONLY for hero sections */
-.dark .hero-text,
-.dark .text-glow {
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
-}
-
-/* Enhanced headings with animations - NO GLOBAL SHADOWS */
-h1,
-h2,
-h3 {
-  transition: text-shadow 300ms ease;
-}
-
-/* Hero text hover effects only */
-.dark .hero-text:hover {
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
-}
-
-/* JECRC Red accent text with glow */
-.text-accent {
-  @apply text-jecrc-red;
-}
-
-.dark .text-accent {
-  @apply text-jecrc-red-bright;
-  text-shadow: 0 0 8px rgba(255, 51, 102, 0.4);
-}
-
-/* Card hover lift effect */
-.hover-lift {
-  transition: transform 200ms ease, filter 200ms ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-0.25rem);
-}
-
-.dark .hover-lift:hover {
-  filter: drop-shadow(0 8px 16px rgba(255, 255, 255, 0.1));
-}
-
-/* Shimmer effect for loading states */
-.shimmer {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2s linear infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* ========================================
-   ESSENTIAL ANIMATIONS ONLY
-   ======================================== */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-/* Removed unused animations: float, spin, pulse */
-/* These are defined in Tailwind config if needed */
-
-/* ========================================
-   SCROLLBAR STYLING
-   ======================================== */
-
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* ========================================
-   TEXT SHADOW UTILITIES (CONTROLLED & MINIMAL)
-   ======================================== */
-
-/* Dark text shadows - MINIMAL spread for performance */
-.text-shadow-black-sm {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.text-shadow-black {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.text-shadow-black-lg {
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
-/* Light text shadows - MINIMAL spread for performance */
-.text-shadow-white-sm {
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.text-shadow-white {
-  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.9);
-}
-
-.text-shadow-white-lg {
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 1);
-}
-
-/* Adaptive text shadows - MINIMAL */
-.text-shadow-adaptive {
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.dark .text-shadow-adaptive {
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6);
-}
-
-/* ========================================
-   PREMIUM 3D TEXT EFFECTS (LUXURY UI)
-   ======================================== */
-
-/* 1. Polished Metal / Chrome (Hero Title) */
-.text-chrome-emboss {
-  background: linear-gradient(120deg,
-      #ffffff 0%,
-      #ffd1d1 25%,
-      #c41e3a 50%,
-      #7a0f1f 75%,
-      #ffffff 100%);
-  background-size: 300% 300%;
-  animation: chromeShift 6s ease infinite;
-
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  /* Fallback */
-
-  text-shadow:
-    0 1px 1px rgba(255, 255, 255, 0.35),
-    0 -1px 1px rgba(0, 0, 0, 0.35),
-    0 10px 25px rgba(0, 0, 0, 0.45);
-}
-
-@keyframes chromeShift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* 2. Soft Raised Emboss (Card Headings) */
-.text-soft-emboss {
-  background: linear-gradient(135deg,
-      #ffffff 0%,
-      #ff5a5a 40%,
-      #8b0000 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-
-  /* 3D Elevation */
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35),
-    /* top highlight */
-    0 -1px 0 rgba(0, 0, 0, 0.25),
-    /* inner depth */
-    0 6px 14px rgba(0, 0, 0, 0.35);
-  /* outer lift */
-  letter-spacing: 0.08em;
-}
-
-/* Light Mode Variant for Soft Emboss (Cards) */
-.text-soft-emboss-light {
-  background: linear-gradient(135deg, #000000 40%, #C41E3A 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: #000000;
-
-  /* Removed white shadow to prevent wash-out. Added subtle depth. */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-weight: 800;
-}
-
-/* Light Mode Variant for Hero Title (NO DUES) */
-.text-hero-light {
-  background: linear-gradient(120deg, #000000 0%, #1a1a1a 30%, #C41E3A 70%, #8B0000 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: #000000;
-
-  /* Crisp, dark shadow for separation */
-  text-shadow: 0 4px 12px rgba(196, 30, 58, 0.15);
-}
-
-/* 3. Micro-3D Depth (CTAs, Subtitles) */
-.text-depth {
-  transform: translateZ(0);
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.3),
-    0 2px 2px rgba(0, 0, 0, 0.2),
-    0 6px 12px rgba(0, 0, 0, 0.4);
-}
-
-/* Light Mode Variant for Depth */
-.text-depth-light {
-  text-shadow:
-    0 1px 0 rgba(255, 255, 255, 1),
-    0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* 4. Hover Elevation (Interactive) */
-.text-raise-hover {
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
-}
-
-.text-raise-hover:hover {
-  transform: translateY(-1px);
-  text-shadow:
-    0 2px 4px rgba(255, 255, 255, 0.3),
-    0 8px 20px rgba(0, 0, 0, 0.5);
-}
-
-/* ========================================
-   SELECT DROPDOWN STYLING
-   ======================================== */
-
-select {
-  max-height: 300px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--jecrc-red) transparent;
-}
-
-select::-webkit-scrollbar {
-  width: 8px;
-}
-
-select::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-select::-webkit-scrollbar-thumb {
-  background: var(--jecrc-red);
-  border-radius: 4px;
-}
-
-select::-webkit-scrollbar-thumb:hover {
-  background: var(--jecrc-red-dark);
-}
-
-.dark select::-webkit-scrollbar-thumb {
-  background: var(--jecrc-red-bright);
-}
-
-.dark select::-webkit-scrollbar-thumb:hover {
-  background: var(--jecrc-red-light);
-}
-
-/* Enhanced dropdown visibility in dark mode */
-.dark select option {
-  background-color: #0f0f0f !important;
-  color: #ffffff !important;
-  padding: 8px 12px;
-}
-
-.dark select option:hover,
-.dark select option:focus,
-.dark select option:checked {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
-}
-
-.dark select option:disabled {
-  background-color: #0a0a0a !important;
-  color: #666666 !important;
-  opacity: 0.5;
-}
-
-select option {
-  background-color: #ffffff;
-  color: #000000;
-  padding: 8px 12px;
-}
-
-select option:hover,
-select option:focus,
-select option:checked {
-  background-color: #f5f5f5;
-  color: #000000;
-}
-
-select option:disabled {
-  background-color: #f0f0f0;
-  color: #999999;
-  opacity: 0.6;
-}
-
-.dark select {
-  color-scheme: dark;
-}
-
-select {
-  color-scheme: light;
-}
-
-/* ========================================
-   PERFORMANCE HELPERS
-   ======================================== */
-
-.gpu-accelerated {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-}
-
-.smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.smooth-transform {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 /* ========================================
    UTILITY CLASSES
    ======================================== */
@@ -751,791 +206,6 @@ select {
 
 .overflow-hidden {
   overflow: hidden;
-}
-
-/* Mask Gradient Utility */
-.mask-gradient-x {
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-}
-
-.mobile-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-/* ========================================
-   GLASS MORPHISM
-   ======================================== */
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 16px;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.05),
-    0 8px 32px -4px rgba(0, 0, 0, 0.15),
-    0 24px 60px -8px rgba(0, 0, 0, 0.2);
-  transform: translateZ(0);
-  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-4px) translateZ(0);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.5),
-    0 12px 40px -4px rgba(0, 0, 0, 0.2),
-    0 30px 80px -8px rgba(0, 0, 0, 0.3);
-}
-
-/* =========================================
-   PROFESSIONAL LAYOUT & STRUCTURAL POLISH
-   ========================================= */
-
-/* =========================================
-   FINAL PROFESSIONAL SYSTEM (LOCKED)
-   ========================================= */
-
-/* 1. The Hero Grid - STRICT ALIGNMENT */
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 32px;
-  align-items: center;
-  /* Center Vertically */
-  width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .hero-grid {
-    grid-template-columns: 0.8fr 1.2fr;
-    gap: 64px;
-    align-items: center;
-  }
-}
-
-/* 2. Unified Surface System (Left Panel & Cards) */
-/* Rule: Same radius, same shadow family */
-
-.surface-light {
-  background: #ffffff;
-  /* Solid White - No Transparency */
-  border-radius: 28px;
-  padding: 32px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow:
-    0 4px 10px rgba(0, 0, 0, 0.08),
-    0 30px 80px rgba(0, 0, 0, 0.12);
-  /* Unified Elevation */
-  color: #1f2937;
-  /* slate-800 */
-}
-
-.surface-dark {
-  background: rgba(10, 10, 10, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 28px;
-  padding: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  /* Subtle border */
-  color: #e5e7eb;
-}
-
-/* Apply Surface System to Left Panel */
-.hero-info-panel-light {
-  @apply surface-light;
-  position: relative;
-  z-index: 10;
-  /* Reducing Dominance */
-  max-width: 100%;
-  width: 100%;
-}
-
-.hero-info-panel-dark {
-  @apply surface-dark;
-  max-width: 100%;
-  width: 100%;
-}
-
-/* Apply Surface System to Cards */
-.card-light-surface {
-  @apply surface-light;
-  padding: 32px;
-  /* Ensure consistent padding */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card-light-surface:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.08),
-    0 40px 100px rgba(0, 0, 0, 0.15);
-  /* Lift elevation */
-}
-
-/* 3. Title Wrap - LOCKED CENTER & OPTICAL CORRECTION */
-.title-wrap {
-  text-align: center;
-  max-width: 360px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translateY(-4px);
-  /* Optical Nudge */
-}
-
-.title-divider {
-  width: 48px;
-  height: 3px;
-  margin: 12px auto;
-  /* Tighter margin */
-  background: #c41e3a;
-  /* JECRC Red */
-  border-radius: 2px;
-  opacity: 0.9;
-}
-
-/* 4. Card Typography Hierarchy */
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.card-desc {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin-top: 8px;
-  color: #4b5563;
-  /* slate-600 */
-}
-
-.dark .card-desc {
-  color: rgba(255, 255, 255, 0.75);
-  /* Improved Contrast */
-}
-
-.card-cta {
-  margin-top: 18px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #c41e3a;
-  /* JECRC Red */
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-}
-
-.card-cta::after {
-  content: '';
-  width: 0;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.4;
-  transition: width 0.3s ease;
-}
-
-.card-light-surface:hover .card-cta::after,
-.glass-card-dark:hover .card-cta::after {
-  width: 24px;
-}
-
-.card-light-surface:hover .card-cta,
-.glass-card-dark:hover .card-cta {
-  text-decoration: none;
-}
-
-.dark .card-cta {
-  color: rgba(255, 255, 255, 0.9);
-  /* High contrast in dark mode */
-}
-
-
-/* Dark Mode Card - FIXED MISSING CLASS */
-.glass-card-dark {
-  @apply surface-dark;
-  padding: 32px;
-  /* Ensure consistent padding */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.glass-card-dark:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(196, 30, 58, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* 5. Process Pills (Premium Polish) */
-.step-pill {
-  @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all duration-300;
-}
-
-.step-pill-light {
-  background: #ffffff;
-  /* Clean White */
-  color: #111827;
-  /* Deep Gray Text */
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  /* Soft Lift */
-}
-
-.step-pill-dark {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e5e7eb;
-}
-
-/* 6. Card Group Grid */
-.card-group {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 24px;
-  width: 100%;
-}
-
-@media (min-width: 768px) {
-  .card-group {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 7. Card Stage (Right Zone Wrapper) */
-.card-stage {
-  padding: 24px;
-  border-radius: 32px;
-  background: rgba(0, 0, 0, 0.02);
-  /* Light Mode Anchor */
-  width: 100%;
-}
-
-.dark .card-stage {
-  background: rgba(255, 255, 255, 0.03);
-  /* Dark Mode Anchor */
-}
-
-/* Light Backdrop Overlay - Stronger Tone Control */
-.light-backdrop {
-  position: absolute;
-  inset: 0;
-  /* Symmetric gradient for balance - Mobile Optimized */
-  background: linear-gradient(to bottom,
-      rgba(255, 255, 255, 0.9) 0%,
-      rgba(255, 255, 255, 0.7) 50%,
-      rgba(255, 255, 255, 0.9) 100%);
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Mobile Lock */
-/* Mobile Lock - Enhanced */
-@media (max-width: 640px) {
-  .hero-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 24px !important;
-    width: 100% !important;
-    align-items: center !important;
-  }
-
-  .card-group {
-    grid-template-columns: 1fr !important;
-    width: 100% !important;
-    gap: 16px !important;
-  }
-
-  /* Reset Surface Padding for Mobile */
-  .surface-light,
-  .surface-dark,
-  .hero-info-panel-light,
-  .hero-info-panel-dark,
-  .card-light-surface,
-  .glass-card-dark {
-    padding: 20px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-  }
-
-  .title {
-    font-size: 2rem !important;
-  }
-
-  .card-stage {
-    padding: 8px !important;
-    /* Reduced from 24px */
-    margin: 0 !important;
-    width: 100% !important;
-    background: transparent !important;
-    /* Remove background on mobile to reduce boxiness */
-  }
-
-  /* Fix Title Optical Alignment */
-  .title-wrap {
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-bottom: 16px !important;
-  }
-
-  .title-divider {
-    margin: 8px auto !important;
-  }
-
-  /* Force container padding consistency */
-  .container,
-  main {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-}
-
-
-.hero-info-panel-dark {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(12px);
-  /* Consistency: Matching card blur */
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 28px;
-  padding: 32px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-/* ========================================
-   MOBILE OPTIMIZATIONS
-   ======================================== */
-
-@media (max-width: 640px) {
-  .glass-card {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  /* Mobile form optimizations */
-  .mobile-form-button {
-    width: 100%;
-    min-height: 48px;
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .mobile-form-stack {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  /* Prevent horizontal overflow */
-  .mobile-form-container {
-    overflow-x: hidden;
-    max-width: 100vw;
-  }
-
-  /* Better touch targets for mobile */
-  button,
-  a,
-  input,
-  select,
-  textarea {
-    min-height: 44px;
-  }
-
-  /* Improve tap targets spacing */
-  button+button {
-    margin-top: 0.5rem;
-  }
-}
-
-/* ========================================
-   AURORA & BLOB ANIMATIONS
-   ======================================== */
-
-/* Aurora flow animation */
-@keyframes aurora-flow {
-
-  0%,
-  100% {
-    transform: rotate(0deg) scale(1) translateZ(0);
-  }
-
-  25% {
-    transform: rotate(90deg) scale(1.1) translateZ(0);
-  }
-
-  50% {
-    transform: rotate(180deg) scale(0.95) translateZ(0);
-  }
-
-  75% {
-    transform: rotate(270deg) scale(1.05) translateZ(0);
-  }
-}
-
-.animate-aurora-flow {
-  animation: aurora-flow 20s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-/* Simplified aurora for low-end devices */
-@keyframes aurora-flow-simple {
-
-  0%,
-  100% {
-    transform: rotate(0deg) translateZ(0);
-  }
-
-  50% {
-    transform: rotate(180deg) translateZ(0);
-  }
-}
-
-.animate-aurora-flow-simple {
-  animation: aurora-flow-simple 30s linear infinite;
-}
-
-/* Blob slow animation */
-@keyframes blob-slow {
-
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1) translateZ(0);
-  }
-
-  25% {
-    transform: translate(25px, -25px) scale(1.08) translateZ(0);
-  }
-
-  50% {
-    transform: translate(-20px, 20px) scale(0.92) translateZ(0);
-  }
-
-  75% {
-    transform: translate(20px, 15px) scale(1.05) translateZ(0);
-  }
-}
-
-.animate-blob-slow {
-  animation: blob-slow 12s ease-in-out infinite;
-}
-
-/* Simplified blob for low-end devices */
-@keyframes blob-slow-simple {
-
-  0%,
-  100% {
-    transform: translate(0, 0) translateZ(0);
-  }
-
-  50% {
-    transform: translate(10px, -10px) translateZ(0);
-  }
-}
-
-.animate-blob-slow-simple {
-  animation: blob-slow-simple 20s ease-in-out infinite;
-}
-
-/* Animation delay utilities */
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-/* ========================================
-   PREMIUM AURORA WAVE ANIMATIONS
-   Smooth flowing ribbons effect
-   ======================================== */
-
-/* Wave 1 - Top flowing ribbon */
-@keyframes aurora-wave-1 {
-  0% {
-    transform: translateZ(0) translateX(-100%) translateY(-50%) rotate(-15deg) scaleY(0.5);
-  }
-
-  100% {
-    transform: translateZ(0) translateX(100%) translateY(-50%) rotate(-15deg) scaleY(0.5);
-  }
-}
-
-@keyframes aurora-wave-1-simple {
-  0% {
-    transform: translateZ(0) translateX(-50%) translateY(-50%) rotate(-15deg) scaleY(0.5);
-  }
-
-  100% {
-    transform: translateZ(0) translateX(50%) translateY(-50%) rotate(-15deg) scaleY(0.5);
-  }
-}
-
-/* Wave 2 - Middle flowing ribbon */
-@keyframes aurora-wave-2 {
-  0% {
-    transform: translateZ(0) translateX(100%) translateY(-50%) rotate(10deg) scaleY(0.6);
-  }
-
-  100% {
-    transform: translateZ(0) translateX(-100%) translateY(-50%) rotate(10deg) scaleY(0.6);
-  }
-}
-
-@keyframes aurora-wave-2-simple {
-  0% {
-    transform: translateZ(0) translateX(50%) translateY(-50%) rotate(10deg) scaleY(0.6);
-  }
-
-  100% {
-    transform: translateZ(0) translateX(-50%) translateY(-50%) rotate(10deg) scaleY(0.6);
-  }
-}
-
-/* Wave 3 - Bottom flowing ribbon */
-@keyframes aurora-wave-3 {
-  0% {
-    transform: translateZ(0) translateX(-80%) translateY(-50%) rotate(-8deg) scaleY(0.4);
-  }
-
-  100% {
-    transform: translateZ(0) translateX(80%) translateY(-50%) rotate(-8deg) scaleY(0.4);
-  }
-}
-
-/* Aurora Wave Animation Classes */
-.animate-aurora-wave-1 {
-  animation: aurora-wave-1 25s ease-in-out infinite;
-}
-
-.animate-aurora-wave-1-simple {
-  animation: aurora-wave-1-simple 35s ease-in-out infinite;
-}
-
-.animate-aurora-wave-2 {
-  animation: aurora-wave-2 30s ease-in-out infinite;
-  animation-delay: -5s;
-}
-
-.animate-aurora-wave-2-simple {
-  animation: aurora-wave-2-simple 40s ease-in-out infinite;
-  animation-delay: -5s;
-}
-
-.animate-aurora-wave-3 {
-  animation: aurora-wave-3 35s ease-in-out infinite;
-  animation-delay: -10s;
-}
-
-/* Pulse animation for radial glow */
-@keyframes pulse-slow {
-
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: translateZ(0) scale(1);
-  }
-
-  50% {
-    opacity: 0.6;
-    transform: translateZ(0) scale(1.05);
-  }
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 8s ease-in-out infinite;
-}
-
-/* Disable animations on very low-end devices */
-@media (prefers-reduced-motion: reduce) {
-
-  .animate-aurora-flow,
-  .animate-aurora-flow-simple,
-  .animate-blob-slow,
-  .animate-blob-slow-simple,
-  .animate-aurora-wave-1,
-  .animate-aurora-wave-1-simple,
-  .animate-aurora-wave-2,
-  .animate-aurora-wave-2-simple,
-  .animate-aurora-wave-3,
-  .animate-pulse-slow {
-    animation: none !important;
-  }
-}
-
-/* ========================================
-   MOBILE OPTIMIZATION UTILITIES
-   ======================================== */
-
-/* Hide scrollbar but keep functionality */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  /* IE and Edge */
-  scrollbar-width: none;
-  /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari and Opera */
-}
-
-/* Ensure touch targets are minimum 44px (Apple HIG) */
-.touch-target {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* ========================================
-   MOBILE TABLE OPTIMIZATIONS
-   ======================================== */
-
-/* Responsive table wrapper */
-.table-responsive {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(196, 30, 58, 0.3) transparent;
-}
-
-.table-responsive::-webkit-scrollbar {
-  height: 8px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-  background: rgba(196, 30, 58, 0.3);
-  border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb:hover {
-  background: rgba(196, 30, 58, 0.5);
-}
-
-.dark .table-responsive::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.dark .table-responsive::-webkit-scrollbar-thumb {
-  background: rgba(255, 51, 102, 0.3);
-}
-
-.dark .table-responsive::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 51, 102, 0.5);
-}
-
-/* Mobile table scroll hint */
-.mobile-scroll-hint {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .mobile-scroll-hint {
-    display: block;
-    padding: 0.5rem 1rem;
-    background: rgba(59, 130, 246, 0.1);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
-    text-align: center;
-    font-size: 0.75rem;
-    color: rgba(59, 130, 246, 0.8);
-    user-select: none;
-  }
-
-  .dark .mobile-scroll-hint {
-    background: rgba(59, 130, 246, 0.15);
-    border-bottom-color: rgba(59, 130, 246, 0.3);
-    color: rgba(96, 165, 250, 0.9);
-  }
-}
-
-/* Ensure tables maintain minimum width on mobile */
-@media (max-width: 768px) {
-  table {
-    min-width: 640px;
-  }
-
-  /* Reduce table padding on mobile */
-  table th,
-  table td {
-    padding: 0.75rem 0.75rem !important;
-    font-size: 0.875rem;
-  }
-
-  /* Make table text more readable on mobile */
-  table {
-    font-size: 0.875rem;
-  }
-}
-
-/* Sticky table headers */
-.table-sticky-header thead {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: inherit;
-}
-
-/* Better table cell spacing on mobile */
-@media (max-width: 640px) {
-
-  table th,
-  table td {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.8125rem;
-  }
-
-  table {
-    font-size: 0.8125rem;
-  }
-}
-
-/* ========================================
-   MOBILE FORM BUTTON OPTIMIZATIONS
-   ======================================== */
-
-@media (max-width: 640px) {
-
-  /* Full-width buttons on mobile */
-  .mobile-button-full {
-    width: 100%;
-  }
-
-  /* Button groups stack vertically on mobile */
-  .mobile-button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .mobile-button-group button,
-  .mobile-button-group a {
-    width: 100%;
-  }
 }
 
 /* ========================================
@@ -1560,8 +230,6 @@ input[type="button"] {
 
 /* Prevent text selection on buttons */
 button,
-.btn-primary,
-.btn-ghost,
 [role="button"] {
   user-select: none;
   -webkit-user-select: none;
@@ -1603,56 +271,28 @@ textarea:focus-visible,
   box-shadow: 0 0 0 4px rgba(255, 51, 102, 0.2);
 }
 
-/* Interactive card focus */
-.interactive:focus-visible {
-  outline: 3px solid var(--jecrc-red);
-  outline-offset: 4px;
-}
-
-.dark .interactive:focus-visible {
-  outline: 3px solid var(--jecrc-red-bright);
-  outline-offset: 4px;
-  box-shadow: 0 0 0 6px rgba(255, 51, 102, 0.15);
-}
-
 /* ========================================
-   MOBILE GRID OPTIMIZATIONS
+   MOBILE OPTIMIZATIONS
    ======================================== */
 
 @media (max-width: 640px) {
-
-  /* Force single column on mobile */
-  .mobile-grid-1 {
-    grid-template-columns: 1fr !important;
+  /* Better touch targets for mobile */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
   }
 
-  /* Reduce gaps on mobile */
-  .mobile-gap-reduced {
-    gap: 0.75rem !important;
-  }
-}
-
-/* ========================================
-   MOBILE SPACING UTILITIES
-   ======================================== */
-
-@media (max-width: 640px) {
-  .mobile-p-4 {
-    padding: 1rem !important;
+  /* Improve tap targets spacing */
+  button+button {
+    margin-top: 0.5rem;
   }
 
-  .mobile-px-4 {
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-  }
-
-  .mobile-py-3 {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
-  }
-
-  .mobile-mb-6 {
-    margin-bottom: 1.5rem !important;
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden !important;
   }
 }
 
@@ -1684,7 +324,6 @@ textarea:focus-visible,
 
 /* Ensure no horizontal scrolling on any page */
 @media (max-width: 768px) {
-
   .min-h-screen,
   .h-screen {
     width: 100vw !important;
