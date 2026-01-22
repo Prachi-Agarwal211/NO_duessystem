@@ -32,20 +32,20 @@ export default function GlobalBackground() {
     const checkDevice = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      
-      // PERFORMANCE: Progressive device detection for tiered optimization
+
+      // ✅ PERFORMANCE: Progressive device detection for tiered optimization
       // Very low-end: < 2GB RAM or slow connection
-      const veryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
-                         (navigator.connection && navigator.connection.saveData) ||
-                         (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
-      
+      const veryLowEnd = (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory < 2) ||
+        (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) ||
+        (typeof navigator !== 'undefined' && navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
+
       // Low-end: < 4GB RAM or mobile
-      const lowEnd = mobile || (navigator.deviceMemory && navigator.deviceMemory < 4) || veryLowEnd;
-      
+      const lowEnd = mobile || (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory < 4) || veryLowEnd;
+
       setIsVeryLowEnd(veryLowEnd);
       setIsLowEnd(lowEnd);
     };
-    
+
     checkDevice();
     window.addEventListener('resize', checkDevice);
 
@@ -78,7 +78,7 @@ export default function GlobalBackground() {
       />
 
       {/* 3. Enhanced Iridescent Gradient Mesh with Morphing - PROGRESSIVE OPTIMIZATION */}
-      {!isMobile && !isLowEnd && !isVeryLowEnd && (
+      {!isVeryLowEnd && (
         <div className={`absolute inset-0 transition-opacity duration-700 z-20 ${isDark ? 'opacity-70' : 'opacity-60'
           }`}>
           {/* Top Iridescent Blob with Morphing */}
@@ -133,7 +133,7 @@ export default function GlobalBackground() {
       )}
 
       {/* 4. Premium Aurora Wave Animation - Smooth flowing ribbons */}
-      {!isMobile && !isLowEnd && !isVeryLowEnd && (
+      {!isVeryLowEnd && (
         <div className="absolute inset-0 overflow-hidden z-30" style={{ opacity: isDark ? 0.5 : 0.35 }}>
           {/* Wave 1 - Top flowing ribbon */}
           <div

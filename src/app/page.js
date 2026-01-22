@@ -1,115 +1,102 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { FileCheck, Search } from 'lucide-react';
-import PageWrapper from '@/components/landing/PageWrapper';
-import HeroBackground from '@/components/landing/HeroBackground';
-import Logo from '@/components/ui/Logo';
-import LiquidTitle from '@/components/landing/LiquidTitle';
+// import PageWrapper from '@/components/landing/PageWrapper'; // Removed to reduce wrapper bloat
 import EnhancedActionCard from '@/components/landing/EnhancedActionCard';
-import ProcessPreview from '@/components/landing/ProcessPreview';
-import TrustSignals from '@/components/landing/TrustSignals';
+import LiquidTitle from '@/components/landing/LiquidTitle';
+import Logo from '@/components/ui/Logo';
+import ScrollReveal, { StaggerContainer, StaggerItem } from '@/components/ui/ScrollReveal';
 import { useTheme } from '@/contexts/ThemeContext';
+import GlobalBackground from '@/components/ui/GlobalBackground'; // Direct import
+import ThemeToggle from '@/components/landing/ThemeToggle';
+import EnhancedSupportButton from '@/components/landing/EnhancedSupportButton';
 
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { scrollYProgress } = useScroll();
+
+  // Provide default theme during SSR/initial render
+  const currentTheme = theme || 'dark';
+  const isDark = currentTheme === 'dark';
+
+  // Parallax effects
+  const yLogo = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
+  const opacityHeader = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   return (
-    <PageWrapper>
-      {/* Main Container - Premium Seamless Design */}
-      <div className="min-h-screen w-full flex flex-col relative overflow-hidden">
+    <>
+      <GlobalBackground />
+      <ThemeToggle />
+      <EnhancedSupportButton />
 
-        {/* Premium Background */}
-        <div className={`
-          fixed inset-0 -z-10 transition-colors duration-700
-          ${isDark
-            ? 'bg-[radial-gradient(ellipse_at_top,rgba(196,30,58,0.12)_0%,rgba(5,5,5,0.98)_40%,rgba(5,5,5,1)_60%)]'
-            : 'bg-gradient-to-b from-white via-gray-50/50 to-white'
-          }
-        `} />
+      <div className={`
+        min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden
+        ${isDark ? 'text-white' : 'text-ink-black'}
+      `}>
 
-        <HeroBackground />
+        {/* Centered Header / Branding with Parallax */}
+        <motion.header
+          style={{ y: yLogo, opacity: opacityHeader }}
+          className="flex flex-col items-center mb-4 sm:mb-8 text-center px-4 pt-12 sm:pt-0"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="mb-4 sm:mb-6"
+          >
+            <Logo size="medium" priority={true} />
+          </motion.div>
 
-        {/* Deep gradient layer for depth and royal feel */}
-        <div className="hero-gradient" aria-hidden="true" />
+          {/* Enhanced Liquid Title */}
+          <LiquidTitle />
+        </motion.header>
 
-        {/* Light Mode Premium Backdrop */}
-        {!isDark && (
-          <div className="fixed inset-0 -z-10 bg-gradient-to-b from-white/95 via-white/80 to-white/95" />
-        )}
-
-        {/* Main Content */}
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 flex items-center justify-center min-h-[85vh]">
-
-          {/* Centered Content Container */}
-          <div className="w-full max-w-3xl mx-auto flex flex-col items-center">
-
-            {/* Logo - Centered with Premium Spacing */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="flex justify-center mb-8 sm:mb-10"
-            >
-              <Logo size="large" priority={true} className="opacity-95 hover:opacity-100 transition-opacity duration-300" />
-            </motion.div>
-
-            {/* Title Section - Using Premium LiquidTitle */}
-            <div className="mb-10 sm:mb-12 w-full">
-              <LiquidTitle />
-            </div>
-
-            {/* Process Steps - Using Premium ProcessPreview */}
-            <div className="mb-10 w-full flex justify-center">
-              <ProcessPreview mode="horizontal" />
-            </div>
-
-            {/* Action Cards - Premium Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 w-full mt-4 sm:mt-6">
+        {/* Main Content Area with Stagger Animation */}
+        <main className="w-full max-w-7xl px-4 sm:px-6 md:px-12 pb-8 sm:pb-16 mt-4 sm:mt-0">
+          <StaggerContainer
+            staggerDelay={0.15}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8 md:gap-12 lg:gap-16 items-stretch max-w-4xl mx-auto"
+          >
+            <StaggerItem>
               <EnhancedActionCard
                 index={0}
-                title="Submit No Dues"
-                subtitle="Apply for semester-end or degree completion clearance."
+                title="Submit New Form"
+                subtitle="Submit a new no-dues application for semester end or degree completion."
                 icon={FileCheck}
                 onClick={() => router.push('/student/submit-form')}
               />
-
+            </StaggerItem>
+            <StaggerItem>
               <EnhancedActionCard
                 index={1}
                 title="Check Status"
-                subtitle="Track your application status via registration number."
+                subtitle="Track the status of your no dues application using your registration number."
                 icon={Search}
                 onClick={() => router.push('/student/check-status')}
               />
-            </div>
-
-            {/* Trust Signals */}
-            <div className="mt-10 sm:mt-12">
-              <TrustSignals />
-            </div>
-
-          </div>
+            </StaggerItem>
+          </StaggerContainer>
         </main>
 
-        {/* Footer - Premium */}
-        <footer className="w-full py-6 sm:py-8 text-center mt-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className={`
-              text-xs sm:text-sm uppercase tracking-[0.15em] font-medium transition-colors duration-500
-              ${isDark ? 'text-white/40 hover:text-white/60' : 'text-black/50 hover:text-black/70'}
-            `}
-          >
-            Jaipur Engineering College and Research Centre
-          </motion.div>
-        </footer>
-
+        {/* Minimal Footer with Fade-in Animation */}
+        <ScrollReveal animation="fade" delay={0.3}>
+          <footer className="mt-auto mb-4 sm:mb-8 flex flex-col items-center gap-5 opacity-80 hover:opacity-100 transition-opacity duration-500">
+            <div
+              className={`font-sans text-[9px] tracking-[0.3em] uppercase transition-colors duration-700 ease-smooth ${isDark ? 'text-gray-300' : 'text-gray-900'}`}
+              style={isDark ? {
+                textShadow: '0 0 20px rgba(255, 255, 255, 0.3), 0 2px 10px rgba(0, 0, 0, 0.8)'
+              } : {
+                textShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
+              }}>
+              Jaipur Engineering College and Research Centre
+            </div>
+          </footer>
+        </ScrollReveal>
       </div>
-    </PageWrapper>
+    </>
   );
 }

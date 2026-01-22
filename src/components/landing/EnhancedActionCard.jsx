@@ -165,12 +165,12 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       }}
       className={`
         interactive group relative
-        w-full min-h-[260px] sm:min-h-[280px] md:min-h-[320px]
+        w-full min-h-[320px]
         overflow-hidden text-left
-        p-6 sm:p-8 md:p-9
+        p-7 sm:p-8 md:p-9
         flex flex-col justify-between
         transition-all duration-300 ease-out
-        border backdrop-blur-md rounded-xl sm:rounded-2xl
+        border backdrop-blur-md rounded-xl
         touch-manipulation
         ${isDark
           ? 'bg-gradient-to-br from-white/[0.02] via-white/[0.08] to-white/[0.02] hover:from-white/[0.08] hover:via-white/[0.15] hover:to-white/[0.08] border-white/20 hover:border-white/40'
