@@ -1,5 +1,4 @@
 {
-  "$schema": "https://vercel.com/schemas/2025-05-01",
   "name": "jecrc-no-dues",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
@@ -13,9 +12,6 @@
     "NODE_ENV": "production"
   },
   "regions": ["iad1"],
-  "analytics": {
-    "enabled": true
-  },
   "headers": [
     {
       "source": "/api/(.*)",
