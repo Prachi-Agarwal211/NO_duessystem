@@ -4,7 +4,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { finalizeCertificate } from './certificateService';
 import { sendCertificateReadyNotification } from './emailService';
-import { SmsService } from './smsService';
 import { APP_URLS, EMAIL_URLS } from './urlHelper';
 
 const supabaseAdmin = createClient(

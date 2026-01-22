@@ -9,7 +9,6 @@ import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
 import { ApiResponse } from '@/lib/apiResponse';
 import { AuditLogger } from '@/lib/auditLogger';
-import { SmsService } from '@/lib/smsService';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
