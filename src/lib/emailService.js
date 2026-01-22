@@ -14,7 +14,14 @@
  * 1. One combined email to ALL departments (not individual)
  * 2. One email to student on rejection
  * 3. One email to student when fully approved
+ * 
+ * SERVER-SIDE ONLY: This service can only be used on the server
  */
+
+// Prevent client-side imports
+if (typeof window !== 'undefined') {
+  throw new Error('Email service can only be used on the server side');
+}
 
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';

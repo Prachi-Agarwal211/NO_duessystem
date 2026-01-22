@@ -7,6 +7,51 @@ const nextConfig = {
 
   // Simplified webpack configuration
   webpack: (config, { isServer }) => {
+    // Add externals for client-side to exclude Node.js modules
+    if (!isServer) {
+      config.externals = {
+        ...config.externals,
+        'nodemailer': 'nodemailer',
+        'crypto': 'crypto',
+        'fs': 'fs',
+        'net': 'net',
+        'dns': 'dns',
+        'tls': 'tls',
+        'child_process': 'child_process',
+        'stream': 'stream',
+        'util': 'util',
+        'url': 'url',
+        'zlib': 'zlib',
+        'http': 'http',
+        'https': 'https',
+        'assert': 'assert',
+        'os': 'os',
+        'path': 'path',
+      };
+    }
+
+    // Add fallbacks for Node.js modules in client-side builds
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+        net: false,
+        dns: false,
+        tls: false,
+        child_process: false,
+      };
+    }
+
     // Basic optimizations without aggressive code splitting
     config.optimization = {
       ...config.optimization,
