@@ -1,13 +1,17 @@
 'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import PageWrapper from '@/components/landing/PageWrapper';
-import GlassCard from '@/components/ui/GlassCard';
 import { MessageSquare, ArrowLeft, Loader2, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function StudentSupport() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [submitting, setSubmitting] = useState(false);
 
   // Simplified form state - Only email and message
@@ -18,7 +22,6 @@ export default function StudentSupport() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.email.trim() || !formData.message.trim()) {
       toast.error('Please fill all fields');
       return;
@@ -62,25 +65,53 @@ export default function StudentSupport() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-2xl">
-          {/* Back Button */}
-          <button
-            onClick={() => router.push('/')}
-            className="mb-6 flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all text-gray-700 dark:text-white font-medium"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative z-10">
 
-          <GlassCard className="p-8">
+        {/* Back Button - Matches SubmitForm style */}
+        <div className="w-full max-w-2xl mb-6 sm:mb-8">
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            onClick={() => router.push('/')}
+            className={`
+              interactive flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
+              ${isDark
+                ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
+              }
+            `}
+          >
+            <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
+            <span className="font-medium text-sm">Back to Home</span>
+          </motion.button>
+        </div>
+
+        <div className="w-full max-w-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className={`
+              p-8 rounded-2xl overflow-hidden transition-all duration-500
+              ${isDark
+                ? 'bg-gradient-to-br from-white/5 to-white/10 border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+                : 'bg-white border border-gray-200 shadow-xl'
+              }
+            `}
+          >
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 mx-auto bg-jecrc-red/10 dark:bg-jecrc-red/20 rounded-full flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-jecrc-red dark:text-jecrc-red-bright" />
+              <div className={`
+                w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4
+                ${isDark ? 'bg-jecrc-red/10' : 'bg-jecrc-red/5'}
+              `}>
+                <MessageSquare className="w-8 h-8 text-jecrc-red" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Student Support</h1>
-              <p className="text-gray-500 dark:text-gray-400">
+              <h1 className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Student Support
+              </h1>
+              <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>
                 Submit your issue or question. Our admin team will help you.
               </p>
             </div>
@@ -88,34 +119,46 @@ export default function StudentSupport() {
             {/* Support Form */}
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Your Email *
+                <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Your Email <span className="text-jecrc-red">*</span>
                 </label>
                 <input
                   type="email"
                   required
                   disabled={submitting}
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="student.email@college.edu"
-                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent disabled:opacity-50 transition-all"
+                  className={`
+                    w-full p-4 rounded-xl border outline-none font-medium transition-all
+                    ${isDark
+                      ? 'bg-black/40 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red/50 focus:bg-black/60'
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white'
+                    }
+                  `}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Your Message * (minimum 10 characters)
+                <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Your Message <span className="text-jecrc-red">*</span>
                 </label>
                 <textarea
                   required
                   disabled={submitting}
                   value={formData.message}
-                  onChange={(e) => setFormData({...formData, message: e.target.value})}
-                  placeholder="Describe your issue or question in detail..."
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Describe your issue or question in detail (min 10 chars)..."
                   rows="6"
-                  className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent resize-none disabled:opacity-50 transition-all"
+                  className={`
+                    w-full p-4 rounded-xl border outline-none font-medium resize-none transition-all
+                    ${isDark
+                      ? 'bg-black/40 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red/50 focus:bg-black/60'
+                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white'
+                    }
+                  `}
                 />
-                <p className="text-xs text-gray-400 mt-2">
+                <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                   {formData.message.length} / 10 characters minimum
                 </p>
               </div>
@@ -123,7 +166,11 @@ export default function StudentSupport() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-4 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl font-bold text-lg shadow-lg shadow-jecrc-red/30 dark:shadow-neon-red transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                className={`
+                  w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]
+                  ${submitting ? 'opacity-70 cursor-wait' : 'hover:scale-[1.01]'}
+                  bg-gradient-to-br from-jecrc-red to-jecrc-red-dark text-white hover:shadow-jecrc-red/25
+                `}
               >
                 {submitting ? (
                   <>
@@ -139,12 +186,18 @@ export default function StudentSupport() {
               </button>
             </form>
 
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-              <p className="text-sm text-blue-800 dark:text-blue-300 text-center">
+            <div className={`
+              mt-6 p-4 rounded-xl border
+              ${isDark
+                ? 'bg-blue-900/10 border-blue-800/30'
+                : 'bg-blue-50 border-blue-100'
+              }
+            `}>
+              <p className={`text-sm text-center ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                 💡 <strong>Tip:</strong> Our admin team monitors support requests in realtime and will respond as soon as possible.
               </p>
             </div>
-          </GlassCard>
+          </motion.div>
         </div>
       </div>
     </PageWrapper>

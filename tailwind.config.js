@@ -12,6 +12,9 @@ module.exports = {
         'jecrc-primary-light': '#E02849',
         'jecrc-primary-dark': '#8B0000',
         'jecrc-primary-bright': '#FF3366',
+        'jecrc-red': '#C41E3A',
+        'jecrc-red-dark': '#8B0000',
+        'jecrc-red-bright': '#FF3366',
       },
       fontFamily: {
         'manrope': ['var(--font-manrope)', 'system-ui', 'sans-serif'],

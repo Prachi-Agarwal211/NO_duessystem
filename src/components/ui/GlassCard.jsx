@@ -14,15 +14,15 @@ import { useTheme } from '@/contexts/ThemeContext';
  * - Floating effects and hover states
  */
 
-export default function GlassCard({ 
-  children, 
-  className = "", 
+export default function GlassCard({
+  children,
+  className = "",
   onClick,
   variant = 'default',
   theme = 'jecrc',
   floating = false,
   hoverable = true,
-  ...props 
+  ...props
 }) {
   const { theme: currentTheme } = useTheme();
   const isDark = currentTheme === 'dark';
@@ -45,24 +45,24 @@ export default function GlassCard({
   const getVariantClasses = () => {
     switch (variant) {
       case 'glass':
-        return isDark 
-          ? 'backdrop-blur-xl bg-gray-900/50 border border-white/10 shadow-xl' 
-          : 'backdrop-blur-xl bg-white/50 border border-white/20 shadow-xl';
+        return isDark
+          ? 'backdrop-blur-xl bg-gray-900/60 border border-white/10 shadow-xl shadow-black/20'
+          : 'backdrop-blur-xl bg-white/60 border border-white/20 shadow-xl shadow-gray-200/50';
       case 'elegant':
-        return isDark 
-          ? 'bg-gray-800/80 border border-white/10 shadow-lg' 
-          : 'bg-white/80 border border-gray-200/50 shadow-lg';
+        return isDark
+          ? 'bg-gray-800/80 border border-white/10 shadow-lg shadow-black/20'
+          : 'bg-white/80 border border-gray-200/50 shadow-lg shadow-gray-200/40';
       case 'premium':
-        return isDark 
-          ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 shadow-xl' 
-          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-xl';
+        return isDark
+          ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 shadow-2xl shadow-purple-900/10'
+          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl shadow-gray-200/50';
       case 'dark':
-        return 'bg-gradient-to-br from-gray-900/80 to-black/80 border border-gray-700/50 shadow-xl';
+        return 'bg-gradient-to-br from-gray-900/90 to-black/90 border border-gray-700/50 shadow-2xl shadow-black/40';
       case 'default':
       default:
-        return isDark 
-          ? 'bg-gray-900 border border-white/10 shadow-lg' 
-          : 'bg-white border border-gray-200 shadow-lg';
+        return isDark
+          ? 'bg-gray-900/80 border border-white/10 shadow-lg shadow-black/20 backdrop-blur-md'
+          : 'bg-white/90 border border-gray-200 shadow-xl shadow-gray-100/50 backdrop-blur-md';
     }
   };
 
@@ -92,7 +92,7 @@ export default function GlassCard({
         opacity-0 hover:opacity-100 transition-opacity duration-500
         ${isDark ? 'via-white/5' : 'via-white/10'}
       `} />
-      
+
       {/* Content */}
       <div className="relative z-10">
         {children}

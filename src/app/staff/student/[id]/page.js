@@ -13,6 +13,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { FormDetailSkeleton } from '@/components/ui/SkeletonLoader';
 import ChatBox from '@/components/chat/ChatBox';
 import toast from 'react-hot-toast';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function StudentDetailView() {
   const { id } = useParams();
@@ -423,9 +424,9 @@ export default function StudentDetailView() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {/* Student Information Section */}
-              <div className={`p-4 sm:p-6 rounded-xl border transition-colors duration-700 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
+              <div className={`p-6 rounded-xl border transition-colors duration-700 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
                 }`}>
-                <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 pb-3 border-b transition-colors duration-700 ${isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
+                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
                   }`}>
                   Student Information
                 </h2>
@@ -492,14 +493,14 @@ export default function StudentDetailView() {
               </div>
 
               {/* Alumni Profile Link Section */}
-              <div className={`p-4 sm:p-6 rounded-xl border transition-colors duration-700 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
+              <div className={`p-6 rounded-xl border transition-colors duration-700 ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50/80 border-gray-200'
                 }`}>
-                <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 pb-3 border-b transition-colors duration-700 ${isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
+                <h2 className={`text-lg font-bold mb-5 pb-3 border-b transition-colors duration-700 ${isDark ? 'text-white border-white/10' : 'text-ink-black border-gray-200'
                   }`}>
                   Alumni Verification
                 </h2>
                 {studentData.alumni_profile_link ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className={`text-xs font-semibold uppercase tracking-wide transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
                       }`}>
                       Alumni Profile Link
@@ -508,7 +509,7 @@ export default function StudentDetailView() {
                       href={studentData.alumni_profile_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${isDark
+                      className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all duration-300 w-full justify-center ${isDark
                         ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30'
                         : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
                         }`}
@@ -518,18 +519,18 @@ export default function StudentDetailView() {
                       </svg>
                       View Alumni Profile
                     </a>
-                    <p className={`text-xs break-all transition-colors duration-700 ${isDark ? 'text-gray-500' : 'text-gray-400'
+                    <p className={`text-xs break-all text-center transition-colors duration-700 ${isDark ? 'text-gray-500' : 'text-gray-400'
                       }`}>
                       {studentData.alumni_profile_link}
                     </p>
                   </div>
                 ) : (
-                  <div className={`py-8 text-center rounded-lg border-2 border-dashed transition-colors duration-700 ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-300 text-gray-400'
+                  <div className={`py-12 text-center rounded-lg border-2 border-dashed transition-colors duration-700 ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-300 text-gray-400'
                     }`}>
-                    <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-16 h-16 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.100m-.758-4.900a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
-                    <p className="text-sm font-medium">No alumni profile link provided</p>
+                    <p className="text-base font-medium">No alumni profile link provided</p>
                   </div>
                 )}
               </div>
@@ -537,86 +538,55 @@ export default function StudentDetailView() {
 
             {/* Department Status Table */}
             <div className="mb-6 sm:mb-8">
-              <h2 className={`text-base sm:text-lg font-bold mb-4 sm:mb-5 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              <h2 className={`text-lg font-bold mb-5 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                 }`}>
                 Department Status
               </h2>
-              <div className="overflow-x-auto -mx-4 sm:mx-0 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
-                {/* Mobile Scroll Hint */}
-                <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-center text-xs text-blue-600 dark:text-blue-400 border-b border-blue-100 dark:border-blue-800">
-                  ← Swipe left/right to view all columns →
-                </div>
-                <div className="inline-block min-w-full align-middle">
-                  <div className={`overflow-hidden rounded-xl border-2 shadow-lg transition-colors duration-700 ${isDark ? 'border-white/10' : 'border-gray-200'
-                    }`}>
-                    <table className="min-w-full" style={{ minWidth: '640px' }}>
-                      <thead className={`sticky top-0 transition-colors duration-700 ${isDark ? 'bg-gray-800/50' : 'bg-gray-100'
-                        }`}>
-                        <tr>
-                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-200' : 'text-gray-700'
-                            }`}>
-                            Department
-                          </th>
-                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-200' : 'text-gray-700'
-                            }`}>
-                            Status
-                          </th>
-                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-200' : 'text-gray-700'
-                            }`}>
-                            Updated
-                          </th>
-                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider transition-colors duration-700 ${isDark ? 'text-gray-200' : 'text-gray-700'
-                            }`}>
-                            Action By
-                          </th>
-                          <th className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-left text-xs font-bold uppercase tracking-wider min-w-[200px] transition-colors duration-700 ${isDark ? 'text-gray-200' : 'text-gray-700'
-                            }`}>
-                            Notes
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className={`transition-colors duration-700 ${isDark ? 'bg-gray-900/30' : 'bg-white'
-                        }`}>
-                        {statusData.map((status, index) => (
-                          <tr key={index} className={`border-b transition-colors duration-700 ${isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'
-                            }`}>
-                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-semibold transition-colors duration-700 ${isDark ? 'text-white' : 'text-gray-900'
-                              }`}>
-                              {status.display_name}
-                            </td>
-                            <td className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap">
-                              <StatusBadge status={status.status} />
-                            </td>
-                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
-                              }`}>
-                              {status.action_at ? new Date(status.action_at).toLocaleDateString() : '-'}
-                            </td>
-                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
-                              }`}>
-                              {status.action_by || '-'}
-                            </td>
-                            <td className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 text-xs sm:text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-500'
-                              }`}>
-                              {status.status === 'rejected' && status.rejection_reason ? (
-                                <div className="space-y-1">
-                                  <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-red-400' : 'text-red-600'
-                                    }`}>
-                                    {status.rejection_reason}
+              <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-white/10">
+                    <thead className={`transition-colors duration-700 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                      <tr>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Department</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Status</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Updated</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Action By</th>
+                        <th className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y divide-gray-200 dark:divide-white/5 ${isDark ? 'bg-transparent' : 'bg-white'}`}>
+                      {statusData.map((status, index) => (
+                        <tr key={index} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {status.display_name}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <StatusBadge status={status.status} />
+                          </td>
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {status.action_at ? new Date(status.action_at).toLocaleDateString() : '-'}
+                          </td>
+                          <td className={`px-4 py-4 whitespace-nowrap text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {status.action_by || '-'}
+                          </td>
+                          <td className={`px-4 py-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {status.status === 'rejected' && status.rejection_reason ? (
+                              <div className="space-y-1">
+                                <p className={`font-medium ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                                  {status.rejection_reason}
+                                </p>
+                                {studentData.reapplication_count > 0 && (
+                                  <p className={`text-xs ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
+                                    ⚠️ Student has reapplied
                                   </p>
-                                  {studentData.reapplication_count > 0 && (
-                                    <p className={`text-xs transition-colors duration-700 ${isDark ? 'text-orange-400' : 'text-orange-600'
-                                      }`}>
-                                      ⚠️ Student has reapplied - please review updates
-                                    </p>
-                                  )}
-                                </div>
-                              ) : '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                )}
+                              </div>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -624,7 +594,7 @@ export default function StudentDetailView() {
             {/* Chat Section - Show for user's department if rejected */}
             {userDepartmentStatus?.status === 'rejected' && user?.department_name && (
               <div className="mb-6">
-                <h2 className={`text-base sm:text-lg font-bold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                <h2 className={`text-lg font-bold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                   }`}>
                   💬 Chat with Student
                 </h2>
@@ -643,8 +613,9 @@ export default function StudentDetailView() {
                 <button
                   onClick={handleApproveClick}
                   disabled={approving}
-                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
+                  {approving ? <div className="animate-spin w-4 h-4 border-2 border-white rounded-full border-t-transparent" /> : <CheckCircle className="w-5 h-5" />}
                   {approving ? 'Approving...' : 'Approve Request'}
                 </button>
 
@@ -660,8 +631,9 @@ export default function StudentDetailView() {
                     }, 150);
                   }}
                   disabled={rejecting}
-                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="interactive w-full sm:w-auto px-6 py-3 min-h-[44px] bg-red-600 hover:bg-red-700 rounded-lg font-semibold text-sm sm:text-base text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
+                  {rejecting ? <div className="animate-spin w-4 h-4 border-2 border-white rounded-full border-t-transparent" /> : <XCircle className="w-5 h-5" />}
                   {rejecting ? 'Rejecting...' : 'Reject Request'}
                 </button>
               </div>
@@ -777,7 +749,8 @@ function StaffChatSection({ formId, departmentName, staffName, rejectionReason, 
     loadingMore,
     sendMessage,
     retryMessage,
-    loadMoreMessages
+    loadMoreMessages,
+    fileUpload
   } = useChat(formId, departmentName, 'department');
 
   // Typing indicators
@@ -800,13 +773,14 @@ function StaffChatSection({ formId, departmentName, staffName, rejectionReason, 
       hasMore={hasMore}
       loadingMore={loadingMore}
       currentUserType="department"
-      currentUserName={staffName || 'Department Staff'}
+      currentUserName={staffName}
       rejectionReason={rejectionReason}
       departmentName={departmentName}
       typingUsers={typingUsers}
       onTypingStart={startTyping}
       onTypingStop={stopTyping}
+      // Pass file upload handler if available
+      onFileUpload={fileUpload}
     />
   );
 }
-

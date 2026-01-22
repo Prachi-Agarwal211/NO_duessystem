@@ -40,7 +40,7 @@ export default function Home() {
         {/* Centered Header / Branding with Parallax */}
         <motion.header
           style={{ y: yLogo, opacity: opacityHeader }}
-          className="flex flex-col items-center mb-4 sm:mb-8 text-center px-4 pt-12 sm:pt-0"
+          className="flex flex-col items-center mb-6 sm:mb-8 text-center px-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
