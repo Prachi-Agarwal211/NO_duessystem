@@ -111,7 +111,7 @@ export async function triggerCertificateGeneration(formId, triggeredByUserId = n
       }
     }
 
-    // 7. Log the certificate generation
+    // 6. Log the certificate generation
     console.log(`🎉 Certificate generation completed for form ${formId}`);
     
     return {
