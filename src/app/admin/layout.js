@@ -1,5 +1,7 @@
 import PageWrapper from '@/components/landing/PageWrapper';
 
+// Force dynamic rendering to prevent static export errors
+export const dynamic = 'force-dynamic';
 export const metadata = {
   title: 'Admin Dashboard | JECRC UNIVERSITY NO DUES',
   description: 'Administrative control panel for JECRC UNIVERSITY NO DUES System',

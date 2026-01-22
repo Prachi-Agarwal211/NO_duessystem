@@ -1,0 +1,193 @@
+﻿  Γû▓ Next.js 14.2.35
+  - Environments: .env.local, .env.production
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+   Generating static pages (0/46) ...
+   Generating static pages (11/46) 
+≡ƒöº Environment Validation Results:
+Γ£à Valid: true
+≡ƒô¥ Required vars: 6/6
+node.exe : 
+ReferenceError: 
+RefreshCw is not 
+defined
+At line:1 char:1
++ & "C:\Program Files
+\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo   
+           : 
+NotSpecified: (Refer 
+   enceError: 
+RefreshCw is     not 
+defined:String) []   
+ , RemoteException
+    + FullyQualifiedE
+rrorId     : 
+NativeCommandError
+ 
+    at q (D:\nextjs\n
+odues\nodues_system\.
+next\server\app\admin
+\page.js:24:1265)
+    at nj (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:46252)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47572)
+    at nL (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:64547)
+    at nI (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47011)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47718)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:61547)
+    at nL (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:64547)
+    at nB (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:67539)
+    at nD (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:66681) {
+  digest: '903625858'
+}
+
+Error occurred 
+prerendering page 
+"/admin". Read more: 
+https://nextjs.org/do
+cs/messages/prerender
+-error
+
+ReferenceError: 
+RefreshCw is not 
+defined
+    at q (D:\nextjs\n
+odues\nodues_system\.
+next\server\app\admin
+\page.js:24:1265)
+    at nj (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:46252)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47572)
+    at nL (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:64547)
+    at nI (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47011)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:47718)
+    at nM (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:61547)
+    at nL (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:64547)
+    at nB (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:67539)
+    at nD (D:\nextjs\
+nodues\nodues_system\
+node_modules\next\dis
+t\compiled\next-serve
+r\app-page.runtime.pr
+od.js:12:66681)
+   Generating static pages (22/46) 
+   Generating static pages (34/46) 
+ Γ£ô Generating static pages (46/46)
+
+> Export encountered 
+errors on following 
+paths:
+	/admin/page: /admin

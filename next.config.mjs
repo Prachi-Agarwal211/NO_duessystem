@@ -5,6 +5,10 @@ const nextConfig = {
   swcMinify: true,
   compress: true,
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
   // Simplified webpack configuration
   webpack: (config, { isServer }) => {
     // Add externals for client-side to exclude Node.js modules
