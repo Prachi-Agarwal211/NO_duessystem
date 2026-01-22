@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Search, AlertCircle, FileText, ArrowLeft, Info, CheckCircle2 } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
-import FormInput from '@/components/student/FormInput';
+import Input from '@/components/ui/Input';
+
 import StatusTracker from '@/components/student/StatusTracker';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -350,15 +351,16 @@ function CheckStatusContent() {
               {/* Search Form Card */}
               <div className="glass-card p-8 rounded-2xl border border-white/20 dark:border-gray-700/50">
                 <form onSubmit={handleSearch} className="space-y-6">
-                  <FormInput
+                  <Input
                     label="Registration Number"
+                    name="registrationNumber"
                     type="text"
                     value={registrationNumber}
                     onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())}
                     placeholder="e.g., 21EJECS001"
                     error={error}
                     disabled={loading}
-                    icon={<Search className="w-5 h-5" />}
+                    endIcon={<Search className="w-5 h-5" />}
                   />
 
                   <motion.button

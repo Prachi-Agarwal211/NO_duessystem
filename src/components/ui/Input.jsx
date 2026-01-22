@@ -17,12 +17,15 @@ export default function Input({
     className,
     options = [], // For select
     rows = 4, // For textarea
+    startIcon,
+    endIcon,
     ...props
 }) {
     const [showPassword, setShowPassword] = useState(false);
     const inputType = type === 'password' && showPassword ? 'text' : type;
     const isSelect = type === 'select';
     const isTextarea = type === 'textarea';
+    const errorId = error ? `${name}-error` : undefined;
 
     // "Filled" design: Bottom border, light background (gray-50/white-5)
     // Shared container classes
@@ -37,24 +40,34 @@ export default function Input({
     );
 
     const inputBaseClasses = cn(
-        "peer w-full px-4 pt-6 pb-2 bg-transparent outline-none border-none",
+        "peer w-full pt-6 pb-2 bg-transparent outline-none border-none",
         "text-gray-900 dark:text-white placeholder-transparent",
         "text-base font-medium",
+        startIcon ? "pl-11" : "pl-4",
+        (endIcon || type === 'password' || isSelect) ? "pr-11" : "pr-4",
         disabled && "cursor-not-allowed",
         isSelect && "appearance-none cursor-pointer" // Hide default arrow for select
     );
 
     const labelClasses = cn(
-        "absolute left-4 top-4 text-gray-500 dark:text-gray-400 text-base transition-all duration-200 pointer-events-none origin-[0]",
+        "absolute top-4 text-gray-500 dark:text-gray-400 text-base transition-all duration-200 pointer-events-none origin-[0]",
+        startIcon ? "left-11" : "left-4",
         "peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0",
         "peer-focus:scale-75 peer-focus:-translate-y-3 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red",
-        (value || value === 0) && "scale-75 -translate-y-3",
+        (value || value === 0) ? "scale-75 -translate-y-3" : "",
         error && "text-red-500 peer-focus:text-red-500"
     );
 
     return (
         <div className={cn("w-full group relative mb-5", className)}>
             <div className={containerClasses}>
+
+                {/* Start Icon */}
+                {startIcon && (
+                    <div className="absolute left-3 top-6 -translate-y-[2px] text-gray-400 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red transition-colors pointer-events-none">
+                        {startIcon}
+                    </div>
+                )}
 
                 {/* Render Element based on type */}
                 {isSelect ? (
@@ -66,6 +79,8 @@ export default function Input({
                             required={required}
                             disabled={disabled}
                             className={inputBaseClasses}
+                            aria-describedby={errorId}
+                            id={name}
                             {...props}
                         >
                             <option value="" disabled className="bg-gray-50 dark:bg-gray-900 text-gray-500">
@@ -82,7 +97,7 @@ export default function Input({
                             ))}
                         </select>
                         {/* Custom Arrow */}
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 peer-focus:text-jecrc-red transition-colors">
+                        <div className="absolute right-3 top-1/2 translate-y-1 pointer-events-none text-gray-400 peer-focus:text-jecrc-red transition-colors">
                             <ChevronDown size={18} />
                         </div>
                     </>
@@ -96,6 +111,8 @@ export default function Input({
                         placeholder=" "
                         rows={rows}
                         className={cn(inputBaseClasses, "resize-none")}
+                        aria-describedby={errorId}
+                        id={name}
                         {...props}
                     />
                 ) : (
@@ -108,6 +125,8 @@ export default function Input({
                         disabled={disabled}
                         placeholder=" "
                         className={inputBaseClasses}
+                        aria-describedby={errorId}
+                        id={name}
                         {...props}
                     />
                 )}
@@ -117,22 +136,26 @@ export default function Input({
                     {label} {required && <span className="text-red-500">*</span>}
                 </label>
 
-                {/* Password Toggle */}
-                {type === 'password' && (
+                {/* End Icon or Password Toggle */}
+                {type === 'password' ? (
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="absolute right-3 top-1/2 translate-y-1 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                         disabled={disabled}
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                )}
+                ) : endIcon ? (
+                    <div className="absolute right-3 top-1/2 translate-y-1 text-gray-400 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red transition-colors pointer-events-none">
+                        {endIcon}
+                    </div>
+                ) : null}
             </div>
 
             {/* Error Message */}
             {error && (
-                <div className="absolute -bottom-5 left-0 flex items-center gap-1 text-xs text-red-500 font-medium animate-in slide-in-from-top-1">
+                <div id={errorId} className="absolute -bottom-5 left-0 flex items-center gap-1 text-xs text-red-500 font-medium animate-in slide-in-from-top-1">
                     <AlertCircle size={12} />
                     <span>{error}</span>
                 </div>

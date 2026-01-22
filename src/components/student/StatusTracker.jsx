@@ -77,14 +77,16 @@ export default function StatusTracker({ registrationNo }) {
       }
 
       // Update state with optimized data
-      console.log('📊 Fresh data received from API:', {
-        formStatus: result.data.form.status,
-        isManualEntry: result.data.form.is_manual_entry,
-        departmentStatuses: result.data.statusData.map(d => ({
-          name: d.display_name,
-          status: d.status
-        }))
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Fresh data received from API:', {
+          formStatus: result.data.form.status,
+          isManualEntry: result.data.form.is_manual_entry,
+          departmentStatuses: result.data.statusData.map(d => ({
+            name: d.display_name,
+            status: d.status
+          }))
+        });
+      }
       setFormData(result.data.form);
       setStatusData(result.data.statusData);
 
@@ -148,7 +150,9 @@ export default function StatusTracker({ registrationNo }) {
       unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
         // Check if OUR form is involved
         if (analysis.formIds.includes(formData.id)) {
-          console.log('⚡ Student tracker received relevant update, refreshing...');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⚡ Student tracker received relevant update, refreshing...');
+          }
           fetchData(true);
         }
       });
@@ -156,7 +160,9 @@ export default function StatusTracker({ registrationNo }) {
       unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
         // Check for general updates to our form (completion, etc)
         if (analysis.formIds.includes(formData.id)) {
-          console.log('⚡ Student tracker received global update, refreshing...');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⚡ Student tracker received global update, refreshing...');
+          }
           fetchData(true);
         }
       });
@@ -217,19 +223,21 @@ export default function StatusTracker({ registrationNo }) {
     ? formData.status === 'rejected'
     : rejectedCount > 0;
 
-  const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
-  const canReapply = hasRejection && formData.status !== 'completed';
+   const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
+   const canReapply = hasRejection && formData.status !== 'completed';
 
-  // 🐛 DEBUG: Log reapply button visibility logic
-  console.log('🔍 Reapply Button Debug:', {
-    hasRejection,
-    formStatus: formData.status,
-    canReapply,
-    rejectedCount,
-    rejectedDepartments: rejectedDepartments.map(d => d.display_name),
-    isManualEntry,
-    allApproved
-  });
+   // 🐛 DEBUG: Log reapply button visibility logic (dev only)
+   if (process.env.NODE_ENV === 'development') {
+     console.log('🔍 Reapply Button Debug:', {
+       hasRejection,
+       formStatus: formData.status,
+       canReapply,
+       rejectedCount,
+       rejectedDepartments: rejectedDepartments.map(d => d.display_name),
+       isManualEntry,
+       allApproved
+     });
+   }
 
   return (
     <motion.div

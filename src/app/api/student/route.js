@@ -48,8 +48,8 @@ export async function POST(request) {
       );
     }
 
-    // Use workflow service for submission
-    const result = await studentWorkflowService.submitApplication(validation.data);
+    // Use application service for submission
+    const result = await applicationService.submitApplication(validation.data);
 
     return ApiResponse.success(result.data, 'Application submitted successfully');
 

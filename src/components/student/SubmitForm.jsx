@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
@@ -173,7 +174,7 @@ export default function SubmitForm() {
       if (response.status === 404 || result.error === 'Form not found') {
         // No form exists - user can proceed
         setError('');
-        alert('✅ No existing form found. You can proceed with submission.');
+        toast.success('✅ No existing form found. You can proceed with submission.');
         return;
       }
 
@@ -217,9 +218,9 @@ export default function SubmitForm() {
 
         // Check if student already has a form or is completed
         if (studentData.no_dues_status === 'pending') {
-          alert(`⚠️ Notice: You already have a pending application. You can view its status using the Check Status feature.`);
+          toast.info('⚠️ You already have a pending application. You can view its status using the Check Status feature.');
         } else if (studentData.no_dues_status === 'completed') {
-          alert(`✅ Notice: Your No Dues process is already completed. You can download your certificate from the status page.`);
+          toast.success('✅ Your No Dues process is already completed. You can download your certificate from the status page.');
         }
 
         setFormData(prev => ({

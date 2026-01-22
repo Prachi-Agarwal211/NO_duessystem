@@ -242,7 +242,7 @@ export default function ApplicationsTable({ applications: initialApplications, c
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan="8" className="px-4 py-4 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
+                      <td colSpan="9" className="px-4 py-4 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
                         <div className="animate-fade-in">
                           <ExpandedDepartmentDetails departments={app.no_dues_status} />
                         </div>
