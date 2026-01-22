@@ -12,9 +12,6 @@
   "env": {
     "NODE_ENV": "production"
   },
-  "envPreview": {
-    "NODE_ENV": "development"
-  },
   "regions": ["iad1"],
   "analytics": {
     "enabled": true
