@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FileCheck, Search } from 'lucide-react';
 import PageWrapper from '@/components/landing/PageWrapper';
+import HeroBackground from '@/components/landing/HeroBackground';
 import Logo from '@/components/ui/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -190,6 +191,7 @@ export default function Home() {
             : 'bg-gradient-to-b from-white via-gray-50/50 to-white'
           }
         `} />
+        <HeroBackground />
         {/* Deep gradient layer for depth and royal feel */}
         <div className="hero-gradient" aria-hidden="true" />
         
