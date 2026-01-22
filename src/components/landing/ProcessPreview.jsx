@@ -10,9 +10,9 @@ export default function ProcessPreview({ mode = 'horizontal' }) {
     const isVertical = mode === 'vertical';
 
     const steps = [
-        { icon: Send, label: 'Submit App' },
-        { icon: UserCheck, label: 'Dept Approvals' },
-        { icon: Award, label: 'Certificate' }
+        { icon: Send, label: 'Submit App', color: 'from-blue-500 to-cyan-500' },
+        { icon: UserCheck, label: 'Dept Approvals', color: 'from-amber-500 to-orange-500' },
+        { icon: Award, label: 'Certificate', color: 'from-green-500 to-emerald-500' }
     ];
 
     // "Horizontal" mode (Horizontal Pills) - Used for both Desktop and Mobile now
@@ -32,16 +32,38 @@ export default function ProcessPreview({ mode = 'horizontal' }) {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.5 + (i * 0.1), duration: 0.5 }}
-                        className={`step-pill ${isDark ? 'step-pill-dark' : 'step-pill-light'} shrink-0`}
+                        className={`
+                            step-pill shrink-0
+                            px-4 py-2 rounded-full
+                            flex items-center gap-2
+                            ${isDark 
+                                ? 'bg-white/5 border border-white/10' 
+                                : 'bg-gradient-to-r from-white to-gray-50 border border-gray-200 shadow-sm'
+                            }
+                        `}
                     >
-                        <step.icon size={15} className={isDark ? 'text-gray-400' : 'text-jecrc-red'} strokeWidth={isDark ? 2 : 2.5} />
-                        <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-slate-700'}`}> {/* Darker text for light mode */}
+                        <div className={`
+                            p-1.5 rounded-lg
+                            bg-gradient-to-br ${step.color}
+                            opacity-80
+                        `}>
+                            <step.icon size={14} className="text-white" strokeWidth={2.5} />
+                        </div>
+                        <span className={`
+                            text-xs sm:text-sm font-semibold tracking-wide
+                            ${isDark ? 'text-gray-300' : 'text-gray-700'}
+                        `}>
                             {step.label}
                         </span>
 
                         {/* Connector Arrow (except last item) */}
                         {i < steps.length - 1 && !isVertical && mode !== 'compact' && (
-                            <span className={`ml-2 opacity-30 ${isDark ? 'text-white' : 'text-black'}`}>→</span>
+                            <span className={`
+                                ml-2 text-lg
+                                ${isDark ? 'text-white/20' : 'text-gray-300'}
+                            `}>
+                                →
+                            </span>
                         )}
                     </motion.div>
                 ))}

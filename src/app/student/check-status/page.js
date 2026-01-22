@@ -318,8 +318,11 @@ function CheckStatusContent() {
                     <Info className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
                   <div className="flex-1">
-                    <h3 className={`font-bold text-lg mb-3 ${isDark ? 'text-white' : 'text-gray-900'
-                      }`}>
+                    <h3 className={`
+                      font-bold text-lg mb-3 font-serif
+                      bg-gradient-to-r from-blue-500 to-purple-500 dark:from-blue-400 dark:to-purple-400
+                      bg-clip-text text-transparent
+                    `}>
                       Important Instructions
                     </h3>
                     <ul className="space-y-2">

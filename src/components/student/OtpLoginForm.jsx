@@ -4,10 +4,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, ArrowRight, Lock, Loader2, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/ThemeContext';
 import toast from 'react-hot-toast';
 
 export default function OtpLoginForm({ onLoginSuccess }) {
     const router = useRouter();
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
     const [step, setStep] = useState(1); // 1: Request OTP, 2: Verify OTP
     const [loading, setLoading] = useState(false);
     const [registrationNo, setRegistrationNo] = useState('');
@@ -78,20 +81,42 @@ export default function OtpLoginForm({ onLoginSuccess }) {
     };
 
     return (
-        <div className="min-h-[60vh] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white dark:bg-black/40 backdrop-blur-xl rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl p-8 transform transition-all">
-
-                <div className="text-center mb-8">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-jecrc-red to-jecrc-red-dark rounded-2xl flex items-center justify-center shadow-lg shadow-jecrc-red/20 mb-4 transform rotate-3 hover:rotate-6 transition-transform">
-                        <KeyRound className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="min-h-[60vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className={`
+                    w-full max-w-md 
+                    ${isDark 
+                        ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' 
+                        : 'bg-white border border-gray-200'
+                    }
+                    backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8
+                `}
+            >
+                <div className="text-center mb-6 sm:mb-8">
+                    <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                        className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-jecrc-red to-jecrc-red-dark rounded-2xl flex items-center justify-center shadow-lg shadow-jecrc-red/20 mb-4 transform hover:rotate-3 transition-transform"
+                    >
+                        <KeyRound className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+                    </motion.div>
+                    <h2 className={`
+                        text-xl sm:text-2xl font-bold mb-2
+                        ${isDark ? 'text-white' : 'text-gray-900'}
+                    `}>
                         Student Access
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    <p className={`
+                        text-sm
+                        ${isDark ? 'text-gray-400' : 'text-gray-500'}
+                    `}>
                         {step === 1
                             ? 'Enter your registration number to verify your identity'
-                            : `Enter the code sent to your ${emailType === 'personal' ? 'Personal' : 'Registered'} Email (${sentEmail})`
+                            : `Enter the code sent to your ${emailType === 'personal' ? 'Personal' : 'Registered'} Email`
                         }
                     </p>
                 </div>
@@ -104,22 +129,35 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             onSubmit={handleRequestOtp}
-                            className="space-y-6"
+                            className="space-y-5 sm:space-y-6"
                         >
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+                                <label className={`
+                                    text-sm font-medium ml-1
+                                    ${isDark ? 'text-gray-300' : 'text-gray-700'}
+                                `}>
                                     Registration Number
                                 </label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-jecrc-red transition-colors" />
+                                        <Mail className={`
+                                            h-5 w-5 transition-colors
+                                            ${isDark ? 'text-gray-500' : 'text-gray-400'}
+                                            group-focus-within:text-jecrc-red
+                                        `} />
                                     </div>
                                     <input
                                         type="text"
                                         required
                                         value={registrationNo}
                                         onChange={(e) => setRegistrationNo(e.target.value.toUpperCase())}
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600/20 focus:border-jecrc-red transition-all"
+                                        className={`
+                                            block w-full pl-11 pr-4 py-3.5 rounded-xl outline-none transition-all
+                                            ${isDark 
+                                                ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-red-600/30' 
+                                                : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-red-600/30'
+                                            }
+                                        `}
                                         placeholder="e.g. 21BXXXXXX"
                                     />
                                 </div>
@@ -128,9 +166,22 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl text-white bg-gradient-to-r from-jecrc-red to-jecrc-red-dark hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-jecrc-red disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-jecrc-red/25"
+                                className={`
+                                    w-full flex items-center justify-center gap-2 py-3.5 sm:py-4 px-6 rounded-xl text-white
+                                    bg-gradient-to-r from-jecrc-red to-jecrc-red-dark 
+                                    hover:from-red-600 hover:to-red-700 
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-jecrc-red
+                                    disabled:opacity-50 disabled:cursor-not-allowed 
+                                    transform hover:scale-[1.02] active:scale-[0.98] 
+                                    transition-all shadow-lg shadow-jecrc-red/25
+                                `}
                             >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send OTP <ArrowRight className="w-5 h-5" /></>}
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                    <>
+                                        <span>Send OTP</span>
+                                        <ArrowRight className="w-5 h-5" />
+                                    </>
+                                )}
                             </button>
                         </motion.form>
                     ) : (
@@ -140,15 +191,22 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             onSubmit={handleVerifyOtp}
-                            className="space-y-6"
+                            className="space-y-5 sm:space-y-6"
                         >
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+                                <label className={`
+                                    text-sm font-medium ml-1
+                                    ${isDark ? 'text-gray-300' : 'text-gray-700'}
+                                `}>
                                     Enter 6-Digit OTP
                                 </label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-jecrc-red transition-colors" />
+                                        <Lock className={`
+                                            h-5 w-5 transition-colors
+                                            ${isDark ? 'text-gray-500' : 'text-gray-400'}
+                                            group-focus-within:text-jecrc-red
+                                        `} />
                                     </div>
                                     <input
                                         type="text"
@@ -156,7 +214,14 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                                         maxLength={6}
                                         value={otp}
                                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600/20 focus:border-jecrc-red transition-all tracking-widest text-lg"
+                                        className={`
+                                            block w-full pl-11 pr-4 py-3.5 rounded-xl outline-none transition-all
+                                            tracking-widest text-lg
+                                            ${isDark 
+                                                ? 'bg-white/5 border border-white/10 text-white placeholder:text-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-red-600/30' 
+                                                : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-red-600/30'
+                                            }
+                                        `}
                                         placeholder="XXXXXX"
                                     />
                                 </div>
@@ -165,7 +230,15 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-green-600/25"
+                                className={`
+                                    w-full flex items-center justify-center gap-2 py-3.5 sm:py-4 px-6 rounded-xl text-white
+                                    bg-gradient-to-r from-green-600 to-green-700 
+                                    hover:from-green-700 hover:to-green-800
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600
+                                    disabled:opacity-50 disabled:cursor-not-allowed 
+                                    transform hover:scale-[1.02] active:scale-[0.98] 
+                                    transition-all shadow-lg shadow-green-600/25
+                                `}
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verify & Login'}
                             </button>
@@ -173,7 +246,13 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                             <button
                                 type="button"
                                 onClick={() => setStep(1)}
-                                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                                className={`
+                                    w-full text-center text-sm transition-colors
+                                    ${isDark 
+                                        ? 'text-gray-500 hover:text-gray-300' 
+                                        : 'text-gray-500 hover:text-gray-700'
+                                    }
+                                `}
                             >
                                 Change Registration Number
                             </button>
@@ -181,12 +260,18 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                     )}
                 </AnimatePresence>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-white/5 text-center">
-                    <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                <div className={`
+                    mt-6 sm:mt-8 pt-6 border-t text-center
+                    ${isDark ? 'border-white/5' : 'border-gray-100'}
+                `}>
+                    <p className={`
+                        text-xs sm:text-sm max-w-xs mx-auto
+                        ${isDark ? 'text-gray-500' : 'text-gray-400'}
+                    `}>
                         Please check your personal and college email for the OTP. If you don't receive it within 2 minutes, try again.
                     </p>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 }

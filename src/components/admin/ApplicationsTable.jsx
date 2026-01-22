@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
 import { RefreshCw } from 'lucide-react';
@@ -10,6 +11,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { realtimeManager } from '@/lib/realtimeManager';
 
 export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [applications, setApplications] = useState(initialApplications);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [updatingRows, setUpdatingRows] = useState(new Set());
@@ -130,12 +133,18 @@ export default function ApplicationsTable({ applications: initialApplications, c
   };
 
   return (
-    <div className="rounded-xl border overflow-hidden transition-all duration-200 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 shadow-sm">
+    <div className={`
+        rounded-xl border overflow-hidden transition-all duration-200
+        ${isDark 
+            ? 'bg-gradient-to-br from-gray-900 to-black border-white/10 shadow-xl' 
+            : 'bg-white border-gray-200 shadow-sm'
+        }
+    `}>
       {/* Mobile scroll hint */}
       <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 text-center">
         ← Swipe left/right to view all columns →
       </div>
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent -mx-4 px-4 md:mx-0 md:px-0">
         <table className="min-w-[1000px] w-full">
           <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
             <tr>

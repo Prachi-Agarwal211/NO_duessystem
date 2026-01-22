@@ -54,6 +54,10 @@
   --transition-slow: 0.3s ease;
 }
 
+/* Helper typography utilities */
+.font-display { font-family: var(--font-display); }
+.uppercase { text-transform: uppercase; }
+
 /* Dark Mode Variables (via data-theme) */
 [data-theme="dark"] {
   --bg-primary: #050505;

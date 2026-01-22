@@ -453,7 +453,11 @@ export default function StaffDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className={`
+              text-xl sm:text-2xl md:text-3xl font-bold font-serif
+              bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-transparent dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white
+              bg-clip-text text-transparent
+            `}>
               {user?.department_name || 'Department'} Dashboard
             </h1>
             <div className="flex items-center gap-2 mt-2">

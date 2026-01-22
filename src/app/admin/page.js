@@ -353,7 +353,13 @@ export default function EnhancedAdminDashboard() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Admin Command Center</h1>
+          <h1 className={`
+            text-xl sm:text-2xl md:text-3xl font-bold font-serif
+            bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-transparent dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white
+            bg-clip-text text-transparent
+          `}>
+            Admin Command Center
+          </h1>
           <div className="flex items-center gap-2 mt-2">
             <div className="flex items-center gap-2 px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
@@ -389,7 +395,11 @@ export default function EnhancedAdminDashboard() {
         <GlassCard className="lg:col-span-2 p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 dark:border-white/5 pb-3 sm:pb-4">
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-jecrc-red dark:text-jecrc-red-bright" />
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Department Efficiency</h3>
+            <h3 className={`
+              text-base sm:text-lg font-bold font-serif
+              bg-gradient-to-r from-jecrc-red to-transparent dark:from-jecrc-red-bright dark:to-white
+              bg-clip-text text-transparent
+            `}>Department Efficiency</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {data.departmentStats.length === 0 ? (

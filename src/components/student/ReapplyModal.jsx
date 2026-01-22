@@ -260,27 +260,37 @@ export default function ReapplyModal({
   if (success) {
     return (
       <motion.div
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         style={{ willChange: 'opacity' }}
       >
         <motion.div
-          className={`rounded-xl max-w-md w-full p-8 text-center transition-colors duration-700 ${isDark ? 'bg-gray-900 border border-white/10' : 'bg-white border border-black/10'
-            }`}
+          className={`
+            rounded-xl max-w-md w-full p-6 sm:p-8 text-center
+            ${isDark 
+                ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' 
+                : 'bg-white border border-gray-200'
+            }
+          `}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
         >
-          <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-          <h2 className={`text-2xl font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-            }`}>
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center"
+          >
+            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+          </motion.div>
+          <h2 className={`text-xl sm:text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
             Reapplication Submitted!
           </h2>
-          <p className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-            }`}>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             {isPerDeptMode
               ? `Your reapplication to ${selectedDepartment?.display_name || selectedDepartment?.department_name} has been submitted.`
               : 'Your reapplication has been submitted. The rejected departments will review it again.'
@@ -294,7 +304,7 @@ export default function ReapplyModal({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[9990] backdrop-blur-sm"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -302,8 +312,13 @@ export default function ReapplyModal({
         style={{ willChange: 'opacity' }}
       >
         <motion.div
-          className={`rounded-xl max-w-3xl w-full max-h-[90vh] flex flex-col transition-colors duration-700 ${isDark ? 'bg-gray-900 border border-white/10' : 'bg-white border border-black/10'
-            }`}
+          className={`
+            rounded-xl w-full max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col
+            ${isDark 
+                ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' 
+                : 'bg-white border border-gray-200'
+            }
+          `}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -312,42 +327,50 @@ export default function ReapplyModal({
           style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
         >
           {/* Sticky Header */}
-          <div className={`sticky top-0 z-10 flex justify-between items-start p-6 border-b transition-colors duration-700 ${isDark ? 'bg-gray-900 border-white/10' : 'bg-white border-black/10'
-            }`}>
+          <div className={`
+            sticky top-0 z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 sm:p-6 border-b
+            ${isDark ? 'bg-gray-900/95 border-white/10' : 'bg-white/95 border-gray-200'}
+          `}>
             <div>
-              <h2 className={`text-2xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                }`}>
+              <h2 className={`text-lg sm:text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {isPerDeptMode
                   ? `Reapply to ${selectedDepartment?.display_name || selectedDepartment?.department_name}`
                   : 'Reapply to All Departments'
                 }
               </h2>
-              <p className={`text-sm mt-1 transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>
+              <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Registration No: <span className="font-mono font-bold text-jecrc-red">{formData.registration_no}</span>
               </p>
             </div>
             <button
               onClick={onClose}
               disabled={loading}
-              className={`p-2 rounded-lg transition-colors duration-300 ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
-                }`}
+              className={`
+                p-2 rounded-lg transition-all duration-300
+                ${isDark 
+                    ? 'hover:bg-white/10 text-gray-400 hover:text-white' 
+                    : 'hover:bg-black/5 text-gray-600 hover:text-gray-900'
+                }
+              `}
             >
-              <X className={`w-5 h-5 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {/* Error Alert */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-start gap-3"
+                className={`
+                    mb-6 p-4 rounded-lg flex items-start gap-3
+                    ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}
+                `}
               >
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-500">{error}</p>
+                <p className={`text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>{error}</p>
               </motion.div>
             )}
 

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
-import FormInput from './FormInput';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -507,31 +508,19 @@ export default function SubmitForm() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
+          <Button
             onClick={() => router.push(`/student/check-status?reg=${formData.registration_no}`)}
-            className={`
-              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-              flex items-center justify-center gap-2
-              shadow-lg hover:shadow-xl active:scale-[0.99]
-              bg-jecrc-red hover:bg-jecrc-red-dark text-white
-            `}
+            className="w-full sm:w-auto"
           >
             Track Status
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => window.location.reload()}
-            className={`
-              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-              flex items-center justify-center gap-2
-              border active:scale-[0.99]
-              ${isDark
-                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
-              }
-            `}
+            className="w-full sm:w-auto"
           >
             Submit Another
-          </button>
+          </Button>
         </div>
       </motion.div>
     );
@@ -605,417 +594,286 @@ export default function SubmitForm() {
 
       {/* Registration Number with Check Button AND Fetch Details Button */}
       <motion.div
-        className="space-y-2"
+        className="space-y-3"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.05, duration: 0.3, type: "spring", stiffness: 200 }}
       >
+        <Input
+          label="Registration Number"
+          name="registration_no"
+          value={formData.registration_no}
+          onChange={handleInputChange}
+          required
+          placeholder="e.g., 22BCAN001"
+          disabled={loading}
+          error={studentFetchError || ''}
+        />
+
+        {/* Buttons container - Stack vertically on mobile, side-by-side on sm+ */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <FormInput
-              label="Registration Number"
-              name="registration_no"
-              value={formData.registration_no}
-              onChange={handleInputChange}
-              required
-              placeholder="e.g., 22BCAN001"
-              disabled={loading}
-            />
-
-            {/* Student Data Fetch Status */}
-            {fetchingStudent && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                <span className="text-xs text-blue-500">Fetching...</span>
-              </div>
-            )}
-
-            {!fetchingStudent && studentDataFound && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-500" />
-                <span className="text-xs text-green-500">Found</span>
-              </div>
-            )}
-
-            {!fetchingStudent && studentFetchError && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <X className="w-5 h-5 text-red-500" />
-                <span className="text-xs text-red-500">Not found</span>
-              </div>
-            )}
-          </div>
-
-          {/* Buttons container - Stack vertically on mobile */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {/* Auto-Fill Button */}
-            <button
-              type="button"
-              onClick={() => fetchStudentData(formData.registration_no)}
-              disabled={fetchingStudent || !formData.registration_no}
-              className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
-                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-                ${isDark
-                  ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30'
-                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                }
-              `}
-              title="Auto-fill student details from database"
-            >
-              {fetchingStudent ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Fetching...</span>
-                </>
-              ) : (
-                <>
-                  <span>Auto-Fill</span>
-                </>
-              )}
-            </button>
-
-            {/* Check Status Button */}
-            <button
-              type="button"
-              onClick={checkExistingForm}
-              disabled={checking || !formData.registration_no}
-              className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
-                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-                ${isDark
-                  ? 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                }
-              `}
-              title="Check if application already exists"
-            >
-              {checking ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </>
-              ) : (
-                <>
-                  <span>Check Status</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Show student data when successfully fetched */}
-      {studentDataFound && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`
-            p-3 rounded-lg text-sm transition-all duration-500
-            ${isDark
-              ? 'bg-green-500/10 border border-green-500/30'
-              : 'bg-green-50 border border-green-200'
-            }
-          `}
-        >
-          <div className={`
-            font-medium mb-1 transition-colors duration-500
-            ${isDark ? 'text-green-400' : 'text-green-700'}
-          `}>
-            ✓ Student Data Found - Details Fetched
-          </div>
-          <div className={`
-            space-y-1 transition-colors duration-500
-            ${isDark ? 'text-green-300/80' : 'text-green-600'}
-          `}>
-            <div><strong>Name:</strong> {studentDataFound.student_name}</div>
-            <div><strong>School:</strong> {studentDataFound.school}</div>
-            <div><strong>Course:</strong> {studentDataFound.course}</div>
-            {studentDataFound.branch && <div><strong>Branch:</strong> {studentDataFound.branch}</div>}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Show error message when student not found */}
-      {studentFetchError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`
-            p-3 rounded-lg text-sm transition-all duration-500
-            ${isDark
-              ? 'bg-amber-500/10 border border-amber-500/30'
-              : 'bg-amber-50 border border-amber-200'
-            }
-          `}
-        >
-          <div className={`
-            flex items-start gap-2 transition-colors duration-500
-            ${isDark ? 'text-amber-400' : 'text-amber-700'}
-          `}>
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium mb-1">{studentFetchError}</p>
-              <p className={`
-                text-xs transition-colors duration-500
-                ${isDark ? 'text-amber-300/70' : 'text-amber-600'}
-              `}>
-                You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 200 }}
-      >
-        <div className="md:col-span-2">
-          <FormInput
-            label="Student Name"
-            name="student_name"
-            value={formData.student_name}
-            onChange={handleInputChange}
-            required
-            placeholder="Full Name"
-            disabled={loading}
-          />
-        </div>
-
-        {/* Country Code */}
-        <FormInput
-          label="Country Code"
-          name="country_code"
-          type="select"
-          value={formData.country_code}
-          onChange={handleInputChange}
-          required
-          disabled={loading || configLoading}
-          options={countryCodes.map(c => ({
-            value: c.dial_code,
-            label: `${c.country_name} (${c.dial_code})`
-          }))}
-        />
-
-        {/* Contact Number */}
-        <FormInput
-          label="Contact Number"
-          name="contact_no"
-          type="tel"
-          value={formData.contact_no}
-          onChange={handleInputChange}
-          required
-          placeholder="6-15 digits (without country code)"
-          disabled={loading}
-          pattern="[0-9]{6,15}"
-          inputMode="tel"
-        />
-
-        <FormInput
-          label="Admission Year"
-          name="admission_year"
-          value={formData.admission_year}
-          onChange={handleInputChange}
-          placeholder="e.g., 2020"
-          maxLength={4}
-          pattern="\d{4}"
-          required
-          disabled={loading}
-        />
-
-        <FormInput
-          label="Passing Year"
-          name="passing_year"
-          value={formData.passing_year}
-          onChange={handleInputChange}
-          placeholder="e.g., 2024"
-          maxLength={4}
-          pattern="\d{4}"
-          required
-          disabled={loading}
-        />
-
-        <div className="md:col-span-2">
-          <FormInput
-            label="Parent Name"
-            name="parent_name"
-            value={formData.parent_name}
-            onChange={handleInputChange}
-            placeholder="Father's/Mother's Name"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <DropdownWithErrorBoundary
-            componentName="SchoolDropdown"
-            dropdownType="schools"
-            onReset={() => window.location.reload()}
+          {/* Auto-Fill Button */}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => fetchStudentData(formData.registration_no)}
+            disabled={fetchingStudent || !formData.registration_no}
+            loading={fetchingStudent}
+            className="mt-0 sm:mt-3 h-[56px] w-full sm:w-auto text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900"
           >
-            <FormInput
-              label="School"
-              name="school"
-              type="select"
-              value={formData.school}
-              onChange={handleInputChange}
-              required
-              disabled={loading || configLoading}
-              loading={configLoading}
-              placeholder={configLoading ? "Loading schools..." : "Select School"}
-              options={schools.map(s => ({ value: s.id, label: s.name }))}
-            />
-          </DropdownWithErrorBoundary>
+            {!fetchingStudent && <span>Auto-Fill</span>}
+          </Button>
+
+          {/* Check Status Button */}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={checkExistingForm}
+            disabled={checking || !formData.registration_no}
+            loading={checking}
+            className="mt-0 sm:mt-3 h-[56px] w-full sm:w-auto"
+          >
+            {!checking && <span>Check Status</span>}
+          </Button>
         </div>
 
-        <DropdownWithErrorBoundary
-          componentName="CourseDropdown"
-          dropdownType="courses"
-          onReset={() => {
-            setFormData(prev => ({ ...prev, course: '', branch: '' }));
-            setAvailableCourses([]);
-          }}
-        >
-          <FormInput
-            label="Course"
-            name="course"
-            type="select"
-            value={formData.course}
-            onChange={handleInputChange}
-            required
-            disabled={loading || configLoading || coursesLoading || !formData.school}
-            loading={coursesLoading}
-            placeholder={
-              coursesLoading
-                ? "Loading courses..."
-                : !formData.school
-                  ? "Select a school first"
-                  : availableCourses.length === 0
-                    ? "No courses available"
-                    : "Select Course"
-            }
-            options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
-          />
-        </DropdownWithErrorBoundary>
+        {/* Student Data Fetch Status - Show below buttons instead of overlapping */}
+        {(fetchingStudent || studentDataFound || studentFetchError) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`
+              p-3 rounded-lg text-sm flex items-center gap-2
+              ${studentDataFound
+                ? isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'
+                : studentFetchError
+                  ? isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'
+                  : isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'
+              }
+            `}
+          >
+            {fetchingStudent && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+            {studentDataFound && <Check className="w-4 h-4 text-green-500" />}
+            {studentFetchError && <AlertCircle className="w-4 h-4 text-amber-500" />}
+            <span className={studentDataFound
+              ? isDark ? 'text-green-400' : 'text-green-700'
+              : studentFetchError
+                ? isDark ? 'text-amber-400' : 'text-amber-700'
+                : isDark ? 'text-blue-400' : 'text-blue-700'
+            }>
+              {fetchingStudent && 'Fetching student data...'}
+              {studentDataFound && `✓ Found: ${studentDataFound.student_name}`}
+              {studentFetchError && studentFetchError}
+            </span>
+          </motion.div>
+        )}
+      </motion.div>
+      <Input
+        label="Contact Number"
+        name="contact_no"
+        type="tel"
+        value={formData.contact_no}
+        onChange={handleInputChange}
+        required
+        placeholder="6-15 digits (without country code)"
+        disabled={loading}
+        pattern="[0-9]{6, 15}"
+        inputMode="tel"
+      />
 
-        <DropdownWithErrorBoundary
-          componentName="BranchDropdown"
-          dropdownType="branches"
-          onReset={() => {
-            setFormData(prev => ({ ...prev, branch: '' }));
-            setAvailableBranches([]);
-          }}
-        >
-          <FormInput
-            label="Branch"
-            name="branch"
-            type="select"
-            value={formData.branch}
-            onChange={handleInputChange}
-            required
-            disabled={loading || configLoading || branchesLoading || !formData.course}
-            loading={branchesLoading}
-            placeholder={
-              branchesLoading
-                ? "Loading branches..."
-                : !formData.course
-                  ? "Select a course first"
-                  : availableBranches.length === 0
-                    ? "No branches available"
-                    : "Select Branch"
-            }
-            options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
-          />
-        </DropdownWithErrorBoundary>
+      <Input
+        label="Admission Year"
+        name="admission_year"
+        value={formData.admission_year}
+        onChange={handleInputChange}
+        placeholder="e.g., 2020"
+        maxLength={4}
+        // pattern="\d{4}"
+        required
+        disabled={loading}
+      />
 
-        <FormInput
-          label="Personal Email"
-          name="personal_email"
-          type="email"
-          value={formData.personal_email}
+      <Input
+        label="Passing Year"
+        name="passing_year"
+        value={formData.passing_year}
+        onChange={handleInputChange}
+        placeholder="e.g., 2024"
+        maxLength={4}
+        // pattern="\d{4}" // Handled by validation logic/HTML5
+        required
+        disabled={loading}
+      />
+
+      <div className="md:col-span-2">
+        <Input
+          label="Parent Name"
+          name="parent_name"
+          value={formData.parent_name}
           onChange={handleInputChange}
+          placeholder="Father's/Mother's Name"
           required
-          placeholder="your.email@example.com"
           disabled={loading}
         />
+      </div>
 
-        <FormInput
-          label={`College Email (must end with ${collegeDomain})`}
-          name="college_email"
-          type="email"
-          value={formData.college_email}
-          onChange={handleInputChange}
-          required
-          placeholder={`yourname${collegeDomain}`}
-          disabled={loading}
-        />
-
-        {/* ALUMNI PROFILE LINK (MANDATORY) */}
-        <div className="md:col-span-2">
-          <FormInput
-            label="Alumni Profile Link (Mandatory)"
-            name="alumni_profile_link"
-            type="url"
-            value={formData.alumni_profile_link}
+      <div className="md:col-span-2">
+        <DropdownWithErrorBoundary
+          componentName="SchoolDropdown"
+          dropdownType="schools"
+          onReset={() => window.location.reload()}
+        >
+          <Input
+            label="School"
+            name="school"
+            type="select"
+            value={formData.school}
             onChange={handleInputChange}
             required
-            placeholder="https://jualumni.in/profile/123456"
-            disabled={loading}
+            disabled={loading || configLoading}
+            // loading={configLoading}
+            placeholder={configLoading ? "Loading schools..." : "Select School"}
+            options={schools.map(s => ({ value: s.id, label: s.name }))}
           />
-          <p className={`
+        </DropdownWithErrorBoundary>
+      </div>
+
+      <DropdownWithErrorBoundary
+        componentName="CourseDropdown"
+        dropdownType="courses"
+        onReset={() => {
+          setFormData(prev => ({ ...prev, course: '', branch: '' }));
+          setAvailableCourses([]);
+        }}
+      >
+        <Input
+          label="Course"
+          name="course"
+          type="select"
+          value={formData.course}
+          onChange={handleInputChange}
+          required
+          disabled={loading || configLoading || coursesLoading || !formData.school}
+          // loading={coursesLoading}
+          placeholder={
+            coursesLoading
+              ? "Loading courses..."
+              : !formData.school
+                ? "Select a school first"
+                : availableCourses.length === 0
+                  ? "No courses available"
+                  : "Select Course"
+          }
+          options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
+        />
+      </DropdownWithErrorBoundary>
+
+      <DropdownWithErrorBoundary
+        componentName="BranchDropdown"
+        dropdownType="branches"
+        onReset={() => {
+          setFormData(prev => ({ ...prev, branch: '' }));
+          setAvailableBranches([]);
+        }}
+      >
+        <Input
+          label="Branch"
+          name="branch"
+          type="select"
+          value={formData.branch}
+          onChange={handleInputChange}
+          required
+          disabled={loading || configLoading || branchesLoading || !formData.course}
+          // loading={branchesLoading} // Input doesn't support loading prop yet, removing to avoid warning
+          placeholder={
+            branchesLoading
+              ? "Loading branches..."
+              : !formData.course
+                ? "Select a course first"
+                : availableBranches.length === 0
+                  ? "No branches available"
+                  : "Select Branch"
+          }
+          options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+        />
+      </DropdownWithErrorBoundary>
+
+      <Input
+        label="Personal Email"
+        name="personal_email"
+        type="email"
+        value={formData.personal_email}
+        onChange={handleInputChange}
+        required
+        placeholder="your.email@example.com"
+        disabled={loading}
+      />
+
+      <Input
+        label={`College Email (must end with ${collegeDomain})`}
+        name="college_email"
+        type="email"
+        value={formData.college_email}
+        onChange={handleInputChange}
+        required
+        placeholder={`yourname${collegeDomain}`}
+        disabled={loading}
+      />
+
+      {/* ALUMNI PROFILE LINK (MANDATORY) */}
+      <div className="md:col-span-2">
+        <Input
+          label="Alumni Profile Link (Mandatory)"
+          name="alumni_profile_link"
+          type="url"
+          value={formData.alumni_profile_link}
+          onChange={handleInputChange}
+          required
+          placeholder="https://jualumni.in/profile/123456"
+          disabled={loading}
+        />
+        <p className={`
             text-xs sm:text-sm mt-2 ml-1 transition-colors duration-300
             ${isDark ? 'text-amber-400/90' : 'text-amber-700/90'}
           `}>
-            <span className="font-bold">Instruction:</span> Please visit{' '}
-            <a
-              href="https://jualumni.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-amber-500 font-medium"
-            >
-              jualumni.in
-            </a>
-            , go to your profile section, copy your profile link, and paste it here.
-          </p>
-        </div>
-      </motion.div>
+          <span className="font-bold">Instruction:</span> Please visit{' '}
+          <a
+            href="https://jualumni.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-amber-500 font-medium"
+          >
+            jualumni.in
+          </a>
+          , go to your profile section, copy your profile link, and paste it here.
+        </p>
+      </div>
+    </motion.div>
 
-      {/* Alumni Screenshot Upload Removed as per requirement */}
+      {/* Alumni Screenshot Upload Removed as per requirement */ }
 
-      {/* Form Actions */}
-      <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
-        <button
-          type="submit"
-          disabled={loading}
-          className={`
-            w-full py-4 rounded-xl font-bold text-base tracking-wide uppercase transition-all duration-300
-            flex items-center justify-center gap-2
-            shadow-lg hover:shadow-xl active:scale-[0.99]
-            disabled:opacity-70 disabled:cursor-not-allowed
-            bg-[#c41e3a] hover:bg-[#a01830] text-white
-          `}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Submitting Application...</span>
-            </>
-          ) : (
-            <>
-              <span>Submit Application</span>
-              <span className="ml-1 opacity-70">→</span>
-            </>
-          )}
-        </button>
-        <p className={`
+  {/* Form Actions */ }
+  <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
+    <Button
+      type="submit"
+      disabled={loading}
+      loading={loading}
+      className="w-full py-4 text-base tracking-wide uppercase shadow-lg hover:shadow-xl bg-[#c41e3a] hover:bg-[#a01830] text-white"
+    >
+      {!loading && (
+        <>
+          <span>Submit Application</span>
+          <span className="ml-1 opacity-70">→</span>
+        </>
+      )}
+    </Button>
+    <p className={`
           text-center mt-4 text-xs sm:text-sm
           ${isDark ? 'text-gray-500' : 'text-gray-400'}
         `}>
-          By clicking submit, you confirm all details are accurate.
-        </p>
-      </div>
-    </motion.form>
+      By clicking submit, you confirm all details are accurate.
+    </p>
+  </div>
+    </motion.form >
   );
 }

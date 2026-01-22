@@ -267,7 +267,7 @@ export default function Background({ theme }) {
     <>
       {/* LAYER 1: Far Background (Campus Image) */}
       <div
-        className="fixed inset-0 z-0 bg-cover bg-center transition-transform duration-100 ease-out"
+        className="fixed inset-0 -z-10 bg-cover bg-center transition-transform duration-100 ease-out"
         style={{
           backgroundImage: `url('/assets/9-1-1536x720.jpg')`,
           // Dark mode: Darkened for white text. Light mode: Faded/White-washed for dark text.
@@ -280,7 +280,7 @@ export default function Background({ theme }) {
       />
 
       {/* LAYER 2: Atmospheric Haze (Gradients) */}
-      <div className="fixed inset-0 z-0 pointer-events-none mix-blend-overlay opacity-60">
+      <div className="fixed inset-0 -z-10 pointer-events-none mix-blend-overlay opacity-60">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
         <div
           className="absolute inset-0 transition-transform duration-700 ease-out"
@@ -296,10 +296,9 @@ export default function Background({ theme }) {
       {/* LAYER 3: Particles & Orbs (Canvas) */}
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none"
+        className="fixed inset-0 transition-colors duration-700 ease-smooth pointer-events-none z-0"
         style={{
           background: 'transparent',
-          zIndex: 1,
           position: 'fixed',
           top: 0,
           left: 0,
