@@ -3,6 +3,7 @@ import { jwtVerify, importJWK } from 'jose';
 import { NextResponse } from 'next/server';
 import { sendRejectionNotification, sendCertificateReadyNotification } from '@/lib/emailService';
 import { APP_URLS, EMAIL_URLS } from '@/lib/urlHelper';
+import applicationService from '@/lib/services/ApplicationService';
 
 // Initialize Supabase Admin Client to bypass RLS for server-side actions
 const supabaseAdmin = createClient(
@@ -96,172 +97,93 @@ export async function POST(request) {
         const { searchParams } = new URL(request.url);
         let token = searchParams.get("token");
 
-        // Read the request body once
-        let status, reason, userId, departmentName;
-        try {
+        // If not in URL, try body
+        if (!token) {
             const body = await request.json();
-            if (!token) token = body.token;
-            status = body.status;
-            reason = body.reason;
-            userId = body.userId;
-            departmentName = body.departmentName;
-        } catch (err) {
-            return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+            token = body.token;
         }
 
-        if (!token || !status) {
-            return NextResponse.json({ error: "Token and status are required." }, { status: 400 });
+        // Read the request body for action data
+        let status, reason, userId, departmentName, remarks;
+        const body = await request.json();
+        status = body.status;
+        reason = body.reason;
+        userId = body.userId;
+        departmentName = body.departmentName;
+        remarks = body.remarks;
+
+        // Validate inputs
+        if (!token) {
+            return NextResponse.json({ error: "Token is required." }, { status: 400 });
+        }
+
+        if (!status || !['Approved', 'Rejected'].includes(status)) {
+            return NextResponse.json({ error: "Valid status (Approved/Rejected) is required." }, { status: 400 });
         }
 
         if (status === 'Rejected' && !reason) {
             return NextResponse.json({ error: "Reason is required for rejection." }, { status: 400 });
         }
 
-        const payload = await verifyToken(token);
-        const { user_id, form_id, department } = payload;
-
-        // If userId and departmentName are provided in body, use them for additional validation
-        if (userId && departmentName) {
-            // Verify the user has permission to act on this department
-            const { data: profile } = await supabaseAdmin
-                .from('profiles')
-                .select('role, department_name')
-                .eq('id', userId)
-                .single();
-
-            if (profile && (profile.role !== 'admin' && profile.department_name !== departmentName)) {
-                return NextResponse.json({
-                    error: 'You can only take actions for your own department'
-                }, { status: 403 });
-            }
+        // Verify the token and get the payload
+        let payload;
+        try {
+            payload = await verifyToken(token);
+        } catch (tokenError) {
+            return NextResponse.json({ error: `Token verification failed: ${tokenError.message}` }, { status: 401 });
         }
 
-        // STEP 1: Update the department status
-        const { data, error } = await supabaseAdmin
-            .from("no_dues_status")
-            .update({
-                status: status.toLowerCase(),
-                rejection_reason: status === 'Rejected' ? reason : null,
-                action_by_user_id: user_id,
-                action_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            })
-            .eq("form_id", form_id)
-            .eq("department_name", department)
-            .select();
+        const { form_id, department } = payload;
+
+        if (!form_id) {
+            return NextResponse.json({ error: "Invalid token: Missing form_id" }, { status: 400 });
+        }
+
+        // Get form details
+        const { data: form, error } = await supabaseAdmin
+            .from("no_dues_forms")
+            .select("id, student_name, registration_no, contact_no, personal_email, college_email, status")
+            .eq("id", form_id)
+            .single();
 
         if (error) throw error;
+        if (!form) return NextResponse.json({ error: "Form not found." }, { status: 404 });
 
-        // 🔥 NEW: Store rejection context for cascade explanation
+        // Handle rejection using unified application service
         if (status === 'Rejected') {
-            try {
-                // Get all pending departments that will be cascade-rejected
-                const { data: pendingDepts } = await supabaseAdmin
-                    .from('no_dues_status')
-                    .select('department_name')
-                    .eq('form_id', form_id)
-                    .eq('status', 'pending');
+            const rejectionResult = await applicationService.handleDepartmentRejection(
+                form_id,
+                department,
+                reason,
+                remarks,
+                userId || department
+            );
 
-                // Store context in form for student visibility
-                await supabaseAdmin
-                    .from('no_dues_forms')
-                    .update({
-                        rejection_context: {
-                            primary_rejector: department,
-                            primary_reason: reason,
-                            cascade_count: pendingDepts?.length || 0,
-                            cascade_departments: pendingDepts?.map(d => d.department_name) || [],
-                            rejected_at: new Date().toISOString()
-                        }
-                    })
-                    .eq('id', form_id);
-
-                console.log(`✅ Stored rejection context: ${department} rejected, ${pendingDepts?.length || 0} departments will cascade`);
-            } catch (contextError) {
-                console.error('⚠️ Failed to store rejection context (non-fatal):', contextError);
-                // Don't fail the request if context storage fails
-            }
+            return NextResponse.json({
+                success: true,
+                message: `Application rejected successfully. Reason: ${reason}`,
+                data: rejectionResult.data
+            });
         }
 
-        // STEP 2 & 3: Parallelize database queries for faster response (saves ~250ms)
-        const [
-            { data: formData, error: formError },
-            { data: deptData }
-        ] = await Promise.all([
-            supabaseAdmin
-                .from('no_dues_forms')
-                .select('student_name, registration_no, personal_email, status')
-                .eq('id', form_id)
-                .single(),
-            supabaseAdmin
-                .from('departments')
-                .select('display_name')
-                .eq('name', department)
-                .single()
-        ]);
+        // Handle approval using unified application service
+        if (status === 'Approved') {
+            const approvalResult = await applicationService.handleDepartmentApproval(
+                form_id,
+                department,
+                remarks,
+                userId || department
+            );
 
-        if (formError) {
-            console.error('❌ Failed to fetch form data:', formError);
+            return NextResponse.json({
+                success: true,
+                message: `Application approved successfully`,
+                data: approvalResult.data
+            });
         }
 
-        const departmentDisplayName = deptData?.display_name || department;
-
-        // STEP 4: Send email notification to student (only for rejections)
-        if (formData && formData.personal_email && status === 'Rejected') {
-            try {
-                await sendRejectionNotification({
-                    studentEmail: formData.personal_email,
-                    studentName: formData.student_name,
-                    registrationNo: formData.registration_no,
-                    departmentName: departmentDisplayName,
-                    rejectionReason: reason,
-                    statusUrl: EMAIL_URLS.studentCheckStatus(formData.registration_no)
-                });
-
-                console.log(`✅ Sent rejection notification to ${formData.personal_email}`);
-            } catch (emailError) {
-                console.error('❌ Failed to send student notification (non-fatal):', emailError);
-                // Don't fail the request if email fails
-            }
-        }
-
-        // STEP 5: Check if ALL departments approved → Send certificate email
-        if (status.toLowerCase() === 'approved') {
-            try {
-                const { data: allStatuses, error: statusError } = await supabaseAdmin
-                    .from('no_dues_status')
-                    .select('status')
-                    .eq('form_id', form_id);
-
-                if (!statusError && allStatuses) {
-                    const totalDepts = allStatuses.length;
-                    const approvedDepts = allStatuses.filter(s => s.status === 'approved').length;
-
-                    console.log(`📊 Progress: ${approvedDepts}/${totalDepts} departments approved`);
-
-                    // If ALL departments approved, send certificate ready email
-                    if (approvedDepts === totalDepts && formData?.personal_email) {
-                        await sendCertificateReadyNotification({
-                            studentEmail: formData.personal_email,
-                            studentName: formData.student_name,
-                            registrationNo: formData.registration_no,
-                            certificateUrl: EMAIL_URLS.studentCheckStatus(formData.registration_no)
-                        });
-
-                        console.log(`🎓 Certificate ready email sent to ${formData.personal_email}`);
-                    }
-                }
-            } catch (certError) {
-                console.error('❌ Certificate notification failed (non-fatal):', certError);
-            }
-        }
-
-        return NextResponse.json({
-            ok: true,
-            message: "Status updated successfully.",
-            emailSent: true
-        });
     } catch (err) {
-        return NextResponse.json({ error: err.message || "Failed to update status." }, { status: 500 });
+        console.error('Department action error:', err);
+        return NextResponse.json({ error: err.message || "Internal server error." }, { status: 500 });
     }
 }

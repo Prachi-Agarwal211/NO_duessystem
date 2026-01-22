@@ -21,18 +21,16 @@ function DepartmentStatus({ departmentName, status, actionAt, rejectionReason })
     }
   };
 
-  const getStatusBadge = () => {
-    const baseClasses = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider";
-
+  const getStatusBadge = (status) => {
     switch (status) {
       case 'approved':
-        return `${baseClasses} bg-green-500/20 text-green-500`;
+        return "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-500/20 text-green-500";
       case 'rejected':
-        return `${baseClasses} bg-red-500/20 text-red-500`;
+        return "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-500";
       case 'in_progress':
-        return `${baseClasses} bg-blue-500/20 text-blue-500`;
+        return "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-500/20 text-blue-500";
       default:
-        return `${baseClasses} bg-yellow-500/20 text-yellow-500`;
+        return "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-500";
     }
   };
 

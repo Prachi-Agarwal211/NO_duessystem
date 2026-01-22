@@ -38,24 +38,30 @@ export default function AdminNotificationBell({ departmentStats = [] }) {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('Not authenticated');
 
-            const res = await fetch('/api/admin/send-reminder', {
+            const res = await fetch('/api/admin/notify-department', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ departmentName })
+                body: JSON.stringify({ 
+                    departmentName,
+                    customMessage: 'Please review pending applications at your earliest convenience.',
+                    includeStats: true 
+                })
             });
 
             const json = await res.json();
             if (json.success) {
-                toast.success(`Reminder sent to ${departmentName.replace(/_/g, ' ')}!`);
+                toast.success(`Admin notification sent to ${departmentName.replace(/_/g, ' ')}!`);
+                // Refresh departments to update pending counts
+                fetchDepartments();
             } else {
-                throw new Error(json.error || 'Failed to send reminder');
+                throw new Error(json.error || 'Failed to send notification');
             }
         } catch (e) {
-            console.error('Reminder error:', e);
-            toast.error(e.message || 'Failed to send reminder');
+            console.error('Admin notification error:', e);
+            toast.error(e.message || 'Failed to send notification');
         } finally {
             setSending(prev => ({ ...prev, [departmentName]: false }));
         }

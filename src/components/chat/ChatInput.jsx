@@ -8,7 +8,9 @@ export default function ChatInput({
     sending,
     placeholder,
     onTypingStart,
-    onTypingStop
+    onTypingStop,
+    disabled = false,
+    selectedFile = null
 }) {
     const [message, setMessage] = useState('');
     const typingTimeoutRef = useRef(null);
@@ -47,7 +49,7 @@ export default function ChatInput({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!message.trim() || sending) return;
+        if (!message.trim() || sending || disabled) return;
 
         // Stop typing when sending
         if (onTypingStop) {
@@ -75,6 +77,15 @@ export default function ChatInput({
 
     return (
         <form onSubmit={handleSubmit} className="p-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-white/10">
+            {selectedFile && (
+                <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-700 dark:text-blue-300">
+                            📎 {selectedFile.name}
+                        </span>
+                    </div>
+                </div>
+            )}
             <div className="flex gap-2 items-end">
                 <textarea
                     value={message}
@@ -85,11 +96,11 @@ export default function ChatInput({
                     rows={1}
                     className="flex-1 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all"
                     style={{ minHeight: '44px', maxHeight: '120px' }}
-                    disabled={sending}
+                    disabled={sending || disabled}
                 />
                 <button
                     type="submit"
-                    disabled={!message.trim() || sending}
+                    disabled={!message.trim() || sending || disabled}
                     className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex-shrink-0 min-w-[44px] min-h-[44px]"
                     aria-label="Send message"
                 >

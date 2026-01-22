@@ -1,0 +1,554 @@
+/* 🎯 OPTIMIZED TABLE SYSTEM - JECRC NO DUES */
+/* Performance-optimized table styles with smooth animations */
+
+/* ========================================
+   TABLE CONTAINER SYSTEM
+   ======================================== */
+
+.table-container {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.table-container:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ========================================
+   RESPONSIVE TABLE SYSTEM
+   ======================================== */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  position: relative;
+}
+
+/* Table Header */
+.table thead {
+  background: var(--color-gray-50);
+  border-bottom: 2px solid var(--color-gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-700);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-gray-200);
+  position: relative;
+  user-select: none;
+}
+
+/* Sortable Headers */
+.table th.sortable {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.table th.sortable:hover {
+  color: var(--color-primary);
+}
+
+.sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-gray-400);
+  transition: all var(--transition-fast);
+}
+
+.sort-indicator.active {
+  color: var(--color-primary);
+}
+
+.sort-indicator.asc::after {
+  content: '↑';
+  margin-left: var(--space-1);
+}
+
+.sort-indicator.desc::after {
+  content: '↓';
+  margin-left: var(--space-1);
+}
+
+/* Table Body */
+.table tbody {
+  background: var(--color-white);
+}
+
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-gray-100);
+  vertical-align: middle;
+  color: var(--color-gray-600);
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+}
+
+/* Table Rows */
+.table-row {
+  transition: all var(--transition-normal);
+  position: relative;
+  will-change: transform;
+}
+
+.table-row:hover {
+  background: var(--color-gray-50);
+  transform: translateZ(0);
+}
+
+.table-row.selected {
+  background: rgba(59, 130, 246, 0.05);
+  border-left: 3px solid var(--color-primary);
+}
+
+.table-row.updating {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(59, 130, 246, 0.1) 50%, 
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: rowUpdating 1s ease infinite;
+}
+
+@keyframes rowUpdating {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Expandable Rows */
+.expandable-row {
+  cursor: pointer;
+  position: relative;
+}
+
+.expandable-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-gray-300);
+  transform: scaleY(0);
+  transition: all var(--transition-normal);
+}
+
+.expandable-row:hover::before {
+  transform: scaleY(1);
+  background: var(--color-primary);
+}
+
+.expandable-row.expanded::before {
+  transform: scaleY(1);
+  background: var(--color-primary);
+}
+
+/* Expand/Collapse Button */
+.expand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+  color: var(--color-gray-600);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.expand-button:hover {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+  color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.expand-button:active {
+  transform: scale(0.95);
+}
+
+.expand-button .expand-icon {
+  transition: transform var(--transition-normal);
+  display: inline-block;
+}
+
+.expand-button.expanded .expand-icon {
+  transform: rotate(90deg);
+}
+
+/* Checkbox Styles */
+.table-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-gray-300);
+  background: var(--color-white);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.table-checkbox:checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.table-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--color-white);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.table-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* ========================================
+   MOBILE TABLE OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table {
+    min-width: 600px;
+  }
+  
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+  
+  .expand-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .table-checkbox {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Mobile Table Card View */
+@media (max-width: 640px) {
+  .table-mobile-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+  }
+  
+  .table-mobile-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  
+  .table-mobile-card-header {
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-2);
+  }
+  
+  .table-mobile-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .table-mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--color-gray-100);
+  }
+  
+  .table-mobile-card-row:last-child {
+    border-bottom: none;
+  }
+  
+  .table-mobile-card-label {
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+    font-weight: var(--font-medium);
+  }
+  
+  .table-mobile-card-value {
+    font-size: var(--text-sm);
+    color: var(--color-gray-900);
+    text-align: right;
+  }
+}
+
+/* ========================================
+   LOADING AND EMPTY STATES
+   ======================================== */
+
+.table-loading {
+  position: relative;
+}
+
+.table-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    transparent 100%);
+  animation: tableLoading 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes tableLoading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.table-empty {
+  text-align: center;
+  padding: var(--space-16) var(--space-4);
+  color: var(--color-gray-500);
+}
+
+.table-empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-4);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.table-empty-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+.table-empty-description {
+  font-size: var(--text-sm);
+  color: var(--color-gray-500);
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* ========================================
+   BULK ACTIONS BAR
+   ======================================== */
+
+.bulk-actions-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-white);
+  border-top: 1px solid var(--color-gray-200);
+  padding: var(--space-4);
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 20;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bulk-actions-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.bulk-actions-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bulk-actions-count {
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+}
+
+.bulk-actions-label {
+  font-size: var(--text-sm);
+  color: var(--color-gray-700);
+  font-weight: var(--font-medium);
+}
+
+.bulk-actions-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ========================================
+   PAGINATION SYSTEM
+   ======================================== */
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  background: var(--color-gray-50);
+  border-top: 1px solid var(--color-gray-200);
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .table-pagination {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+}
+
+.pagination-info {
+  font-size: var(--text-sm);
+  color: var(--color-gray-600);
+}
+
+.pagination-info strong {
+  color: var(--color-gray-900);
+  font-weight: var(--font-semibold);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.pagination-button {
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  min-width: 44px;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+  color: var(--color-gray-700);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background: var(--color-gray-50);
+  border-color: var(--color-gray-300);
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-button.primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+.pagination-button.primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* GPU Acceleration */
+.table-row,
+.expand-button,
+.table-checkbox {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .table-row,
+  .expand-button,
+  .table-checkbox,
+  .pagination-button {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .table-row.updating {
+    animation: none !important;
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Print Optimizations */
+@media print {
+  .table-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .table-row:hover {
+    background: transparent;
+  }
+  
+  .bulk-actions-bar,
+  .pagination-controls {
+    display: none !important;
+  }
+}

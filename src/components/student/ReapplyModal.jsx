@@ -391,7 +391,7 @@ export default function ReapplyModal({
                   setReplyMessage(e.target.value);
                   setError('');
                 }}
-                className={`w-full p-3 border rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-jecrc-red ${isDark
+                className={`w-full p-3 border rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-600 ${isDark
                   ? 'bg-white/10 border-white/20 text-white placeholder-gray-500'
                   : 'bg-white border-black/20 text-ink-black placeholder-gray-400'
                   }`}

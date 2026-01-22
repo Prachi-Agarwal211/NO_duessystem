@@ -1,11 +1,14 @@
 /**
- * Email Service using Nodemailer
+ * Enhanced Email Service using Nodemailer
  * Handles all email notifications for the JECRC UNIVERSITY NO DUES System
  * 
  * Features:
  * - SMTP connection pooling
  * - Inline retry with exponential backoff (no cron dependency)
  * - Graceful failure handling
+ * - Notification settings management
+ * - Certificate generation and tracking
+ * - Email logging and statistics
  * 
  * OPTIMIZED: Reduced from 15 emails per student to just 3:
  * 1. One combined email to ALL departments (not individual)
@@ -14,6 +17,32 @@
  */
 
 import nodemailer from 'nodemailer';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase for email logging and notification settings
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
+
+// Email types for tracking
+export const EMAIL_TYPES = {
+  DEPARTMENT_NOTIFICATION: 'department_notification',
+  CERTIFICATE_GENERATED: 'certificate_generated',
+  CERTIFICATE_SENT: 'certificate_sent',
+  STATUS_UPDATE: 'status_update',
+  REAPPLICATION_SUBMITTED: 'reapplication_submitted',
+  SUPPORT_TICKET_CREATED: 'support_ticket_created',
+  SUPPORT_TICKET_RESOLVED: 'support_ticket_resolved',
+  REMINDER_PENDING: 'reminder_pending',
+  REMINDER_REAPPLY: 'reminder_reapply'
+};
 
 // Email configuration optimized for Render deployment
 const SMTP_CONFIG = {
@@ -267,10 +296,10 @@ function generateEmailTemplate({ title, content, actionUrl, actionText, footerTe
 }
 
 /**
- * 🆕 OPTIMIZED: Send ONE combined email to ALL departments
- * Instead of individual emails to each staff member
- * @param {Object} params - Notification parameters
- * @returns {Promise<Object>} - Email send result
+ * 🚫 DISABLED: No longer sending individual department notifications
+ * Only daily summaries and admin-triggered notifications are sent
+ * 
+ * @deprecated - Use sendDailyDepartmentDigest or admin-triggered notifications instead
  */
 export async function sendCombinedDepartmentNotification({
   allStaffEmails,
@@ -282,69 +311,104 @@ export async function sendCombinedDepartmentNotification({
   formId,
   dashboardUrl
 }) {
-  if (!allStaffEmails || allStaffEmails.length === 0) {
-    console.warn('⚠️ No staff emails to notify');
-    return { success: false, error: 'No recipients' };
-  }
+  console.log('🚫 Individual department notifications disabled - only daily summaries sent');
+  return { success: true, skipped: true, reason: 'Individual notifications disabled' };
+}
 
-  console.log(`📧 Sending COMBINED notification to ${allStaffEmails.length} staff members...`);
-
+/**
+ * Send reminder email to department staff
+ * @param {Object} params - Reminder parameters
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendDepartmentReminder({
+  staffEmails,
+  departmentName,
+  pendingCount,
+  customMessage,
+  dashboardUrl,
+  isAdminTriggered = false
+}) {
+  const priority = isAdminTriggered ? '🔴 ADMIN ALERT' : '⏰ REMINDER';
+  const priorityColor = isAdminTriggered ? '#dc2626' : '#f59e0b';
+  
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      A new No Dues application has been submitted and requires review from <strong>all departments</strong>.
+      Hello <strong>${departmentName}</strong> Team,
     </p>
     
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
+    ${isAdminTriggered ? `
+    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #dc2626; font-size: 14px; font-weight: 600; margin-bottom: 8px;">
+        🚨 ADMIN TRIGGERED NOTIFICATION
+      </p>
+      <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
+        This notification was sent directly by the administration. Please prioritize your review of pending applications.
+      </p>
+    </div>
+    ` : ''}
+    
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      ${customMessage || `You have <strong style="color: ${priorityColor};">${pendingCount}</strong> pending No Dues application${pendingCount > 1 ? 's' : ''} awaiting your review.`}
+    </p>
+    
+    ${pendingCount > 0 ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0;">
       <tr>
         <td>
-          <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase;">
-            Student Details
+          <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600;">
+            ${priority}: ${pendingCount} Application${pendingCount > 1 ? 's' : ''} Pending
           </p>
-          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-            <strong>Name:</strong> ${studentName}
-          </p>
-          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-            <strong>Registration No:</strong> <span style="font-family: monospace; background-color: #fef2f2; padding: 2px 6px; border-radius: 4px; color: #dc2626;">${registrationNo}</span>
-          </p>
-          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-            <strong>School:</strong> ${school}
-          </p>
-          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 15px;">
-            <strong>Course:</strong> ${course}
-          </p>
-          <p style="margin: 0; color: #1f2937; font-size: 15px;">
-            <strong>Branch:</strong> ${branch}
+          <p style="margin: 8px 0 0 0; color: #1f2937; font-size: 13px; line-height: 1.6;">
+            Prompt action helps students receive their certificates on time. Please log in to your dashboard to review and process these applications.
           </p>
         </td>
       </tr>
     </table>
-    
-    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
-        <strong>📌 Important:</strong> This email is sent to all department staff. Please log in to your dashboard to review and take action (Approve/Reject) for your department only.
+    ` : `
+    <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #16a34a; font-size: 14px; font-weight: 600;">
+        ✅ All Applications Processed
+      </p>
+      <p style="margin: 8px 0 0 0; color: #1f2937; font-size: 13px; line-height: 1.6;">
+        Great job! You have no pending applications at this time.
       </p>
     </div>
+    `}
     
-    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
-      The student will be notified only when ALL departments approve or if ANY department rejects.
-    </p>
+    ${isAdminTriggered ? `
+    <div style="background-color: #f3f4f6; border-radius: 8px; padding: 12px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; color: #6b7280; font-size: 12px;">
+        This is an administrative notification. For questions, please contact the system administrator.
+      </p>
+    </div>
+    ` : ''}
   `;
 
   const html = generateEmailTemplate({
-    title: 'New No Dues Application - All Departments',
+    title: `${priority}: ${departmentName} Department`,
     content,
     actionUrl: dashboardUrl,
-    actionText: 'Review Application',
-    footerText: 'This is a combined notification sent to all department staff. Please do not reply to this email.'
+    actionText: pendingCount > 0 ? 'Review Applications' : 'View Dashboard',
+    footerText: isAdminTriggered 
+      ? 'Admin-triggered notification. Priority response requested.'
+      : `Automated reminder sent to ${departmentName} department.`
   });
 
-  // Send ONE email with all staff in CC (visible to all)
+  const subject = isAdminTriggered 
+    ? `🚨 Admin Alert: ${departmentName} - ${pendingCount} Pending`
+    : `⏰ Reminder: ${departmentName} - ${pendingCount} Pending`;
+
   return sendEmail({
-    to: allStaffEmails[0], // Primary recipient (first staff)
-    cc: allStaffEmails.slice(1), // CC all others (visible to everyone)
-    subject: `🔔 New Application: ${studentName} (${registrationNo}) - All Departments`,
+    to: staffEmails[0],
+    cc: staffEmails.slice(1),
+    subject,
     html,
-    metadata: { formId, type: 'combined_department_notification', recipientCount: allStaffEmails.length }
+    metadata: { 
+      type: isAdminTriggered ? 'admin_triggered_notification' : 'department_reminder', 
+      departmentName, 
+      pendingCount,
+      isAdminTriggered
+    }
   });
 }
 
@@ -359,15 +423,15 @@ export async function sendRejectionNotification({
   registrationNo,
   departmentName,
   rejectionReason,
-  statusUrl
+  dashboardUrl
 }) {
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      Hello <strong>${studentName}</strong>,
+      Dear <strong>${studentName}</strong>,
     </p>
     
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
-      Your No Dues application has been <strong>rejected</strong> by the <strong>${departmentName}</strong> department.
+      We regret to inform you that your No Dues application has been <strong style="color: #dc2626;">rejected</strong> by the <strong>${departmentName}</strong> department.
     </p>
     
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626; padding: 20px; margin: 20px 0;">
@@ -380,50 +444,211 @@ export async function sendRejectionNotification({
             <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
           </p>
           <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
-            <strong>Rejected By:</strong> ${departmentName}
+            <strong>Department:</strong> ${departmentName}
           </p>
           ${rejectionReason ? `
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #fecaca;">
-              <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase;">
-                Reason for Rejection
-              </p>
-              <p style="margin: 0; color: #dc2626; font-size: 14px; font-style: italic;">
-                "${rejectionReason}"
-              </p>
-            </div>
+          <p style="margin: 8px 0 0 0; color: #1f2937; font-size: 14px;">
+            <strong>Reason:</strong> ${rejectionReason}
+          </p>
           ` : ''}
         </td>
       </tr>
     </table>
     
-    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 20px 0;">
-      <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
-        <strong>⚠️ Next Steps:</strong><br/>
-        Please resolve the issues mentioned above and reapply through the system. You can edit your application and resubmit for review.
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <strong>📝 What's Next?</strong><br/>
+        You can reapply for No Dues clearance after addressing the concerns mentioned above. Please review the feedback and submit a new application when ready.
       </p>
     </div>
+    
+    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
+      If you believe this rejection was made in error, please contact the support team or visit your dashboard for more information.
+    </p>
   `;
 
   const html = generateEmailTemplate({
-    title: `Application Rejected: ${departmentName}`,
+    title: 'No Dues Application Rejected',
     content,
-    actionUrl: statusUrl,
-    actionText: 'View Application Status'
+    actionUrl: dashboardUrl,
+    actionText: 'View Application Details',
+    footerText: 'This is an automated notification from JECRC UNIVERSITY NO DUES System.'
   });
 
   return sendEmail({
     to: studentEmail,
-    subject: `❌ Application Rejected - ${registrationNo}`,
+    subject: `❌ Application Rejected: ${departmentName} - ${registrationNo}`,
     html,
-    metadata: { type: 'rejection_notification', department: departmentName }
+    metadata: { 
+      type: 'rejection', 
+      departmentName, 
+      registrationNo,
+      rejectionReason
+    }
   });
 }
 
 /**
- * Send certificate ready notification to student (all approved)
+ * Send status update notification to student
  * @param {Object} params - Notification parameters
  * @returns {Promise<Object>} - Email send result
  */
+export async function sendStudentStatusUpdate({
+  studentEmail,
+  studentName,
+  registrationNo,
+  departmentName,
+  status,
+  dashboardUrl
+}) {
+  const statusConfig = {
+    approved: {
+      color: '#16a34a',
+      icon: '✅',
+      title: 'Application Approved',
+      message: 'Great news! Your application has been approved.'
+    },
+    rejected: {
+      color: '#dc2626',
+      icon: '❌',
+      title: 'Application Rejected',
+      message: 'Your application has been rejected.'
+    },
+    in_progress: {
+      color: '#f59e0b',
+      icon: '⏳',
+      title: 'Application In Progress',
+      message: 'Your application is being reviewed.'
+    }
+  };
+
+  const config = statusConfig[status] || statusConfig.in_progress;
+
+  const content = `
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      Dear <strong>${studentName}</strong>,
+    </p>
+    
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      ${config.message}
+    </p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border-radius: 8px; border-left: 4px solid #16a34a; padding: 20px; margin: 20px 0;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 8px 0; color: #16a34a; font-size: 18px; font-weight: 600;">
+            ${config.icon} ${config.title}
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
+            <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
+            <strong>Department:</strong> ${departmentName}
+          </p>
+          <p style="margin: 0; color: #1f2937; font-size: 14px;">
+            <strong>Status:</strong> <span style="color: ${config.color}; font-weight: 600;">${status.toUpperCase()}</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+    
+    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
+      You can check your application status anytime by logging into your dashboard.
+    </p>
+  `;
+
+  const html = generateEmailTemplate({
+    title: config.title,
+    content,
+    actionUrl: dashboardUrl,
+    actionText: 'View Application Status',
+    footerText: 'This is an automated notification from JECRC UNIVERSITY NO DUES System.'
+  });
+
+  return sendEmail({
+    to: studentEmail,
+    subject: `${config.icon} ${config.title}: ${departmentName} - ${registrationNo}`,
+    html,
+    metadata: { 
+      type: 'status_update', 
+      departmentName, 
+      registrationNo,
+      status
+    }
+  });
+}
+
+/**
+ * Send reapplication confirmation to student
+ * @param {Object} params - Notification parameters
+ * @returns {Promise<Object>} - Email send result
+ */
+export async function sendReapplicationConfirmation({
+  studentEmail,
+  studentName,
+  registrationNo,
+  reapplicationNumber,
+  dashboardUrl
+}) {
+  const content = `
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      Dear <strong>${studentName}</strong>,
+    </p>
+    
+    <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+      We have received your reapplication for No Dues clearance. This is your <strong style="color: #f59e0b;">reapplication #${reapplicationNumber}</strong>.
+    </p>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+      <tr>
+        <td>
+          <p style="margin: 0 0 8px 0; color: #92400e; font-size: 18px; font-weight: 600;">
+            🔄 Reapplication Received
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
+            <strong>Registration No:</strong> <span style="font-family: monospace;">${registrationNo}</span>
+          </p>
+          <p style="margin: 0 0 6px 0; color: #1f2937; font-size: 14px;">
+            <strong>Reapplication Number:</strong> ${reapplicationNumber}
+          </p>
+          <p style="margin: 0; color: #1f2937; font-size: 14px;">
+            <strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">Under Review</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+    
+    <div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+        <strong>📋 Next Steps:</strong><br/>
+        The relevant departments will review your reapplication. You will be notified of any status changes via email.
+      </p>
+    </div>
+    
+    <p style="margin: 16px 0 0 0; color: #6b7280; font-size: 14px;">
+      You can track your application status in real-time by logging into your dashboard.
+    </p>
+  `;
+
+  const html = generateEmailTemplate({
+    title: 'Reapplication Received',
+    content,
+    actionUrl: dashboardUrl,
+    actionText: 'Track Application Status',
+    footerText: 'This is an automated notification from JECRC UNIVERSITY NO DUES System.'
+  });
+
+  return sendEmail({
+    to: studentEmail,
+    subject: `🔄 Reapplication #${reapplicationNumber} Received - ${registrationNo}`,
+    html,
+    metadata: { 
+      type: 'reapplication_confirmation', 
+      registrationNo,
+      reapplicationNumber
+    }
+  });
+}
 export async function sendCertificateReadyNotification({
   studentEmail,
   studentName,
@@ -624,7 +849,7 @@ export async function sendSupportTicketResponse({
  * @param {Object} params - Reminder parameters
  * @returns {Promise<Object>} - Email send result
  */
-export async function sendDepartmentReminder({
+export async function sendStudentReminder({
   staffEmails,
   studentName,
   registrationNo,
@@ -801,12 +1026,265 @@ export async function sendDailyDepartmentDigest({
   };
 }
 
+/**
+ * Log email to database for tracking and analytics
+ */
+async function logEmail(emailData) {
+  try {
+    const { data, error } = await supabase
+      .from('email_logs')
+      .insert({
+        email_type: emailData.emailType,
+        recipient_email: emailData.recipientEmail,
+        subject: emailData.subject,
+        body: emailData.body,
+        status: emailData.status || 'pending',
+        error_message: emailData.errorMessage,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Failed to log email:', error);
+    return null;
+  }
+}
+
+/**
+ * Update email log with status
+ */
+async function updateEmailLog(logId, updates) {
+  try {
+    const { error } = await supabase
+      .from('email_logs')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', logId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Failed to update email log:', error);
+  }
+}
+
+/**
+ * Get user notification settings
+ */
+async function getUserNotificationSettings(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // Not found error
+      throw error;
+    }
+
+    // Return default settings if none found
+    return data || {
+      emailEnabled: true,
+      smsEnabled: false,
+      pushEnabled: true,
+      departmentEmails: true,
+      certificateEmail: true,
+      statusEmails: true,
+      reminderEmails: true,
+      supportEmails: true
+    };
+  } catch (error) {
+    console.error('Failed to get notification settings:', error);
+    return {
+      emailEnabled: true,
+      smsEnabled: false,
+      pushEnabled: true,
+      departmentEmails: true,
+      certificateEmail: true,
+      statusEmails: true,
+      reminderEmails: true,
+      supportEmails: true
+    };
+  }
+}
+
+/**
+ * Update user notification settings
+ */
+async function updateUserNotificationSettings(userId, settings) {
+  try {
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .upsert({
+        user_id: userId,
+        ...settings,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Failed to update notification settings:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send certificate email with tracking
+ */
+async function sendCertificateEmail(studentEmail, certificateData) {
+  const subject = `🎓 No Dues Certificate Generated - ${certificateData.registrationNo}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>No Dues Certificate</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .header { background: #16a34a; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .certificate { background: linear-gradient(135deg, #fbbf24, #f59e0b); padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0; }
+        .footer { background: #f1f5f9; padding: 15px; text-align: center; font-size: 12px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #16a34a; color: white; text-decoration: none; border-radius: 5px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🎓 JECRC No Dues Certificate</h1>
+        <p>Certificate Generated Successfully</p>
+      </div>
+      
+      <div class="content">
+        <h2>Congratulations!</h2>
+        <p>Your no-dues certificate has been generated successfully.</p>
+        
+        <div class="certificate">
+          <h3>📜 Certificate of Clearance</h3>
+          <p><strong>${certificateData.student_name}</strong></p>
+          <p>Registration: ${certificateData.registration_no}</p>
+          <p>${certificateData.school} - ${certificateData.course}</p>
+          <p>Branch: ${certificateData.branch}</p>
+          <p>Completed: ${new Date(certificateData.completionDate).toLocaleDateString()}</p>
+        </div>
+        
+        <p>You can download your certificate from the link below:</p>
+        <a href="${certificateData.verificationUrl}" class="btn">Download Certificate</a>
+        
+        <p><strong>Certificate ID:</strong> ${certificateData.certificateId}</p>
+        <p><small>This certificate is verified and stored on blockchain for authenticity.</small></p>
+      </div>
+      
+      <div class="footer">
+        <p>This is an automated message from JECRC No Dues System.</p>
+        <p>For any queries, please contact the administration.</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  // Log email attempt
+  const logEntry = await logEmail({
+    emailType: EMAIL_TYPES.CERTIFICATE_SENT,
+    recipientEmail: studentEmail,
+    subject,
+    body: html
+  });
+
+  try {
+    const result = await sendEmail({
+      to: studentEmail,
+      subject,
+      html
+    });
+
+    // Update log with success
+    if (logEntry) {
+      await updateEmailLog(logEntry.id, {
+        status: 'sent',
+        sentAt: new Date().toISOString()
+      });
+    }
+
+    // Update certificate record
+    if (certificateData.id) {
+      await supabase
+        .from('certificates')
+        .update({
+          email_sent: true,
+          email_sent_at: new Date().toISOString()
+        })
+        .eq('id', certificateData.id);
+    }
+
+    return result;
+  } catch (error) {
+    // Update log with error
+    if (logEntry) {
+      await updateEmailLog(logEntry.id, {
+        status: 'failed',
+        errorMessage: error.message
+      });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get email statistics for dashboard
+ */
+async function getEmailStats(startDate, endDate) {
+  try {
+    const { data, error } = await supabase
+      .from('email_logs')
+      .select('*')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
+
+    if (error) throw error;
+
+    const stats = {
+      total: data.length,
+      sent: data.filter(log => log.status === 'sent').length,
+      failed: data.filter(log => log.status === 'failed').length,
+      pending: data.filter(log => log.status === 'pending').length,
+      byType: data.reduce((acc, log) => {
+        acc[log.email_type] = (acc[log.email_type] || 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return stats;
+  } catch (error) {
+    console.error('Failed to get email stats:', error);
+    return null;
+  }
+}
+
 // Export all functions
 export default {
   sendEmail,
   sendDailyDepartmentDigest,
   sendRejectionNotification,
-  sendOtpEmail
+  sendStudentStatusUpdate,
+  sendReapplicationConfirmation,
+  sendCertificateReadyNotification,
+  sendOtpEmail,
+  sendCertificateEmail,
+  logEmail,
+  updateEmailLog,
+  getUserNotificationSettings,
+  updateUserNotificationSettings,
+  getEmailStats,
+  EMAIL_TYPES
 };
 
 /**

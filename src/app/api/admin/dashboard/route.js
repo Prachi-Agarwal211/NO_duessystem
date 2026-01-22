@@ -3,6 +3,8 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import adminDashboardService from '@/lib/adminDashboardService';
+import applicationService from '@/lib/services/ApplicationService';
 
 // ✅ CRITICAL FIX: Force Supabase to bypass Next.js server-side caching
 const supabaseAdmin = createClient(

@@ -64,7 +64,7 @@ export async function GET(request) {
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
       college_email: student.college_email || '',
-      alumni_profile_link: student.alumni_profile_link || '',
+      alumni_profile_link: student.alumniProfileLink || student.alumni_profile_link || '',
       no_dues_status: student.no_dues_status || 'not_applied',
       certificate_url: student.certificate_url || null
     };
@@ -138,7 +138,7 @@ export async function POST(request) {
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
       college_email: student.college_email || '',
-      alumni_profile_link: student.alumni_profile_link || '',
+      alumni_profile_link: student.alumniProfileLink || student.alumni_profile_link || '',
 
       // Master Sync Fields
       no_dues_status: student.no_dues_status || 'not_applied',

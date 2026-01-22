@@ -366,14 +366,6 @@ export async function PUT(request) {
         if (action === 'reject') {
           const { sendRejectionNotification } = await import('@/lib/emailService');
 
-          // Send SMS Alert
-          if (formWithEmail.contact_no) {
-            SmsService.sendSMS(
-              formWithEmail.contact_no,
-              SmsService.TEMPLATES.REJECTION_ALERT(formWithEmail.student_name, departmentName)
-            ).catch(console.error);
-          }
-
           const emailResult = await sendRejectionNotification({
             studentEmail,
             studentName: formWithEmail.student_name,
@@ -393,14 +385,6 @@ export async function PUT(request) {
         // CASE 2: Department APPROVED + ALL completed - Send certificate ready email
         else if (action === 'approve' && currentForm?.status === 'completed') {
           const { sendCertificateReadyNotification } = await import('@/lib/emailService');
-
-          // Send SMS Alert
-          if (formWithEmail.contact_no) {
-            SmsService.sendSMS(
-              formWithEmail.contact_no,
-              SmsService.TEMPLATES.CERTIFICATE_READY(formWithEmail.student_name)
-            ).catch(console.error);
-          }
 
           const emailResult = await sendCertificateReadyNotification({
             studentEmail,

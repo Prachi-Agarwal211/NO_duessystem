@@ -149,13 +149,13 @@ export const fileSizeSchema = (maxSize = 1 * 1024 * 1024) => z
 export const studentFormSchema = z.object({
   registration_no: registrationNoSchema,
   student_name: nameSchema,
-  parent_name: nameSchema.optional().or(z.literal('')),
+  parent_name: nameSchema.optional().or(z.literal('')).transform(val => val?.trim()),
   personal_email: emailSchema,
   college_email: emailSchema, // Will be validated against domain separately
   contact_no: phoneSchema,
   country_code: z.string().default('+91'),
-  admission_year: yearSchema.optional().or(z.literal('')),
-  passing_year: yearSchema.optional().or(z.literal('')),
+  admission_year: yearSchema.optional().or(z.literal('')).transform(val => val?.trim()),
+  passing_year: yearSchema.optional().or(z.literal('')).transform(val => val?.trim()),
   school: z.string().min(1, 'School is required'), // UUID or Name
   course: z.string().min(1, 'Course is required'), // UUID or Name
   branch: z.string().min(1, 'Branch is required'), // UUID or Name

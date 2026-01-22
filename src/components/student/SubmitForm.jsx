@@ -388,8 +388,8 @@ export default function SubmitForm() {
         setTimeout(() => reject(new Error('Request timeout. Please try again.')), 30000)
       );
 
-      // Create fetch promise
-      const fetchPromise = fetch('/api/student', {
+      // Create fetch promise using Prisma-based API
+      const fetchPromise = fetch('/api/student/prisma-route', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -475,8 +475,13 @@ export default function SubmitForm() {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className={`max-w-lg mx-auto text-center p-8 sm:p-12 rounded-3xl shadow-2xl transition-all duration-300
-          ${isDark ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' : 'bg-white border border-gray-100'}`}
+        className={`
+          max-w-lg mx-auto text-center p-8 sm:p-12 rounded-3xl shadow-2xl transition-all duration-500
+          ${isDark
+            ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10'
+            : 'bg-white border border-gray-100'
+          }
+        `}
       >
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
@@ -487,27 +492,43 @@ export default function SubmitForm() {
           <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
         </motion.div>
 
-        <h2 className={`text-3xl font-extrabold mb-4 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
+        <h2 className={`
+          text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight
+          ${isDark ? 'text-white' : 'text-gray-900'}
+        `}>
           Application Submitted!
         </h2>
 
-        <p className={`text-base mb-8 leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p className={`
+          text-sm sm:text-base mb-8 leading-relaxed
+          ${isDark ? 'text-gray-400' : 'text-gray-600'}
+        `}>
           Your no dues application has been successfully recorded. You can track its live status using your Registration Number.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={() => router.push(`/student/check-status?reg=${formData.registration_no}`)}
-            className="px-6 py-3.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl font-semibold shadow-lg shadow-jecrc-red/25 transition-all active:scale-95"
+            className={`
+              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+              flex items-center justify-center gap-2
+              shadow-lg hover:shadow-xl active:scale-[0.99]
+              bg-jecrc-red hover:bg-jecrc-red-dark text-white
+            `}
           >
             Track Status
           </button>
           <button
             onClick={() => window.location.reload()}
-            className={`px-6 py-3.5 rounded-xl font-semibold transition-all active:scale-95 border ${isDark
-              ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-              : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
-              }`}
+            className={`
+              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
+              flex items-center justify-center gap-2
+              border active:scale-[0.99]
+              ${isDark
+                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
+                : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
+              }
+            `}
           >
             Submit Another
           </button>
@@ -519,39 +540,51 @@ export default function SubmitForm() {
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-8" // Increased spacing for comfort
+      className="space-y-6 sm:space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.3 }}
     >
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`p-4 rounded-lg flex items-start gap-3 transition-all duration-700
-            ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}
+          className={`
+            p-4 rounded-xl flex items-start gap-3 transition-all duration-500
+            ${isDark
+              ? 'bg-red-500/10 border border-red-500/30'
+              : 'bg-red-50 border border-red-200'
+            }
+          `}
         >
           <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-500">{error}</p>
         </motion.div>
       )}
 
-      {/* Important Instructions Block */}
+      {/* Important Instructions Block - Premium Style */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`p-6 sm:p-8 rounded-xl border mb-8 ${isDark
-          ? 'bg-blue-900/10 border-blue-500/20'
-          : 'bg-blue-50 border-blue-100'
-          }`}
+        className={`
+          p-6 sm:p-8 rounded-xl border mb-8
+          ${isDark
+            ? 'bg-blue-900/10 border-blue-500/20'
+            : 'bg-blue-50 border-blue-100'
+          }
+        `}
       >
-        <h3 className={`text-base font-bold mb-3 flex items-center gap-2 ${isDark ? 'text-blue-400' : 'text-blue-700'
-          }`}>
+        <h3 className={`
+          text-base sm:text-lg font-bold mb-3 flex items-center gap-2
+          ${isDark ? 'text-blue-400' : 'text-blue-700'}
+        `}>
           <AlertCircle className="w-5 h-5" />
           Important Instructions
         </h3>
-        <ul className={`space-y-2.5 text-sm list-disc pl-5 ${isDark ? 'text-blue-200/70' : 'text-blue-600'
-          }`}>
+        <ul className={`
+          space-y-2.5 text-sm sm:text-base list-disc pl-5
+          ${isDark ? 'text-blue-200/70' : 'text-blue-600'}
+        `}>
           <li>All fields marked with <span className="text-red-500 font-bold">*</span> are mandatory.</li>
           <li>Please ensure all details match your official college records.</li>
           <li>After submission, you can track your application status using your Registration Number.</li>
@@ -575,7 +608,7 @@ export default function SubmitForm() {
         className="space-y-2"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.05, duration: 0.2, type: "spring", stiffness: 200 }}
+        transition={{ delay: 0.05, duration: 0.3, type: "spring", stiffness: 200 }}
       >
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
@@ -620,7 +653,7 @@ export default function SubmitForm() {
               onClick={() => fetchStudentData(formData.registration_no)}
               disabled={fetchingStudent || !formData.registration_no}
               className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-200 
+                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
                 flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
                 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
                 ${isDark
@@ -648,7 +681,7 @@ export default function SubmitForm() {
               onClick={checkExistingForm}
               disabled={checking || !formData.registration_no}
               className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-200 
+                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
                 flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
                 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
                 ${isDark
@@ -677,15 +710,24 @@ export default function SubmitForm() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`p-3 rounded-lg text-sm transition-all duration-700
-            ${isDark ? 'bg-green-500/10 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}
+          className={`
+            p-3 rounded-lg text-sm transition-all duration-500
+            ${isDark
+              ? 'bg-green-500/10 border border-green-500/30'
+              : 'bg-green-50 border border-green-200'
+            }
+          `}
         >
-          <div className={`font-medium mb-1 transition-colors duration-700
-            ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+          <div className={`
+            font-medium mb-1 transition-colors duration-500
+            ${isDark ? 'text-green-400' : 'text-green-700'}
+          `}>
             ✓ Student Data Found - Details Fetched
           </div>
-          <div className={`space-y-1 transition-colors duration-700
-            ${isDark ? 'text-green-300/80' : 'text-green-600'}`}>
+          <div className={`
+            space-y-1 transition-colors duration-500
+            ${isDark ? 'text-green-300/80' : 'text-green-600'}
+          `}>
             <div><strong>Name:</strong> {studentDataFound.student_name}</div>
             <div><strong>School:</strong> {studentDataFound.school}</div>
             <div><strong>Course:</strong> {studentDataFound.course}</div>
@@ -699,16 +741,25 @@ export default function SubmitForm() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`p-3 rounded-lg text-sm transition-all duration-700
-            ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}
+          className={`
+            p-3 rounded-lg text-sm transition-all duration-500
+            ${isDark
+              ? 'bg-amber-500/10 border border-amber-500/30'
+              : 'bg-amber-50 border border-amber-200'
+            }
+          `}
         >
-          <div className={`flex items-start gap-2 transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-400' : 'text-amber-700'
-            }`}>
+          <div className={`
+            flex items-start gap-2 transition-colors duration-500
+            ${isDark ? 'text-amber-400' : 'text-amber-700'}
+          `}>
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium mb-1">{studentFetchError}</p>
-              <p className={`text-xs transition-colors duration-700 ease-smooth ${isDark ? 'text-amber-300/70' : 'text-amber-600'
-                }`}>
+              <p className={`
+                text-xs transition-colors duration-500
+                ${isDark ? 'text-amber-300/70' : 'text-amber-600'}
+              `}>
                 You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
               </p>
             </div>
@@ -913,8 +964,20 @@ export default function SubmitForm() {
             placeholder="https://jualumni.in/profile/123456"
             disabled={loading}
           />
-          <p className={`text-xs mt-2 ml-1 transition-colors duration-300 ${isDark ? 'text-amber-400/90' : 'text-amber-700/90'}`}>
-            <span className="font-bold">Instruction:</span> Please visit <a href="https://jualumni.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-500 font-medium">jualumni.in</a>, go to your profile section, copy your profile link, and paste it here.
+          <p className={`
+            text-xs sm:text-sm mt-2 ml-1 transition-colors duration-300
+            ${isDark ? 'text-amber-400/90' : 'text-amber-700/90'}
+          `}>
+            <span className="font-bold">Instruction:</span> Please visit{' '}
+            <a
+              href="https://jualumni.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-amber-500 font-medium"
+            >
+              jualumni.in
+            </a>
+            , go to your profile section, copy your profile link, and paste it here.
           </p>
         </div>
       </motion.div>
@@ -941,12 +1004,15 @@ export default function SubmitForm() {
             </>
           ) : (
             <>
-              <span className={isDark ? "pl-[2px]" : ""}>Submit Application</span>
+              <span>Submit Application</span>
               <span className="ml-1 opacity-70">→</span>
             </>
           )}
         </button>
-        <p className={`text-center mt-4 text-xs ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+        <p className={`
+          text-center mt-4 text-xs sm:text-sm
+          ${isDark ? 'text-gray-500' : 'text-gray-400'}
+        `}>
           By clicking submit, you confirm all details are accurate.
         </p>
       </div>

@@ -139,6 +139,28 @@ class SupabaseRealtimeService {
                   }
                 }));
               }
+
+              // 🔥 AUTOMATIC CERTIFICATE GENERATION TRIGGER
+              if (payload.new?.status === 'completed') {
+                console.log('🎯 Form completed - triggering automatic certificate generation');
+                
+                // Trigger certificate generation in background
+                import('./certificateTrigger.js').then(({ triggerCertificateGeneration }) => {
+                  triggerCertificateGeneration(payload.new?.id, 'realtime-system')
+                    .then(result => {
+                      if (result.success) {
+                        console.log('✅ Realtime certificate generated:', result.certificateUrl);
+                      } else {
+                        console.error('❌ Realtime certificate generation failed:', result.error);
+                      }
+                    })
+                    .catch(error => {
+                      console.error('❌ Realtime certificate trigger error:', error);
+                    });
+                }).catch(error => {
+                  console.error('❌ Failed to import certificate trigger:', error);
+                });
+              }
             }
           }
         )

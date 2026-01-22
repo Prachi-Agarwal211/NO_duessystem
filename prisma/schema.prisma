@@ -39,7 +39,7 @@ model ConfigCourse {
 
   school       ConfigSchool @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   branches     ConfigBranch[]
-  profiles     Profile[]
+  profiles     Profile[] @relation("ProfileCourses")
 
   @@unique([schoolId, name])
   @@map("config_courses")
@@ -55,7 +55,7 @@ model ConfigBranch {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   course       ConfigCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  profiles     Profile[]
+  profiles     Profile[] @relation("ProfileBranches")
 
   @@unique([courseId, name])
   @@map("config_branches")
@@ -142,17 +142,20 @@ model Profile {
   courseIds             String[] @default([]) @map("course_ids")
   branchIds             String[] @default([]) @map("branch_ids")
   isActive              Boolean  @default(true) @map("is_active")
-  metadata              Json     @default("{}")::jsonb
+  metadata              Json     @default("{}")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   school                ConfigSchool?  @relation(fields: [schoolId], references: [id])
-  course                ConfigCourse?  @relation(fields: [courseIds], references: [id])
-  branch                ConfigBranch?  @relation(fields: [branchIds], references: [id])
+  courses               ConfigCourse[] @relation("ProfileCourses")
+  branches              ConfigBranch[] @relation("ProfileBranches")
   department            Department?    @relation(fields: [departmentName], references: [name])
   noDuesForms           NoDuesForm[]
   auditLogs             AuditLog[]
   supportTickets        SupportTicket[]
+  chatMessages          NoDuesMessage[] @relation("ProfileMessages")
+  notificationSettings  NotificationSettings?
+  certificates          Certificate[]
 
   @@map("profiles")
 }
@@ -180,7 +183,7 @@ model NoDuesForm {
   personalEmail              String?   @map("personal_email")
   collegeEmail               String?   @map("college_email")
   email                      String?
-  alumniScreenshotUrl        String?   @map("alumni_screenshot_url")
+  alumniProfileLink          String?   @map("alumni_profile_link")  // Fixed field name to match form
   status                     String    @default("pending")
   reapplicationOf            String?   @map("reapplication_of")
   reapplicationCount         Int       @default(0) @map("reapplication_count")
@@ -206,6 +209,7 @@ model NoDuesForm {
   noDuesMessages             NoDuesMessage[]
   certificateVerifications   CertificateVerification[]
   studentData                StudentData?
+  certificates               Certificate[]
 
   @@map("no_dues_forms")
 }
@@ -250,11 +254,13 @@ model NoDuesMessage {
   message       String
   senderType    String    @map("sender_type")
   senderName    String    @map("sender_name")
+  senderId      String?   @map("sender_id")
   createdAt     DateTime  @default(now()) @map("created_at")
   isRead        Boolean   @default(false) @map("is_read")
 
   form          NoDuesForm @relation(fields: [formId], references: [id], onDelete: Cascade)
   department    Department @relation(fields: [departmentName], references: [name])
+  sender        Profile?   @relation("ProfileMessages", fields: [senderId], references: [id])
 
   @@map("no_dues_messages")
 }
@@ -351,6 +357,72 @@ model EmailLog {
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   @@map("email_logs")
+}
+
+model NotificationSettings {
+  id              String    @id @default(cuid())
+  userId          String    @unique @map("user_id")
+  emailEnabled    Boolean   @default(true) @map("email_enabled")
+  smsEnabled      Boolean   @default(false) @map("sms_enabled")
+  pushEnabled     Boolean   @default(true) @map("push_enabled")
+  departmentEmails Boolean   @default(true) @map("department_emails")
+  certificateEmail Boolean  @default(true) @map("certificate_email")
+  statusEmails    Boolean   @default(true) @map("status_emails")
+  reminderEmails  Boolean   @default(true) @map("reminder_emails")
+  supportEmails   Boolean   @default(true) @map("support_emails")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  user            Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model Certificate {
+  id              String    @id @default(cuid())
+  certificateId   String    @unique @map("certificate_id")
+  formId          String    @map("form_id")
+  userId          String?   @map("user_id")
+  studentName     String    @map("student_name")
+  registrationNo  String    @map("registration_no")
+  school          String
+  course          String
+  branch          String
+  completionDate  DateTime  @map("completion_date")
+  issueDate       DateTime  @default(now()) @map("issue_date")
+  status          String    @default("generated") // generated, sent, downloaded, verified
+  filePath        String?   @map("file_path")
+  fileSize        Int?      @map("file_size")
+  fileHash        String?   @map("file_hash")
+  blockchainTxId  String?   @map("blockchain_tx_id")
+  verificationUrl String?   @map("verification_url")
+  downloadCount   Int       @default(0) @map("download_count")
+  lastDownloadAt  DateTime? @map("last_download_at")
+  emailSent       Boolean   @default(false) @map("email_sent")
+  emailSentAt     DateTime? @map("email_sent_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  form            NoDuesForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  profile         Profile?   @relation(fields: [userId], references: [id])
+
+  @@map("certificates")
+}
+
+model EmailTemplate {
+  id            String    @id @default(cuid())
+  templateName  String    @unique @map("template_name")
+  subject       String
+  htmlContent   String    @map("html_content")
+  textContent   String?   @map("text_content")
+  variables     Json      // Template variables in JSON format
+  isActive      Boolean   @default(true) @map("is_active")
+  department    String?   // Optional department-specific template
+  createdBy     String    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("email_templates")
 }
 
 model AuditLog {

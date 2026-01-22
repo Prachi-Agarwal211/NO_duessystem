@@ -16,7 +16,6 @@
   "analytics": {
     "enabled": true
   },
-  "edgeNetwork": "sfo1",
   "headers": [
     {
       "source": "/api/(.*)",

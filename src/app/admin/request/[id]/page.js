@@ -296,14 +296,14 @@ export default function AdminRequestDetail() {
                   isDark ? 'text-white' : 'text-ink-black'
                 }`}>{new Date(request.updated_at).toLocaleString()}</p>
               </div>
-              {request.alumni_screenshot_url && (
+              {request.alumniProfileLink && (
                 <div>
                   <span className={`text-sm transition-colors duration-700 ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>Alumni Screenshot:</span>
                   <div className="mt-2">
                     <img
-                      src={request.alumni_screenshot_url}
+                      src={request.alumniProfileLink}
                       alt="Alumni verification"
                       className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${
                         isDark ? 'border-gray-600' : 'border-gray-300'

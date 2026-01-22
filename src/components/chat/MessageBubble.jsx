@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Check, CheckCheck, AlertCircle } from 'lucide-react';
+import { RefreshCw, Check, CheckCheck, AlertCircle, Paperclip, Download } from 'lucide-react';
 
 export default function MessageBubble({ message, isOwn, isSending, isFailed, onRetry }) {
     const formatTime = (dateStr) => {
@@ -11,6 +11,20 @@ export default function MessageBubble({ message, isOwn, isSending, isFailed, onR
             hour12: true
         });
     };
+
+    const formatReadTime = (dateStr) => {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
+    // Check if message contains file attachment
+    const hasFileAttachment = message.message.includes('📎') || message.file_url;
+    const fileName = message.file_name || message.message.replace('📎 ', '').trim();
+    const fileUrl = message.file_url;
 
     return (
         <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
@@ -33,6 +47,25 @@ export default function MessageBubble({ message, isOwn, isSending, isFailed, onR
                             : 'bg-blue-600 text-white rounded-br-md'
                     : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md shadow-sm border border-gray-100 dark:border-gray-600'
                     }`}>
+                    
+                    {/* File Attachment */}
+                    {hasFileAttachment && fileUrl && (
+                        <div className="mb-2 p-2 bg-white/10 dark:bg-black/10 rounded-lg">
+                            <div className="flex items-center gap-2">
+                                <Paperclip className="w-4 h-4" />
+                                <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm underline hover:no-underline flex items-center gap-1"
+                                >
+                                    {fileName}
+                                    <Download className="w-3 h-3" />
+                                </a>
+                            </div>
+                        </div>
+                    )}
+
                     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                         {message.message}
                     </p>
@@ -53,7 +86,7 @@ export default function MessageBubble({ message, isOwn, isSending, isFailed, onR
 
                     {/* Read receipt indicator for own messages */}
                     {isOwn && !isSending && !isFailed && (
-                        <span className="text-gray-400">
+                        <span className="text-gray-400" title={message.is_read ? `Read at ${formatReadTime(message.read_at)}` : 'Not read yet'}>
                             {message.is_read ? (
                                 <CheckCheck className="w-3 h-3 text-blue-500" />
                             ) : (

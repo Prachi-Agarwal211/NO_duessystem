@@ -16,22 +16,35 @@ function SubmitFormPageContent() {
 
   return (
     <>
-      {/* Enterprise Backdrop */}
-      {!isDark && <div className="light-backdrop" />}
+      {/* Premium Background - Same as Landing Page */}
+      <div className={`
+        fixed inset-0 -z-10
+        ${isDark
+          ? 'bg-[radial-gradient(ellipse_at_top,rgba(196,30,58,0.12)_0%,rgba(5,5,5,0.98)_40%,rgba(5,5,5,1)_60%)]'
+          : 'bg-gradient-to-b from-white via-gray-50/50 to-white'
+        }
+      `} />
+      
+      {/* Light Mode Premium Backdrop */}
+      {!isDark && (
+        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-white/95 via-white/80 to-white/95" />
+      )}
 
-      <div className="relative z-10 min-h-screen pt-20 pb-24 sm:py-20 px-4 sm:px-6 flex flex-col items-center">
-        {/* Back Button */}
-        <div className="w-full max-w-7xl mb-8 pl-4 lg:pl-0">
+      <div className="relative z-10 min-h-screen w-full flex flex-col items-center py-8 sm:py-12 px-4 sm:px-6">
+        {/* Back Button - Premium Style */}
+        <div className="w-full max-w-5xl mb-6 sm:mb-8">
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
             onClick={() => router.push('/')}
-            className={`group flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
-                    ${isDark
-                ? 'text-gray-400 hover:text-white hover:bg-white/10'
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-              }`}
+            className={`
+              interactive flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300
+              ${isDark
+                ? 'text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10'
+                : 'text-gray-600 hover:text-black bg-white hover:bg-gray-50 border border-black/10'
+              }
+            `}
           >
             <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
             <span className="font-medium text-sm">Back to Home</span>
@@ -43,36 +56,93 @@ function SubmitFormPageContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-7xl"
+          className="w-full max-w-5xl"
         >
-          {/* Header Section (Locked Center) */}
-          <div className="title-wrap mb-10">
-            <Logo size="medium" />
-            <div className="h-4"></div>
-            <span className="text-xs font-bold text-jecrc-red tracking-[0.2em] uppercase mb-2">
+          {/* Header Section - Premium Centered */}
+          <div className="text-center mb-8 sm:mb-10">
+            <motion.span
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className={`
+                inline-block text-xs sm:text-sm font-bold uppercase tracking-[0.2em] mb-3 sm:mb-4
+                ${isDark ? 'text-jecrc-red-bright' : 'text-jecrc-red-dark'}
+              `}
+            >
               Student Services
-            </span>
-            <h1 className={`text-3xl sm:text-4xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            </motion.span>
+            
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6 }}
+              className={`
+                text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-2 sm:mb-3
+                ${isDark
+                  ? 'text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400'
+                  : 'text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900'
+                }
+              `}
+            >
               Submit Application
-            </h1>
-            <div className="title-divider"></div>
-            <p className={`text-sm mt-3 max-w-md ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            </motion.h1>
+            
+            {/* Premium Decorative Line */}
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 80 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className={`
+                h-1.5 mx-auto rounded-full
+                ${isDark ? 'bg-gradient-to-r from-jecrc-red to-jecrc-red-bright' : 'bg-gradient-to-r from-jecrc-red to-jecrc-red-dark'}
+              `}
+            />
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className={`
+                text-sm sm:text-base mt-3 max-w-md mx-auto
+                ${isDark ? 'text-gray-400' : 'text-gray-600'}
+              `}
+            >
               Fill in your details to initiate the no-dues clearance process.
-            </p>
+            </motion.p>
           </div>
 
-          {/* Form Surface */}
-          <div className={`
-                    rounded-[28px] overflow-hidden transition-all duration-300
-                    ${isDark ? 'hero-info-panel-dark' : 'hero-info-panel-light'}
-                `}>
+          {/* Form Surface - Premium Card Style */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className={`
+              rounded-2xl overflow-hidden transition-all duration-500
+              ${isDark
+                ? 'bg-gradient-to-br from-white/5 to-white/10 border border-white/10'
+                : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200'
+              }
+              shadow-xl
+            `}
+          >
             <SubmitForm />
-          </div>
+          </motion.div>
 
-          {/* Info Card (Subtle) */}
-          <div className={`mt-8 text-center text-sm ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+          {/* Info Card - Premium Style */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className={`
+              mt-6 sm:mt-8 text-center text-sm p-4 rounded-xl
+              ${isDark
+                ? 'bg-white/5 border border-white/10 text-gray-400'
+                : 'bg-gray-50 border border-gray-200 text-gray-600'
+              }
+            `}
+          >
             <p>Need help? Contact the administrative office.</p>
-          </div>
+          </motion.div>
         </motion.div>
       </div>
     </>

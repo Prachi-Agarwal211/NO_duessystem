@@ -119,7 +119,7 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                                         required
                                         value={registrationNo}
                                         onChange={(e) => setRegistrationNo(e.target.value.toUpperCase())}
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-jecrc-red/20 focus:border-jecrc-red transition-all"
+                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600/20 focus:border-jecrc-red transition-all"
                                         placeholder="e.g. 21BXXXXXX"
                                     />
                                 </div>
@@ -156,7 +156,7 @@ export default function OtpLoginForm({ onLoginSuccess }) {
                                         maxLength={6}
                                         value={otp}
                                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-jecrc-red/20 focus:border-jecrc-red transition-all tracking-widest text-lg"
+                                        className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-red-600/20 focus:border-jecrc-red transition-all tracking-widest text-lg"
                                         placeholder="XXXXXX"
                                     />
                                 </div>

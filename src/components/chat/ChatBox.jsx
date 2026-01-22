@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
-import { ChevronUp, RefreshCw } from 'lucide-react';
+import { ChevronUp, RefreshCw, Paperclip, X, CheckCircle } from 'lucide-react';
 
 export default function ChatBox({
     messages,
@@ -22,10 +22,16 @@ export default function ChatBox({
     // Typing indicator props
     typingUsers = [],
     onTypingStart,
-    onTypingStop
+    onTypingStop,
+    // File attachment props
+    onFileUpload,
+    isConnected = true
 }) {
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -33,6 +39,48 @@ export default function ChatBox({
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
+
+    // Handle file selection
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Check file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size must be less than 10MB');
+                return;
+            }
+
+            // Check file type
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Only images, PDFs, and text files are allowed');
+                return;
+            }
+
+            setSelectedFile(file);
+        }
+    };
+
+    // Handle file upload
+    const handleFileUpload = async () => {
+        if (!selectedFile || !onFileUpload) return;
+
+        setIsUploading(true);
+        try {
+            const result = await onFileUpload(selectedFile);
+            if (result.success) {
+                setSelectedFile(null);
+                // Send message with file attachment
+                onSend(`📎 ${selectedFile.name}`, currentUserType, currentUserName, result.fileUrl);
+            } else {
+                alert(result.error || 'Failed to upload file');
+            }
+        } catch (error) {
+            alert('Failed to upload file');
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -57,11 +105,36 @@ export default function ChatBox({
     }
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-xl">
             {/* Header */}
-            <div className="px-4 py-3 bg-gradient-to-r from-jecrc-red to-red-600 text-white">
-                <h3 className="font-bold text-lg">💬 Chat with {departmentName}</h3>
-                <p className="text-xs text-white/80">Real-time communication</p>
+            <div className="px-4 py-3 bg-gradient-to-r from-jecrc-red to-red-600 text-white relative z-10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="font-bold text-lg">💬 Chat with {departmentName}</h3>
+                        <p className="text-xs text-white/80 flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'}`} />
+                            {isConnected ? 'Connected' : 'Disconnected'}
+                        </p>
+                    </div>
+                    {onFileUpload && (
+                        <div className="flex items-center gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                onChange={handleFileSelect}
+                                accept="image/*,.pdf,.doc,.docx,.txt"
+                                className="hidden"
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                                title="Attach file"
+                            >
+                                <Paperclip className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Rejection Reason Banner */}
@@ -164,12 +237,50 @@ export default function ChatBox({
             )}
 
             {/* Input Area */}
+            {/* File Preview */}
+            {selectedFile && (
+                <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-t border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Paperclip className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm text-blue-700 dark:text-blue-300 truncate">
+                                {selectedFile.name}
+                            </span>
+                            <span className="text-xs text-blue-600 dark:text-blue-400">
+                                ({(selectedFile.size / 1024).toFixed(1)} KB)
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleFileUpload}
+                                disabled={isUploading}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            >
+                                {isUploading ? (
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    'Upload'
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setSelectedFile(null)}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ChatInput
                 onSend={(message) => onSend(message, currentUserType, currentUserName)}
                 sending={sending}
                 placeholder={`Message ${departmentName}...`}
                 onTypingStart={onTypingStart}
                 onTypingStop={onTypingStop}
+                disabled={isUploading}
+                selectedFile={selectedFile}
             />
         </div>
     );

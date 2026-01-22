@@ -194,7 +194,7 @@ export default function ConfigModal({
             className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all ${
               error 
                 ? 'border-red-500 ring-2 ring-red-500/20' 
-                : 'focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                : 'focus:border-jecrc-red focus:ring-2 focus:ring-red-600/20'
             } ${
               isDark
                 ? 'bg-white/5 border-white/10 text-white placeholder-white/50 [&>option]:bg-[#0f0f0f] [&>option]:text-white'
@@ -221,7 +221,7 @@ export default function ConfigModal({
             className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all ${
               error 
                 ? 'border-red-500 ring-2 ring-red-500/20 animate-shake' 
-                : 'focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                : 'focus:border-jecrc-red focus:ring-2 focus:ring-red-600/20'
             } ${
               isDark
                 ? 'bg-white/5 border-white/10 text-white placeholder-white/50'
@@ -241,7 +241,7 @@ export default function ConfigModal({
             className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all ${
               error 
                 ? 'border-red-500 ring-2 ring-red-500/20 animate-shake' 
-                : 'focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                : 'focus:border-jecrc-red focus:ring-2 focus:ring-red-600/20'
             } ${
               isDark
                 ? 'bg-white/5 border-white/10 text-white placeholder-white/50'
@@ -350,7 +350,7 @@ export default function ConfigModal({
             className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all ${
               error 
                 ? 'border-red-500 ring-2 ring-red-500/20 animate-shake' 
-                : 'focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                : 'focus:border-jecrc-red focus:ring-2 focus:ring-red-600/20'
             } ${
               isDark
                 ? 'bg-white/5 border-white/10 text-white placeholder-white/50'
@@ -370,7 +370,7 @@ export default function ConfigModal({
             className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none transition-all ${
               error 
                 ? 'border-red-500 ring-2 ring-red-500/20 animate-shake' 
-                : 'focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                : 'focus:border-jecrc-red focus:ring-2 focus:ring-red-600/20'
             } ${
               isDark
                 ? 'bg-white/5 border-white/10 text-white placeholder-white/50'

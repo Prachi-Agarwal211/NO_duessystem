@@ -155,14 +155,16 @@ export default function ApplicationsTable({ applications: initialApplications, c
               const isExpanded = expandedRows.has(app.id);
               return (
                 <React.Fragment key={app.id}>
-                  <tr className={`group transition-colors duration-500 ${updatingRows.has(app.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                  <tr className={`group transition-colors duration-200 gpu-accelerated ${updatingRows.has(app.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}>
                     <td className="px-4 py-4">
                       <button
                         onClick={() => toggleRowExpansion(app.id)}
-                        className="p-3 min-h-[44px] min-w-[44px] rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-white/10 flex items-center justify-center"
+                        className="p-3 min-h-[44px] min-w-[44px] rounded-lg transition-all duration-200 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 border border-transparent hover:border-gray-200 dark:hover:border-white/10 flex items-center justify-center hover-scale"
                         aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
                       >
-                        {isExpanded ? '▼' : '▶'}
+                        <span className={`transition-transform duration-200 inline-block ${isExpanded ? 'rotate-90' : ''}`}>
+                          ▶
+                        </span>
                       </button>
                     </td>
                     <td className="px-4 py-4 text-sm font-medium text-gray-900 dark:text-white group-hover:text-jecrc-red dark:group-hover:text-jecrc-red-light transition-colors">

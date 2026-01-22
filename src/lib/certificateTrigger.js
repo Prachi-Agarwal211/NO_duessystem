@@ -112,26 +112,6 @@ export async function triggerCertificateGeneration(formId, triggeredByUserId = n
       }
     }
 
-    // 6. Send SMS notification
-    if (form.contact_no) {
-      try {
-        console.log(`📱 Sending SMS to ${form.contact_no}...`);
-        
-        const smsResult = await SmsService.sendSMS(
-          form.contact_no,
-          SmsService.TEMPLATES.CERTIFICATE_READY(form.student_name)
-        );
-
-        if (smsResult.success) {
-          console.log(`✅ SMS sent to ${form.contact_no}`);
-        } else {
-          console.warn(`⚠️ SMS failed for ${form.contact_no}:`, smsResult.error);
-        }
-      } catch (smsError) {
-        console.error(`❌ SMS notification error:`, smsError);
-      }
-    }
-
     // 7. Log the certificate generation
     console.log(`🎉 Certificate generation completed for form ${formId}`);
     

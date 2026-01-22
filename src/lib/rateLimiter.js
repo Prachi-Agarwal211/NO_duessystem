@@ -35,6 +35,21 @@ export const RATE_LIMITS = {
     windowMs: 60 * 1000, // 1 minute
     message: 'Too many reapplication attempts. Please try again in 1 minute.'
   },
+  REAPPLY_PER_DEPARTMENT: {
+    maxRequests: 5, // 5 reapplications per department
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    message: 'Maximum 5 reapplications allowed per department. Please try again later.'
+  },
+  REAPPLY_PER_STUDENT: {
+    maxRequests: 10, // 10 total reapplications per student
+    windowMs: 30 * 24 * 60 * 60 * 1000, // 30 days
+    message: 'Maximum 10 reapplications allowed. Please contact administration.'
+  },
+  REAPPLY_COOLDOWN: {
+    maxRequests: 1, // 1 reapplication per cooldown period
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    message: 'Please wait 24 hours between reapplications.'
+  },
   STUDENT_EDIT: {
     maxRequests: 10,
     windowMs: 60 * 1000, // 1 minute

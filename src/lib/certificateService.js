@@ -1,5 +1,6 @@
-// This is a server-side utility for generating certificates as PDFs
+// Enhanced Certificate Service with Tracking and Notifications
 // Using jsPDF for PDF generation with JECRC branding
+// Includes automatic email delivery, blockchain verification, and analytics
 
 import { jsPDF } from 'jspdf';
 import { createClient } from '@supabase/supabase-js';
@@ -11,7 +12,7 @@ import {
   generateQRData
 } from './blockchainService';
 
-// Initialize Supabase Admin Client for file storage
+// Initialize Supabase Admin Client for file storage and database operations
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -21,8 +22,18 @@ const supabaseAdmin = createClient(
 const JECRC_RED = [196, 30, 58]; // #C41E3A
 const GOLD_ACCENT = [218, 165, 32]; // #DAA520
 
+/**
+ * Enhanced Certificate Generation with Tracking
+ */
 export const generateCertificate = async (certificateData, blockchainRecord) => {
   try {
+    // Log certificate generation attempt
+    const logEntry = await logCertificateGeneration({
+      formId: certificateData.formId,
+      registrationNo: certificateData.registrationNo,
+      status: 'generating'
+    });
+
     // blockchainRecord is now passed as parameter (created before certificate generation)
 
     // Generate QR code data with correct two-parameter signature
@@ -377,22 +388,148 @@ export const finalizeCertificate = async (formId) => {
       console.error('❌ Database update failed:', updateError);
       throw new Error(`Database update error: ${updateError.message}`);
     }
+  } catch (error) {
+    console.error('Failed to update certificate record:', error);
+  }
+}
 
-    console.log('✅ Database updated successfully');
+/**
+ * Get certificate statistics for dashboard
+ */
+export async function getCertificateStats(startDate, endDate) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('certificates')
+      .select('*')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate);
 
-    console.log('🎉 Certificate generation completed successfully!');
+    if (error) throw error;
+
+    const stats = {
+      total: data.length,
+      generated: data.filter(cert => cert.status === 'generated').length,
+      sent: data.filter(cert => cert.email_sent).length,
+      downloaded: data.filter(cert => cert.download_count > 0).length,
+      blockchainVerified: data.filter(cert => cert.blockchain_tx_id).length,
+      bySchool: data.reduce((acc, cert) => {
+        acc[cert.school] = (acc[cert.school] || 0) + 1;
+        return acc;
+      }, {}),
+      byCourse: data.reduce((acc, cert) => {
+        acc[cert.course] = (acc[cert.course] || 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    return stats;
+  } catch (error) {
+    console.error('Certificate stats error:', error);
+    return null;
+  }
+}
+
+/**
+ * Get certificate by form ID
+ */
+export async function getCertificateByFormId(formId) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('certificates')
+      .select('*')
+      .eq('form_id', formId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // Not found error
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Get certificate error:', error);
+    return null;
+  }
+}
+
+/**
+ * Verify certificate authenticity
+ */
+export async function verifyCertificate(certificateId) {
+  try {
+    const certificate = await getCertificateByFormId(certificateId);
+    
+    if (!certificate) {
+      return {
+        valid: false,
+        error: 'Certificate not found'
+      };
+    }
+
+    // Update verification count
+    await incrementVerificationCount(certificateId);
 
     return {
-      success: true,
-      message: 'Certificate generated successfully with blockchain verification',
-      formId,
-      certificateUrl: certificateResult.certificateUrl,
-      blockchainHash: blockchainRecord.certificateHash,
-      transactionId: blockchainRecord.transactionId
+      valid: true,
+      certificate,
+      verifiedAt: new Date().toISOString()
     };
   } catch (error) {
-    console.error('❌ Fatal error in finalizeCertificate:', error);
-    console.error('Error stack:', error.stack);
-    throw new Error(`Failed to finalize certificate: ${error.message}`);
+    console.error('Certificate verification error:', error);
+    return {
+      valid: false,
+      error: error.message
+    };
   }
-};
+}
+
+/**
+ * Increment verification/download count
+ */
+async function incrementVerificationCount(certificateId) {
+  try {
+    const { error } = await supabaseAdmin
+      .from('certificates')
+      .update({
+        download_count: supabaseAdmin.raw('download_count + 1'),
+        last_download_at: new Date().toISOString()
+      })
+      .eq('certificate_id', certificateId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Increment verification count error:', error);
+  }
+}
+
+/**
+ * Send certificate notification email
+ */
+export async function sendCertificateNotification(formData, certificateUrl) {
+  try {
+    // Import email service dynamically to avoid circular dependencies
+    const emailService = await import('./emailService.js');
+    
+    const certificateData = {
+      student_name: formData.student_name,
+      registrationNo: formData.registration_no,
+      verificationUrl: certificateUrl,
+      certificateId: `CERT-${formData.id}`
+    };
+
+    await emailService.default.sendCertificateEmail(
+      formData.college_email || formData.personal_email,
+      certificateData
+    );
+
+    // Update certificate record to mark email as sent
+    await updateCertificateRecord(certificateData.certificateId, {
+      email_sent: true,
+      email_sent_at: new Date().toISOString()
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Certificate notification error:', error);
+    return { success: false, error: error.message };
+  }
+}

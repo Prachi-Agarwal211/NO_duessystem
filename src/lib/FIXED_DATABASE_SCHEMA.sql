@@ -177,7 +177,7 @@ CREATE TABLE public.no_dues_forms (
     personal_email TEXT,
     college_email TEXT,
     email TEXT,
-    alumni_screenshot_url TEXT,
+    alumni_profile_link TEXT,
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'reapplied', 'rejected', 'completed')),
     
     -- Reapplication fields - FIXED
