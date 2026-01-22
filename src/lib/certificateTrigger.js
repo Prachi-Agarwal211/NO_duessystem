@@ -3,7 +3,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { finalizeCertificate } from './certificateService';
-import { sendCertificateReadyNotification } from './emailService';
 import { APP_URLS, EMAIL_URLS } from './urlHelper';
 
 const supabaseAdmin = createClient(
@@ -93,6 +92,9 @@ export async function triggerCertificateGeneration(formId, triggeredByUserId = n
     if (studentEmail) {
       try {
         console.log(`📧 Sending certificate ready email to ${studentEmail}...`);
+        
+        // Import email service dynamically
+        const { sendCertificateReadyNotification } = await import('./emailService');
         
         const emailResult = await sendCertificateReadyNotification({
           studentEmail,

@@ -11,7 +11,6 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
-import { sendCombinedDepartmentNotification } from '@/lib/emailService';
 import realtimeService from '@/lib/realtimeService';
 
 class ApplicationService {
@@ -656,6 +655,9 @@ class ApplicationService {
         .eq('is_active', true);
 
       if (departments) {
+        // Import email service dynamically
+        const { sendCombinedDepartmentNotification } = await import('@/lib/emailService');
+        
         await sendCombinedDepartmentNotification({
           formId: form.id,
           studentName: form.student_name,
