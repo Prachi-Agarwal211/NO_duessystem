@@ -24,12 +24,13 @@ function PremiumActionCard({ title, subtitle, icon: Icon, onClick, variant = 'pr
       className={`
         w-full p-6 sm:p-8 rounded-2xl text-left transition-all duration-500
         ${isDark
-          ? 'bg-gradient-to-br from-white/5 to-white/10 border border-white/10 hover:border-jecrc-red/30'
-          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 hover:border-jecrc-red/50'
+          // Glassy dark variant for premium feel
+          ? 'bg-white/6 border border-white/20 backdrop-blur-md hover:border-white/40'
+          : 'bg-white/75 border border-gray-200 hover:border-jecrc-red/50 backdrop-blur-md'
         }
         ${isPrimary
           ? 'shadow-xl hover:shadow-2xl'
-          : 'shadow-lg hover:shadow-xl'
+          : 'shadow-md hover:shadow-xl'
         }
         group relative overflow-hidden
       `}
@@ -48,7 +49,7 @@ function PremiumActionCard({ title, subtitle, icon: Icon, onClick, variant = 'pr
       <div className={`
         w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-4 sm:mb-6 flex items-center justify-center
         ${isPrimary
-          ? 'bg-gradient-to-br from-jecrc-red to-jecrc-red-dark text-white shadow-lg shadow-jecrc-red/30'
+          ? 'bg-gradient-to-br from-jecrc-red to-jecrc-red-dark text-white shadow-lg'
           : isDark
             ? 'bg-white/10 text-white border border-white/20'
             : 'bg-gray-100 text-gray-700 border border-gray-200'
@@ -60,7 +61,7 @@ function PremiumActionCard({ title, subtitle, icon: Icon, onClick, variant = 'pr
       
       {/* Title */}
       <h3 className={`
-        text-xl sm:text-2xl font-bold mb-2 sm:mb-3
+        text-xl sm:text-2xl font-semibold mb-2 sm:mb-3
         ${isDark ? 'text-white' : 'text-gray-900'}
       `}>
         {title}
@@ -69,7 +70,7 @@ function PremiumActionCard({ title, subtitle, icon: Icon, onClick, variant = 'pr
       {/* Subtitle */}
       <p className={`
         text-sm sm:text-base leading-relaxed mb-4 sm:mb-6
-        ${isDark ? 'text-gray-400' : 'text-gray-600'}
+        ${isDark ? 'text-gray-300' : 'text-gray-600'}
       `}>
         {subtitle}
       </p>
@@ -189,6 +190,8 @@ export default function Home() {
             : 'bg-gradient-to-b from-white via-gray-50/50 to-white'
           }
         `} />
+        {/* Deep gradient layer for depth and royal feel */}
+        <div className="hero-gradient" aria-hidden="true" />
         
         {/* Light Mode Premium Backdrop */}
         {!isDark && (
