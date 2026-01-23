@@ -19,7 +19,7 @@ export default function Button({
 
     const variants = {
         primary: 'bg-gradient-to-br from-jecrc-red to-jecrc-red-dark text-white hover:shadow-lg hover:shadow-jecrc-red/25 border border-transparent',
-        secondary: 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20',
+        secondary: 'bg-white dark:bg-white/10 text-gray-900 dark:text-white border border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/20 shadow-sm hover:shadow',
         ghost: 'bg-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10',
         danger: 'bg-red-600 text-white hover:bg-red-700 shadow-md hover:shadow-red-500/20',
     };

@@ -19,6 +19,7 @@ export default function Input({
     rows = 4, // For textarea
     startIcon,
     endIcon,
+    description,
     ...props
 }) {
     const [showPassword, setShowPassword] = useState(false);
@@ -31,17 +32,17 @@ export default function Input({
     // Shared container classes
     const containerClasses = cn(
         "relative w-full rounded-t-lg overflow-hidden transition-all duration-300",
-        "bg-gray-50 dark:bg-white/5 border-b-2",
+        "bg-[#F1F3F5] dark:bg-white/5 border-b-2",
         isTextarea ? "min-h-[120px]" : "min-h-[56px]",
         error
             ? "border-red-500 bg-red-50/50 dark:bg-red-900/10"
-            : "border-gray-200 dark:border-white/10 group-hover:bg-gray-100 dark:group-hover:bg-white/10 focus-within:border-jecrc-red dark:focus-within:border-jecrc-red",
+            : "border-gray-300 dark:border-white/10 group-hover:bg-gray-200/80 dark:group-hover:bg-white/10 focus-within:border-jecrc-red dark:focus-within:border-jecrc-red shadow-sm",
         disabled && "opacity-60 cursor-not-allowed"
     );
 
     const inputBaseClasses = cn(
         "peer w-full pt-6 pb-2 bg-transparent outline-none border-none",
-        "text-gray-900 dark:text-white placeholder-transparent",
+        "text-gray-900 dark:text-white placeholder:text-transparent focus:placeholder:text-gray-400 dark:focus:placeholder:text-gray-500",
         "text-base font-medium",
         startIcon ? "pl-11" : "pl-4",
         (endIcon || type === 'password' || isSelect) ? "pr-11" : "pr-4",
@@ -158,6 +159,16 @@ export default function Input({
                 <div id={errorId} className="absolute -bottom-5 left-0 flex items-center gap-1 text-xs text-red-500 font-medium animate-in slide-in-from-top-1">
                     <AlertCircle size={12} />
                     <span>{error}</span>
+                </div>
+            )}
+
+            {/* Description / Helper Text */}
+            {description && !error && (
+                <div className="mt-1 text-[11px] leading-tight text-gray-500 dark:text-gray-400 font-medium px-1 flex items-start gap-1.5 transition-colors group-focus-within:text-jecrc-red">
+                    <div className="mt-0.5">
+                        <ChevronDown size={10} className="rotate-[-90deg]" />
+                    </div>
+                    <div>{description}</div>
                 </div>
             )}
         </div>

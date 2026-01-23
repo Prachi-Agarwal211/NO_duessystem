@@ -417,7 +417,7 @@ export default function SubmitForm() {
           p-6 rounded-xl border
           ${isDark
             ? 'bg-blue-900/10 border-blue-500/20'
-            : 'bg-blue-50 border-blue-100'
+            : 'bg-blue-100/30 border-blue-200'
           }
         `}
       >
@@ -428,7 +428,7 @@ export default function SubmitForm() {
         <ul className={`space-y-2 text-sm list-disc pl-5 ${isDark ? 'text-blue-200' : 'text-blue-600'}`}>
           <li>Fields marked <span className="text-red-500">*</span> are mandatory.</li>
           <li>Ensure details match official college records.</li>
-          <li>Register at <a href="https://jualumni.in" target="_blank" className="underline font-bold">jualumni.in</a> before applying.</li>
+          <li>Register at <a href="https://jualumni.in" target="_blank" className="underline font-bold hover:text-jecrc-red transition-colors">jualumni.in</a> and obtain your <strong>Profile Link</strong> (from the Profile section) before applying.</li>
         </ul>
       </motion.div>
 
@@ -497,6 +497,7 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading}
+          placeholder="Enter your full name as per records"
         />
 
         <Input
@@ -518,6 +519,7 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading}
+          placeholder="e.g. 9876543210"
         />
 
         <Input
@@ -528,7 +530,9 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading}
+          placeholder="e.g. student@gmail.com"
         />
+        {/* Note: Legacy might have had College Email in grid, but usually emails are long, span-2 looks better on laptop. Legacy was 2-col? Let's stick to strict 2-col unless it overflows. I'll make it span-2 for better laptop UI as requested "laptop friendly". */}
 
         <Input
           label="College Email"
@@ -539,8 +543,8 @@ export default function SubmitForm() {
           required
           disabled={loading}
           className="md:col-span-2"
+          placeholder="e.g. student.id@jecrc.ac.in"
         />
-        {/* Note: Legacy might have had College Email in grid, but usually emails are long, span-2 looks better on laptop. Legacy was 2-col? Let's stick to strict 2-col unless it overflows. I'll make it span-2 for better laptop UI as requested "laptop friendly". */}
 
         <Input
           label="Admission Year"
@@ -549,6 +553,7 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading}
+          placeholder="e.g. 2022"
         />
 
         <Input
@@ -558,6 +563,7 @@ export default function SubmitForm() {
           onChange={handleInputChange}
           required
           disabled={loading}
+          placeholder="e.g. 2026"
         />
 
         <div className="md:col-span-2">
@@ -568,6 +574,7 @@ export default function SubmitForm() {
             onChange={handleInputChange}
             required
             disabled={loading}
+            placeholder="Enter Father's or Mother's Name"
           />
         </div>
 
@@ -614,13 +621,18 @@ export default function SubmitForm() {
 
         <div className="md:col-span-2">
           <Input
-            label="Alumni Profile Link"
+            label="JU Alumni Profile Link"
             name="alumni_profile_link"
             value={formData.alumni_profile_link}
             onChange={handleInputChange}
             required
             disabled={loading}
-            placeholder="https://jualumni.in/profile/..."
+            placeholder="e.g. https://jualumni.in/p/username or https://jualumni.in/profile/123456"
+            description={
+              <span>
+                Go to <a href="https://jualumni.in" target="_blank" className="underline hover:text-jecrc-red">JU Alumni</a> → <strong>Profile</strong> section → Copy the link from browser address bar
+              </span>
+            }
           />
         </div>
       </div>
