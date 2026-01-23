@@ -123,6 +123,12 @@ export default function SubmitForm() {
         [name]: value,
         branch: ''
       }));
+    } else if (name === 'registration_no') {
+      // Auto-convert to uppercase as user types
+      setFormData(prev => ({
+        ...prev,
+        [name]: value.toUpperCase()
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
