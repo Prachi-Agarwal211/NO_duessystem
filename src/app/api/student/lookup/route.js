@@ -25,7 +25,7 @@ export async function GET(request) {
     // Search by registration number (supports both EnrollNo and RollNo)
     const { data: studentData, error: fetchError } = await supabase
       .rpc('search_student_data', {
-        search_term: cleanRegNo
+        p_search_term: cleanRegNo
       });
 
     if (fetchError) {
@@ -99,7 +99,7 @@ export async function POST(request) {
     const cleanRegNo = registration_no.trim().toUpperCase();
 
     const { data: studentData, error } = await supabase
-      .rpc('get_student_by_regno', { registration_no: cleanRegNo });
+      .rpc('get_student_by_regno', { p_registration_no: cleanRegNo });
 
     if (error) {
       console.error('Database error:', error);

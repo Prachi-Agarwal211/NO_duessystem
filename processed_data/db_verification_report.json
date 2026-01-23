@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-01-23T15:17:24.244Z",
+  "results": [
+    {
+      "test": "Table: no_dues_forms",
+      "status": "PASS",
+      "count": 29044
+    },
+    {
+      "test": "Table: student_data",
+      "status": "PASS",
+      "count": 29044
+    },
+    {
+      "test": "Table: config_schools",
+      "status": "PASS",
+      "count": 13
+    },
+    {
+      "test": "Table: config_courses",
+      "status": "PASS",
+      "count": 34
+    },
+    {
+      "test": "Table: config_branches",
+      "status": "PASS",
+      "count": 215
+    },
+    {
+      "test": "Table: departments",
+      "status": "PASS",
+      "count": 7
+    },
+    {
+      "test": "Table: profiles",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "test": "Table: no_dues_status",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "test": "RPC: search_student_data",
+      "status": "PASS",
+      "count": 3
+    },
+    {
+      "test": "RPC: get_student_by_regno",
+      "status": "PASS",
+      "count": 1
+    },
+    {
+      "test": "RPC: get_form_statistics",
+      "status": "PASS",
+      "data": {
+        "total_applications": 29044,
+        "pending_applications": 0,
+        "approved_applications": 0,
+        "rejected_applications": 0
+      }
+    },
+    {
+      "test": "RPC: get_department_workload",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "test": "RPC: get_staff_performance",
+      "status": "SKIP",
+      "reason": "No staff profiles"
+    },
+    {
+      "test": "RPC: get_staff_leaderboard",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "test": "FK: Schools",
+      "status": "PASS"
+    },
+    {
+      "test": "FK: Courses",
+      "status": "PASS"
+    },
+    {
+      "test": "FK: Branches",
+      "status": "PASS"
+    }
+  ]
+}
