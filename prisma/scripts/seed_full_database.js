@@ -201,6 +201,9 @@ async function main() {
 
                 const email = sanitize(row.email);
                 const contact = sanitize(row.contact_no);
+                const parentName = sanitize(row.parent_name);
+                const admissionYear = sanitize(row.admission_year);
+                const passingYear = sanitize(row.passing_year);
 
                 forms.push({
                     id: formId,
@@ -214,6 +217,9 @@ async function main() {
                     branch: branchName,
                     email: email,
                     contactNo: contact,
+                    parentName: parentName,
+                    admissionYear: admissionYear,
+                    passingYear: passingYear,
                     status: 'PENDING',
                     isReapplication: false,
                     reapplicationCount: 0,
@@ -234,6 +240,9 @@ async function main() {
                     branch: branchName,
                     personalEmail: email,
                     contactNo: contact,
+                    parentName: parentName,
+                    admissionYear: admissionYear,
+                    passingYear: passingYear,
                     updatedAt: new Date(),
                     updatedBy: 'SEED_SCRIPT'
                 });

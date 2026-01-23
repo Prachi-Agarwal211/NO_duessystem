@@ -202,6 +202,42 @@ async function main() {
             }
 
             if (regNo) {
+                // Extract admission year from AdmissionDate (format: M/D/YY or YYYY-MM-DD)
+                let admissionYear = '';
+                const admissionDate = row['AdmissionDate'] || '';
+                if (admissionDate) {
+                    // Try to match 4-digit year first (e.g., 2016)
+                    const yearMatch4 = admissionDate.match(/(\d{4})/);
+                    if (yearMatch4) {
+                        admissionYear = yearMatch4[1];
+                    } else {
+                        // Try to match 2-digit year, usually at the end (e.g., /16 or -16)
+                        const yearMatch2 = admissionDate.match(/[\/\-](\d{2})$/);
+                        if (yearMatch2) {
+                            admissionYear = '20' + yearMatch2[1];
+                        }
+                    }
+                }
+
+                // Extract parent name: prioritize FatherName, fall back to MotherName
+                const fatherName = (row['FatherName'] || '').trim();
+                const motherName = (row['MotherName'] || '').trim();
+                let parentName = '';
+                if (fatherName && fatherName !== 'NULL' && fatherName !== '') {
+                    parentName = fatherName;
+                } else if (motherName && motherName !== 'NULL' && motherName !== '') {
+                    parentName = motherName;
+                }
+
+                // Keep passing year empty for students to fill
+                let passingYear = '';
+
+                // Clean contact number
+                let contactNo = row['StudentMobile'] || row['Mobile'] || '';
+                if (contactNo === 'NULL' || contactNo === '0') {
+                    contactNo = '';
+                }
+
                 cleanedData.push({
                     registration_no: regNo,
                     student_name: row['Name'],
@@ -209,7 +245,10 @@ async function main() {
                     course_id: validCourse.id,
                     branch_id: validBranch.id,
                     email: row['EmailId'] || row['Email'] || '',
-                    contact_no: row['StudentMobile'] || row['Mobile'] || '',
+                    contact_no: contactNo,
+                    parent_name: parentName,
+                    admission_year: admissionYear,
+                    passing_year: passingYear,
                     raw_degree: rawDegree,
                     raw_branch: rawBranch
                 });
@@ -225,7 +264,7 @@ async function main() {
     }
 
     // 3. Write Outputs
-    const cleanHeader = 'registration_no,student_name,school_id,course_id,branch_id,email,contact_no,raw_degree,raw_branch';
+    const cleanHeader = 'registration_no,student_name,school_id,course_id,branch_id,email,contact_no,parent_name,admission_year,passing_year,raw_degree,raw_branch';
     const cleanCsvContent = [cleanHeader, ...cleanedData.map(d => Object.values(d).map(v => `"${v}"`).join(','))].join('\n');
     fs.writeFileSync(path.join(OUTPUT_DIR, 'cleaned_student_data.csv'), cleanCsvContent);
 

@@ -69,18 +69,18 @@ export default function SubmitForm() {
   // Ref to prevent useEffects from resetting values during auto-fill
   const isAutoFilling = useRef(false);
 
-  // Update available courses when school changes
+  // Update available courses when school changes (only when user manually selects)
   useEffect(() => {
+    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    if (isAutoFilling.current) return;
+
     const loadCourses = async () => {
       if (formData.school) {
         const coursesForSchool = await fetchCoursesBySchool(formData.school);
         setAvailableCourses(coursesForSchool);
-
-        // Only reset course/branch if NOT auto-filling
-        if (!isAutoFilling.current && formData.course) {
-          setFormData(prev => ({ ...prev, course: '', branch: '' }));
-          setAvailableBranches([]);
-        }
+        // Reset course/branch when user manually changes school
+        setFormData(prev => ({ ...prev, course: '', branch: '' }));
+        setAvailableBranches([]);
       } else {
         setAvailableCourses([]);
         setAvailableBranches([]);
@@ -89,17 +89,17 @@ export default function SubmitForm() {
     loadCourses();
   }, [formData.school, fetchCoursesBySchool]);
 
-  // Update available branches when course changes
+  // Update available branches when course changes (only when user manually selects)
   useEffect(() => {
+    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    if (isAutoFilling.current) return;
+
     const loadBranches = async () => {
       if (formData.course) {
         const branchesForCourse = await fetchBranchesByCourse(formData.course);
         setAvailableBranches(branchesForCourse);
-
-        // Only reset branch if NOT auto-filling
-        if (!isAutoFilling.current && formData.branch) {
-          setFormData(prev => ({ ...prev, branch: '' }));
-        }
+        // Reset branch when user manually changes course
+        setFormData(prev => ({ ...prev, branch: '' }));
       } else {
         setAvailableBranches([]);
       }
@@ -281,9 +281,11 @@ export default function SubmitForm() {
       console.error('Error fetching student data:', err);
       setStudentFetchError('Failed to fetch student data.');
     } finally {
-      // Reset the auto-filling flag
-      isAutoFilling.current = false;
       setFetchingStudent(false);
+      // Reset the auto-filling flag after a short delay to ensure React has processed all state updates
+      setTimeout(() => {
+        isAutoFilling.current = false;
+      }, 100);
     }
   };
 
