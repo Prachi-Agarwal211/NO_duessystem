@@ -35,7 +35,7 @@ export default function Home() {
       <div className={`
         min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden
         ${isDark ? 'text-white' : 'text-ink-black'}
-      `}>
+      `} style={{ overflow: 'hidden' }}>
 
         {/* Centered Header / Branding with Parallax */}
         <motion.header

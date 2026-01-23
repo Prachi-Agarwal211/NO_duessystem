@@ -155,12 +155,12 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         y: magneticOffset.y,
         boxShadow: isDark ? (
           isHovering
-            ? '0 12px 40px rgba(0, 0, 0, 0.6), 0 0 50px rgba(196, 30, 58, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
-            : '0 6px 24px rgba(0, 0, 0, 0.4), 0 0 30px rgba(196, 30, 58, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            ? '0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
         ) : (
           isHovering
-            ? '0 12px 30px rgba(0, 0, 0, 0.15), 0 0 30px rgba(196, 30, 58, 0.2)'
-            : '0 6px 16px rgba(0, 0, 0, 0.1)'
+            ? '0 20px 50px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)'
+            : '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
         )
       }}
       className={`
@@ -170,11 +170,12 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
         p-7 sm:p-8 md:p-9
         flex flex-col justify-between
         transition-all duration-300 ease-out
-        border backdrop-blur-md rounded-xl
+        rounded-2xl
         touch-manipulation
+        backdrop-blur-xl
         ${isDark
-          ? 'bg-gradient-to-br from-white/[0.02] via-white/[0.08] to-white/[0.02] hover:from-white/[0.08] hover:via-white/[0.15] hover:to-white/[0.08] border-white/20 hover:border-white/40'
-          : 'bg-gradient-to-br from-white/90 via-gray-50/95 to-white/85 hover:from-white/95 hover:via-rose-50/90 hover:to-pink-50/85 border-black/10 hover:border-jecrc-red/30'
+          ? 'bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-white/20'
+          : 'bg-white/40 hover:bg-white/60 border border-white/50 hover:border-white/70'
         }
       `}
     >
@@ -190,8 +191,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
             marginLeft: '-200px',
             marginTop: '-200px',
             background: isDark
-              ? 'radial-gradient(circle, rgba(196, 30, 58, 0.4) 0%, rgba(196, 30, 58, 0.2) 20%, transparent 60%)'
-              : 'radial-gradient(circle, rgba(196, 30, 58, 0.15) 0%, rgba(255, 192, 203, 0.1) 30%, transparent 60%)',
+              ? 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 20%, transparent 60%)'
+              : 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 30%, transparent 60%)',
             filter: 'blur(40px)',
           }}
           initial={{ scale: 0, opacity: 0 }}
@@ -207,8 +208,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           className="absolute inset-0 opacity-0 group-hover:opacity-40 pointer-events-none animate-holographic"
           style={{
             background: isDark
-              ? 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.03) 20%, rgba(255,51,102,0.08) 35%, rgba(196,30,58,0.15) 50%, rgba(255,51,102,0.08) 65%, rgba(255,255,255,0.03) 80%, transparent 100%)'
-              : 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.4) 20%, rgba(196,30,58,0.15) 35%, rgba(196,30,58,0.2) 50%, rgba(196,30,58,0.15) 65%, rgba(255,255,255,0.3) 80%, transparent 100%)',
+              ? 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.05) 20%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 80%, transparent 100%)'
+              : 'linear-gradient(125deg, transparent 0%, rgba(255,255,255,0.6) 20%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.6) 80%, transparent 100%)',
             backgroundSize: '200% 200%',
           }}
           initial={{ scale: 0.95, opacity: 0 }}
@@ -225,8 +226,8 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
             } pointer-events-none`}
           style={{
             background: isDark
-              ? 'linear-gradient(135deg, rgba(196, 30, 58, 0.2) 0%, transparent 40%, rgba(139, 0, 139, 0.15) 100%)'
-              : 'linear-gradient(135deg, rgba(255, 229, 233, 0.4) 0%, transparent 50%, rgba(196, 30, 58, 0.1) 100%)',
+              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 40%, rgba(255, 255, 255, 0.05) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%, rgba(255, 255, 255, 0.3) 100%)',
           }}
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
@@ -237,17 +238,17 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       {/* 4. Animated Metallic Border */}
       {deviceTier === 'high' && isHovering && (
         <motion.div
-          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none animate-border-sweep"
+          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 pointer-events-none animate-border-sweep"
           style={{
             background: isDark
-              ? 'linear-gradient(90deg, transparent, rgba(196,30,58,0.4), rgba(255,51,102,0.6), rgba(196,30,58,0.4), transparent)'
-              : 'linear-gradient(90deg, transparent, rgba(196,30,58,0.4), rgba(196,30,58,0.6), rgba(196,30,58,0.4), transparent)',
+              ? 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), rgba(255,255,255,0.4), rgba(255,255,255,0.2), transparent)'
+              : 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), rgba(255,255,255,0.9), rgba(255,255,255,0.6), transparent)',
             backgroundSize: '200% 100%',
             mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
             WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
             maskComposite: 'exclude',
             WebkitMaskComposite: 'xor',
-            padding: '2px',
+            padding: '1.5px',
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -258,11 +259,13 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       {/* 5. Top Accent Line with Enhanced Glow - DEVICE-AWARE */}
       {deviceTier !== 'very-low' && (
         <motion.div
-          className="absolute top-0 left-0 w-full h-[2px] opacity-0 group-hover:opacity-100"
+          className="absolute top-0 left-0 w-full h-[1px] opacity-0 group-hover:opacity-100"
           style={{
-            background: 'linear-gradient(90deg, transparent 0%, #C41E3A 50%, transparent 100%)',
+            background: isDark
+              ? 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)'
+              : 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 50%, transparent 100%)',
             boxShadow: isDark && deviceTier === 'high'
-              ? '0 0 12px rgba(196, 30, 58, 0.8), 0 0 24px rgba(196, 30, 58, 0.4)'
+              ? '0 0 8px rgba(255, 255, 255, 0.3)'
               : 'none'
           }}
           initial={{ scaleX: 0 }}
@@ -275,10 +278,10 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       {deviceTier !== 'very-low' && (
         <motion.div
           className={`absolute bottom-0 right-0 w-40 h-40 rounded-full ${deviceTier === 'low' ? 'blur-2xl' : 'blur-3xl'
-            } opacity-0 group-hover:opacity-100 ${isDark ? 'bg-jecrc-red/20' : 'bg-jecrc-red/10'
+            } opacity-0 group-hover:opacity-100 ${isDark ? 'bg-white/10' : 'bg-white/40'
             }`}
           style={isDark && deviceTier === 'high' ? {
-            boxShadow: '0 0 40px rgba(196, 30, 58, 0.4)'
+            boxShadow: '0 0 40px rgba(255, 255, 255, 0.15)'
           } : {}}
           initial={{ scale: 0.5, opacity: 0 }}
           whileHover={{ scale: 1, opacity: 1 }}
@@ -295,15 +298,16 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
             flex items-center justify-center
             rounded-2xl
             transition-all duration-500 ease-spring
+            backdrop-blur-sm
             ${isDark
-              ? 'bg-white/5 text-white group-hover:bg-gradient-to-br group-hover:from-jecrc-red group-hover:to-jecrc-red-dark'
-              : 'bg-black/5 text-black group-hover:bg-gradient-to-br group-hover:from-jecrc-red group-hover:to-jecrc-red-dark group-hover:text-white'
+              ? 'bg-white/10 text-white/80 group-hover:bg-white/20 group-hover:text-white'
+              : 'bg-white/60 text-gray-600 group-hover:bg-white/80 group-hover:text-gray-900'
             }
           `}
           style={isHovering && isDark ? {
-            boxShadow: '0 0 20px rgba(196, 30, 58, 0.6), 0 0 30px rgba(196, 30, 58, 0.3), inset 0 0 12px rgba(255, 255, 255, 0.1)'
+            boxShadow: '0 0 20px rgba(255, 255, 255, 0.15), inset 0 0 12px rgba(255, 255, 255, 0.05)'
           } : isHovering ? {
-            boxShadow: '0 8px 20px rgba(196, 30, 58, 0.4)'
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)'
           } : {}}
           whileHover={deviceTier !== 'very-low' ? {
             scale: deviceTier === 'low' ? 1.1 : 1.15,
@@ -328,25 +332,11 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
           className={`font-serif text-2xl sm:text-2xl md:text-3xl mb-2 sm:mb-3 font-bold transition-all duration-300 ${isDark ? 'text-white' : 'text-gray-900'
             }`}
           style={isDark ? {
-            background: isHovering && gradientReady
-              ? 'linear-gradient(135deg, #FFFFFF 0%, #ff6b89 30%, #ff3366 60%, #C41E3A 100%)'
-              : undefined,
-            backgroundSize: '200% 200%',
-            backgroundClip: isHovering && gradientReady ? 'text' : undefined,
-            WebkitBackgroundClip: isHovering && gradientReady ? 'text' : undefined,
-            WebkitTextFillColor: isHovering && gradientReady ? 'transparent' : undefined,
             filter: isHovering
-              ? 'drop-shadow(0 1px 4px rgba(255, 107, 157, 0.3))'
+              ? 'drop-shadow(0 1px 4px rgba(255, 255, 255, 0.2))'
               : 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))'
           } : {
-            background: isHovering && gradientReady
-              ? 'linear-gradient(135deg, #8B0000 0%, #C41E3A 40%, #1F2937 100%)'
-              : undefined,
-            backgroundSize: '200% 200%',
-            backgroundClip: isHovering && gradientReady ? 'text' : undefined,
-            WebkitBackgroundClip: isHovering && gradientReady ? 'text' : undefined,
-            WebkitTextFillColor: isHovering && gradientReady ? 'transparent' : undefined,
-            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15))'
+            filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'
           }}
         >
           {title}
@@ -369,12 +359,12 @@ function EnhancedActionCard({ title, subtitle, icon: Icon, onClick, index }) {
       {/* Enhanced CTA - MINIMAL SHADOW */}
       <motion.div
         className={`relative z-10 flex items-center gap-3 text-xs font-bold tracking-[0.25em] uppercase transition-all duration-300 ${isDark
-            ? 'text-gray-400 group-hover:text-jecrc-red-bright'
-            : 'text-gray-600 group-hover:text-jecrc-red'
+          ? 'text-gray-400 group-hover:text-white'
+          : 'text-gray-500 group-hover:text-gray-700'
           }`}
         style={isDark ? {
           filter: isHovering
-            ? 'drop-shadow(0 0 6px rgba(196, 30, 58, 0.4))'
+            ? 'drop-shadow(0 0 6px rgba(255, 255, 255, 0.2))'
             : 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4))'
         } : {
           filter: 'none'
