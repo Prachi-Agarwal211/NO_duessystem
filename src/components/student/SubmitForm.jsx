@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, CheckCircle, AlertCircle, Check, X, Info } from 'lucide-react';
@@ -66,6 +66,9 @@ export default function SubmitForm() {
   const [studentDataFound, setStudentDataFound] = useState(null);
   const [studentFetchError, setStudentFetchError] = useState('');
 
+  // Ref to prevent useEffects from resetting values during auto-fill
+  const isAutoFilling = useRef(false);
+
   // Update available courses when school changes
   useEffect(() => {
     const loadCourses = async () => {
@@ -73,7 +76,8 @@ export default function SubmitForm() {
         const coursesForSchool = await fetchCoursesBySchool(formData.school);
         setAvailableCourses(coursesForSchool);
 
-        if (formData.course) {
+        // Only reset course/branch if NOT auto-filling
+        if (!isAutoFilling.current && formData.course) {
           setFormData(prev => ({ ...prev, course: '', branch: '' }));
           setAvailableBranches([]);
         }
@@ -92,7 +96,8 @@ export default function SubmitForm() {
         const branchesForCourse = await fetchBranchesByCourse(formData.course);
         setAvailableBranches(branchesForCourse);
 
-        if (formData.branch) {
+        // Only reset branch if NOT auto-filling
+        if (!isAutoFilling.current && formData.branch) {
           setFormData(prev => ({ ...prev, branch: '' }));
         }
       } else {
@@ -174,6 +179,9 @@ export default function SubmitForm() {
     setStudentFetchError('');
     setStudentDataFound(null);
 
+    // Set flag to prevent useEffects from resetting dropdown values
+    isAutoFilling.current = true;
+
     try {
       const response = await fetch(`/api/student/lookup?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}`);
       const result = await response.json();
@@ -187,15 +195,63 @@ export default function SubmitForm() {
           toast.success('✅ Your No Dues process is already completed.');
         }
 
+        // Find matching school ID from name
+        let schoolId = '';
+        let courseId = '';
+        let branchId = '';
+
+        // Try to find school by name or use ID if already provided
+        if (studentData.school) {
+          const matchedSchool = schools.find(s =>
+            s.name === studentData.school || s.id === studentData.school
+          );
+          if (matchedSchool) {
+            schoolId = matchedSchool.id;
+          }
+        }
+
+        // Load courses for the school and find matching course
+        let loadedCourses = [];
+        if (schoolId) {
+          loadedCourses = await fetchCoursesBySchool(schoolId);
+          setAvailableCourses(loadedCourses);
+
+          if (studentData.course) {
+            const matchedCourse = loadedCourses.find(c =>
+              c.name === studentData.course || c.id === studentData.course
+            );
+            if (matchedCourse) {
+              courseId = matchedCourse.id;
+            }
+          }
+        }
+
+        // Load branches for the course and find matching branch
+        let loadedBranches = [];
+        if (courseId) {
+          loadedBranches = await fetchBranchesByCourse(courseId);
+          setAvailableBranches(loadedBranches);
+
+          if (studentData.branch) {
+            const matchedBranch = loadedBranches.find(b =>
+              b.name === studentData.branch || b.id === studentData.branch
+            );
+            if (matchedBranch) {
+              branchId = matchedBranch.id;
+            }
+          }
+        }
+
+        // Set form data with resolved IDs
         setFormData(prev => ({
           ...prev,
           student_name: studentData.student_name || prev.student_name,
           admission_year: studentData.admission_year || prev.admission_year,
           passing_year: studentData.passing_year || prev.passing_year,
           parent_name: studentData.parent_name || prev.parent_name,
-          school: studentData.school || prev.school,
-          course: studentData.course || prev.course,
-          branch: studentData.branch || prev.branch,
+          school: schoolId || prev.school,
+          course: courseId || prev.course,
+          branch: branchId || prev.branch,
           country_code: studentData.country_code || prev.country_code,
           contact_no: studentData.contact_no || prev.contact_no,
           personal_email: studentData.personal_email || prev.personal_email,
@@ -206,14 +262,11 @@ export default function SubmitForm() {
         setStudentDataFound(studentData);
         setError('');
 
-        // Trigger cascading loads
-        if (studentData.school) {
-          const coursesForSchool = await fetchCoursesBySchool(studentData.school);
-          setAvailableCourses(coursesForSchool);
-          if (studentData.course) {
-            const branchesForCourse = await fetchBranchesByCourse(studentData.course);
-            setAvailableBranches(branchesForCourse);
-          }
+        // Show success message with details
+        if (schoolId && courseId && branchId) {
+          toast.success('✅ All details auto-filled successfully!');
+        } else if (schoolId) {
+          toast.info('⚠️ Some dropdown values could not be matched. Please verify.');
         }
       } else {
         setStudentFetchError(result.message || 'Student not found in database');
@@ -222,6 +275,8 @@ export default function SubmitForm() {
       console.error('Error fetching student data:', err);
       setStudentFetchError('Failed to fetch student data.');
     } finally {
+      // Reset the auto-filling flag
+      isAutoFilling.current = false;
       setFetchingStudent(false);
     }
   };
