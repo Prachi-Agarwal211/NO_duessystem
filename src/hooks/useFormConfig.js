@@ -44,7 +44,7 @@ export function useFormConfig() {
       const result = await response.json();
 
       console.log('🔧 [ConfigHook] API Payload:', result.data);
-      console.log('📊 [ConfigHook] Received counts:', result.counts || 'N/A');
+      console.log('📊 [ConfigHook] Received counts:', result.data.counts || 'N/A');
 
       // Global debug helper
       if (typeof window !== 'undefined') {
@@ -60,9 +60,14 @@ export function useFormConfig() {
       const coursesData = result.data.courses || [];
       const branchesData = result.data.branches || [];
 
-      setSchools(schoolsData);
-      setCourses(coursesData);
-      setBranches(branchesData);
+      console.log('✅ [ConfigHook] Committing to state:', {
+        schoolsCount: schoolsData.length,
+        coursesCount: coursesData.length
+      });
+
+      trackedSetSchools(schoolsData);
+      trackedSetCourses(coursesData);
+      trackedSetBranches(branchesData);
       setCollegeDomain(result.data.collegeDomain || 'jecrcu.edu.in');
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
@@ -205,6 +210,26 @@ export function useFormConfig() {
     fetchAllConfig();
   }, [fetchAllConfig]);
 
+  // 🕵️ ADVANCED STATE TRACKING
+  const trackedSetSchools = (data) => {
+    console.log(`📥 [ConfigHook] SETTING Schools: ${data?.length || 0}`);
+    setSchools(data);
+  };
+  const trackedSetCourses = (data) => {
+    console.log(`📥 [ConfigHook] SETTING Courses: ${data?.length || 0}`);
+    setCourses(data);
+  };
+  const trackedSetBranches = (data) => {
+    console.log(`📥 [ConfigHook] SETTING Branches: ${data?.length || 0}`);
+    setBranches(data);
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__CONFIG_HOOK_DEBUG__ = { schools, courses, branches, loading, error };
+    }
+  }, [schools, courses, branches, loading, error]);
+
   return {
     schools,
     courses,
@@ -222,6 +247,10 @@ export function useFormConfig() {
     getCoursesForSchool,
     getBranchesForCourse,
     getValidationRule,
-    validateField
+    validateField,
+    // Debug helpers
+    trackedSetSchools,
+    trackedSetCourses,
+    trackedSetBranches
   };
 }

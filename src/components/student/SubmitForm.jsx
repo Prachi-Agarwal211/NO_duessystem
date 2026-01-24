@@ -207,7 +207,7 @@ export default function SubmitForm() {
         const studentData = result.data;
 
         if (studentData.no_dues_status === 'pending') {
-          toast.info('⚠️ You already have a pending application.');
+          toast('⚠️ You already have a pending application.');
         } else if (studentData.no_dues_status === 'completed') {
           toast.success('✅ Your No Dues process is already completed.');
         }
@@ -285,9 +285,9 @@ export default function SubmitForm() {
         if (resolvedSchoolId && resolvedCourseId && resolvedBranchId) {
           toast.success('✅ All details auto-filled successfully!');
         } else if (resolvedSchoolId) {
-          toast.info('⚠️ Some dropdown values could not be matched. Please verify.');
+          toast('⚠️ Some dropdown values could not be matched. Please verify.');
         } else {
-          toast.info('🔍 Student found, but School/Course matching failed. Please select manually.');
+          toast('🔍 Student found, but School/Course matching failed. Please select manually.');
         }
       } else {
         setStudentFetchError(result.message || 'Student not found in database');
