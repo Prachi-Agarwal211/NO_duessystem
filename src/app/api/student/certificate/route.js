@@ -1,8 +1,9 @@
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 /**
  * GET /api/student/certificate?formId=XXX&registrationNo=XXX
@@ -18,14 +19,32 @@ export async function GET(request) {
     const formId = searchParams.get('formId');
     const registrationNo = searchParams.get('registrationNo');
 
-    // ==================== VALIDATION ====================
+    // 🔐 0. SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
 
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Session expired or required' }, { status: 401 });
+    }
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
+    }
+
+    // ==================== VALIDATION ====================
     if (!formId && !registrationNo) {
       return NextResponse.json({
         success: false,
         error: 'Either Form ID or Registration Number is required'
       }, { status: 400 });
     }
+
+    // 🛡️ AUTHORIZATION CHECK - Must match session identity
+    const targetRegNo = registrationNo?.trim().toUpperCase() || '';
+    // We will verify this against the fetched record owner below.
 
     // ==================== FETCH FORM DATA ====================
     // Use Prisma to fetch form data
@@ -92,44 +111,13 @@ export async function GET(request) {
       }, { status: 404 });
     }
 
-    // ==================== AUTHORIZATION (Phase 1 Compatible) ====================
-
-    // Phase 1: Students don't have authentication
-    // Authorization is done by providing the correct registration number
-    // This is secure enough for Phase 1 since:
-    // 1. Registration numbers are not publicly listed
-    // 2. Students need to know their own registration number
-    // 3. Certificates are not sensitive documents (they're proof of clearance)
-
-    let canAccess = false;
-
-    // Check if user is authenticated (staff/admin) using standard client for auth check
-    // We still create a standard client just for checking auth state if token is present
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-
-    // Pass the session/cookies if available (this is tricky in API route without headers)
-    // For now, checks registration number match for student access
-    if (registrationNo && registrationNo.trim().toUpperCase() === formData.registration_no) {
-      canAccess = true;
-    }
-
-    // Also allow if formId was provided AND matches the registration number check (dual verification)
-    // Ideally we would check session here but for student portal public access, RegNo is the key.
-
-    if (!canAccess) {
-      // Allow access if the request is for the correct student (implicit via query params)
-      // This logic assumes the link is shared/accessed by the student
-      if (formId && formData.id === formId) canAccess = true;
-    }
-
-    if (!canAccess) {
+    // ==================== AUTHORIZATION CHECK ====================
+    // Securely verify that the session user owns this application
+    if (formData.registration_no !== decoded.regNo) {
+      console.warn(`🛑 [Certificate Access Blocked] Session ${decoded.regNo} tried to access ${formData.registration_no}`);
       return NextResponse.json({
         success: false,
-        error: 'Unauthorized to access this certificate'
+        error: 'Unauthorized access to this certificate'
       }, { status: 403 });
     }
 

@@ -1,9 +1,10 @@
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 /**
  * GET /api/student/can-edit?registration_no=XXX
@@ -33,12 +34,32 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 
+    // 🔐 0. SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Session expired or required' }, { status: 401 });
+    }
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
+    }
+
     // ==================== VALIDATION ====================
     if (!registrationNo) {
       return NextResponse.json({
         success: false,
         error: 'Registration number is required'
       }, { status: 400 });
+    }
+
+    // 🛡️ AUTHORIZATION CHECK
+    if (decoded.regNo !== registrationNo.trim().toUpperCase()) {
+      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
     }
 
     // ==================== GET FORM AND STATUS ====================

@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +34,26 @@ export async function PUT(request) {
 
     const body = await request.json();
     const { registration_no, updated_form_data } = body;
+
+    // 🔐 0. SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Session expired or required' }, { status: 401 });
+    }
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
+    }
+
+    // 🛡️ AUTHORIZATION CHECK
+    if (decoded.regNo !== registration_no?.toUpperCase().trim()) {
+      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
+    }
 
     // ==================== VALIDATION ====================
     if (!registration_no?.trim()) {

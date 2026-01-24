@@ -9,13 +9,10 @@ import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
 import { ApiResponse } from '@/lib/apiResponse';
 import { AuditLogger } from '@/lib/auditLogger';
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 
-// Supabase client for authentication only
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Note: Мы используем supabase напрямую (который теперь admin), так как это серверный роут.
+// Мы все еще проверяем токен пользователя через supabase.auth.getUser() для безопасности.
 
 export async function PUT(request) {
   try {
@@ -39,7 +36,7 @@ export async function PUT(request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       return NextResponse.json(
