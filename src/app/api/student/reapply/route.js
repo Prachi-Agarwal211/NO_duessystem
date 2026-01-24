@@ -4,6 +4,9 @@ import { rateLimit, addRateLimitHeaders, RATE_LIMITS } from '@/lib/rateLimiter';
 import { z } from 'zod';
 import applicationService from '@/lib/services/ApplicationService';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -36,14 +39,14 @@ export async function POST(request) {
 
     // Apply rate limiting
     const rateLimitResult = await rateLimit(request, RATE_LIMITS.STUDENT_REAPPLY);
-    
+
     if (!rateLimitResult.success) {
       return addRateLimitHeaders(
         NextResponse.json(
-          { 
+          {
             error: rateLimitResult.error,
             retryAfter: rateLimitResult.retryAfter
-          }, 
+          },
           { status: 429 }
         ),
         rateLimitResult
@@ -52,18 +55,18 @@ export async function POST(request) {
 
     // Check per-department reapplication limit
     const departmentLimitResult = await rateLimit(
-      request, 
-      RATE_LIMITS.REAPPLY_PER_DEPARTMENT, 
+      request,
+      RATE_LIMITS.REAPPLY_PER_DEPARTMENT,
       `dept:${validatedData.department}`
     );
-    
+
     if (!departmentLimitResult.success) {
       return addRateLimitHeaders(
         NextResponse.json(
-          { 
+          {
             error: departmentLimitResult.error,
             retryAfter: departmentLimitResult.retryAfter
-          }, 
+          },
           { status: 429 }
         ),
         departmentLimitResult
@@ -72,18 +75,18 @@ export async function POST(request) {
 
     // Check per-student reapplication limit
     const studentLimitResult = await rateLimit(
-      request, 
-      RATE_LIMITS.REAPPLY_PER_STUDENT, 
+      request,
+      RATE_LIMITS.REAPPLY_PER_STUDENT,
       `student:${validatedData.registration_no}`
     );
-    
+
     if (!studentLimitResult.success) {
       return addRateLimitHeaders(
         NextResponse.json(
-          { 
+          {
             error: studentLimitResult.error,
             retryAfter: studentLimitResult.retryAfter
-          }, 
+          },
           { status: 429 }
         ),
         studentLimitResult
@@ -92,18 +95,18 @@ export async function POST(request) {
 
     // Check cooldown period
     const cooldownResult = await rateLimit(
-      request, 
-      RATE_LIMITS.REAPPLY_COOLDOWN, 
+      request,
+      RATE_LIMITS.REAPPLY_COOLDOWN,
       `cooldown:${validatedData.registration_no}:${validatedData.department}`
     );
-    
+
     if (!cooldownResult.success) {
       return addRateLimitHeaders(
         NextResponse.json(
-          { 
+          {
             error: cooldownResult.error,
             retryAfter: cooldownResult.retryAfter
-          }, 
+          },
           { status: 429 }
         ),
         cooldownResult
@@ -153,7 +156,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('❌ Reapplication error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -175,7 +178,7 @@ async function validateDepartmentReapplication(formId, department, studentId) {
       .select('department_responses')
       .eq('form_id', formId);
 
-    const deptReapps = existingReapps?.filter(reapp => 
+    const deptReapps = existingReapps?.filter(reapp =>
       reapp.department_responses?.[department]?.length > 0
     ).length || 0;
 
@@ -202,7 +205,7 @@ async function validateDepartmentReapplication(formId, department, studentId) {
     if (form.last_reapplied_at) {
       const cooldownEnd = new Date(form.last_reapplied_at);
       cooldownEnd.setHours(cooldownEnd.getHours() + 24); // 24 hour cooldown
-      
+
       if (new Date() < cooldownEnd) {
         throw new Error('Please wait 24 hours between reapplications');
       }
@@ -236,7 +239,7 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('❌ Get reapplication history error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

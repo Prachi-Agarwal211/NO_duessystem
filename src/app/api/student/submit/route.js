@@ -5,6 +5,7 @@ import { ApiResponse } from '@/lib/apiResponse';
 import prisma from '@/lib/prismaClient';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * POST /api/student

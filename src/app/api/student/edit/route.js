@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -140,7 +143,7 @@ export async function PUT(request) {
 
     // Validate email formats if updated
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (sanitizedData.personal_email && !emailPattern.test(sanitizedData.personal_email)) {
       return NextResponse.json({
         success: false,
@@ -180,7 +183,7 @@ export async function PUT(request) {
     // Validate years if updated
     if (sanitizedData.admission_year || sanitizedData.passing_year) {
       const yearPattern = /^\d{4}$/;
-      
+
       if (sanitizedData.admission_year && !yearPattern.test(sanitizedData.admission_year)) {
         return NextResponse.json({
           success: false,
@@ -220,7 +223,7 @@ export async function PUT(request) {
 
     // ==================== SUCCESS RESPONSE ====================
     console.log(`✅ Form edited successfully for ${form.registration_no}`);
-    
+
     return NextResponse.json({
       success: true,
       message: 'Form updated successfully',
