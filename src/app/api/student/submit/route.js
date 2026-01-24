@@ -4,6 +4,8 @@ import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { ApiResponse } from '@/lib/apiResponse';
 import prisma from '@/lib/prismaClient';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/student
  * Submit a new No Dues application using Prisma ORM

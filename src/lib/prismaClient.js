@@ -10,7 +10,8 @@ import { PrismaClient } from '@prisma/client';
 // Singleton pattern for Prisma client
 const globalForPrisma = globalThis;
 
-const prisma = globalForPrisma.prisma || new PrismaClient({
+// Prevent instantiation during build if env is missing
+const prisma = globalForPrisma.prisma || (process.env.DATABASE_URL ? new PrismaClient({
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
@@ -18,6 +19,17 @@ const prisma = globalForPrisma.prisma || new PrismaClient({
   },
   // Enable logging in development
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+}) : {
+  // Mock client for build time only to prevent crashes
+  noDuesForm: { findUnique: () => null, create: () => null },
+  configSchool: { findUnique: () => null, create: () => null },
+  configCourse: { findUnique: () => null, create: () => null },
+  configBranch: { findUnique: () => null, create: () => null },
+  department: { findMany: () => [] },
+  noDuesStatus: { createMany: () => null },
+  studentData: { upsert: () => null },
+  $connect: () => Promise.resolve(),
+  $disconnect: () => Promise.resolve(),
 });
 
 if (process.env.NODE_ENV !== 'production') {
