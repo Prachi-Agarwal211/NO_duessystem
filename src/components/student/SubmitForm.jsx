@@ -212,50 +212,52 @@ export default function SubmitForm() {
           toast.success('✅ Your No Dues process is already completed.');
         }
 
-        // Find matching school ID from name
-        let schoolId = '';
-        let courseId = '';
-        let branchId = '';
+        // 🔍 ROBUST ID RESOLUTION
+        // We prioritize IDs (UUIDs) because they are immutable and accurate.
+        // Names are used only as a secondary fallback.
+        let resolvedSchoolId = '';
+        let resolvedCourseId = '';
+        let resolvedBranchId = '';
 
-        // Try to find school by name or use ID if already provided
-        if (studentData.school) {
-          const matchedSchool = schools.find(s =>
-            s.name === studentData.school || s.id === studentData.school
+        // 1. Resolve School
+        const schoolValue = studentData.school_id || studentData.school;
+        if (schoolValue) {
+          const matched = schools.find(s =>
+            s.id === schoolValue ||
+            s.name?.toLowerCase() === schoolValue.toString().toLowerCase()
           );
-          if (matchedSchool) {
-            schoolId = matchedSchool.id;
-          }
+          if (matched) resolvedSchoolId = matched.id;
         }
 
-        // Load courses for the school and find matching course
+        // 2. Resolve Course (Requires School)
         let loadedCourses = [];
-        if (schoolId) {
-          loadedCourses = await fetchCoursesBySchool(schoolId);
+        if (resolvedSchoolId) {
+          loadedCourses = await fetchCoursesBySchool(resolvedSchoolId);
           setAvailableCourses(loadedCourses);
 
-          if (studentData.course) {
-            const matchedCourse = loadedCourses.find(c =>
-              c.name === studentData.course || c.id === studentData.course
+          const courseValue = studentData.course_id || studentData.course;
+          if (courseValue) {
+            const matched = loadedCourses.find(c =>
+              c.id === courseValue ||
+              c.name?.toLowerCase() === courseValue.toString().toLowerCase()
             );
-            if (matchedCourse) {
-              courseId = matchedCourse.id;
-            }
+            if (matched) resolvedCourseId = matched.id;
           }
         }
 
-        // Load branches for the course and find matching branch
+        // 3. Resolve Branch (Requires Course)
         let loadedBranches = [];
-        if (courseId) {
-          loadedBranches = await fetchBranchesByCourse(courseId);
+        if (resolvedCourseId) {
+          loadedBranches = await fetchBranchesByCourse(resolvedCourseId);
           setAvailableBranches(loadedBranches);
 
-          if (studentData.branch) {
-            const matchedBranch = loadedBranches.find(b =>
-              b.name === studentData.branch || b.id === studentData.branch
+          const branchValue = studentData.branch_id || studentData.branch;
+          if (branchValue) {
+            const matched = loadedBranches.find(b =>
+              b.id === branchValue ||
+              b.name?.toLowerCase() === branchValue.toString().toLowerCase()
             );
-            if (matchedBranch) {
-              branchId = matchedBranch.id;
-            }
+            if (matched) resolvedBranchId = matched.id;
           }
         }
 
@@ -266,9 +268,9 @@ export default function SubmitForm() {
           admission_year: studentData.admission_year || prev.admission_year,
           passing_year: studentData.passing_year || prev.passing_year,
           parent_name: studentData.parent_name || prev.parent_name,
-          school: schoolId || prev.school,
-          course: courseId || prev.course,
-          branch: branchId || prev.branch,
+          school: resolvedSchoolId || prev.school,
+          course: resolvedCourseId || prev.course,
+          branch: resolvedBranchId || prev.branch,
           country_code: studentData.country_code || prev.country_code,
           contact_no: studentData.contact_no || prev.contact_no,
           personal_email: studentData.personal_email || prev.personal_email,

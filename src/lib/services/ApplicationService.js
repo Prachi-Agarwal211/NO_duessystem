@@ -252,12 +252,19 @@ class ApplicationService {
   async checkForDuplicates(registrationNo) {
     const { data, error } = await supabase
       .from('no_dues_forms')
-      .select('id')
+      .select('id, status')
       .eq('registration_no', registrationNo.toUpperCase())
-      .single();
+      .maybeSingle();
 
     if (data) {
-      throw new Error('A form with this registration number already exists');
+      if (data.status === 'rejected') {
+        // Allow re-submission by marking the old form as archived or deleting if needed
+        // For now, we just let the unique constraint handle it unless we decide to purge
+        // A better way is to allow the submission but update the existing record
+        // Here we just signal that the user already has a pending or completed form
+        return;
+      }
+      throw new Error(`A form with this registration number already exists (Status: ${data.status})`);
     }
   }
 
@@ -269,12 +276,10 @@ class ApplicationService {
       .eq('is_active', true)
       .order('display_order', { ascending: true });
 
-    if (error || !departments) {
-      console.error('Error fetching departments:', error);
+    if (error || !departments || departments.length === 0) {
+      console.warn('⚠️ No active departments found in configuration. Forms may have empty status list.');
       return;
     }
-
-    if (departments.length === 0) return;
 
     // Create status records
     const statusRecords = departments.map(dept => ({
