@@ -1,23 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { rateLimit, addRateLimitHeaders, RATE_LIMITS } from '@/lib/rateLimiter';
 import { z } from 'zod';
 import applicationService from '@/lib/services/ApplicationService';
+import supabase from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
 
 // Validation schema
 const reapplySchema = z.object({
@@ -172,28 +160,14 @@ export async function POST(request) {
  */
 async function validateDepartmentReapplication(formId, department, studentId) {
   try {
-    // Check if student has already reapplied to this department too many times
-    const { data: existingReapps } = await supabase
-      .from('no_dues_reapplication_history')
-      .select('department_responses')
-      .eq('form_id', formId);
-
-    const deptReapps = existingReapps?.filter(reapp =>
-      reapp.department_responses?.[department]?.length > 0
-    ).length || 0;
-
-    if (deptReapps >= 5) {
-      throw new Error(`Maximum 5 reapplications allowed for ${department} department`);
-    }
-
     // Check if form is in correct state for reapplication
-    const { data: form } = await supabase
+    const { data: form, error } = await supabase
       .from('no_dues_forms')
       .select('status, last_reapplied_at')
       .eq('id', formId)
       .single();
 
-    if (!form) {
+    if (error || !form) {
       throw new Error('Original form not found');
     }
 

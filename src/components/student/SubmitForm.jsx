@@ -148,10 +148,20 @@ export default function SubmitForm() {
     setError('');
 
     try {
-      const response = await fetch(`/api/student/can-edit?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
+      const response = await fetch(`/api/student?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
       const result = await response.json();
 
-      if (response.status === 404 || result.error === 'Form not found') {
+      // If success is true, it means a form exists (according to getStudentStatus in ApplicationService)
+      if (response.ok && result.success && result.data) {
+        setError('A form already exists for this registration number. Redirecting to status page...');
+        setTimeout(() => {
+          router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
+        }, 2000);
+        return;
+      }
+
+      // If 404 or success: false, it means no form exists, which is good for submission
+      if (response.status === 404 || !result.success) {
         setError('');
         toast.success('✅ No existing form found. You can proceed.');
         return;
@@ -160,16 +170,15 @@ export default function SubmitForm() {
       if (!response.ok) {
         throw new Error(result.error || 'Failed to check form status');
       }
-
-      if (result.success && result.data) {
-        setError('A form already exists for this registration number. Redirecting to status page...');
-        setTimeout(() => {
-          router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
-        }, 2000);
-      }
     } catch (err) {
       console.error('Error checking form:', err);
-      setError(err.message || 'Failed to check existing form');
+      // If it's just not found, that's fine
+      if (err.message.includes('No form found')) {
+        setError('');
+        toast.success('✅ No existing form found. You can proceed.');
+      } else {
+        setError(err.message || 'Failed to check existing form');
+      }
     } finally {
       setChecking(false);
     }
@@ -331,7 +340,7 @@ export default function SubmitForm() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch('/api/student/submit', {
+      const response = await fetch('/api/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sanitizedData),

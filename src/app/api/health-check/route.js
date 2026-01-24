@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prismaClient';
+import supabase from '@/lib/supabaseClient';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function GET() {
@@ -25,16 +25,20 @@ export async function GET() {
         }
     };
 
-    // Check Prisma Connection
+    // Check Supabase Connection
     try {
-        if (!process.env.DATABASE_URL) {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
             health.database.status = 'missing_config';
-            health.database.error = 'DATABASE_URL is not set';
+            health.database.error = 'Supabase environment variables are not set';
         } else {
             // Simple query
-            const count = await prisma.noDuesForm.count();
+            const { count, error } = await supabase
+                .from('no_dues_forms')
+                .select('*', { count: 'exact', head: true });
+
+            if (error) throw error;
             health.database.status = 'connected';
-            health.database.recordCount = count;
+            health.database.recordCount = count || 0;
         }
     } catch (error) {
         health.database.status = 'error';

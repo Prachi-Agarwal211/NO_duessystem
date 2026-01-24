@@ -2,13 +2,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase Admin Client to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import supabase from '@/lib/supabaseClient';
 
 /**
  * GET /api/student/certificate?formId=XXX&registrationNo=XXX
@@ -34,46 +28,61 @@ export async function GET(request) {
     }
 
     // ==================== FETCH FORM DATA ====================
-    // Use supabaseAdmin to bypass RLS policies that might restrict unauthenticated access
+    // Use Prisma to fetch form data
 
-    let query = supabaseAdmin
-      .from('no_dues_forms')
-      .select(`
-        id,
-        user_id,
-        student_name,
-        registration_no,
-        course,
-        branch,
-        admission_year,
-        passing_year,
-        status,
-        final_certificate_generated,
-        certificate_url,
-        blockchain_hash,
-        blockchain_tx
-      `);
+    let formData;
+    let error;
 
-    // Query by formId or registrationNo
     if (formId) {
-      query = query.eq('id', formId);
+      const { data: result, error: queryError } = await supabase
+        .from('no_dues_forms')
+        .select(`
+          id,
+          user_id,
+          student_name,
+          registration_no,
+          course,
+          branch,
+          admission_year,
+          passing_year,
+          status,
+          final_certificate_generated,
+          certificate_url,
+          blockchain_hash,
+          blockchain_tx
+        `)
+        .eq('id', formId)
+        .single();
+
+      formData = result;
+      error = queryError;
     } else {
-      query = query.eq('registration_no', registrationNo.trim().toUpperCase());
+      const { data: result, error: queryError } = await supabase
+        .from('no_dues_forms')
+        .select(`
+          id,
+          user_id,
+          student_name,
+          registration_no,
+          course,
+          branch,
+          admission_year,
+          passing_year,
+          status,
+          final_certificate_generated,
+          certificate_url,
+          blockchain_hash,
+          blockchain_tx
+        `)
+        .eq('registration_no', registrationNo.trim().toUpperCase())
+        .single();
+
+      formData = result;
+      error = queryError;
     }
 
-    const { data: formData, error: formError } = await query.single();
-
-    if (formError) {
-      if (formError.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Application not found'
-        }, { status: 404 });
-      }
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to fetch application data'
-      }, { status: 500 });
+    if (error && error.code !== 'PGRST116') {
+      console.error('Form lookup error:', error);
     }
 
     if (!formData) {
@@ -96,6 +105,7 @@ export async function GET(request) {
 
     // Check if user is authenticated (staff/admin) using standard client for auth check
     // We still create a standard client just for checking auth state if token is present
+    const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
