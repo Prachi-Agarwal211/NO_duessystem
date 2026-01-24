@@ -4,6 +4,9 @@ import { sign } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // Initialize Supabase Admin Client
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,

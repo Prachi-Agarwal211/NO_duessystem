@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { DepartmentStatusSummary, ExpandedDepartmentDetails } from './DepartmentStatusDisplay';
 import { RefreshCw } from 'lucide-react';
@@ -10,6 +11,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { realtimeManager } from '@/lib/realtimeManager';
 
 export default function ApplicationsTable({ applications: initialApplications, currentPage, totalPages, totalItems, onPageChange }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [applications, setApplications] = useState(initialApplications);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [updatingRows, setUpdatingRows] = useState(new Set());
@@ -94,15 +97,6 @@ export default function ApplicationsTable({ applications: initialApplications, c
       setApplications(prevApps => {
         return prevApps.map(app => {
           if (!impactedIds.has(app.id)) return app;
-
-          // If we have specific new data in the event, use it.
-          // Note: Realtime manager events might need to carry the 'new' payload for this to be perfect.
-          // For now, if it's a department status update, we might need to fetch *just* that row
-          // OR if the event payload has the data, we merge it.
-
-          // Ideally, we'd merge changes here. For now, let's assume the event *might* trigger a single row refresh
-          // if we don't have the full data. But to stop full page reload, we update what we can.
-
           return app;
         });
       });
@@ -130,11 +124,13 @@ export default function ApplicationsTable({ applications: initialApplications, c
   };
 
   return (
-    <div className="rounded-xl border overflow-hidden transition-all duration-200 bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 shadow-sm">
-      {/* Mobile scroll hint */}
-      <div className="md:hidden px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 text-center">
-        ← Swipe left/right to view all columns →
-      </div>
+    <div className={`
+        rounded-xl overflow-hidden transition-all duration-200 border
+        ${isDark
+        ? 'bg-gradient-to-br from-gray-900 via-gray-900 to-black border-white/10 shadow-2xl'
+        : 'bg-white border-gray-200 shadow-lg'
+      }
+    `}>
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
         <table className="min-w-[1000px] w-full">
           <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
@@ -233,7 +229,7 @@ export default function ApplicationsTable({ applications: initialApplications, c
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan="8" className="px-4 py-4 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
+                      <td colSpan="9" className="px-4 py-4 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5">
                         <div className="animate-fade-in">
                           <ExpandedDepartmentDetails departments={app.no_dues_status} />
                         </div>

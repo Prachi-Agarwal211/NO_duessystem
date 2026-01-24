@@ -9,7 +9,9 @@ import { staffActionSchema, validateWithZod } from '@/lib/zodSchemas';
 import { APP_URLS } from '@/lib/urlHelper';
 import { ApiResponse } from '@/lib/apiResponse';
 import { AuditLogger } from '@/lib/auditLogger';
+import supabase from '@/lib/supabaseClient';
 
+// Supabase client for authentication only
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -79,37 +81,48 @@ export async function PUT(request) {
     // All data is validated by Zod (action is enum-validated, reason required for reject)
     const { formId, departmentName, action, reason } = validation.data;
 
-    // OPTIMIZATION: Parallelize all validation queries for faster response
+    // OPTIMIZATION: Parallelize all validation queries for faster response using Supabase
     const [
-      { data: profile, error: profileError },
-      { data: department, error: deptLookupError },
-      { data: form, error: formError },
-      { data: existingStatus, error: statusError }
+      profileResult,
+      departmentResult,
+      formResult,
+      existingStatusResult
     ] = await Promise.all([
-      supabaseAdmin
+      supabase
         .from('profiles')
         .select('id, role, assigned_department_ids, department_name, full_name')
         .eq('id', authUserId)
         .single(),
-      supabaseAdmin
+      supabase
         .from('departments')
         .select('id, name, display_name')
         .eq('name', departmentName)
         .single(),
-      supabaseAdmin
+      supabase
         .from('no_dues_forms')
         .select('id, status, student_name, registration_no')
         .eq('id', formId)
         .single(),
-      supabaseAdmin
+      supabase
         .from('no_dues_status')
         .select('id, status, department_name')
         .eq('form_id', formId)
         .eq('department_name', departmentName)
-        .maybeSingle()
+        .single()
     ]);
 
-    if (profileError || !profile) {
+    const profile = profileResult.data;
+    const department = departmentResult.data;
+    const form = formResult.data;
+    const existingStatus = existingStatusResult.data;
+
+    // Check for errors
+    if (profileResult.error && profileResult.error.code !== 'PGRST116') throw profileResult.error;
+    if (departmentResult.error && departmentResult.error.code !== 'PGRST116') throw departmentResult.error;
+    if (formResult.error && formResult.error.code !== 'PGRST116') throw formResult.error;
+    if (existingStatusResult.error && existingStatusResult.error.code !== 'PGRST116') throw existingStatusResult.error;
+
+    if (!profile) {
       return NextResponse.json({
         success: false,
         error: 'Profile not found'
@@ -128,7 +141,7 @@ export async function PUT(request) {
     }
 
     // Verify department exists
-    if (deptLookupError || !department) {
+    if (!department) {
       return NextResponse.json({
         success: false,
         error: 'Invalid department'
@@ -167,28 +180,23 @@ export async function PUT(request) {
       });
     }
 
-    if (formError || !form) {
+    if (!form) {
       return NextResponse.json({
         success: false,
         error: 'Form not found'
       }, { status: 404 });
     }
 
-    if (statusError) {
-      console.error('❌ Status query error:', statusError);
-      return NextResponse.json({
-        success: false,
-        error: 'Error querying department status',
-        details: statusError.message
-      }, { status: 500 });
-    }
-
     if (!existingStatus) {
-      // Get all statuses for this form to help diagnose the issue
-      const { data: allStatuses } = await supabaseAdmin
+      // Get all statuses for this form to help diagnose issue
+      const { data: allStatuses, error: statusesError } = await supabase
         .from('no_dues_status')
         .select('department_name')
         .eq('form_id', formId);
+
+      if (statusesError) {
+        console.error('Error fetching statuses:', statusesError);
+      }
 
       console.error('❌ Department status not found:', {
         formId,
@@ -204,7 +212,7 @@ export async function PUT(request) {
           formId,
           requestedDepartment: departmentName,
           availableDepartments: allStatuses?.map(s => s.department_name) || [],
-          hint: 'The department name in the request may not match any status records for this form'
+          hint: 'The department name in request may not match any status records for this form'
         }
       }, { status: 404 });
     }
@@ -221,8 +229,8 @@ export async function PUT(request) {
     const statusValue = action === 'approve' ? 'approved' : 'rejected';
     const updateData = {
       status: statusValue,
-      action_at: new Date().toISOString(),
-      action_by_user_id: userId // ✅ CRITICAL: Track who performed the action
+      action_at: new Date(),
+      action_by_user_id: userId // ✅ CRITICAL: Track who performed action
     };
 
     // Add rejection reason if rejecting
@@ -235,19 +243,14 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    const { data: updatedStatus, error: updateError } = await supabaseAdmin
+    const { data: updatedStatus, error: updateError } = await supabase
       .from('no_dues_status')
       .update(updateData)
       .eq('id', existingStatus.id)
       .select()
       .single();
 
-    if (updateError) {
-      return NextResponse.json({
-        success: false,
-        error: updateError.message
-      }, { status: 500 });
-    }
+    if (updateError) throw updateError;
 
     // ==================== IMPORTANT ====================
     // Form status update is handled by database trigger: trigger_update_form_status
@@ -255,16 +258,14 @@ export async function PUT(request) {
     // We don't need to manually check or update it here - this prevents race conditions
     // ===================================================
 
-    // Get the updated form status (may have been changed by trigger)
-    const { data: currentForm, error: formFetchError } = await supabaseAdmin
+    // Get updated form status (may have been changed by trigger)
+    const { data: currentForm, error: formError } = await supabase
       .from('no_dues_forms')
       .select('id, status, student_name, registration_no')
       .eq('id', formId)
       .single();
 
-    if (formFetchError) {
-      console.error('Error fetching form after status update:', formFetchError);
-    }
+    if (formError && formError.code !== 'PGRST116') throw formError;
 
     // ==================== AUDIT LOGGING ====================
     // Log the action (async)
@@ -283,7 +284,7 @@ export async function PUT(request) {
 
     // ==================== ASYNC CERTIFICATE GENERATION ====================
     // If form is now completed (trigger updated it), generate certificate in background
-    // Don't await - let it happen asynchronously to not block the response
+    // Don't await - let it happen asynchronously to not block response
     if (currentForm?.status === 'completed') {
       console.log(`🎓 Form completed - triggering background certificate generation for ${formId}`);
 
@@ -295,10 +296,10 @@ export async function PUT(request) {
         formId
       );
 
-      // Use the new certificate trigger service for more reliable generation
+      // Use new certificate trigger service for more reliable generation
       try {
         const { triggerCertificateGeneration } = await import('@/lib/certificateTrigger');
-        
+
         // Fire and forget - certificate generation happens in background
         triggerCertificateGeneration(formId, userId)
           .then(result => {
@@ -314,8 +315,8 @@ export async function PUT(request) {
           });
       } catch (importError) {
         console.error('❌ Failed to import certificate trigger:', importError);
-        
-        // Fallback to the old fetch method
+
+        // Fallback to old fetch method
         fetch(
           APP_URLS.certificateGenerateApi(),
           {
@@ -349,11 +350,15 @@ export async function PUT(request) {
     // 2. ALL departments approved (certificate ready)
     // ❌ NO emails on individual department approvals
 
-    const { data: formWithEmail, error: emailFetchError } = await supabaseAdmin
+    const { data: formWithEmail, error: emailError } = await supabase
       .from('no_dues_forms')
       .select('personal_email, college_email, student_name, registration_no, status')
       .eq('id', formId)
       .single();
+
+    if (emailError && emailError.code !== 'PGRST116') {
+      console.error('Error fetching form email info:', emailError);
+    }
 
     if (formWithEmail && (formWithEmail.personal_email || formWithEmail.college_email)) {
       const studentEmail = formWithEmail.personal_email || formWithEmail.college_email;
@@ -406,7 +411,7 @@ export async function PUT(request) {
 
       } catch (emailError) {
         console.error('❌ Failed to send email notification:', emailError);
-        // Don't fail the request if email fails
+        // Don't fail request if email fails
       }
     } else {
       console.log('ℹ️ Student email not available - skipping email notification');
@@ -415,7 +420,7 @@ export async function PUT(request) {
     return ApiResponse.success({
       status: updatedStatus,
       form: currentForm || form,
-    }, `Successfully ${action}d the no dues request for ${form.student_name}`);
+    }, `Successfully ${action}d no dues request for ${form.student_name}`);
 
   } catch (error) {
     console.error('Staff Action API Error:', error);

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * Premium GlassCard Component
@@ -13,16 +14,18 @@ import React from 'react';
  * - Floating effects and hover states
  */
 
-export default function GlassCard({ 
-  children, 
-  className = "", 
+export default function GlassCard({
+  children,
+  className = "",
   onClick,
   variant = 'default',
   theme = 'jecrc',
   floating = false,
   hoverable = true,
-  ...props 
+  ...props
 }) {
+  const { theme: currentTheme } = useTheme();
+  const isDark = currentTheme === 'dark';
   // Theme-based styling
   const getThemeClasses = () => {
     switch (theme) {
@@ -38,20 +41,28 @@ export default function GlassCard({
     }
   };
 
-  // Variant-based styling
+  // Variant-based styling with improved dark mode support
   const getVariantClasses = () => {
     switch (variant) {
       case 'glass':
-        return 'backdrop-blur-xl bg-white/10 border border-white/20 shadow-xl';
+        return isDark
+          ? 'backdrop-blur-xl bg-gray-900/60 border border-white/10 shadow-xl shadow-black/20'
+          : 'backdrop-blur-xl bg-white/60 border border-white/20 shadow-xl shadow-gray-200/50';
       case 'elegant':
-        return 'bg-white/80 border border-gray-200/50 shadow-lg';
+        return isDark
+          ? 'bg-gray-800/80 border border-white/10 shadow-lg shadow-black/20'
+          : 'bg-white/80 border border-gray-200/50 shadow-lg shadow-gray-200/40';
       case 'premium':
-        return 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-xl';
+        return isDark
+          ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 shadow-2xl shadow-purple-900/10'
+          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl shadow-gray-200/50';
       case 'dark':
-        return 'bg-gradient-to-br from-gray-900/80 to-black/80 border border-gray-700/50 shadow-xl';
+        return 'bg-gradient-to-br from-gray-900/90 to-black/90 border border-gray-700/50 shadow-2xl shadow-black/40';
       case 'default':
       default:
-        return 'bg-white border border-gray-200 shadow-lg';
+        return isDark
+          ? 'bg-gray-900/80 border border-white/10 shadow-lg shadow-black/20 backdrop-blur-md'
+          : 'bg-white/90 border border-gray-200 shadow-xl shadow-gray-100/50 backdrop-blur-md';
     }
   };
 
@@ -64,7 +75,7 @@ export default function GlassCard({
     relative overflow-hidden rounded-2xl p-6
     ${getVariantClasses()}
     ${getThemeClasses()}
-    ${hoverable ? 'hover:shadow-2xl hover:scale-[1.02] transition-all duration-500' : ''}
+    ${hoverable ? 'hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 cursor-pointer' : ''}
     ${className}
   `;
 
@@ -76,15 +87,23 @@ export default function GlassCard({
       {...props}
     >
       {/* Premium gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
-      
+      <div className={`
+        absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent 
+        opacity-0 hover:opacity-100 transition-opacity duration-500
+        ${isDark ? 'via-white/5' : 'via-white/10'}
+      `} />
+
       {/* Content */}
       <div className="relative z-10">
         {children}
       </div>
 
       {/* Corner accent */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-transparent to-white/10 rounded-full -translate-y-12 translate-x-12 blur-xl" />
+      <div className={`
+        absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-transparent to-white/10 rounded-full 
+        -translate-y-12 translate-x-12 blur-xl
+        ${isDark ? 'to-white/5' : 'to-white/10'}
+      `} />
     </div>
   );
 }

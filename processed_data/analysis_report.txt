@@ -1,0 +1,61 @@
+Total Errors: 587
+
+--- Top 10 Failed Degrees ---
+121: Bachelor of Computer Applications
+111: Bachelor of Business Administration
+83: Master of Technology
+49: Bachelor of Arts
+42: Bachelor of Design
+31: Master of Computer Applications
+27: Master of Law
+21: Master of Business Administration
+20: Master of Science
+19: Bachelor of Radiation Technology
+
+--- Top 20 Failed Branches ---
+32: BCA-CollegeDekho
+31: Bachelor of Design-Gurukul School of Design
+28: BCA (Cloud Computing)-Microsoft
+24: MCA (Full Stack)-CollegeDekho
+23: BBA (Digital Business(AISI))-ISDC
+22: Liberal Studies with Major (International Relations & Diplomacy)
+21: BBA (Logistics and Supply Chain Management (CIPS))-ISDC
+21: BCA (Digital Forensics and Information Security)-CollegeDekho
+20: BBA (Tourism and Hospitality Management)
+20: BBA-CollegeDekho
+20: Clinical Embryology
+19: Radiation Technology
+18: BBA (Global Business)-ISDC
+17: Civil Engineering (Construction Engineering and Management)
+17: BCA (Robotic Process Automation)-CollegeDekho
+16: Civil Engineering (Transportation Engineering)
+16: BCA (Health Informatics)
+15: LLM (Business Law)
+12: Civil Engineering (Environmental Engineering)
+11: Mechanical Engineering (Production Engineering)
+
+--- Top 20 Failed Combinations (Degree || Branch) ---
+32: Bachelor of Computer Applications || BCA-CollegeDekho
+31: Bachelor of Design || Bachelor of Design-Gurukul School of Design
+28: Bachelor of Computer Applications || BCA (Cloud Computing)-Microsoft
+24: Master of Computer Applications || MCA (Full Stack)-CollegeDekho
+23: Bachelor of Business Administration || BBA (Digital Business(AISI))-ISDC
+22: Bachelor of Arts || Liberal Studies with Major (International Relations & Diplomacy)
+21: Bachelor of Business Administration || BBA (Logistics and Supply Chain Management (CIPS))-ISDC
+21: Bachelor of Computer Applications || BCA (Digital Forensics and Information Security)-CollegeDekho
+20: Bachelor of Business Administration || BBA (Tourism and Hospitality Management)
+20: Bachelor of Business Administration || BBA-CollegeDekho
+20: Master of Science || Clinical Embryology
+19: Bachelor of Radiation Technology || Radiation Technology
+18: Bachelor of Business Administration || BBA (Global Business)-ISDC
+17: Master of Technology || Civil Engineering (Construction Engineering and Management)
+17: Bachelor of Computer Applications || BCA (Robotic Process Automation)-CollegeDekho
+16: Master of Technology || Civil Engineering (Transportation Engineering)
+16: Bachelor of Computer Applications || BCA (Health Informatics)
+15: Master of Law || LLM (Business Law)
+12: Master of Technology || Civil Engineering (Environmental Engineering)
+11: Master of Technology || Mechanical Engineering (Production Engineering)
+
+--- Error Reasons ---
+576: Branch not found
+11: Course not found

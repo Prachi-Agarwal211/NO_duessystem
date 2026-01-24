@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   LayoutDashboard,
   History,
@@ -16,6 +17,8 @@ import toast from 'react-hot-toast';
 export default function Sidebar({ isOpen, setIsOpen }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [unreadCount, setUnreadCount] = useState(0);
   
   const isStaff = pathname.startsWith('/staff');
@@ -82,7 +85,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       {/* Mobile Overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -90,18 +93,33 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       {/* Sidebar Container */}
       <aside className={`
         fixed top-0 left-0 h-full w-64 z-50 transform transition-transform duration-300 ease-in-out
-        bg-white border-r border-gray-200 
-        dark:bg-black dark:border-white/10
+        ${isDark
+          ? 'bg-gradient-to-b from-gray-900 to-black border-r border-white/10'
+          : 'bg-gradient-to-b from-white to-gray-50 border-r border-gray-200'
+        }
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-        flex flex-col
+        flex flex-col shadow-xl
       `}>
         
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100 dark:border-white/5">
-          <span className="font-bold text-xl bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-white dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white bg-clip-text text-transparent">
+        <div className={`
+          h-16 flex items-center justify-between px-6
+          ${isDark ? 'border-b border-white/5' : 'border-b border-gray-100'}
+        `}>
+          <span className={`
+            font-bold text-xl
+            bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-transparent dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white
+            bg-clip-text text-transparent
+          `}>
             NoDues
           </span>
-          <button onClick={() => setIsOpen(false)} className="md:hidden text-gray-500">
+          <button 
+            onClick={() => setIsOpen(false)} 
+            className={`
+              md:hidden transition-colors duration-200
+              ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}
+            `}
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -115,15 +133,17 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 key={item.href}
                 href={item.href}
                 className={`
-                  flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium
+                  flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 font-medium
                   ${isActive
-                    ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/25 dark:shadow-neon-red'
+                    : isDark
+                      ? 'text-gray-400 hover:bg-white/5 hover:text-white'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }
                 `}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : ''}`} />
                   {item.name}
                 </div>
                 {item.badge > 0 && (
@@ -143,10 +163,19 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         </nav>
 
         {/* Footer / Logout */}
-        <div className="p-4 border-t border-gray-100 dark:border-white/5">
+        <div className={`
+          p-4 border-t
+          ${isDark ? 'border-white/5' : 'border-gray-100'}
+        `}>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors font-medium"
+            className={`
+              flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 font-medium
+              ${isDark 
+                ? 'text-red-400 hover:bg-red-500/10' 
+                : 'text-red-600 hover:bg-red-50'
+              }
+            `}
           >
             <LogOut className="w-5 h-5" />
             Sign Out

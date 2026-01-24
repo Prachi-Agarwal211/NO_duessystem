@@ -25,7 +25,7 @@ function StatusBadge({ status, className = "" }) {
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 border text-xs font-semibold transition-all duration-200 ${classes} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full px-3 py-1 border text-xs font-semibold transition-all duration-200 shadow-sm ${classes} ${className}`}
     >
       {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
     </span>

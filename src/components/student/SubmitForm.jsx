@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Loader2, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
-import FormInput from './FormInput';
+import { Loader2, CheckCircle, AlertCircle, Check, X, Info } from 'lucide-react';
+import toast from 'react-hot-toast';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { supabase } from '@/lib/supabaseClient';
+// import { supabase } from '@/lib/supabaseClient'; // Not using file upload anymore
 import { useFormConfig } from '@/hooks/useFormConfig';
 import { DropdownWithErrorBoundary } from '@/components/ui/DropdownErrorBoundary';
 import { createLogger } from '@/lib/errorLogger';
-import FormInstructions from './FormInstructions';
-// Removed: FireNebulaBackground and PearlGradientOverlay - animations too intense
 
 const logger = createLogger('SubmitForm');
 
@@ -21,28 +21,25 @@ export default function SubmitForm() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  // Load dynamic configuration (includes validation rules and country codes)
+  // Load dynamic configuration
   const {
     schools,
     courses,
     branches,
     collegeDomain,
     countryCodes,
-    validateField,
     loading: configLoading,
     coursesLoading,
     branchesLoading,
     fetchCoursesBySchool,
-    fetchBranchesByCourse,
-    getCoursesForSchool,
-    getBranchesForCourse
+    fetchBranchesByCourse
   } = useFormConfig();
 
   const [formData, setFormData] = useState({
     registration_no: '',
     student_name: '',
-    admission_year: '', // Admission year
-    passing_year: '',   // Passing year
+    admission_year: '',
+    passing_year: '',
     parent_name: '',
     school: '',
     course: '',
@@ -58,7 +55,6 @@ export default function SubmitForm() {
   const [availableCourses, setAvailableCourses] = useState([]);
   const [availableBranches, setAvailableBranches] = useState([]);
 
-
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
@@ -70,76 +66,68 @@ export default function SubmitForm() {
   const [studentDataFound, setStudentDataFound] = useState(null);
   const [studentFetchError, setStudentFetchError] = useState('');
 
-  // Update available courses when school changes - Use API call for fresh data
+  // Ref to prevent useEffects from resetting values during auto-fill
+  const isAutoFilling = useRef(false);
+
+  // Update available courses when school changes (only when user manually selects)
   useEffect(() => {
+    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    if (isAutoFilling.current) return;
+
     const loadCourses = async () => {
       if (formData.school) {
-        logger.debug('School selected', { schoolId: formData.school });
-
-        // Fetch courses from API for selected school
         const coursesForSchool = await fetchCoursesBySchool(formData.school);
-        logger.debug('Courses loaded for school', {
-          schoolId: formData.school,
-          count: coursesForSchool.length
-        });
         setAvailableCourses(coursesForSchool);
-
-        // Reset course and branch since school changed
-        if (formData.course) {
-          setFormData(prev => ({ ...prev, course: '', branch: '' }));
-          setAvailableBranches([]);
-        }
+        // Reset course/branch when user manually changes school
+        setFormData(prev => ({ ...prev, course: '', branch: '' }));
+        setAvailableBranches([]);
       } else {
         setAvailableCourses([]);
         setAvailableBranches([]);
       }
     };
-
     loadCourses();
   }, [formData.school, fetchCoursesBySchool]);
 
-  // Update available branches when course changes - Use API call for fresh data
+  // Update available branches when course changes (only when user manually selects)
   useEffect(() => {
+    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    if (isAutoFilling.current) return;
+
     const loadBranches = async () => {
       if (formData.course) {
-        logger.debug('Course selected', { courseId: formData.course });
-
-        // Fetch branches from API for selected course
         const branchesForCourse = await fetchBranchesByCourse(formData.course);
-        logger.debug('Branches loaded for course', {
-          courseId: formData.course,
-          count: branchesForCourse.length
-        });
         setAvailableBranches(branchesForCourse);
-
-        // Reset branch since course changed
-        if (formData.branch) {
-          setFormData(prev => ({ ...prev, branch: '' }));
-        }
+        // Reset branch when user manually changes course
+        setFormData(prev => ({ ...prev, branch: '' }));
       } else {
         setAvailableBranches([]);
       }
     };
-
     loadBranches();
   }, [formData.course, fetchBranchesByCourse]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Special handling for cascading dropdowns
     if (name === 'school') {
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        course: '', // Reset dependent fields
+        course: '',
         branch: ''
       }));
     } else if (name === 'course') {
       setFormData(prev => ({
         ...prev,
         [name]: value,
-        branch: '' // Reset dependent field
+        branch: ''
+      }));
+    } else if (name === 'registration_no') {
+      // Auto-convert to uppercase as user types
+      setFormData(prev => ({
+        ...prev,
+        [name]: value.toUpperCase()
       }));
     } else {
       setFormData(prev => ({
@@ -147,9 +135,7 @@ export default function SubmitForm() {
         [name]: value
       }));
     }
-
     setError('');
-
   };
 
   const checkExistingForm = async () => {
@@ -162,40 +148,42 @@ export default function SubmitForm() {
     setError('');
 
     try {
-      // Use API endpoint instead of direct Supabase client query
-      // This avoids RLS issues and works in all environments
-      // Note: API expects 'registration_no' parameter
-      const response = await fetch(`/api/student/can-edit?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
-
+      const response = await fetch(`/api/student?registration_no=${encodeURIComponent(formData.registration_no.trim().toUpperCase())}`);
       const result = await response.json();
 
-      if (response.status === 404 || result.error === 'Form not found') {
-        // No form exists - user can proceed
+      // If success is true, it means a form exists (according to getStudentStatus in ApplicationService)
+      if (response.ok && result.success && result.data) {
+        setError('A form already exists for this registration number. Redirecting to status page...');
+        setTimeout(() => {
+          router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
+        }, 2000);
+        return;
+      }
+
+      // If 404 or success: false, it means no form exists, which is good for submission
+      if (response.status === 404 || !result.success) {
         setError('');
-        alert('✅ No existing form found. You can proceed with submission.');
+        toast.success('✅ No existing form found. You can proceed.');
         return;
       }
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to check form status');
       }
-
-      // Form exists
-      if (result.success && result.data) {
-        setError('A form already exists for this registration number. Redirecting to status page...');
-        setTimeout(() => {
-          router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
-        }, 2000);
-      }
     } catch (err) {
       console.error('Error checking form:', err);
-      setError(err.message || 'Failed to check existing form');
+      // If it's just not found, that's fine
+      if (err.message.includes('No form found')) {
+        setError('');
+        toast.success('✅ No existing form found. You can proceed.');
+      } else {
+        setError(err.message || 'Failed to check existing form');
+      }
     } finally {
       setChecking(false);
     }
   };
 
-  // Fetch student data from database
   const fetchStudentData = async (registrationNo) => {
     if (!registrationNo) {
       setStudentFetchError('Please enter registration number first');
@@ -206,30 +194,79 @@ export default function SubmitForm() {
     setStudentFetchError('');
     setStudentDataFound(null);
 
+    // Set flag to prevent useEffects from resetting dropdown values
+    isAutoFilling.current = true;
+
     try {
       const response = await fetch(`/api/student/lookup?registration_no=${encodeURIComponent(registrationNo.trim().toUpperCase())}`);
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Auto-fill form with student data
         const studentData = result.data;
 
-        // Check if student already has a form or is completed
         if (studentData.no_dues_status === 'pending') {
-          alert(`⚠️ Notice: You already have a pending application. You can view its status using the Check Status feature.`);
+          toast.info('⚠️ You already have a pending application.');
         } else if (studentData.no_dues_status === 'completed') {
-          alert(`✅ Notice: Your No Dues process is already completed. You can download your certificate from the status page.`);
+          toast.success('✅ Your No Dues process is already completed.');
         }
 
+        // Find matching school ID from name
+        let schoolId = '';
+        let courseId = '';
+        let branchId = '';
+
+        // Try to find school by name or use ID if already provided
+        if (studentData.school) {
+          const matchedSchool = schools.find(s =>
+            s.name === studentData.school || s.id === studentData.school
+          );
+          if (matchedSchool) {
+            schoolId = matchedSchool.id;
+          }
+        }
+
+        // Load courses for the school and find matching course
+        let loadedCourses = [];
+        if (schoolId) {
+          loadedCourses = await fetchCoursesBySchool(schoolId);
+          setAvailableCourses(loadedCourses);
+
+          if (studentData.course) {
+            const matchedCourse = loadedCourses.find(c =>
+              c.name === studentData.course || c.id === studentData.course
+            );
+            if (matchedCourse) {
+              courseId = matchedCourse.id;
+            }
+          }
+        }
+
+        // Load branches for the course and find matching branch
+        let loadedBranches = [];
+        if (courseId) {
+          loadedBranches = await fetchBranchesByCourse(courseId);
+          setAvailableBranches(loadedBranches);
+
+          if (studentData.branch) {
+            const matchedBranch = loadedBranches.find(b =>
+              b.name === studentData.branch || b.id === studentData.branch
+            );
+            if (matchedBranch) {
+              branchId = matchedBranch.id;
+            }
+          }
+        }
+
+        // Set form data with resolved IDs
         setFormData(prev => ({
           ...prev,
           student_name: studentData.student_name || prev.student_name,
           admission_year: studentData.admission_year || prev.admission_year,
           passing_year: studentData.passing_year || prev.passing_year,
           parent_name: studentData.parent_name || prev.parent_name,
-          school: studentData.school || prev.school,
-          course: studentData.course || prev.course,
-          branch: studentData.branch || prev.branch,
+          school: schoolId || prev.school,
+          course: courseId || prev.course,
+          branch: branchId || prev.branch,
           country_code: studentData.country_code || prev.country_code,
           contact_no: studentData.contact_no || prev.contact_no,
           personal_email: studentData.personal_email || prev.personal_email,
@@ -240,26 +277,24 @@ export default function SubmitForm() {
         setStudentDataFound(studentData);
         setError('');
 
-        // Load courses and branches if school/course data is available
-        // Note: studentData.school/course/branch might be UUIDs or names
-        if (studentData.school) {
-          const coursesForSchool = await fetchCoursesBySchool(studentData.school);
-          setAvailableCourses(coursesForSchool);
-
-          if (studentData.course) {
-            const branchesForCourse = await fetchBranchesByCourse(studentData.course);
-            setAvailableBranches(branchesForCourse);
-          }
+        // Show success message with details
+        if (schoolId && courseId && branchId) {
+          toast.success('✅ All details auto-filled successfully!');
+        } else if (schoolId) {
+          toast.info('⚠️ Some dropdown values could not be matched. Please verify.');
         }
-
       } else {
         setStudentFetchError(result.message || 'Student not found in database');
       }
     } catch (err) {
       console.error('Error fetching student data:', err);
-      setStudentFetchError('Failed to fetch student data. Please try again.');
+      setStudentFetchError('Failed to fetch student data.');
     } finally {
       setFetchingStudent(false);
+      // Reset the auto-filling flag after a short delay to ensure React has processed all state updates
+      setTimeout(() => {
+        isAutoFilling.current = false;
+      }, 100);
     }
   };
 
@@ -269,110 +304,32 @@ export default function SubmitForm() {
     setError('');
 
     try {
-      // Basic required field validation (keep client-side for immediate feedback)
-      if (!formData.registration_no?.trim()) {
-        throw new Error('Registration number is required');
-      }
+      // Validations
+      if (!formData.registration_no?.trim()) throw new Error('Registration number is required');
+      if (!formData.student_name?.trim()) throw new Error('Student name is required');
+      if (!formData.school) throw new Error('School selection is required');
+      if (!formData.course) throw new Error('Course selection is required');
+      if (!formData.branch) throw new Error('Branch selection is required');
+      if (!formData.personal_email?.trim()) throw new Error('Personal email is required');
+      if (!formData.college_email?.trim()) throw new Error('College email is required');
+      if (!formData.contact_no?.trim()) throw new Error('Contact number is required');
 
-      if (!formData.student_name?.trim()) {
-        throw new Error('Student name is required');
-      }
-
-      if (!formData.school) {
-        throw new Error('School selection is required');
-      }
-
-      if (!formData.course) {
-        throw new Error('Course selection is required');
-      }
-
-      if (!formData.branch) {
-        throw new Error('Branch selection is required');
-      }
-
-      if (!formData.personal_email?.trim()) {
-        throw new Error('Personal email is required');
-      }
-
-      if (!formData.college_email?.trim()) {
-        throw new Error('College email is required');
-      }
-
-      if (!formData.contact_no?.trim()) {
-        throw new Error('Contact number is required');
-      }
-
-      // Basic email format check (detailed validation on server)
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(formData.personal_email.trim())) {
-        throw new Error('Invalid personal email format');
-      }
-
-      if (!emailPattern.test(formData.college_email.trim())) {
-        throw new Error('Invalid college email format');
-      }
-
-      // College email domain check (only if collegeDomain is loaded)
+      if (!emailPattern.test(formData.personal_email.trim())) throw new Error('Invalid personal email format');
+      if (!emailPattern.test(formData.college_email.trim())) throw new Error('Invalid college email format');
       if (collegeDomain && !formData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
         throw new Error(`College email must end with ${collegeDomain}`);
       }
 
-      // Mandatory checks for fields that might be missing validation
-      if (!formData.passing_year?.trim()) throw new Error('Passing Year is required');
-      if (!formData.parent_name?.trim()) throw new Error('Parent Name is required');
-      if (!formData.alumni_profile_link?.trim()) throw new Error('Alumni Profile Link is required');
-
-      // Admission/Passing year validation
-      if (formData.admission_year) {
-        // Validate YYYY format
-        if (!/^\d{4}$/.test(formData.admission_year)) {
-          throw new Error('Admission Year must be in YYYY format (e.g., 2020)');
-        }
-        const admissionYear = parseInt(formData.admission_year);
-        const currentYear = new Date().getFullYear();
-        if (admissionYear < 1950 || admissionYear > currentYear + 1) {
-          throw new Error('Please enter a valid Admission Year');
-        }
-      }
-
-      if (formData.passing_year) {
-        // Validate YYYY format
-        if (!/^\d{4}$/.test(formData.passing_year)) {
-          throw new Error('Passing Year must be in YYYY format (e.g., 2024)');
-        }
-        const passingYear = parseInt(formData.passing_year);
-        const currentYear = new Date().getFullYear();
-        if (passingYear < 1950 || passingYear > currentYear + 10) {
-          throw new Error('Please enter a valid Passing Year');
-        }
-      }
-
-      // Validate year range (if both provided)
-      if (formData.admission_year && formData.passing_year) {
-        const admissionYear = parseInt(formData.admission_year);
-        const passingYear = parseInt(formData.passing_year);
-        if (passingYear < admissionYear) {
-          throw new Error('Passing Year must be greater than or equal to Admission Year');
-        }
-        if (passingYear - admissionYear > 10) {
-          throw new Error('Duration between Admission and Passing Year cannot exceed 10 years');
-        }
-      }
-
-      // Note: Detailed format validation (registration number, phone, names)
-      // is handled by server using configurable database rules
-
-      // Sanitize and prepare data
-      // Send UUIDs for school, course, branch - backend will look up names
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
-        admission_year: formData.admission_year?.trim() ? formData.admission_year.trim() : null,
-        passing_year: formData.passing_year?.trim() ? formData.passing_year.trim() : null,
-        parent_name: formData.parent_name?.trim() ? formData.parent_name.trim() : null,
-        school: formData.school,        // Send UUID from dropdown
-        course: formData.course,        // Send UUID from dropdown
-        branch: formData.branch,        // Send UUID from dropdown
+        admission_year: formData.admission_year?.trim() || null,
+        passing_year: formData.passing_year?.trim() || null,
+        parent_name: formData.parent_name?.trim() || null,
+        school: formData.school,
+        course: formData.course,
+        branch: formData.branch,
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
@@ -380,90 +337,50 @@ export default function SubmitForm() {
         alumni_profile_link: (formData.alumni_profile_link || '').trim()
       };
 
-      // ==================== SUBMIT VIA API ROUTE ====================
-      // This ensures server-side validation and email notifications
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      // Create timeout promise (30 seconds)
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout. Please try again.')), 30000)
-      );
-
-      // Create fetch promise using Prisma-based API
-      const fetchPromise = fetch('/api/student/prisma-route', {
+      const response = await fetch('/api/student', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sanitizedData),
+        signal: controller.signal
       });
 
-      // Race between fetch and timeout
-      const response = await Promise.race([fetchPromise, timeoutPromise]);
-
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        // Handle API errors with specific messages
         if (response.status === 409 || result.duplicate) {
-          throw new Error('A form with this registration number already exists. Redirecting to status page...');
+          throw new Error('Form already exists. Redirecting...');
         }
-
-        // Show specific field errors if available
-        if (result.field && result.error) {
-          throw new Error(`${result.error}`);
-        }
-
-        // Show detailed error if available
-        if (result.details && typeof result.details === 'object') {
-          const errorMessages = Object.values(result.details).join('. ');
-          throw new Error(errorMessages || 'Please check all required fields');
-        }
-
-        throw new Error(result.error || 'Failed to submit form. Please check all fields and try again.');
-      }
-
-      if (!result.data) {
-        throw new Error('Failed to create form record');
+        const error = new Error(result.error || 'Failed to submit form');
+        if (result.details) error.details = result.details;
+        throw error;
       }
 
       setFormId(result.data.id);
       setSuccess(true);
 
-      logger.success('Form submitted successfully', {
-        formId: result.data.id,
-        registrationNo: sanitizedData.registration_no
-      });
-
-      // Redirect to status page after 3 seconds
       setTimeout(() => {
         router.push(`/student/check-status?reg=${sanitizedData.registration_no}`);
       }, 3000);
 
     } catch (err) {
-      logger.error(err, {
-        action: 'formSubmission',
-        registrationNo: formData.registration_no,
-        school: formData.school,
-        course: formData.course,
-        branch: formData.branch
-      });
-
-      // Provide user-friendly error messages
-      let errorMessage = err.message;
-
-      if (errorMessage.includes('duplicate key') || errorMessage.includes('already exists')) {
-        errorMessage = 'A form with this registration number already exists. Please check your status or contact support.';
-        // Auto-redirect to check status after showing error
+      console.error(err);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please check your connection.');
+      } else {
+        const errorMsg = err.message || 'An unexpected error occurred.';
+        // Read details attached to the error object
+        const details = err.details || '';
+        setError(details ? `${errorMsg} (Details: ${details})` : errorMsg);
+      }
+      if (err.message && err.message.includes('already exists')) {
         setTimeout(() => {
           router.push(`/student/check-status?reg=${formData.registration_no.toUpperCase()}`);
         }, 3000);
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (!errorMessage || errorMessage === 'undefined') {
-        errorMessage = 'An unexpected error occurred. Please try again or contact support.';
       }
-
-      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -474,64 +391,26 @@ export default function SubmitForm() {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className={`
-          max-w-lg mx-auto text-center p-8 sm:p-12 rounded-3xl shadow-2xl transition-all duration-500
-          ${isDark
-            ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10'
-            : 'bg-white border border-gray-100'
-          }
-        `}
+        className={`max-w-lg mx-auto text-center p-8 sm:p-12 rounded-3xl shadow-2xl ${isDark ? 'bg-gradient-to-br from-gray-900 to-black border border-white/10' : 'bg-white border border-gray-100'
+          }`}
       >
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center shadow-inner"
+          className="w-24 h-24 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center"
         >
           <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
         </motion.div>
-
-        <h2 className={`
-          text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight
-          ${isDark ? 'text-white' : 'text-gray-900'}
-        `}>
+        <h2 className={`text-3xl sm:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
           Application Submitted!
         </h2>
-
-        <p className={`
-          text-sm sm:text-base mb-8 leading-relaxed
-          ${isDark ? 'text-gray-400' : 'text-gray-600'}
-        `}>
-          Your no dues application has been successfully recorded. You can track its live status using your Registration Number.
+        <p className={`text-sm sm:text-base mb-8 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          Your no dues application has been successfully recorded.
         </p>
-
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={() => router.push(`/student/check-status?reg=${formData.registration_no}`)}
-            className={`
-              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-              flex items-center justify-center gap-2
-              shadow-lg hover:shadow-xl active:scale-[0.99]
-              bg-jecrc-red hover:bg-jecrc-red-dark text-white
-            `}
-          >
+          <Button onClick={() => router.push(`/student/check-status?reg=${formData.registration_no}`)}>
             Track Status
-          </button>
-          <button
-            onClick={() => window.location.reload()}
-            className={`
-              px-6 py-3.5 rounded-xl font-semibold transition-all duration-300
-              flex items-center justify-center gap-2
-              border active:scale-[0.99]
-              ${isDark
-                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-white'
-                : 'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700'
-              }
-            `}
-          >
-            Submit Another
-          </button>
+          </Button>
         </div>
       </motion.div>
     );
@@ -543,319 +422,179 @@ export default function SubmitForm() {
       className="space-y-6 sm:space-y-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
     >
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`
-            p-4 rounded-xl flex items-start gap-3 transition-all duration-500
-            ${isDark
-              ? 'bg-red-500/10 border border-red-500/30'
-              : 'bg-red-50 border border-red-200'
-            }
-          `}
-        >
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-500">{error}</p>
-        </motion.div>
-      )}
-
-      {/* Important Instructions Block - Premium Style */}
+      {/* Instructions Pane - Restored similar to legacy */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className={`
-          p-6 sm:p-8 rounded-xl border mb-8
+          p-6 rounded-xl border
           ${isDark
             ? 'bg-blue-900/10 border-blue-500/20'
-            : 'bg-blue-50 border-blue-100'
+            : 'bg-blue-100/30 border-blue-200'
           }
         `}
       >
-        <h3 className={`
-          text-base sm:text-lg font-bold mb-3 flex items-center gap-2
-          ${isDark ? 'text-blue-400' : 'text-blue-700'}
-        `}>
-          <AlertCircle className="w-5 h-5" />
-          Important Instructions
+        <h3 className={`font-bold mb-3 flex items-center gap-2 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+          <Info className="w-5 h-5" />
+          Instructions
         </h3>
-        <ul className={`
-          space-y-2.5 text-sm sm:text-base list-disc pl-5
-          ${isDark ? 'text-blue-200/70' : 'text-blue-600'}
-        `}>
-          <li>All fields marked with <span className="text-red-500 font-bold">*</span> are mandatory.</li>
-          <li>Please ensure all details match your official college records.</li>
-          <li>After submission, you can track your application status using your Registration Number.</li>
-          <li className="font-semibold text-amber-500 dark:text-amber-400">
-            If you haven't created an Alumni account yet, please register at{' '}
-            <a
-              href="https://jualumni.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
-            >
-              jualumni.in
-            </a>
-            . Failure to register may lead to rejection of your No Dues application.
-          </li>
+        <ul className={`space-y-2 text-sm list-disc pl-5 ${isDark ? 'text-blue-200' : 'text-blue-600'}`}>
+          <li>Fields marked <span className="text-red-500">*</span> are mandatory.</li>
+          <li>Ensure details match official college records.</li>
+          <li>Register at <a href="https://jualumni.in" target="_blank" className="underline font-bold hover:text-jecrc-red transition-colors">jualumni.in</a> and obtain your <strong>Profile Link</strong> (from the Profile section) before applying.</li>
         </ul>
       </motion.div>
 
-      {/* Registration Number with Check Button AND Fetch Details Button */}
-      <motion.div
-        className="space-y-2"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.05, duration: 0.3, type: "spring", stiffness: 200 }}
-      >
+      {error && (
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-4 rounded-xl flex gap-3 ${isDark ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-red-50 border-red-200 text-red-600'}`}
+        >
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm">{error}</p>
+        </motion.div>
+      )}
+
+      {/* Legacy Arrangement: Registration Top, then Grid */}
+      <div className="space-y-4">
+        <Input
+          label="Registration Number"
+          name="registration_no"
+          value={formData.registration_no}
+          onChange={handleInputChange}
+          required
+          placeholder="e.g., 22BCAN001"
+          disabled={loading}
+          // Error handling for student fetch
+          error={studentFetchError}
+        />
+
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1 relative">
-            <FormInput
-              label="Registration Number"
-              name="registration_no"
-              value={formData.registration_no}
-              onChange={handleInputChange}
-              required
-              placeholder="e.g., 22BCAN001"
-              disabled={loading}
-            />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => fetchStudentData(formData.registration_no)}
+            disabled={fetchingStudent || !formData.registration_no}
+            loading={fetchingStudent}
+            className="w-full sm:w-auto h-[50px]"
+          >
+            {!fetchingStudent && "Auto-Fill details"}
+          </Button>
 
-            {/* Student Data Fetch Status */}
-            {fetchingStudent && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                <span className="text-xs text-blue-500">Fetching...</span>
-              </div>
-            )}
-
-            {!fetchingStudent && studentDataFound && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-500" />
-                <span className="text-xs text-green-500">Found</span>
-              </div>
-            )}
-
-            {!fetchingStudent && studentFetchError && (
-              <div className="absolute right-3 top-11 flex items-center gap-2">
-                <X className="w-5 h-5 text-red-500" />
-                <span className="text-xs text-red-500">Not found</span>
-              </div>
-            )}
-          </div>
-
-          {/* Buttons container - Stack vertically on mobile */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            {/* Auto-Fill Button */}
-            <button
-              type="button"
-              onClick={() => fetchStudentData(formData.registration_no)}
-              disabled={fetchingStudent || !formData.registration_no}
-              className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
-                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-                ${isDark
-                  ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/30'
-                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-                }
-              `}
-              title="Auto-fill student details from database"
-            >
-              {fetchingStudent ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Fetching...</span>
-                </>
-              ) : (
-                <>
-                  <span>Auto-Fill</span>
-                </>
-              )}
-            </button>
-
-            {/* Check Status Button */}
-            <button
-              type="button"
-              onClick={checkExistingForm}
-              disabled={checking || !formData.registration_no}
-              className={`
-                sm:mt-6 px-5 py-3 rounded-xl font-semibold transition-all duration-300
-                flex items-center justify-center gap-2 text-sm w-full sm:w-auto h-[52px] shadow-sm
-                disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-                ${isDark
-                  ? 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                }
-              `}
-              title="Check if application already exists"
-            >
-              {checking ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </>
-              ) : (
-                <>
-                  <span>Check Status</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Show student data when successfully fetched */}
-      {studentDataFound && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`
-            p-3 rounded-lg text-sm transition-all duration-500
-            ${isDark
-              ? 'bg-green-500/10 border border-green-500/30'
-              : 'bg-green-50 border border-green-200'
-            }
-          `}
-        >
-          <div className={`
-            font-medium mb-1 transition-colors duration-500
-            ${isDark ? 'text-green-400' : 'text-green-700'}
-          `}>
-            ✓ Student Data Found - Details Fetched
-          </div>
-          <div className={`
-            space-y-1 transition-colors duration-500
-            ${isDark ? 'text-green-300/80' : 'text-green-600'}
-          `}>
-            <div><strong>Name:</strong> {studentDataFound.student_name}</div>
-            <div><strong>School:</strong> {studentDataFound.school}</div>
-            <div><strong>Course:</strong> {studentDataFound.course}</div>
-            {studentDataFound.branch && <div><strong>Branch:</strong> {studentDataFound.branch}</div>}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Show error message when student not found */}
-      {studentFetchError && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`
-            p-3 rounded-lg text-sm transition-all duration-500
-            ${isDark
-              ? 'bg-amber-500/10 border border-amber-500/30'
-              : 'bg-amber-50 border border-amber-200'
-            }
-          `}
-        >
-          <div className={`
-            flex items-start gap-2 transition-colors duration-500
-            ${isDark ? 'text-amber-400' : 'text-amber-700'}
-          `}>
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium mb-1">{studentFetchError}</p>
-              <p className={`
-                text-xs transition-colors duration-500
-                ${isDark ? 'text-amber-300/70' : 'text-amber-600'}
-              `}>
-                You can still proceed by manually filling the form below. If you believe this is an error, please contact the admin.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      )}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3, type: "spring", stiffness: 200 }}
-      >
-        <div className="md:col-span-2">
-          <FormInput
-            label="Student Name"
-            name="student_name"
-            value={formData.student_name}
-            onChange={handleInputChange}
-            required
-            placeholder="Full Name"
-            disabled={loading}
-          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={checkExistingForm}
+            disabled={checking || !formData.registration_no}
+            loading={checking}
+            className="w-full sm:w-auto h-[50px]"
+          >
+            {!checking && "Check Status"}
+          </Button>
         </div>
 
-        {/* Country Code */}
-        <FormInput
+        {/* Success/Error Message for Auto-Fill */}
+        {(studentDataFound) && (
+          <div className={`p-3 rounded-lg text-sm flex gap-2 items-center ${isDark ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-700'}`}>
+            <Check className="w-4 h-4" /> Found: {studentDataFound.student_name}
+          </div>
+        )}
+      </div>
+
+      {/* MAIN GRID LAYOUT - Restored Legacy density */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <Input
+          label="Student Name"
+          name="student_name"
+          value={formData.student_name}
+          onChange={handleInputChange}
+          required
+          disabled={loading}
+          placeholder="Enter your full name as per records"
+        />
+
+        <Input
           label="Country Code"
           name="country_code"
           type="select"
           value={formData.country_code}
           onChange={handleInputChange}
           required
-          disabled={loading || configLoading}
-          options={countryCodes.map(c => ({
-            value: c.dial_code,
-            label: `${c.country_name} (${c.dial_code})`
-          }))}
+          disabled={loading}
+          options={countryCodes.map(c => ({ value: c.dial_code, label: `${c.country_name} (${c.dial_code})` }))}
         />
 
-        {/* Contact Number */}
-        <FormInput
+        <Input
           label="Contact Number"
           name="contact_no"
           type="tel"
           value={formData.contact_no}
           onChange={handleInputChange}
           required
-          placeholder="6-15 digits (without country code)"
           disabled={loading}
-          pattern="[0-9]{6,15}"
-          inputMode="tel"
+          placeholder="e.g. 9876543210"
         />
 
-        <FormInput
+        <Input
+          label="Personal Email"
+          name="personal_email"
+          type="email"
+          value={formData.personal_email}
+          onChange={handleInputChange}
+          required
+          disabled={loading}
+          placeholder="e.g. student@gmail.com"
+        />
+        {/* Note: Legacy might have had College Email in grid, but usually emails are long, span-2 looks better on laptop. Legacy was 2-col? Let's stick to strict 2-col unless it overflows. I'll make it span-2 for better laptop UI as requested "laptop friendly". */}
+
+        <Input
+          label="College Email"
+          name="college_email"
+          type="email"
+          value={formData.college_email}
+          onChange={handleInputChange}
+          required
+          disabled={loading}
+          className="md:col-span-2"
+          placeholder="e.g. student.id@jecrc.ac.in"
+        />
+
+        <Input
           label="Admission Year"
           name="admission_year"
           value={formData.admission_year}
           onChange={handleInputChange}
-          placeholder="e.g., 2020"
-          maxLength={4}
-          pattern="\d{4}"
           required
           disabled={loading}
+          placeholder="e.g. 2022"
         />
 
-        <FormInput
+        <Input
           label="Passing Year"
           name="passing_year"
           value={formData.passing_year}
           onChange={handleInputChange}
-          placeholder="e.g., 2024"
-          maxLength={4}
-          pattern="\d{4}"
           required
           disabled={loading}
+          placeholder="e.g. 2026"
         />
 
         <div className="md:col-span-2">
-          <FormInput
+          <Input
             label="Parent Name"
             name="parent_name"
             value={formData.parent_name}
             onChange={handleInputChange}
-            placeholder="Father's/Mother's Name"
             required
             disabled={loading}
+            placeholder="Enter Father's or Mother's Name"
           />
         </div>
 
         <div className="md:col-span-2">
-          <DropdownWithErrorBoundary
-            componentName="SchoolDropdown"
-            dropdownType="schools"
-            onReset={() => window.location.reload()}
-          >
-            <FormInput
+          <DropdownWithErrorBoundary componentName="SchoolDropdown" onReset={() => window.location.reload()}>
+            <Input
               label="School"
               name="school"
               type="select"
@@ -863,158 +602,64 @@ export default function SubmitForm() {
               onChange={handleInputChange}
               required
               disabled={loading || configLoading}
-              loading={configLoading}
-              placeholder={configLoading ? "Loading schools..." : "Select School"}
               options={schools.map(s => ({ value: s.id, label: s.name }))}
             />
           </DropdownWithErrorBoundary>
         </div>
 
-        <DropdownWithErrorBoundary
-          componentName="CourseDropdown"
-          dropdownType="courses"
-          onReset={() => {
-            setFormData(prev => ({ ...prev, course: '', branch: '' }));
-            setAvailableCourses([]);
-          }}
-        >
-          <FormInput
+        <DropdownWithErrorBoundary componentName="CourseDropdown">
+          <Input
             label="Course"
             name="course"
             type="select"
             value={formData.course}
             onChange={handleInputChange}
             required
-            disabled={loading || configLoading || coursesLoading || !formData.school}
-            loading={coursesLoading}
-            placeholder={
-              coursesLoading
-                ? "Loading courses..."
-                : !formData.school
-                  ? "Select a school first"
-                  : availableCourses.length === 0
-                    ? "No courses available"
-                    : "Select Course"
-            }
+            disabled={loading || !formData.school}
             options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
           />
         </DropdownWithErrorBoundary>
 
-        <DropdownWithErrorBoundary
-          componentName="BranchDropdown"
-          dropdownType="branches"
-          onReset={() => {
-            setFormData(prev => ({ ...prev, branch: '' }));
-            setAvailableBranches([]);
-          }}
-        >
-          <FormInput
+        <DropdownWithErrorBoundary componentName="BranchDropdown">
+          <Input
             label="Branch"
             name="branch"
             type="select"
             value={formData.branch}
             onChange={handleInputChange}
             required
-            disabled={loading || configLoading || branchesLoading || !formData.course}
-            loading={branchesLoading}
-            placeholder={
-              branchesLoading
-                ? "Loading branches..."
-                : !formData.course
-                  ? "Select a course first"
-                  : availableBranches.length === 0
-                    ? "No branches available"
-                    : "Select Branch"
-            }
+            disabled={loading || !formData.course}
             options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
           />
         </DropdownWithErrorBoundary>
 
-        <FormInput
-          label="Personal Email"
-          name="personal_email"
-          type="email"
-          value={formData.personal_email}
-          onChange={handleInputChange}
-          required
-          placeholder="your.email@example.com"
-          disabled={loading}
-        />
-
-        <FormInput
-          label={`College Email (must end with ${collegeDomain})`}
-          name="college_email"
-          type="email"
-          value={formData.college_email}
-          onChange={handleInputChange}
-          required
-          placeholder={`yourname${collegeDomain}`}
-          disabled={loading}
-        />
-
-        {/* ALUMNI PROFILE LINK (MANDATORY) */}
         <div className="md:col-span-2">
-          <FormInput
-            label="Alumni Profile Link (Mandatory)"
+          <Input
+            label="JU Alumni Profile Link"
             name="alumni_profile_link"
-            type="url"
             value={formData.alumni_profile_link}
             onChange={handleInputChange}
             required
-            placeholder="https://jualumni.in/profile/123456"
             disabled={loading}
+            placeholder="e.g. https://jualumni.in/p/username or https://jualumni.in/profile/123456"
+            description={
+              <span>
+                Go to <a href="https://jualumni.in" target="_blank" className="underline hover:text-jecrc-red">JU Alumni</a> → <strong>Profile</strong> section → Copy the link from browser address bar
+              </span>
+            }
           />
-          <p className={`
-            text-xs sm:text-sm mt-2 ml-1 transition-colors duration-300
-            ${isDark ? 'text-amber-400/90' : 'text-amber-700/90'}
-          `}>
-            <span className="font-bold">Instruction:</span> Please visit{' '}
-            <a
-              href="https://jualumni.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-amber-500 font-medium"
-            >
-              jualumni.in
-            </a>
-            , go to your profile section, copy your profile link, and paste it here.
-          </p>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Alumni Screenshot Upload Removed as per requirement */}
-
-      {/* Form Actions */}
-      <div className="pt-6 border-t border-gray-100 dark:border-white/5 mt-8">
-        <button
+      <div className="pt-4 flex justify-end">
+        <Button
           type="submit"
           disabled={loading}
-          className={`
-            w-full py-4 rounded-xl font-bold text-base tracking-wide uppercase transition-all duration-300
-            flex items-center justify-center gap-2
-            shadow-lg hover:shadow-xl active:scale-[0.99]
-            disabled:opacity-70 disabled:cursor-not-allowed
-            bg-[#c41e3a] hover:bg-[#a01830] text-white
-          `}
+          loading={loading}
+          className="w-full sm:w-auto px-10 py-4 text-lg font-bold shadow-xl shadow-red-500/20"
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Submitting Application...</span>
-            </>
-          ) : (
-            <>
-              <span>Submit Application</span>
-              <span className="ml-1 opacity-70">→</span>
-            </>
-          )}
-        </button>
-        <p className={`
-          text-center mt-4 text-xs sm:text-sm
-          ${isDark ? 'text-gray-500' : 'text-gray-400'}
-        `}>
-          By clicking submit, you confirm all details are accurate.
-        </p>
+          Submit Application
+        </Button>
       </div>
     </motion.form>
   );

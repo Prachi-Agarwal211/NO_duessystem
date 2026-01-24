@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
+import supabase from '@/lib/supabaseClient';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 /**
  * PUT /api/student/edit
@@ -49,20 +47,21 @@ export async function PUT(request) {
     }
 
     // ==================== GET CURRENT FORM ====================
-    const { data: form, error: formError } = await supabaseAdmin
+    const { data: form, error: formError } = await supabase
       .from('no_dues_forms')
       .select('id, registration_no, status, student_name')
       .eq('registration_no', registration_no.trim().toUpperCase())
       .single();
 
-    if (formError) {
-      if (formError.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Form not found'
-        }, { status: 404 });
-      }
-      throw formError;
+    if (formError && formError.code !== 'PGRST116') {
+      console.error('Form lookup error:', formError);
+    }
+
+    if (!form) {
+      return NextResponse.json({
+        success: false,
+        error: 'Form not found'
+      }, { status: 404 });
     }
 
     // ==================== CHECK EDIT ELIGIBILITY ====================
@@ -140,7 +139,7 @@ export async function PUT(request) {
 
     // Validate email formats if updated
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (sanitizedData.personal_email && !emailPattern.test(sanitizedData.personal_email)) {
       return NextResponse.json({
         success: false,
@@ -180,7 +179,7 @@ export async function PUT(request) {
     // Validate years if updated
     if (sanitizedData.admission_year || sanitizedData.passing_year) {
       const yearPattern = /^\d{4}$/;
-      
+
       if (sanitizedData.admission_year && !yearPattern.test(sanitizedData.admission_year)) {
         return NextResponse.json({
           success: false,
@@ -208,19 +207,22 @@ export async function PUT(request) {
     }
 
     // ==================== UPDATE FORM ====================
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from('no_dues_forms')
       .update(sanitizedData)
       .eq('id', form.id);
 
     if (updateError) {
-      console.error('Error updating form:', updateError);
-      throw new Error('Failed to update form');
+      console.error('Form update error:', updateError);
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to update form'
+      }, { status: 500 });
     }
 
     // ==================== SUCCESS RESPONSE ====================
     console.log(`✅ Form edited successfully for ${form.registration_no}`);
-    
+
     return NextResponse.json({
       success: true,
       message: 'Form updated successfully',

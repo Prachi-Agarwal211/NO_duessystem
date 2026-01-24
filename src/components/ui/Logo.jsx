@@ -35,21 +35,20 @@ export default function Logo({
     return (
         <div className={`flex justify-center items-center mb-8 ${className}`}>
             <div className={`
-                backdrop-blur-[6px] bg-white/5 border border-white/10 shadow-lg
-                px-3 py-2 sm:px-5 sm:py-3 rounded-lg
+                glass
+                px-4 py-3 rounded-xl
                 transition-all duration-300
-                hover:bg-white/10
+                hover:scale-[1.02]
                 inline-block
-                max-w-[240px] sm:max-w-none
             `}>
                 <Image
                     src={logoSrc}
                     alt="JECRC University"
                     width={config.width}
                     height={config.height}
-                    quality={90}
-                    className={`object-contain transition-all duration-300 w-auto h-auto max-h-[50px] sm:max-h-[90px] ${mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
+                    className={`object-contain transition-all duration-300 ${mounted && theme === 'dark' ? 'logo-dark-mode' : 'logo-light-mode'
                         }`}
+                    style={{ height: 'auto' }}
                     priority={priority}
                 />
             </div>

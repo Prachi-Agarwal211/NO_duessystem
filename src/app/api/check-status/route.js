@@ -2,29 +2,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-
-// ✅ CRITICAL FIX: Force real-time data, NO CACHING
-// Removed in-memory cache to ensure librarian sees updates immediately
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    },
-    global: {
-      fetch: (url, options) => {
-        return fetch(url, {
-          ...options,
-          cache: 'no-store', // Force fresh data from Supabase
-        });
-      },
-    },
-  }
-);
+import supabase from '@/lib/supabaseClient';
 
 /**
  * GET /api/check-status?registration_no=XXX
@@ -34,15 +13,6 @@ const supabaseAdmin = createClient(
  */
 export async function GET(request) {
   try {
-    // Verify environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('❌ Missing Supabase environment variables');
-      return NextResponse.json({
-        success: false,
-        error: 'Server configuration error'
-      }, { status: 500 });
-    }
-
     // Rate limiting
     const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
     if (!rateLimitCheck.success) {
@@ -73,7 +43,7 @@ export async function GET(request) {
     // OPTIMIZATION: Single optimized query with proper indexing
     // ✅ FIXED: Removed manual entry fields (now in separate table)
     // 🛡️ DEFENSIVE: Force fresh query to prevent stale data issues
-    const { data: form, error: formError } = await supabaseAdmin
+    const { data: form, error: formError } = await supabase
       .from('no_dues_forms')
       .select(`
         id,
@@ -103,91 +73,88 @@ export async function GET(request) {
         rejection_context
       `)
       .eq('registration_no', registrationNo.trim().toUpperCase())
-      .order('created_at', { ascending: false }) // Get most recent form if duplicates exist
-      .limit(1)
+      .order('created_at', { ascending: false })
       .single();
 
-    if (formError) {
-      if (formError.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'No form found for this registration number',
-          notFound: true
-        }, { status: 404 });
-      }
-      console.error('Form query error:', formError);
+    if (formError && formError.code !== 'PGRST116') { // PGRST116 is "Row not found"
+      console.error('Form lookup error:', formError);
       throw formError;
     }
 
     if (!form) {
       return NextResponse.json({
         success: false,
-        error: 'Form not found',
+        error: 'No form found for this registration number',
         notFound: true
       }, { status: 404 });
     }
 
     // ✅ FIXED: All forms are now online-only (manual entries in separate table)
     // OPTIMIZATION: Parallel queries for departments and statuses
-    let departments, deptError, statuses, statusError;
-    [
-      { data: departments, error: deptError },
-      { data: statuses, error: statusError }
-    ] = await Promise.all([
-      supabaseAdmin
+    const [departmentsResult, statusesResult] = await Promise.all([
+      supabase
         .from('departments')
         .select('name, display_name, display_order, is_active')
         .eq('is_active', true)
-        .order('display_order'),
-      supabaseAdmin
+        .order('display_order', { ascending: true }),
+      supabase
         .from('no_dues_status')
         .select('department_name, status, action_at, rejection_reason, action_by_user_id')
         .eq('form_id', form.id)
     ]);
 
-    if (deptError) {
-      console.error('Departments query error:', deptError);
-      throw deptError;
-    }
+    if (departmentsResult.error) throw departmentsResult.error;
+    if (statusesResult.error) throw statusesResult.error;
 
-    if (statusError) {
-      console.error('Status query error:', statusError);
-      throw statusError;
-    }
+    const departments = departmentsResult.data;
+    const statuses = statusesResult.data;
 
     // 🔧 CRITICAL FIX: If no department statuses exist, create them
     if (!statuses || statuses.length === 0) {
       console.warn(`⚠️ No department statuses found for form ${form.id}. Creating them now...`);
-      
+
       // Create missing department status records
-      const departmentInserts = (departments || []).map(dept => ({
+      const departmentInserts = departments.map(dept => ({
         form_id: form.id,
         department_name: dept.name,
         status: 'pending'
       }));
 
       if (departmentInserts.length > 0) {
-        const { error: insertError } = await supabaseAdmin
-          .from('no_dues_status')
-          .insert(departmentInserts);
+        try {
+          // Insert department statuses one by one to handle duplicates
+          for (const insert of departmentInserts) {
+            const { error: insertError } = await supabase
+              .from('no_dues_status')
+              .insert(insert)
+              .select()
+              .single(); // Using single() to handle unique constraint violations gracefully
 
-        if (insertError) {
-          console.error('Failed to create department statuses:', insertError);
-        } else {
-          console.log(`✅ Created ${departmentInserts.length} department status records`);
+            // If there's a unique violation, it means the record already exists, which is fine
+            if (insertError && insertError.code !== '23505') {
+              console.error('Insert error:', insertError);
+            }
+          }
+          console.log(`✅ Attempted to create ${departmentInserts.length} department status records`);
+
           // Re-fetch the newly created statuses
-          const { data: newStatuses } = await supabaseAdmin
+          const { data: newStatuses, error: statusFetchError } = await supabase
             .from('no_dues_status')
             .select('department_name, status, action_at, rejection_reason, action_by_user_id')
             .eq('form_id', form.id);
-          statuses = newStatuses || [];
+
+          if (!statusFetchError) {
+            statuses = newStatuses;
+          }
+        } catch (insertError) {
+          console.error('Failed to create department statuses:', insertError);
         }
       }
     }
 
     // Merge department data with status data
-    const statusData = (departments || []).map(dept => {
-      const status = (statuses || []).find(s => s.department_name === dept.name);
+    const statusData = departments.map(dept => {
+      const status = statuses.find(s => s.department_name === dept.name);
       return {
         department_name: dept.name,
         display_name: dept.display_name,
@@ -241,7 +208,7 @@ export async function GET(request) {
       code: error.code,
       details: error.details
     });
-    
+
     return NextResponse.json({
       success: false,
       error: 'Internal server error',

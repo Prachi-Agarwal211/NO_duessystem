@@ -19,15 +19,24 @@ export default function LiquidTitle() {
   const titleRef = useRef(null);
 
   useEffect(() => {
-    // Detect device capabilities for performance optimization
-    const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
-    const isLowEnd = navigator.deviceMemory && navigator.deviceMemory < 4;
+    const detectDevice = () => {
+      const isMobile = window.innerWidth < 768;
+      const isVeryLowEnd = (navigator.deviceMemory && navigator.deviceMemory < 2) ||
+        (navigator.connection && navigator.connection.saveData);
+      const isLowEnd = isMobile || (navigator.deviceMemory && navigator.deviceMemory < 4);
 
-    if (isMobile || isLowEnd) {
-      setDeviceTier('low');
-    } else {
-      setDeviceTier('high');
-    }
+      if (isVeryLowEnd) {
+        setDeviceTier('very-low');
+      } else if (isLowEnd) {
+        setDeviceTier('low');
+      } else {
+        setDeviceTier('high');
+      }
+    };
+
+    detectDevice();
+    window.addEventListener('resize', detectDevice);
+    return () => window.removeEventListener('resize', detectDevice);
   }, []);
 
   // Wait for gradient to be ready before applying transparency
@@ -41,24 +50,19 @@ export default function LiquidTitle() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: deviceTier === 'high' ? 0.8 : 0.3, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col items-center gap-2"
     >
       {/* Top Label - MINIMAL SHADOW */}
-      {/* Top Label - MINIMAL SHADOW */}
-      <motion.span
-        initial={{ letterSpacing: "0.1em", opacity: 0 }}
-        animate={{ letterSpacing: "0.18em", opacity: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className={`font-sans text-[10px] md:text-xs font-bold uppercase transition-colors duration-700 ${isDark ? 'text-jecrc-red-bright' : 'text-jecrc-red-dark'
-          }`}
+      <span className={`font-sans text-[10px] md:text-xs font-bold tracking-[0.5em] uppercase transition-colors duration-700 ${isDark ? 'text-jecrc-red-bright' : 'text-jecrc-red-dark'
+        }`}
         style={{
           textShadow: isDark
             ? '0 0 8px rgba(196, 30, 58, 0.4), 0 1px 3px rgba(0, 0, 0, 0.6)'
             : 'none'
         }}>
         Student Services
-      </motion.span>
+      </span>
 
       {/* Main Title with Chrome Metallic Effect */}
       <div className="relative">
@@ -67,30 +71,8 @@ export default function LiquidTitle() {
           <motion.div
             className="absolute inset-0 -z-10"
             animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.15, 0.25, 0.15],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            style={{
-              background: isDark
-                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(255,51,102,0.15) 40%, transparent 70%)'
-                : 'radial-gradient(ellipse at center, rgba(196,30,58,0.2) 0%, rgba(139,0,0,0.1) 40%, transparent 70%)',
-              filter: 'blur(40px)',
-            }}
-          />
-        )}
-
-        {/* Background Glow Layer - HIGH END ONLY */}
-        {deviceTier === 'high' && isDark && (
-          <motion.div
-            className="absolute inset-0 blur-2xl opacity-30 -z-10"
-            animate={{
-              scale: [1, 1.05, 1],
-              opacity: [0.2, 0.3, 0.2],
+              scale: [1, 1.2, 1],
+              opacity: [0.2, 0.4, 0.2],
             }}
             transition={{
               duration: 4,
@@ -98,7 +80,29 @@ export default function LiquidTitle() {
               ease: "easeInOut"
             }}
             style={{
-              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.4) 0%, rgba(255, 51, 102, 0.2) 50%, transparent 100%)',
+              background: isDark
+                ? 'radial-gradient(ellipse at center, rgba(196,30,58,0.4) 0%, rgba(255,51,102,0.2) 40%, transparent 70%)'
+                : 'radial-gradient(ellipse at center, rgba(196,30,58,0.3) 0%, rgba(139,0,0,0.15) 40%, transparent 70%)',
+              filter: 'blur(60px)',
+            }}
+          />
+        )}
+
+        {/* Background Glow Layer - HIGH END ONLY */}
+        {deviceTier === 'high' && isDark && (
+          <motion.div
+            className="absolute inset-0 blur-3xl opacity-50 -z-10"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.5, 0.3],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            style={{
+              background: 'radial-gradient(circle, rgba(196, 30, 58, 0.6) 0%, rgba(255, 51, 102, 0.3) 50%, transparent 100%)',
             }}
           />
         )}
@@ -106,8 +110,31 @@ export default function LiquidTitle() {
         {/* Chrome Metallic Title Text - FIXED: Only apply transparent when gradient is ready */}
         <h1
           ref={titleRef}
-          className={`font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${isDark ? 'text-chrome-emboss' : 'text-hero-light'
+          className={`font-serif text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight relative z-10 transition-all duration-700 ${isDark ? 'text-white' : 'text-gray-900'
             }`}
+          style={isDark ? {
+            background: deviceTier !== 'very-low' && gradientReady
+              ? 'linear-gradient(145deg, #ff3366 0%, #ffffff 20%, #ff6b89 30%, #c41e3a 50%, #ff3366 70%, #ffffff 85%, #c41e3a 100%)'
+              : undefined,
+            backgroundSize: '300% 300%',
+            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
+            filter: deviceTier === 'high'
+              ? 'drop-shadow(0 0 20px rgba(255,51,102,0.4)) drop-shadow(0 2px 4px rgba(0,0,0,0.8))'
+              : 'drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5))',
+            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+          } : {
+            background: deviceTier !== 'very-low' && gradientReady
+              ? 'linear-gradient(145deg, #ffffff 0%, #8b0000 20%, #c41e3a 35%, #1f2937 55%, #c41e3a 70%, #8b0000 85%, #ffffff 100%)'
+              : undefined,
+            backgroundSize: '300% 300%',
+            backgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitBackgroundClip: deviceTier !== 'very-low' && gradientReady ? 'text' : undefined,
+            WebkitTextFillColor: deviceTier !== 'very-low' && gradientReady ? 'transparent' : undefined,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+            animation: deviceTier === 'high' && gradientReady ? 'chrome-shine 6s ease-in-out infinite' : 'none'
+          }}
         >
           NO DUES
         </h1>
@@ -124,7 +151,7 @@ export default function LiquidTitle() {
           animate={{ x: '100%' }}
           transition={{
             repeat: Infinity,
-            duration: 2,
+            duration: deviceTier === 'very-low' ? 3 : 2,
             ease: "linear"
           }}
           className="absolute inset-0"
@@ -132,7 +159,7 @@ export default function LiquidTitle() {
             background: isDark
               ? 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.7) 30%, rgba(255, 51, 102, 0.9) 50%, rgba(196, 30, 58, 0.7) 70%, transparent 100%)'
               : 'linear-gradient(90deg, transparent 0%, rgba(196, 30, 58, 0.5) 30%, rgba(196, 30, 58, 0.8) 50%, rgba(196, 30, 58, 0.5) 70%, transparent 100%)',
-            boxShadow: isDark
+            boxShadow: isDark && deviceTier === 'high'
               ? '0 0 6px rgba(196, 30, 58, 0.4)'
               : 'none'
           }}

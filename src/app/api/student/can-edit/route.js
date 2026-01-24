@@ -2,18 +2,13 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import supabase from '@/lib/supabaseClient';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 /**
  * GET /api/student/can-edit?registration_no=XXX
- * Check if a student can edit or reapply their form
- * 
+ * Check if a student can edit or reapply their form using Supabase
+ *
  * Returns:
  * {
  *   canEdit: boolean,
@@ -47,42 +42,38 @@ export async function GET(request) {
     }
 
     // ==================== GET FORM AND STATUS ====================
-    const { data: form, error: formError } = await supabaseAdmin
+    const { data: form, error: formError } = await supabase
       .from('no_dues_forms')
       .select(`
-        id,
-        registration_no,
-        student_name,
-        status,
-        reapplication_count,
-        last_reapplied_at,
-        student_reply_message,
-        created_at,
-        no_dues_status (
+        *,
+        no_dues_status!no_dues_status_form_id_fkey (
           department_name,
           status,
           rejection_reason,
+          rejection_count,
           action_at
         )
       `)
       .eq('registration_no', registrationNo.trim().toUpperCase())
       .single();
 
-    if (formError) {
-      if (formError.code === 'PGRST116') {
-        return NextResponse.json({
-          success: false,
-          error: 'Form not found'
-        }, { status: 404 });
-      }
-      throw formError;
+    if (formError && formError.code !== 'PGRST116') {
+      console.error('Form lookup error:', formError);
+    }
+
+    if (!form) {
+      return NextResponse.json({
+        success: false,
+        error: 'Form not found'
+      }, { status: 404 });
     }
 
     // ==================== ANALYZE ELIGIBILITY ====================
-    const hasRejection = form.no_dues_status.some(s => s.status === 'rejected');
-    const rejectedDepartments = form.no_dues_status.filter(s => s.status === 'rejected');
-    const approvedDepartments = form.no_dues_status.filter(s => s.status === 'approved');
-    const pendingDepartments = form.no_dues_status.filter(s => s.status === 'pending');
+    const statuses = form.no_dues_status || [];
+    const hasRejection = statuses.some(s => s.status === 'rejected');
+    const rejectedDepartments = statuses.filter(s => s.status === 'rejected');
+    const approvedDepartments = statuses.filter(s => s.status === 'approved');
+    const pendingDepartments = statuses.filter(s => s.status === 'pending');
 
     // Determine if form is completed
     const isCompleted = form.status === 'completed';
@@ -113,13 +104,13 @@ export async function GET(request) {
 
     // ==================== PREPARE RESPONSE ====================
     // Build per-department reapplication info
-    const perDeptInfo = form.no_dues_status.map(dept => ({
+    const perDeptInfo = statuses.map(dept => ({
       department_name: dept.department_name,
       status: dept.status,
       rejection_reason: dept.rejection_reason,
       rejection_count: dept.rejection_count || 0,
       remaining_attempts: Math.max(0, MAX_REAPPLICATIONS - (dept.rejection_count || 0)),
-      can_reapply: dept.status === 'rejected' && (dept.rejection_count || 0) < MAX_REAPPLICATIONS,
+      can_reapply: dept.status === 'rejected' && (dept.rejection_count || 0) < MAX_RE_APPLICATIONS,
       action_at: dept.action_at
     }));
 
@@ -148,7 +139,7 @@ export async function GET(request) {
             rejection_reason: d.rejection_reason,
             rejection_count: d.rejection_count || 0,
             remaining_attempts: Math.max(0, MAX_REAPPLICATIONS - (d.rejection_count || 0)),
-            can_reapply: (d.rejection_count || 0) < MAX_REAPPLICATIONS,
+            can_reapply: (d.rejection_count || 0) < MAX_RE_APPLICATIONS,
             action_at: d.action_at
           }))
         } : {

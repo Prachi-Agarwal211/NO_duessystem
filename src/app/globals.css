@@ -7,6 +7,7 @@
 /* Import unified design system */
 @import '../styles/unified-design-system.css';
 @import '../styles/fonts.css';
+@import '../styles/global-tokens.css';
 
 /* Lightweight CSS Smooth Scrolling */
 html {

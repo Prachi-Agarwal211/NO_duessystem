@@ -11,9 +11,12 @@ import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, 
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function StaffDashboard() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState('pending');
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
@@ -167,8 +170,6 @@ export default function StaffDashboard() {
         if (payload.new.sender_type === 'student' &&
           payload.new.department_name === user.department_name) {
 
-          console.log('📨 New student message received:', payload.new);
-
           // Update unread count for this form
           setUnreadMessages(prev => ({
             ...prev,
@@ -192,7 +193,6 @@ export default function StaffDashboard() {
       });
 
     return () => {
-      console.log('🧹 Staff Dashboard: Cleaning up chat notification listener');
       supabase.removeChannel(channel);
     };
   }, [user?.department_name]);
@@ -281,21 +281,16 @@ export default function StaffDashboard() {
 
   // Actions
   const handleBulkAction = async (action) => {
-    console.log('🔵 handleBulkAction called:', { action, selectedCount: selectedItems.size, departmentName: user?.department_name });
-
     if (selectedItems.size === 0) {
-      console.log('❌ No items selected');
       toast.error('No items selected');
       return;
     }
 
     if (!user?.department_name) {
       toast.error('Department not found. Please refresh the page.');
-      console.error('❌ user.department_name is undefined:', user);
       return;
     }
 
-    // Proceed directly with action - no popup confirmation
     setBulkActionLoading(true);
     toast.loading(`Processing ${selectedItems.size} items...`, { id: 'bulk-toast' });
 
@@ -331,7 +326,6 @@ export default function StaffDashboard() {
   const handleAction = async (e, formId, departmentName, action) => {
     e.stopPropagation();
 
-    // For REJECT: Open modal to get reason (one-by-one only)
     if (action === 'reject') {
       setRejectFormId(formId);
       setRejectDeptName(departmentName);
@@ -340,10 +334,7 @@ export default function StaffDashboard() {
       return;
     }
 
-    // For APPROVE: Quick action allowed
     toast.loading('Approving...', { id: 'action-toast' });
-
-    // Optimistic update - remove from local state immediately
     setLocalRequests(prev => prev.filter(r => r.no_dues_forms.id !== formId));
 
     try {
@@ -357,19 +348,16 @@ export default function StaffDashboard() {
         body: JSON.stringify({ formId, departmentName, action })
       });
       if (!res.ok) {
-        // Revert optimistic update on failure
         refreshData();
         throw new Error('Failed');
       }
       toast.success('Approved ✓', { id: 'action-toast' });
-      // Background refresh to sync stats
       refreshData();
     } catch (err) {
       toast.error('Action failed', { id: 'action-toast' });
     }
   };
 
-  // Handle rejection with reason (modal submit)
   const confirmRejection = async () => {
     if (!rejectionReason.trim()) {
       toast.error('Rejection reason is required');
@@ -379,7 +367,6 @@ export default function StaffDashboard() {
     setRejecting(true);
     toast.loading('Rejecting...', { id: 'reject-toast' });
 
-    // Optimistic update
     setLocalRequests(prev => prev.filter(r => r.no_dues_forms.id !== rejectFormId));
     setShowRejectModal(false);
 
@@ -421,12 +408,7 @@ export default function StaffDashboard() {
 
     try {
       const success = await exportAllStaffDataToCSV(
-        {
-          activeTab,
-          course: filters.course,
-          branch: filters.branch,
-          search
-        },
+        { activeTab, course: filters.course, branch: filters.branch, search },
         user?.department_name,
         supabase
       );
@@ -453,7 +435,11 @@ export default function StaffDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className={`
+              text-xl sm:text-2xl md:text-3xl font-bold font-serif
+              bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-transparent dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white
+              bg-clip-text text-transparent
+            `}>
               {user?.department_name || 'Department'} Dashboard
             </h1>
             <div className="flex items-center gap-2 mt-2">
@@ -542,73 +528,53 @@ export default function StaffDashboard() {
         )}
 
         {/* Quick Guidelines Card */}
-        <div className="mb-6 p-4 rounded-xl border border-blue-200 dark:border-blue-500/20 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-purple-900/20">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-500/20 flex-shrink-0">
-              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <GlassCard className="mb-6 from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-purple-900/10 border-blue-200 dark:border-blue-500/20">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shadow-inner">
+              <Info className="w-6 h-6" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2">Quick Guidelines</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-sm">
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                  <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                  <span>Approve students with no pending dues</span>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Quick Actions Guide</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+                  <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">Approve: No pending dues</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                  <XCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-                  <span>Reject with valid reason for reapplication</span>
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+                  <div className="p-1.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+                    <XCircle className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">Reject: Valid reason required</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                  <Clock className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
-                  <span>Process pending requests within 24-48 hours</span>
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+                  <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                    <Clock className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">SLA: 24-48 hours target</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                  <AlertTriangle className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
-                  <span>Verify student details before taking action</span>
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+                  <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">Check: Verify all details first</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </GlassCard>
 
         {/* Stats Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatusCard
-            label="Pending"
-            value={stats?.pending || 0}
-            sub="Awaiting action"
-            icon={Clock}
-            color="yellow"
-            onClick={() => setActiveTab('pending')}
-          />
-          <StatusCard
-            label="My Approved"
-            value={stats?.approved || 0}
-            sub="By you"
-            icon={CheckCircle}
-            color="green"
-            onClick={() => setActiveTab('history')}
-          />
-          <StatusCard
-            label="My Rejected"
-            value={stats?.rejected || 0}
-            sub="By you"
-            icon={XCircle}
-            color="red"
-            onClick={() => setActiveTab('rejected')}
-          />
-          <StatusCard
-            label="Total Processed"
-            value={stats?.total || 0}
-            sub={`${stats?.approvalRate || 0}% approval rate`}
-            icon={TrendingUp}
-            color="rose"
-            onClick={() => setActiveTab('history')}
-          />
+          <StatusCard label="Pending" value={stats?.pending || 0} sub="Awaiting action" icon={Clock} color="yellow" onClick={() => setActiveTab('pending')} />
+          <StatusCard label="My Approved" value={stats?.approved || 0} sub="By you" icon={CheckCircle} color="green" onClick={() => setActiveTab('history')} />
+          <StatusCard label="My Rejected" value={stats?.rejected || 0} sub="By you" icon={XCircle} color="red" onClick={() => setActiveTab('rejected')} />
+          <StatusCard label="Total Processed" value={stats?.total || 0} sub={`${stats?.approvalRate || 0}% approval rate`} icon={TrendingUp} color="rose" onClick={() => setActiveTab('history')} />
         </div>
 
-        {/* Filters & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-white dark:bg-white/5 p-4 rounded-xl border border-gray-200 dark:border-white/10">
+        {/* Filters & Search Toolbar - Use GlassCard ✅ */}
+        <GlassCard className="flex flex-col sm:flex-row gap-4 mb-6 p-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -640,7 +606,7 @@ export default function StaffDashboard() {
               <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
-        </div>
+        </GlassCard>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-white/10">
@@ -691,7 +657,7 @@ export default function StaffDashboard() {
                 <table className="w-full text-left min-w-[700px]">
                   <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                     <tr>
-                      {/* Checkbox Column for Bulk Actions (Only on Pending Tab) */}
+                      {/* Checkbox Column */}
                       {activeTab === 'pending' && (
                         <th className="w-12 px-4 py-3">
                           <div className="flex items-center">
@@ -738,7 +704,6 @@ export default function StaffDashboard() {
                                 <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
                                 <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
                               </div>
-                              {/* Unread message badge */}
                               {unreadMessages[item.no_dues_forms.id] > 0 && (
                                 <span
                                   className="flex items-center gap-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full animate-pulse"
@@ -795,7 +760,6 @@ export default function StaffDashboard() {
                             </td>
                           )}
 
-                          {/* Rejected Tab Actions - Allow Approve after resolution */}
                           {activeTab === 'rejected' && (
                             <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-2">
@@ -857,6 +821,7 @@ export default function StaffDashboard() {
             </div>
           </div>
         )}
+
       </div>
 
       {/* Rejection Modal */}
@@ -940,7 +905,7 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   );
 }
 
-// Mobile Card Component for Data Items
+// Mobile Card Component for Data Items - Upgraded to GlassCard
 function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate, formatDate }) {
   const sla = activeTab === 'pending' ? getSLAStatus(item.no_dues_forms.created_at) : null;
 

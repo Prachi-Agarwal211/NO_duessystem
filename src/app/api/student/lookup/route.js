@@ -1,14 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import supabase from '@/lib/supabaseClient';
+import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
-// Create Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
+/**
+ * GET /api/student/lookup?registration_no=XXX
+ * Look up student data from master student_data table using Prisma
+ * 
+ * This endpoint is used by the frontend to auto-fill form fields
+ */
 export async function GET(request) {
   try {
+    // Rate limiting
+    const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.error || 'Too many requests',
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 
@@ -22,21 +36,18 @@ export async function GET(request) {
     // Clean the registration number
     const cleanRegNo = registrationNo.trim().toUpperCase();
 
-    // Search by registration number (supports both EnrollNo and RollNo)
-    const { data: studentData, error: fetchError } = await supabase
-      .rpc('search_student_data', {
-        search_term: cleanRegNo
-      });
+    // Search in student_data table using Supabase
+    let { data: student, error } = await supabase
+      .from('student_data')
+      .select('*')
+      .or(`registration_no.eq.${cleanRegNo},roll_number.eq.${cleanRegNo},enrollment_number.eq.${cleanRegNo}`)
+      .single();
 
-    if (fetchError) {
-      console.error('Database error:', fetchError);
-      return NextResponse.json(
-        { error: 'Database error occurred' },
-        { status: 500 }
-      );
+    if (error) {
+      console.error('Database error:', error);
     }
 
-    if (!studentData || studentData.length === 0) {
+    if (!student) {
       return NextResponse.json(
         {
           error: 'Student not found',
@@ -47,8 +58,16 @@ export async function GET(request) {
       );
     }
 
-    // Get the first (best) match
-    const student = studentData[0];
+    // Check if student has a no-dues form
+    const { data: existingForm, error: formError } = await supabase
+      .from('no_dues_forms')
+      .select('status, certificate_url')
+      .eq('registration_no', cleanRegNo)
+      .single();
+
+    if (formError && formError.code !== 'PGRST116') { // PGRST116 is "Row not found"
+      console.error('Form lookup error:', formError);
+    }
 
     // Return all fields for the form
     const formData = {
@@ -64,9 +83,9 @@ export async function GET(request) {
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
       college_email: student.college_email || '',
-      alumni_profile_link: student.alumniProfileLink || student.alumni_profile_link || '',
-      no_dues_status: student.no_dues_status || 'not_applied',
-      certificate_url: student.certificate_url || null
+      alumni_profile_link: student.alumni_profile_link || '',
+      no_dues_status: existingForm?.status || 'not_applied',
+      certificate_url: existingForm?.certificate_url || null
     };
 
     return NextResponse.json({
@@ -84,6 +103,10 @@ export async function GET(request) {
   }
 }
 
+/**
+ * POST /api/student/lookup
+ * Alternative method for student lookup (same logic as GET)
+ */
 export async function POST(request) {
   try {
     const { registration_no } = await request.json();
@@ -98,18 +121,17 @@ export async function POST(request) {
     // Same logic as GET but for POST requests
     const cleanRegNo = registration_no.trim().toUpperCase();
 
-    const { data: studentData, error } = await supabase
-      .rpc('get_student_by_regno', { registration_no: cleanRegNo });
+    let { data: student, error } = await supabase
+      .from('student_data')
+      .select('*')
+      .or(`registration_no.eq.${cleanRegNo},roll_number.eq.${cleanRegNo},enrollment_number.eq.${cleanRegNo}`)
+      .single();
 
     if (error) {
       console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Database lookup failed' },
-        { status: 500 }
-      );
     }
 
-    if (!studentData || studentData.length === 0) {
+    if (!student) {
       return NextResponse.json(
         {
           success: false,
@@ -120,7 +142,16 @@ export async function POST(request) {
       );
     }
 
-    const student = studentData[0];
+    // Check if student has a no-dues form
+    const { data: existingForm, error: formError } = await supabase
+      .from('no_dues_forms')
+      .select('status, certificate_url')
+      .eq('registration_no', cleanRegNo)
+      .single();
+
+    if (formError && formError.code !== 'PGRST116') { // PGRST116 is "Row not found"
+      console.error('Form lookup error:', formError);
+    }
 
     const formData = {
       registration_no: student.registration_no,
@@ -138,11 +169,11 @@ export async function POST(request) {
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
       college_email: student.college_email || '',
-      alumni_profile_link: student.alumniProfileLink || student.alumni_profile_link || '',
+      alumni_profile_link: student.alumni_profile_link || '',
 
       // Master Sync Fields
-      no_dues_status: student.no_dues_status || 'not_applied',
-      certificate_url: student.certificate_url || null,
+      no_dues_status: existingForm?.status || 'not_applied',
+      certificate_url: existingForm?.certificate_url || null,
 
       // Additional fields from master record
       batch: student.batch || '',

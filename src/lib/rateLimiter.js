@@ -144,8 +144,16 @@ function cleanupStore() {
   }
 }
 
-// Run cleanup every 5 minutes
-setInterval(cleanupStore, 5 * 60 * 1000);
+// Lazy cleanup initialization
+let cleanupInterval = null;
+
+function ensureCleanup() {
+  if (!cleanupInterval && typeof setInterval !== 'undefined') {
+    cleanupInterval = setInterval(cleanupStore, 5 * 60 * 1000);
+    // Unref if in Node.js to allow process exit
+    if (cleanupInterval.unref) cleanupInterval.unref();
+  }
+}
 
 /**
  * Rate limit middleware for API routes
@@ -164,6 +172,7 @@ setInterval(cleanupStore, 5 * 60 * 1000);
  */
 export async function rateLimit(request, config = RATE_LIMITS.DEFAULT, identifier = null) {
   try {
+    ensureCleanup();
     const clientIP = getClientIP(request);
     const now = Date.now();
 

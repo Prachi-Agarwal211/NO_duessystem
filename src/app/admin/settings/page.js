@@ -403,7 +403,7 @@ export default function AdminSettings() {
   // Filter courses based on selected schools for EDITING STAFF
   const filteredCoursesForEditStaff = useMemo(() => {
     if (!editingStaff) return courses.filter(c => c.is_active);
-    
+
     if (!editingStaff.school_ids || editingStaff.school_ids.length === 0) {
       return courses.filter(c => c.is_active);
     }
@@ -415,7 +415,7 @@ export default function AdminSettings() {
   // Filter branches based on selected courses for EDITING STAFF
   const filteredBranchesForEditStaff = useMemo(() => {
     if (!editingStaff) return branches.filter(b => b.is_active);
-    
+
     if (!editingStaff.course_ids || editingStaff.course_ids.length === 0) {
       return branches.filter(b => b.is_active);
     }
@@ -428,16 +428,16 @@ export default function AdminSettings() {
   const handleNewStaffSchoolChange = (schoolIds) => {
     setNewStaff(prev => {
       const updates = { school_ids: schoolIds };
-      
+
       // If schools changed, filter out invalid courses
       if (schoolIds.length > 0) {
         const validCourseIds = courses
           .filter(c => c.is_active && schoolIds.includes(c.school_id))
           .map(c => c.id);
-        
+
         // Keep only courses that belong to selected schools
         updates.course_ids = prev.course_ids.filter(id => validCourseIds.includes(id));
-        
+
         // If courses changed, filter out invalid branches
         if (updates.course_ids.length !== prev.course_ids.length) {
           const validBranchIds = branches
@@ -446,7 +446,7 @@ export default function AdminSettings() {
           updates.branch_ids = prev.branch_ids.filter(id => validBranchIds.includes(id));
         }
       }
-      
+
       return { ...prev, ...updates };
     });
   };
@@ -455,7 +455,7 @@ export default function AdminSettings() {
   const handleNewStaffCourseChange = (courseIds) => {
     setNewStaff(prev => {
       const updates = { course_ids: courseIds };
-      
+
       // If courses changed, filter out invalid branches
       if (courseIds.length > 0) {
         const validBranchIds = branches
@@ -463,7 +463,7 @@ export default function AdminSettings() {
           .map(b => b.id);
         updates.branch_ids = prev.branch_ids.filter(id => validBranchIds.includes(id));
       }
-      
+
       return { ...prev, ...updates };
     });
   };
@@ -473,13 +473,13 @@ export default function AdminSettings() {
     setEditingStaff(prev => {
       if (!prev) return prev;
       const updates = { school_ids: schoolIds };
-      
+
       if (schoolIds.length > 0) {
         const validCourseIds = courses
           .filter(c => c.is_active && schoolIds.includes(c.school_id))
           .map(c => c.id);
         updates.course_ids = (prev.course_ids || []).filter(id => validCourseIds.includes(id));
-        
+
         if (updates.course_ids.length !== (prev.course_ids || []).length) {
           const validBranchIds = branches
             .filter(b => b.is_active && updates.course_ids.includes(b.course_id))
@@ -487,7 +487,7 @@ export default function AdminSettings() {
           updates.branch_ids = (prev.branch_ids || []).filter(id => validBranchIds.includes(id));
         }
       }
-      
+
       return { ...prev, ...updates };
     });
   };
@@ -497,14 +497,14 @@ export default function AdminSettings() {
     setEditingStaff(prev => {
       if (!prev) return prev;
       const updates = { course_ids: courseIds };
-      
+
       if (courseIds.length > 0) {
         const validBranchIds = branches
           .filter(b => b.is_active && courseIds.includes(b.course_id))
           .map(b => b.id);
         updates.branch_ids = (prev.branch_ids || []).filter(id => validBranchIds.includes(id));
       }
-      
+
       return { ...prev, ...updates };
     });
   };
@@ -521,7 +521,7 @@ export default function AdminSettings() {
   return (
     <PageWrapper>
       <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen">
-        
+
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -548,11 +548,10 @@ export default function AdminSettings() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap border ${
-                activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap border ${activeTab === tab.id
                   ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red border-jecrc-red'
                   : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -568,33 +567,35 @@ export default function AdminSettings() {
               {departments.map(dept => (
                 <div key={dept.name} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
                   {editingDept?.name === dept.name ? (
-                    <div className="flex-1 flex gap-3">
+                    <div className="flex-1 flex flex-col sm:flex-row gap-3">
                       <input
-                       type="text"
-                      className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingDept.display_name}
-                       onChange={(e) => setEditingDept({ ...editingDept, display_name: e.target.value })}
-                     />
-                     <input
-                       type="email"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingDept.email || ''}
-                       onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
-                       placeholder="Email (optional)"
-                     />
-                     <button
-                       onClick={() => updateDepartment(editingDept)}
-                       disabled={loading}
-                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
-                     >
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                     </button>
-                     <button
-                       onClick={() => setEditingDept(null)}
-                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
-                     >
-                       Cancel
-                     </button>
+                        type="text"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/50 focus:border-transparent transition-all shadow-sm"
+                        value={editingDept.display_name}
+                        onChange={(e) => setEditingDept({ ...editingDept, display_name: e.target.value })}
+                      />
+                      <input
+                        type="email"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red/50 focus:border-transparent transition-all shadow-sm"
+                        value={editingDept.email || ''}
+                        onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
+                        placeholder="Email (optional)"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateDepartment(editingDept)}
+                          disabled={loading}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20 transition-all active:scale-95"
+                        >
+                          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => setEditingDept(null)}
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl transition-all active:scale-95"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -635,24 +636,24 @@ export default function AdminSettings() {
                   {editingSchool?.id === school.id ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                       type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingSchool.name}
-                       onChange={(e) => setEditingSchool({ ...editingSchool, name: e.target.value })}
-                     />
-                     <button
-                       onClick={() => updateSchool(editingSchool)}
-                       disabled={loading}
-                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
-                     >
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                     </button>
-                     <button
-                       onClick={() => setEditingSchool(null)}
-                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
-                     >
-                       Cancel
-                     </button>
+                        type="text"
+                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                        value={editingSchool.name}
+                        onChange={(e) => setEditingSchool({ ...editingSchool, name: e.target.value })}
+                      />
+                      <button
+                        onClick={() => updateSchool(editingSchool)}
+                        disabled={loading}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingSchool(null)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -691,24 +692,24 @@ export default function AdminSettings() {
                   {editingCourse?.id === course.id ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                       type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingCourse.name}
-                       onChange={(e) => setEditingCourse({ ...editingCourse, name: e.target.value })}
-                     />
-                     <button
-                       onClick={() => updateCourse(editingCourse)}
-                       disabled={loading}
-                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
-                     >
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                     </button>
-                     <button
-                       onClick={() => setEditingCourse(null)}
-                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
-                     >
-                       Cancel
-                     </button>
+                        type="text"
+                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                        value={editingCourse.name}
+                        onChange={(e) => setEditingCourse({ ...editingCourse, name: e.target.value })}
+                      />
+                      <button
+                        onClick={() => updateCourse(editingCourse)}
+                        disabled={loading}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingCourse(null)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -749,24 +750,24 @@ export default function AdminSettings() {
                   {editingBranch?.id === branch.id ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                       type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingBranch.name}
-                       onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
-                     />
-                     <button
-                       onClick={() => updateBranch(editingBranch)}
-                       disabled={loading}
-                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
-                     >
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                     </button>
-                     <button
-                       onClick={() => setEditingBranch(null)}
-                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
-                     >
-                       Cancel
-                     </button>
+                        type="text"
+                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                        value={editingBranch.name}
+                        onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
+                      />
+                      <button
+                        onClick={() => updateBranch(editingBranch)}
+                        disabled={loading}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingBranch(null)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -807,24 +808,24 @@ export default function AdminSettings() {
                   {editingEmail?.key === config.key ? (
                     <div className="flex-1 flex gap-3">
                       <input
-                       type="text"
-                       className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
-                       value={editingEmail.value}
-                       onChange={(e) => setEditingEmail({ ...editingEmail, value: e.target.value })}
-                     />
-                     <button
-                       onClick={() => updateEmailConfig(editingEmail)}
-                       disabled={loading}
-                       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
-                     >
-                       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                     </button>
-                     <button
-                       onClick={() => setEditingEmail(null)}
-                       className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
-                     >
-                       Cancel
-                     </button>
+                        type="text"
+                        className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:ring-2 focus:ring-jecrc-red focus:border-transparent"
+                        value={editingEmail.value}
+                        onChange={(e) => setEditingEmail({ ...editingEmail, value: e.target.value })}
+                      />
+                      <button
+                        onClick={() => updateEmailConfig(editingEmail)}
+                        disabled={loading}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-600/20"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => setEditingEmail(null)}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-xl"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   ) : (
                     <>
@@ -855,7 +856,7 @@ export default function AdminSettings() {
             {/* Create New Staff */}
             <GlassCard className="p-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Create New Staff Account</h3>
-              
+
               {/* Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <input
@@ -899,7 +900,7 @@ export default function AdminSettings() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                   Restrict this staff member to specific schools, courses, or branches. Click to open dropdown and use checkboxes to select multiple items.
                 </p>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Schools Checkbox Multi-Select */}
                   <MultiSelectCheckbox
@@ -1001,7 +1002,7 @@ export default function AdminSettings() {
                             ))}
                           </select>
                         </div>
-                        
+
                         <div className="border-t border-gray-200 dark:border-white/10 pt-4">
                           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                             🔒 Access Scope
@@ -1062,7 +1063,7 @@ export default function AdminSettings() {
                             />
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <button
                             onClick={() => updateStaff(editingStaff)}

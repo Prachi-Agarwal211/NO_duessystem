@@ -26,17 +26,28 @@ if (typeof window !== 'undefined') {
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase for email logging and notification settings
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
+// Lazy Supabase client for email logging
+let supabase = null;
+
+function getSupabase() {
+  if (!supabase) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Return safe mock if env vars missing (e.g. during build)
+      return { from: () => ({ insert: () => ({ error: null }), select: () => ({ data: [], error: null }) }) };
     }
+    supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
   }
-);
+  return supabase;
+}
 
 // Email types for tracking
 export const EMAIL_TYPES = {
@@ -337,7 +348,7 @@ export async function sendDepartmentReminder({
 }) {
   const priority = isAdminTriggered ? '🔴 ADMIN ALERT' : '⏰ REMINDER';
   const priorityColor = isAdminTriggered ? '#dc2626' : '#f59e0b';
-  
+
   const content = `
     <p style="margin: 0 0 16px 0; color: #374151; font-size: 15px; line-height: 1.6;">
       Hello <strong>${departmentName}</strong> Team,
@@ -396,12 +407,12 @@ export async function sendDepartmentReminder({
     content,
     actionUrl: dashboardUrl,
     actionText: pendingCount > 0 ? 'Review Applications' : 'View Dashboard',
-    footerText: isAdminTriggered 
+    footerText: isAdminTriggered
       ? 'Admin-triggered notification. Priority response requested.'
       : `Automated reminder sent to ${departmentName} department.`
   });
 
-  const subject = isAdminTriggered 
+  const subject = isAdminTriggered
     ? `🚨 Admin Alert: ${departmentName} - ${pendingCount} Pending`
     : `⏰ Reminder: ${departmentName} - ${pendingCount} Pending`;
 
@@ -410,9 +421,9 @@ export async function sendDepartmentReminder({
     cc: staffEmails.slice(1),
     subject,
     html,
-    metadata: { 
-      type: isAdminTriggered ? 'admin_triggered_notification' : 'department_reminder', 
-      departmentName, 
+    metadata: {
+      type: isAdminTriggered ? 'admin_triggered_notification' : 'department_reminder',
+      departmentName,
       pendingCount,
       isAdminTriggered
     }
@@ -486,9 +497,9 @@ export async function sendRejectionNotification({
     to: studentEmail,
     subject: `❌ Application Rejected: ${departmentName} - ${registrationNo}`,
     html,
-    metadata: { 
-      type: 'rejection', 
-      departmentName, 
+    metadata: {
+      type: 'rejection',
+      departmentName,
       registrationNo,
       rejectionReason
     }
@@ -576,9 +587,9 @@ export async function sendStudentStatusUpdate({
     to: studentEmail,
     subject: `${config.icon} ${config.title}: ${departmentName} - ${registrationNo}`,
     html,
-    metadata: { 
-      type: 'status_update', 
-      departmentName, 
+    metadata: {
+      type: 'status_update',
+      departmentName,
       registrationNo,
       status
     }
@@ -649,8 +660,8 @@ export async function sendReapplicationConfirmation({
     to: studentEmail,
     subject: `🔄 Reapplication #${reapplicationNumber} Received - ${registrationNo}`,
     html,
-    metadata: { 
-      type: 'reapplication_confirmation', 
+    metadata: {
+      type: 'reapplication_confirmation',
       registrationNo,
       reapplicationNumber
     }
@@ -1038,7 +1049,7 @@ export async function sendDailyDepartmentDigest({
  */
 async function logEmail(emailData) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('email_logs')
       .insert({
         email_type: emailData.emailType,
@@ -1065,7 +1076,7 @@ async function logEmail(emailData) {
  */
 async function updateEmailLog(logId, updates) {
   try {
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('email_logs')
       .update({
         ...updates,
@@ -1084,7 +1095,7 @@ async function updateEmailLog(logId, updates) {
  */
 async function getUserNotificationSettings(userId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notification_settings')
       .select('*')
       .eq('user_id', userId)
@@ -1125,7 +1136,7 @@ async function getUserNotificationSettings(userId) {
  */
 async function updateUserNotificationSettings(userId, settings) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('notification_settings')
       .upsert({
         user_id: userId,
@@ -1148,7 +1159,7 @@ async function updateUserNotificationSettings(userId, settings) {
  */
 async function sendCertificateEmail(studentEmail, certificateData) {
   const subject = `🎓 No Dues Certificate Generated - ${certificateData.registrationNo}`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -1197,7 +1208,7 @@ async function sendCertificateEmail(studentEmail, certificateData) {
     </body>
     </html>
   `;
-  
+
   // Log email attempt
   const logEntry = await logEmail({
     emailType: EMAIL_TYPES.CERTIFICATE_SENT,
@@ -1223,7 +1234,7 @@ async function sendCertificateEmail(studentEmail, certificateData) {
 
     // Update certificate record
     if (certificateData.id) {
-      await supabase
+      await getSupabase()
         .from('certificates')
         .update({
           email_sent: true,
@@ -1250,7 +1261,7 @@ async function sendCertificateEmail(studentEmail, certificateData) {
  */
 async function getEmailStats(startDate, endDate) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('email_logs')
       .select('*')
       .gte('created_at', startDate)
