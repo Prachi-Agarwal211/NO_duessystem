@@ -644,7 +644,11 @@ export default function SubmitForm() {
               onChange={handleInputChange}
               required
               disabled={loading || configLoading}
-              options={schools.map(s => ({ value: s.id, label: s.name }))}
+              placeholder="Select your School"
+              options={(schools || []).map(s => ({
+                value: s.id || '',
+                label: s.name || 'Unnamed School'
+              }))}
             />
           </DropdownWithErrorBoundary>
         </div>
@@ -658,7 +662,11 @@ export default function SubmitForm() {
             onChange={handleInputChange}
             required
             disabled={loading || !formData.school}
-            options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
+            placeholder={!formData.school ? "Select school first" : "Select your Course"}
+            options={(availableCourses || []).map(c => ({
+              value: c.id || '',
+              label: c.name || 'Unnamed Course'
+            }))}
           />
         </DropdownWithErrorBoundary>
 
@@ -671,7 +679,11 @@ export default function SubmitForm() {
             onChange={handleInputChange}
             required
             disabled={loading || !formData.course}
-            options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+            placeholder={!formData.course ? "Select course first" : "Select your Branch"}
+            options={(availableBranches || []).map(b => ({
+              value: b.id || '',
+              label: b.name || 'Unnamed Branch'
+            }))}
           />
         </DropdownWithErrorBoundary>
 

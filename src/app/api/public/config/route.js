@@ -9,6 +9,19 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 // This is a public endpoint (no authentication required)
 export async function GET(request) {
   try {
+    // 🔍 DIAGNOSTIC: Check if Supabase client is initialized correctly
+    if (supabaseAdmin.isMock) {
+      console.error('❌ [ConfigAPI] Supabase client is using a MOCK because of missing ENV variables');
+      return NextResponse.json({
+        success: false,
+        error: 'Backend Configuration Error: Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY) are missing on the server. Please check your environment settings.',
+        diagnostics: {
+          url_env_present: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          key_env_present: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+        }
+      }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'schools', 'courses', 'branches', 'all'
     const schoolId = searchParams.get('school_id');
@@ -110,12 +123,18 @@ export async function GET(request) {
         return NextResponse.json({
           success: true,
           data: {
-            schools,
-            courses: coursesResult.data,
-            branches: branchesResult.data,
+            schools: schools || [],
+            courses: coursesResult.data || [],
+            branches: branchesResult.data || [],
             collegeDomain: emailConfig?.value || 'jecrcu.edu.in',
             validationRules: validationRules || [],
-            countryCodes: countryCodes || []
+            countryCodes: countryCodes || [],
+            // 📊 METADATA FOR DEBUGGING
+            counts: {
+              schools: schools?.length || 0,
+              courses: coursesResult.data?.length || 0,
+              branches: branchesResult.data?.length || 0
+            }
           }
         });
       }

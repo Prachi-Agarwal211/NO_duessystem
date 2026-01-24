@@ -35,25 +35,37 @@ export function useFormConfig() {
       });
       const result = await response.json();
 
-      console.log('🔧 Config API Response:', result);
+      console.log('🔧 [ConfigHook] API Payload:', result.data);
+      console.log('📊 [ConfigHook] Received counts:', result.counts || 'N/A');
+
+      // Global debug helper
+      if (typeof window !== 'undefined') {
+        window.__CONFIG_DATA__ = result.data;
+        window.__CONFIG_COUNTS__ = result.counts;
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch configuration');
       }
 
-      setSchools(result.data.schools || []);
-      setCourses(result.data.courses || []);
-      setBranches(result.data.branches || []);
+      const schoolsData = result.data.schools || [];
+      const coursesData = result.data.courses || [];
+      const branchesData = result.data.branches || [];
+
+      setSchools(schoolsData);
+      setCourses(coursesData);
+      setBranches(branchesData);
       setCollegeDomain(result.data.collegeDomain || 'jecrcu.edu.in');
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
 
       logger.success('Configuration loaded', {
-        schoolsCount: result.data.schools?.length || 0,
-        coursesCount: result.data.courses?.length || 0,
-        branchesCount: result.data.branches?.length || 0
+        schools: schoolsData.length,
+        courses: coursesData.length,
+        branches: branchesData.length
       });
     } catch (err) {
+      console.error('❌ [ConfigHook] Error:', err.message);
       logger.apiError('/api/public/config?type=all', err, {
         action: 'fetchAllConfig'
       });
