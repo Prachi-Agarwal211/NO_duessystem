@@ -433,6 +433,7 @@ export default function SubmitForm() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
+
       {/* Instructions Pane - Restored similar to legacy */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
