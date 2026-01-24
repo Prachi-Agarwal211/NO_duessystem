@@ -36,22 +36,22 @@ class ApplicationService {
 
       // 1. Validate and resolve configuration IDs
       const resolvedData = await this.resolveConfigurationIds(formData);
-      
+
       // 2. Check for duplicates
       await this.checkForDuplicates(resolvedData.registration_no);
-      
+
       // 3. Insert form with proper data
       const form = await this.insertForm(resolvedData);
-      
+
       // 4. Create initial department statuses
       await this.createDepartmentStatuses(form.id);
-      
+
       // 5. Sync student data
       await this.syncStudentData(form.id, resolvedData);
-      
+
       // 6. Send notifications
       await this.sendInitialNotifications(form);
-      
+
       // 7. Trigger real-time updates
       await this.triggerRealtimeUpdate('form_submission', form);
 
@@ -312,12 +312,12 @@ class ApplicationService {
       // 6. Send notifications for completion
       if (allApproved) {
         await this.sendCertificateReadyNotification(updatedForm);
-        
+
         // 6.5. Trigger automatic certificate generation
         try {
           const { triggerCertificateGeneration } = await import('@/lib/certificateTrigger');
           const certResult = await triggerCertificateGeneration(formId, userId || department);
-          
+
           if (certResult.success) {
             console.log('✅ Automatic certificate generated:', certResult.certificateUrl);
           } else {
@@ -452,7 +452,7 @@ class ApplicationService {
       // Filter by department if specified
       let filteredData = data || [];
       if (department) {
-        filteredData = data?.filter(form => 
+        filteredData = data?.filter(form =>
           form.no_dues_status?.some(status => status.department_name === department)
         ) || [];
       }
@@ -515,7 +515,7 @@ class ApplicationService {
   // Private helper methods (from existing services)
   async resolveConfigurationIds(formData) {
     const resolved = { ...formData };
-    
+
     // Resolve School
     if (formData.school_id && this.isUuid(formData.school_id)) {
       const { data: school } = await supabaseAdmin
@@ -523,7 +523,7 @@ class ApplicationService {
         .select('name')
         .eq('id', formData.school_id)
         .single();
-      
+
       if (school) resolved.school_name = school.name;
     } else if (formData.school_id) {
       resolved.school_name = formData.school_id;
@@ -532,7 +532,7 @@ class ApplicationService {
         .select('id')
         .eq('name', formData.school_name)
         .single();
-      
+
       if (school) resolved.school_id = school.id;
     }
 
@@ -637,6 +637,7 @@ class ApplicationService {
         college_email: formData.college_email,
         admission_year: formData.admission_year,
         passing_year: formData.passing_year,
+        alumniProfileLink: formData.alumni_profile_link,
         updated_at: new Date().toISOString(),
         updated_by: 'student_submission'
       }, {
@@ -657,7 +658,7 @@ class ApplicationService {
       if (departments) {
         // Import email service dynamically
         const { sendCombinedDepartmentNotification } = await import('@/lib/emailService');
-        
+
         await sendCombinedDepartmentNotification({
           formId: form.id,
           studentName: form.student_name,
@@ -673,10 +674,10 @@ class ApplicationService {
   async sendReapplicationNotifications(form, reapplicationData) {
     try {
       console.log(`📧 Sending reapplication notifications to ${form.personal_email}`);
-      
+
       // Import email service dynamically
       const { sendReapplicationConfirmation } = await import('@/lib/emailService');
-      
+
       // Send reapplication confirmation email to student
       const emailResult = await sendReapplicationConfirmation({
         studentEmail: form.personal_email || form.college_email,
@@ -685,13 +686,13 @@ class ApplicationService {
         reapplicationNumber: reapplicationData.reapplicationNumber,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/student/status`
       });
-      
+
       if (emailResult.success) {
         console.log('✅ Reapplication confirmation email sent successfully');
       } else {
         console.error('❌ Failed to send reapplication email:', emailResult.error);
       }
-      
+
       // Send high-priority notification to all departments
       console.log(`📧 Sending high-priority reapplication notification to departments`);
     } catch (error) {
@@ -702,10 +703,10 @@ class ApplicationService {
   async sendRejectionNotifications(form, department, reason) {
     try {
       console.log(`📧 Sending rejection notification to ${form.personal_email}`);
-      
+
       // Import email service dynamically
       const { sendRejectionNotification } = await import('@/lib/emailService');
-      
+
       // Send rejection email to student
       const emailResult = await sendRejectionNotification({
         studentEmail: form.personal_email || form.college_email,
@@ -715,13 +716,13 @@ class ApplicationService {
         rejectionReason: reason,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/student/status`
       });
-      
+
       if (emailResult.success) {
         console.log('✅ Rejection email sent successfully');
       } else {
         console.error('❌ Failed to send rejection email:', emailResult.error);
       }
-      
+
       // Send notification to other departments
       console.log(`📧 Notifying other departments about rejection by ${department}`);
     } catch (error) {
@@ -732,10 +733,10 @@ class ApplicationService {
   async sendCertificateReadyNotification(form) {
     try {
       console.log(`📧 Sending certificate ready notification to ${form.personal_email}`);
-      
+
       // Import email service dynamically
       const { sendCertificateReadyNotification } = await import('@/lib/emailService');
-      
+
       // Send certificate ready email to student
       const emailResult = await sendCertificateReadyNotification({
         studentEmail: form.personal_email || form.college_email,
@@ -743,7 +744,7 @@ class ApplicationService {
         registrationNo: form.registration_no,
         certificateUrl: form.certificate_url || `${process.env.NEXT_PUBLIC_APP_URL}/certificate/${form.id}`
       });
-      
+
       if (emailResult.success) {
         console.log('✅ Certificate ready email sent successfully');
       } else {
@@ -757,10 +758,10 @@ class ApplicationService {
   async sendStudentStatusUpdate(form, department, status) {
     try {
       console.log(`📧 Sending status update notification to ${form.personal_email}`);
-      
+
       // Import email service dynamically
       const { sendStudentStatusUpdate } = await import('@/lib/emailService');
-      
+
       // Send status update email to student
       const emailResult = await sendStudentStatusUpdate({
         studentEmail: form.personal_email || form.college_email,
@@ -770,7 +771,7 @@ class ApplicationService {
         status: status,
         dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/student/status`
       });
-      
+
       if (emailResult.success) {
         console.log('✅ Status update email sent successfully');
       } else {
@@ -831,7 +832,7 @@ class ApplicationService {
     if (form.last_reapplied_at) {
       const cooldownEnd = new Date(form.last_reapplied_at);
       cooldownEnd.setDate(cooldownEnd.getDate() + cooldownDays);
-      
+
       if (new Date() < cooldownEnd) {
         throw new Error(`Please wait ${cooldownDays} days between reapplications`);
       }

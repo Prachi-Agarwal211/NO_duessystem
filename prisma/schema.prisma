@@ -283,6 +283,7 @@ model StudentData {
   collegeEmail  String?   @map("college_email")
   admissionYear String?   @map("admission_year")
   passingYear   String?   @map("passing_year")
+  alumniProfileLink String? @map("alumni_profile_link")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   updatedBy     String    @map("updated_by")
 

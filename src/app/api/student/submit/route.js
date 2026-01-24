@@ -60,7 +60,7 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('❌ Student submission error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -145,7 +145,7 @@ async function submitApplicationWithPrisma(formData) {
 
   } catch (error) {
     console.error('❌ Prisma form creation error:', error);
-    
+
     // Handle specific database errors
     if (error.code === 'P2002') {
       return {
@@ -175,7 +175,7 @@ async function resolveConfigurationIds(formData) {
       where: { id: formData.school_id },
       select: { name: true }
     });
-    
+
     if (school) resolved.school_name = school.name;
     else throw new Error('Invalid school ID');
   } else if (formData.school_id) {
@@ -184,7 +184,7 @@ async function resolveConfigurationIds(formData) {
       where: { name: formData.school_name },
       select: { id: true }
     });
-    
+
     if (school) resolved.school_id = school.id;
     else {
       // Create new school if not exists
@@ -202,25 +202,25 @@ async function resolveConfigurationIds(formData) {
       where: { id: formData.course_id },
       select: { name: true }
     });
-    
+
     if (course) resolved.course_name = course.name;
     else throw new Error('Invalid course ID');
   } else if (formData.course_id) {
     resolved.course_name = formData.course_id;
     const course = await prisma.configCourse.findUnique({
-      where: { 
+      where: {
         school_id: resolved.school_id,
-        name: formData.course_name 
+        name: formData.course_name
       },
       select: { id: true }
     });
-    
+
     if (course) resolved.course_id = course.id;
     else {
       const newCourse = await prisma.configCourse.create({
-        data: { 
+        data: {
           school_id: resolved.school_id,
-          name: formData.course_name 
+          name: formData.course_name
         },
         select: { id: true }
       });
@@ -234,25 +234,25 @@ async function resolveConfigurationIds(formData) {
       where: { id: formData.branch_id },
       select: { name: true }
     });
-    
+
     if (branch) resolved.branch_name = branch.name;
     else throw new Error('Invalid branch ID');
   } else if (formData.branch_id) {
     resolved.branch_name = formData.branch_id;
     const branch = await prisma.configBranch.findUnique({
-      where: { 
+      where: {
         course_id: resolved.course_id,
-        name: formData.branch_name 
+        name: formData.branch_name
       },
       select: { id: true }
     });
-    
+
     if (branch) resolved.branch_id = branch.id;
     else {
       const newBranch = await prisma.configBranch.create({
-        data: { 
+        data: {
           course_id: resolved.course_id,
-          name: formData.branch_name 
+          name: formData.branch_name
         },
         select: { id: true }
       });
@@ -310,6 +310,7 @@ async function syncStudentData(formId, formData) {
       college_email: formData.college_email,
       admission_year: formData.admission_year,
       passing_year: formData.passing_year,
+      alumniProfileLink: formData.alumni_profile_link,
       updated_at: new Date(),
       updated_by: 'student_submission'
     },
@@ -326,6 +327,7 @@ async function syncStudentData(formId, formData) {
       college_email: formData.college_email,
       admission_year: formData.admission_year,
       passing_year: formData.passing_year,
+      alumniProfileLink: formData.alumni_profile_link,
       created_at: new Date(),
       updated_at: new Date(),
       updated_by: 'student_submission'
@@ -349,7 +351,7 @@ async function sendInitialNotifications(form) {
     if (departments && departments.length > 0) {
       // This would use your existing emailService
       console.log(`📧 Would send notifications to ${departments.length} departments`);
-      
+
       // Example: await sendCombinedDepartmentNotification({
       //   formId: form.id,
       //   studentName: form.student_name,
