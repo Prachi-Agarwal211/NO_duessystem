@@ -71,16 +71,16 @@ export default function SubmitForm() {
   // Ref to prevent useEffects from resetting values during auto-fill
   const isAutoFilling = useRef(false);
 
-  // Update available courses when school changes (only when user manually selects)
   useEffect(() => {
-    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    // 🛑 CRITICAL: During auto-fill, we handle course loading manually to prevent race conditions.
     if (isAutoFilling.current) return;
 
     const loadCourses = async () => {
       if (formData.school) {
         const coursesForSchool = await fetchCoursesBySchool(formData.school);
         setAvailableCourses(coursesForSchool);
-        // Reset course/branch when user manually changes school
+
+        // Only reset if NOT currently auto-filling
         setFormData(prev => ({ ...prev, course: '', branch: '' }));
         setAvailableBranches([]);
       } else {
@@ -91,16 +91,16 @@ export default function SubmitForm() {
     loadCourses();
   }, [formData.school, fetchCoursesBySchool]);
 
-  // Update available branches when course changes (only when user manually selects)
   useEffect(() => {
-    // Skip entirely during auto-fill - we handle loading in fetchStudentData
+    // 🛑 CRITICAL: During auto-fill, skip manual resetting.
     if (isAutoFilling.current) return;
 
     const loadBranches = async () => {
       if (formData.course) {
         const branchesForCourse = await fetchBranchesByCourse(formData.course);
         setAvailableBranches(branchesForCourse);
-        // Reset branch when user manually changes course
+
+        // Only reset if NOT currently auto-filling
         setFormData(prev => ({ ...prev, branch: '' }));
       } else {
         setAvailableBranches([]);
@@ -212,14 +212,14 @@ export default function SubmitForm() {
           toast.success('✅ Your No Dues process is already completed.');
         }
 
-        // 🔍 ROBUST ID RESOLUTION
-        // We prioritize IDs (UUIDs) because they are immutable and accurate.
-        // Names are used only as a secondary fallback.
+        // 🔍 ROBUST ID RESOLUTION (Unified State Approach)
         let resolvedSchoolId = '';
         let resolvedCourseId = '';
         let resolvedBranchId = '';
+        let activeCourses = [];
+        let activeBranches = [];
 
-        // 1. Resolve School
+        // 🏫 Step 1: Resolve School
         const schoolValue = studentData.school_id || studentData.school;
         if (schoolValue) {
           const matched = schools.find(s =>
@@ -229,15 +229,13 @@ export default function SubmitForm() {
           if (matched) resolvedSchoolId = matched.id;
         }
 
-        // 2. Resolve Course (Requires School)
-        let loadedCourses = [];
+        // 📚 Step 2: Resolve Course (Parallel fetching for speed)
         if (resolvedSchoolId) {
-          loadedCourses = await fetchCoursesBySchool(resolvedSchoolId);
-          setAvailableCourses(loadedCourses);
+          activeCourses = await fetchCoursesBySchool(resolvedSchoolId);
 
           const courseValue = studentData.course_id || studentData.course;
           if (courseValue) {
-            const matched = loadedCourses.find(c =>
+            const matched = activeCourses.find(c =>
               c.id === courseValue ||
               c.name?.toLowerCase() === courseValue.toString().toLowerCase()
             );
@@ -245,15 +243,13 @@ export default function SubmitForm() {
           }
         }
 
-        // 3. Resolve Branch (Requires Course)
-        let loadedBranches = [];
+        // 🌿 Step 3: Resolve Branch
         if (resolvedCourseId) {
-          loadedBranches = await fetchBranchesByCourse(resolvedCourseId);
-          setAvailableBranches(loadedBranches);
+          activeBranches = await fetchBranchesByCourse(resolvedCourseId);
 
           const branchValue = studentData.branch_id || studentData.branch;
           if (branchValue) {
-            const matched = loadedBranches.find(b =>
+            const matched = activeBranches.find(b =>
               b.id === branchValue ||
               b.name?.toLowerCase() === branchValue.toString().toLowerCase()
             );
@@ -261,7 +257,11 @@ export default function SubmitForm() {
           }
         }
 
-        // Set form data with resolved IDs
+        // 📝 Step 4: Final Unified State Commit
+        // We set options first, then the values to ensure React selects them correctly.
+        setAvailableCourses(activeCourses);
+        setAvailableBranches(activeBranches);
+
         setFormData(prev => ({
           ...prev,
           student_name: studentData.student_name || prev.student_name,
