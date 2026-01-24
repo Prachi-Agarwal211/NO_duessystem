@@ -282,10 +282,12 @@ export default function SubmitForm() {
         setError('');
 
         // Show success message with details
-        if (schoolId && courseId && branchId) {
+        if (resolvedSchoolId && resolvedCourseId && resolvedBranchId) {
           toast.success('✅ All details auto-filled successfully!');
-        } else if (schoolId) {
+        } else if (resolvedSchoolId) {
           toast.info('⚠️ Some dropdown values could not be matched. Please verify.');
+        } else {
+          toast.info('🔍 Student found, but School/Course matching failed. Please select manually.');
         }
       } else {
         setStudentFetchError(result.message || 'Student not found in database');

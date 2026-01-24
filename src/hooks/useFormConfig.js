@@ -17,6 +17,14 @@ export function useFormConfig() {
   const [branchesLoading, setBranchesLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // 🕵️ DEBUG LOGGING
+  useEffect(() => {
+    console.log(`📡 [ConfigHook] State Update - Schools: ${schools.length}, Courses: ${courses.length}, Branches: ${branches.length}`);
+    if (schools.length > 0 && typeof window !== 'undefined') {
+      window.__LAST_VALID_SCHOOLS__ = schools;
+    }
+  }, [schools, courses, branches]);
+
   // Fetch all configuration data at once with cache busting
   const fetchAllConfig = useCallback(async () => {
     setLoading(true);
