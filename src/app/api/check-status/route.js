@@ -107,7 +107,7 @@ export async function GET(request) {
     if (statusesResult.error) throw statusesResult.error;
 
     const departments = departmentsResult.data;
-    const statuses = statusesResult.data;
+    let statuses = statusesResult.data;
 
     // 🔧 CRITICAL FIX: If no department statuses exist, create them
     if (!statuses || statuses.length === 0) {

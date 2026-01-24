@@ -321,6 +321,11 @@ export default function SubmitForm() {
         throw new Error(`College email must end with ${collegeDomain}`);
       }
 
+      // Resolve names from the dropdown options
+      const selectedSchool = schools.find(s => s.id === formData.school);
+      const selectedCourse = availableCourses.find(c => c.id === formData.course);
+      const selectedBranch = availableBranches.find(b => b.id === formData.branch);
+
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
@@ -328,8 +333,11 @@ export default function SubmitForm() {
         passing_year: formData.passing_year?.trim() || null,
         parent_name: formData.parent_name?.trim() || null,
         school: formData.school,
+        school_name: selectedSchool?.name || '',
         course: formData.course,
+        course_name: selectedCourse?.name || '',
         branch: formData.branch,
+        branch_name: selectedBranch?.name || '',
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),

@@ -32,22 +32,22 @@ class StudentWorkflowService {
 
       // Step 1: Validate and resolve configuration IDs
       const resolvedData = await this.resolveConfigurationIds(formData);
-      
+
       // Step 2: Check for duplicates
       await this.checkForDuplicates(resolvedData.registration_no);
-      
+
       // Step 3: Insert form with proper data
       const form = await this.insertForm(resolvedData);
-      
+
       // Step 4: Create initial department statuses
       await this.createDepartmentStatuses(form.id);
-      
+
       // Step 5: Sync student data
       await this.syncStudentData(form.id, resolvedData);
-      
+
       // Step 6: Send notifications
       await this.sendInitialNotifications(form);
-      
+
       // Step 7: Trigger real-time updates
       await this.triggerRealtimeUpdate('form_submission', form);
 
@@ -73,7 +73,7 @@ class StudentWorkflowService {
         .select('name')
         .eq('id', formData.school_id)
         .single();
-      
+
       if (school) resolved.school_name = school.name;
     } else if (formData.school_id) {
       resolved.school_name = formData.school_id;
@@ -82,7 +82,7 @@ class StudentWorkflowService {
         .select('id')
         .eq('name', formData.school_id)
         .single();
-      
+
       if (school) resolved.school_id = school.id;
     }
 
@@ -93,7 +93,7 @@ class StudentWorkflowService {
         .select('name')
         .eq('id', formData.course_id)
         .single();
-      
+
       if (course) resolved.course_name = course.name;
     } else if (formData.course_id) {
       resolved.course_name = formData.course_id;
@@ -103,7 +103,7 @@ class StudentWorkflowService {
         .eq('school_id', resolved.school_id)
         .eq('name', formData.course_id)
         .single();
-      
+
       if (course) resolved.course_id = course.id;
     }
 
@@ -114,7 +114,7 @@ class StudentWorkflowService {
         .select('name')
         .eq('id', formData.branch_id)
         .single();
-      
+
       if (branch) resolved.branch_name = branch.name;
     } else if (formData.branch_id) {
       resolved.branch_name = formData.branch_id;
@@ -124,7 +124,7 @@ class StudentWorkflowService {
         .eq('course_id', resolved.course_id)
         .eq('name', formData.branch_id)
         .single();
-      
+
       if (branch) resolved.branch_id = branch.id;
     }
 
@@ -169,7 +169,7 @@ class StudentWorkflowService {
         personal_email: formData.personal_email,
         college_email: formData.college_email,
         email: formData.email,
-        alumniProfileLink: formData.alumni_profile_link,
+        alumni_profile_link: formData.alumni_profile_link,
         status: 'pending',
         is_reapplication: false,
         reapplication_count: 0
@@ -247,7 +247,7 @@ class StudentWorkflowService {
         updated_at: new Date().toISOString(),
         updated_by: 'student_submission'
       }, {
-        onConflict: 'form_id',
+        onConflict: 'registration_no',
         ignoreDuplicates: false
       });
 
@@ -404,7 +404,7 @@ class StudentWorkflowService {
     if (form.last_reapplied_at) {
       const cooldownEnd = new Date(form.last_reapplied_at);
       cooldownEnd.setDate(cooldownEnd.getDate() + cooldownDays);
-      
+
       if (new Date() < cooldownEnd) {
         throw new Error(`Please wait ${cooldownDays} days between reapplications`);
       }
