@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Loader2, CheckCircle, AlertCircle, Check, X, Info } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle, Check, X, Info, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -32,7 +32,9 @@ export default function SubmitForm() {
     coursesLoading,
     branchesLoading,
     fetchCoursesBySchool,
-    fetchBranchesByCourse
+    fetchBranchesByCourse,
+    fetchAllConfig,
+    error: configError
   } = useFormConfig();
 
   const [formData, setFormData] = useState({
@@ -453,6 +455,38 @@ export default function SubmitForm() {
           <li>Register at <a href="https://jualumni.in" target="_blank" className="underline font-bold hover:text-jecrc-red transition-colors">jualumni.in</a> and obtain your <strong>Profile Link</strong> (from the Profile section) before applying.</li>
         </ul>
       </motion.div>
+
+      {/* Config Error Display */}
+      {configError && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`p-5 rounded-xl border flex items-start gap-4 mb-6 transition-all ${isDark
+            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+            : 'bg-red-50 border-red-100 text-red-600 shadow-sm'
+            }`}
+        >
+          <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-bold text-base mb-1">Configuration Loading Failed</h4>
+            <p className="text-sm opacity-90 mb-3">
+              We couldn't load the Schools/Courses data. This is required to submit the form.
+              <br />
+              <span className="text-xs font-mono mt-1 block px-2 py-1 bg-black/5 rounded">Error: {configError}</span>
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={fetchAllConfig}
+              className="h-8 border-current hover:bg-red-500/10"
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {error && (
         <motion.div

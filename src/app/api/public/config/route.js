@@ -16,6 +16,7 @@ export async function GET(request) {
 
     // Fetch schools
     if (type === 'schools' || type === 'all') {
+      console.log('📡 [ConfigAPI] Fetching schools...');
       const { data: schools, error: schoolsError } = await supabaseAdmin
         .from('config_schools')
         .select('id, name, display_order')
@@ -23,17 +24,17 @@ export async function GET(request) {
         .order('display_order');
 
       if (schoolsError) {
-        console.error('❌ Error fetching schools:', schoolsError);
-        // Return empty array if table doesn't exist instead of crashing
+        console.error('❌ [ConfigAPI] Schools fetch error:', schoolsError);
         if (schoolsError.code === '42P01') {
           return NextResponse.json({
             success: false,
-            error: 'Configuration tables not set up. Please run database migration scripts.',
+            error: 'Configuration tables (config_schools) not found. Please contact admin.',
             data: { schools: [], courses: [], branches: [] }
           }, { status: 503 });
         }
         throw schoolsError;
       }
+      console.log(`✅ [ConfigAPI] Found ${schools.length} schools`);
 
       if (type === 'schools') {
         return NextResponse.json({ success: true, data: schools });
@@ -41,41 +42,45 @@ export async function GET(request) {
 
       // If 'all', continue to fetch everything
       if (type === 'all') {
-        const { data: courses, error: coursesError } = await supabaseAdmin
-          .from('config_courses')
-          .select('id, school_id, name, display_order')
-          .eq('is_active', true)
-          .order('display_order');
+        console.log('📡 [ConfigAPI] Fetching courses and branches...');
+        const [coursesResult, branchesResult] = await Promise.all([
+          supabaseAdmin
+            .from('config_courses')
+            .select('id, school_id, name, display_order')
+            .eq('is_active', true)
+            .order('display_order'),
+          supabaseAdmin
+            .from('config_branches')
+            .select('id, course_id, name, display_order')
+            .eq('is_active', true)
+            .order('display_order')
+        ]);
 
-        if (coursesError) {
-          console.error('❌ Error fetching courses:', coursesError);
-          if (coursesError.code === '42P01') {
+        if (coursesResult.error) {
+          console.error('❌ [ConfigAPI] Courses fetch error:', coursesResult.error);
+          if (coursesResult.error.code === '42P01') {
             return NextResponse.json({
               success: false,
-              error: 'Configuration tables not set up. Please run database migration scripts.',
+              error: 'Configuration tables (config_courses) not found.',
               data: { schools: schools || [], courses: [], branches: [] }
             }, { status: 503 });
           }
-          throw coursesError;
+          throw coursesResult.error;
         }
 
-        const { data: branches, error: branchesError } = await supabaseAdmin
-          .from('config_branches')
-          .select('id, course_id, name, display_order')
-          .eq('is_active', true)
-          .order('display_order');
-
-        if (branchesError) {
-          console.error('❌ Error fetching branches:', branchesError);
-          if (branchesError.code === '42P01') {
+        if (branchesResult.error) {
+          console.error('❌ [ConfigAPI] Branches fetch error:', branchesResult.error);
+          if (branchesResult.error.code === '42P01') {
             return NextResponse.json({
               success: false,
-              error: 'Configuration tables not set up. Please run database migration scripts.',
-              data: { schools: schools || [], courses: courses || [], branches: [] }
+              error: 'Configuration tables (config_branches) not found.',
+              data: { schools: schools || [], courses: coursesResult.data || [], branches: [] }
             }, { status: 503 });
           }
-          throw branchesError;
+          throw branchesResult.error;
         }
+
+        console.log(`✅ [ConfigAPI] Parallel fetch complete. Courses: ${coursesResult.data.length}, Branches: ${branchesResult.data.length}`);
 
         const { data: emailConfig, error: emailError } = await supabaseAdmin
           .from('config_emails')
@@ -83,14 +88,14 @@ export async function GET(request) {
           .eq('key', 'college_domain')
           .single();
 
-        if (emailError) console.error('Email config error:', emailError);
+        if (emailError) console.warn('⚠️ [ConfigAPI] Email config fetch warning:', emailError.message);
 
         const { data: validationRules, error: validationError } = await supabaseAdmin
           .from('config_validation_rules')
           .select('*')
           .eq('is_active', true);
 
-        if (validationError) console.error('Validation rules error:', validationError);
+        if (validationError) console.warn('⚠️ [ConfigAPI] Validation rules fetch warning:', validationError.message);
 
         const { data: countryCodes, error: countryError } = await supabaseAdmin
           .from('config_country_codes')
@@ -98,14 +103,16 @@ export async function GET(request) {
           .eq('is_active', true)
           .order('display_order');
 
-        if (countryError) console.error('Country codes error:', countryError);
+        if (countryError) console.warn('⚠️ [ConfigAPI] Country codes fetch warning:', countryError.message);
+
+        console.log('✅ [ConfigAPI] All configuration data retrieved successfully');
 
         return NextResponse.json({
           success: true,
           data: {
             schools,
-            courses,
-            branches,
+            courses: coursesResult.data,
+            branches: branchesResult.data,
             collegeDomain: emailConfig?.value || 'jecrcu.edu.in',
             validationRules: validationRules || [],
             countryCodes: countryCodes || []

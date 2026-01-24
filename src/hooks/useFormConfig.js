@@ -21,7 +21,7 @@ export function useFormConfig() {
   const fetchAllConfig = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Add timestamp to bust cache
       const cacheBuster = `&_t=${Date.now()}`;
@@ -34,20 +34,20 @@ export function useFormConfig() {
         }
       });
       const result = await response.json();
-      
+
       console.log('🔧 Config API Response:', result);
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch configuration');
       }
-      
+
       setSchools(result.data.schools || []);
       setCourses(result.data.courses || []);
       setBranches(result.data.branches || []);
       setCollegeDomain(result.data.collegeDomain || 'jecrcu.edu.in');
       setValidationRules(result.data.validationRules || []);
       setCountryCodes(result.data.countryCodes || []);
-      
+
       logger.success('Configuration loaded', {
         schoolsCount: result.data.schools?.length || 0,
         coursesCount: result.data.courses?.length || 0,
@@ -67,89 +67,79 @@ export function useFormConfig() {
     }
   }, []);
 
-  // Fetch courses by school with proper loading state and cache busting
+  // Fetch courses by school (uses local data if available, otherwise fallback to API)
   const fetchCoursesBySchool = useCallback(async (schoolId) => {
     if (!schoolId) {
-      setCourses([]);
       return [];
     }
-    
+
     setCoursesLoading(true);
     try {
+      // 🥇 First, try to filter from locally cached data (faster, no network)
+      if (courses.length > 0) {
+        const localCourses = courses.filter(c => c.school_id === schoolId);
+        if (localCourses.length > 0) {
+          logger.debug('Courses filtered locally', { schoolId, count: localCourses.length });
+          return localCourses;
+        }
+      }
+
+      // 🥈 Fallback to API only if local data is empty or missing schoolId
       const cacheBuster = `&_t=${Date.now()}`;
       const response = await fetch(`/api/public/config?type=courses&school_id=${schoolId}${cacheBuster}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
+        cache: 'no-store'
       });
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch courses');
       }
-      
-      const coursesData = result.data || [];
-      setCourses(coursesData);
-      logger.success('Courses fetched', {
-        schoolId,
-        count: coursesData.length
-      });
-      return coursesData;
+
+      return result.data || [];
     } catch (err) {
-      logger.apiError(`/api/public/config?type=courses&school_id=${schoolId}`, err, {
-        action: 'fetchCoursesBySchool',
-        schoolId
-      });
-      setError(err.message);
-      setCourses([]);
+      logger.apiError(`/api/public/config?type=courses&school_id=${schoolId}`, err);
       return [];
     } finally {
       setCoursesLoading(false);
     }
-  }, []);
+  }, [courses]);
 
-  // Fetch branches by course with proper loading state and cache busting
+  // Fetch branches by course (uses local data if available, otherwise fallback to API)
   const fetchBranchesByCourse = useCallback(async (courseId) => {
     if (!courseId) {
-      setBranches([]);
       return [];
     }
-    
+
     setBranchesLoading(true);
     try {
+      // 🥇 First, try to filter from locally cached data
+      if (branches.length > 0) {
+        const localBranches = branches.filter(b => b.course_id === courseId);
+        if (localBranches.length > 0) {
+          logger.debug('Branches filtered locally', { courseId, count: localBranches.length });
+          return localBranches;
+        }
+      }
+
+      // 🥈 Fallback to API
       const cacheBuster = `&_t=${Date.now()}`;
       const response = await fetch(`/api/public/config?type=branches&course_id=${courseId}${cacheBuster}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
+        cache: 'no-store'
       });
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch branches');
       }
-      
-      const branchesData = result.data || [];
-      setBranches(branchesData);
-      logger.success('Branches fetched', {
-        courseId,
-        count: branchesData.length
-      });
-      return branchesData;
+
+      return result.data || [];
     } catch (err) {
-      logger.apiError(`/api/public/config?type=branches&course_id=${courseId}`, err, {
-        action: 'fetchBranchesByCourse',
-        courseId
-      });
-      setError(err.message);
-      setBranches([]);
+      logger.apiError(`/api/public/config?type=branches&course_id=${courseId}`, err);
       return [];
     } finally {
       setBranchesLoading(false);
     }
-  }, []);
+  }, [branches]);
 
   // Get courses for selected school (client-side filtering for initial load)
   const getCoursesForSchool = useCallback((schoolId) => {
@@ -176,7 +166,7 @@ export function useFormConfig() {
   const validateField = useCallback((ruleName, value) => {
     const rule = getValidationRule(ruleName);
     if (!rule) return { valid: true };
-    
+
     try {
       const regex = new RegExp(rule.rule_pattern, 'i');
       const valid = regex.test(value);
