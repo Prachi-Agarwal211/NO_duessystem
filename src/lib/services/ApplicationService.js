@@ -8,7 +8,7 @@
  * - Real-time notifications
  */
 
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 import realtimeService from '@/lib/realtimeService';
 
 class ApplicationService {

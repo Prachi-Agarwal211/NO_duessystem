@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 
 export const dynamic = 'force-dynamic';
@@ -7,7 +7,7 @@ export const runtime = 'nodejs';
 
 /**
  * GET /api/student/lookup?registration_no=XXX
- * Look up student data from master student_data table using Prisma
+ * Look up student data from master student_data table
  * 
  * This endpoint is used by the frontend to auto-fill form fields
  */
@@ -36,8 +36,8 @@ export async function GET(request) {
     // Clean the registration number
     const cleanRegNo = registrationNo.trim().toUpperCase();
 
-    // Search in student_data table using Supabase
-    let { data: student, error } = await supabase
+    // Search in student_data table using Supabase Admin (bypasses RLS)
+    let { data: student, error } = await supabaseAdmin
       .from('student_data')
       .select('*')
       .or(`registration_no.eq.${cleanRegNo},roll_number.eq.${cleanRegNo},enrollment_number.eq.${cleanRegNo}`)
@@ -59,13 +59,13 @@ export async function GET(request) {
     }
 
     // Check if student has a no-dues form
-    const { data: existingForm, error: formError } = await supabase
-      .from('no_dues_forms')
+    const { data: existingForm, error: formError } = await supabaseAdmin
+      .from('no_du_forms')
       .select('status, certificate_url')
       .eq('registration_no', cleanRegNo)
-      .single();
+      .maybeSingle();
 
-    if (formError && formError.code !== 'PGRST116') { // PGRST116 is "Row not found"
+    if (formError) {
       console.error('Form lookup error:', formError);
     }
 
@@ -76,9 +76,9 @@ export async function GET(request) {
       admission_year: student.admission_year?.toString() || '',
       passing_year: student.passing_year?.toString() || '',
       parent_name: student.parent_name || '',
-      school: student.school_id || student.school || '', // Send ID if available for dropdowns
-      course: student.course_id || student.course || '', // Send ID if available for dropdowns
-      branch: student.branch_id || student.branch || '', // Send ID if available for dropdowns
+      school: student.school_id || student.school || '',
+      course: student.course_id || student.course || '',
+      branch: student.branch_id || student.branch || '',
       country_code: student.country_code || '+91',
       contact_no: student.contact_no || '',
       personal_email: student.personal_email || '',
@@ -121,7 +121,7 @@ export async function POST(request) {
     // Same logic as GET but for POST requests
     const cleanRegNo = registration_no.trim().toUpperCase();
 
-    let { data: student, error } = await supabase
+    let { data: student, error } = await supabaseAdmin
       .from('student_data')
       .select('*')
       .or(`registration_no.eq.${cleanRegNo},roll_number.eq.${cleanRegNo},enrollment_number.eq.${cleanRegNo}`)
@@ -143,13 +143,13 @@ export async function POST(request) {
     }
 
     // Check if student has a no-dues form
-    const { data: existingForm, error: formError } = await supabase
+    const { data: existingForm, error: formError } = await supabaseAdmin
       .from('no_dues_forms')
       .select('status, certificate_url')
       .eq('registration_no', cleanRegNo)
-      .single();
+      .maybeSingle();
 
-    if (formError && formError.code !== 'PGRST116') { // PGRST116 is "Row not found"
+    if (formError) {
       console.error('Form lookup error:', formError);
     }
 
