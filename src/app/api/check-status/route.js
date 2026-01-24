@@ -2,8 +2,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 /**
  * GET /api/check-status?registration_no=XXX
@@ -31,12 +35,43 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const registrationNo = searchParams.get('registration_no');
 
+    // 🔐 1. SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Session expired or required' }, { status: 401 });
+    }
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
+    }
+
+    // 🧱 2. AUTHENTICATED CHECK (For Auth Guard)
+    // If we reach here, the session is VALID.
+    if (registrationNo === 'SESSION_CHECK') {
+      return NextResponse.json({ success: true, verified: true });
+    }
+
     // Validation
     if (!registrationNo || typeof registrationNo !== 'string') {
       return NextResponse.json({
         success: false,
         error: 'Invalid registration number'
       }, { status: 400 });
+    }
+
+    const cleanRegNo = registrationNo.trim().toUpperCase();
+
+    // 🛡️ 3. AUTHORIZATION CHECK
+    // Ensure the student is only accessing THEIR OWN data
+    if (decoded.regNo !== cleanRegNo) {
+      // Log the potential breach attempt
+      console.warn(`🛑 [Unauthorized Access Attempt] Session RegNo (${decoded.regNo}) tried to access (${cleanRegNo})`);
+      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
     }
 
     // ✅ NO CACHING: Always fetch fresh data from database with explicit cache headers

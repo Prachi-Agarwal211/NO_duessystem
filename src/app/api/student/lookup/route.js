@@ -60,7 +60,7 @@ export async function GET(request) {
 
     // Check if student has a no-dues form
     const { data: existingForm, error: formError } = await supabaseAdmin
-      .from('no_du_forms')
+      .from('no_dues_forms')
       .select('status, certificate_url')
       .eq('registration_no', cleanRegNo)
       .maybeSingle();

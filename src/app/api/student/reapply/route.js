@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { rateLimit, addRateLimitHeaders, RATE_LIMITS } from '@/lib/rateLimiter';
 import { z } from 'zod';
+import { verify } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 import applicationService from '@/lib/services/ApplicationService';
-import supabase from '@/lib/supabaseClient';
+import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -21,9 +25,29 @@ const reapplySchema = z.object({
  */
 export async function POST(request) {
   try {
+    // 🔐 0. SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
+
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'Session expired or required' }, { status: 401 });
+    }
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
+    }
+
     // Parse and validate request body
     const body = await request.json();
     const validatedData = reapplySchema.parse(body);
+
+    // 🛡️ AUTHORIZATION CHECK
+    if (decoded.regNo !== validatedData.registration_no.toUpperCase().trim()) {
+      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
+    }
 
     // Apply rate limiting
     const rateLimitResult = await rateLimit(request, RATE_LIMITS.STUDENT_REAPPLY);
@@ -196,6 +220,19 @@ async function validateDepartmentReapplication(formId, department, studentId) {
  */
 export async function GET(request) {
   try {
+    // 🔐 SESSION VERIFICATION
+    const cookieStore = cookies();
+    const token = cookieStore.get('student_session')?.value;
+
+    if (!token) return NextResponse.json({ error: 'Session required' }, { status: 401 });
+
+    let decoded;
+    try {
+      decoded = verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const formId = searchParams.get('formId');
 
@@ -204,6 +241,17 @@ export async function GET(request) {
         { success: false, error: 'Form ID is required' },
         { status: 400 }
       );
+    }
+
+    // 🛡️ AUTHORIZATION CHECK - Verify this form belongs to the session user
+    const { data: formCheck, error: checkError } = await supabase
+      .from('no_dues_forms')
+      .select('registration_no')
+      .eq('id', formId)
+      .single();
+
+    if (checkError || !formCheck || formCheck.registration_no !== decoded.regNo) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
     // Get reapplication history
