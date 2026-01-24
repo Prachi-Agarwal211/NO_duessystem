@@ -120,8 +120,11 @@ export async function GET(request) {
 
         console.log('✅ [ConfigAPI] All configuration data retrieved successfully');
 
+        console.log(`📊 [ConfigAPI] FINAL CHECK - Schools: ${schools?.length}, Courses: ${coursesResult.data?.length}`);
+
         return NextResponse.json({
           success: true,
+          buildId: '25-Jan-00:15',
           data: {
             schools: schools || [],
             courses: coursesResult.data || [],

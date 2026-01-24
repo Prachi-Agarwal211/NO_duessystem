@@ -43,8 +43,9 @@ export function useFormConfig() {
       });
       const result = await response.json();
 
+      console.log('📡 [ConfigHook] API BUILD ID:', result.buildId || 'LEGACY_VERSION');
       console.log('🔧 [ConfigHook] API Payload:', result.data);
-      console.log('📊 [ConfigHook] Received counts:', result.data.counts || 'N/A');
+      console.log('📊 [ConfigHook] Received counts:', result.data?.counts || 'N/A');
 
       // Global debug helper
       if (typeof window !== 'undefined') {
