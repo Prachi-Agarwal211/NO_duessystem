@@ -82,7 +82,7 @@ async function submitApplicationWithPrisma(formData) {
     console.log('📝 Submitting application via Prisma ORM...');
 
     // 1. Check for duplicate registration number
-    const existingForm = await prisma.noDuesForm.findUnique({
+    const existingForm = await prisma.noDuesForm.findFirst({
       where: {
         registration_no: formData.registration_no.toUpperCase()
       }
@@ -161,7 +161,8 @@ async function submitApplicationWithPrisma(formData) {
 
     return {
       success: false,
-      error: 'Failed to create form record'
+      error: 'Failed to create form record',
+      details: error.message || error.toString() // Exposed for debugging
     };
   }
 }

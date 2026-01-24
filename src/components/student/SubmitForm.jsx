@@ -345,7 +345,9 @@ export default function SubmitForm() {
         if (response.status === 409 || result.duplicate) {
           throw new Error('Form already exists. Redirecting...');
         }
-        throw new Error(result.error || 'Failed to submit form');
+        const error = new Error(result.error || 'Failed to submit form');
+        if (result.details) error.details = result.details;
+        throw error;
       }
 
       setFormId(result.data.id);
@@ -360,7 +362,10 @@ export default function SubmitForm() {
       if (err.name === 'AbortError') {
         setError('Request timed out. Please check your connection.');
       } else {
-        setError(err.message || 'An unexpected error occurred.');
+        const errorMsg = err.message || 'An unexpected error occurred.';
+        // Read details attached to the error object
+        const details = err.details || '';
+        setError(details ? `${errorMsg} (Details: ${details})` : errorMsg);
       }
       if (err.message && err.message.includes('already exists')) {
         setTimeout(() => {

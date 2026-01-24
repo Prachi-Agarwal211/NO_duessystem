@@ -20,8 +20,11 @@ const prisma = globalForPrisma.prisma || (process.env.DATABASE_URL ? new PrismaC
   // Enable logging in development
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 }) : {
-  // Mock client for build time only to prevent crashes
-  noDuesForm: { findUnique: () => null, create: () => null },
+  // Mock client for build time - THROWS at runtime to alert missing config
+  noDuesForm: {
+    findUnique: () => { throw new Error('DATABASE_URL is missing - Mock Client Active'); },
+    create: () => { throw new Error('DATABASE_URL is missing - Mock Client Active'); }
+  },
   configSchool: { findUnique: () => null, create: () => null },
   configCourse: { findUnique: () => null, create: () => null },
   configBranch: { findUnique: () => null, create: () => null },
