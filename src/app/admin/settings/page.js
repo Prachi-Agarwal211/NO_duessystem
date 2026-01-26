@@ -114,13 +114,26 @@ export default function AdminSettings() {
   const fetchStaff = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn('No session found for fetchStaff');
+        return;
+      }
+
       const res = await fetch('/api/admin/staff', {
-        headers: { 'Authorization': `Bearer ${session.access_token}` }
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+        cache: 'no-store'
       });
+
       const json = await res.json();
-      if (json.success) setStaffList(json.data || []);
+      if (json.success) {
+        setStaffList(json.data || []);
+      } else {
+        console.error('Fetch Staff Error:', json.error);
+        toast.error('Failed to load staff list: ' + (json.error || 'Unknown error'));
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Fetch Staff Exception:', e);
+      toast.error('Network error loading staff list');
     }
   };
 
@@ -392,6 +405,12 @@ export default function AdminSettings() {
     fetchStaff();
     fetchSystemSettings();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'staff') {
+      fetchStaff();
+    }
+  }, [activeTab]);
 
   const updateSetting = async (key, value) => {
     try {
@@ -1100,8 +1119,25 @@ export default function AdminSettings() {
 
             {/* Staff List */}
             <GlassCard className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Existing Staff ({staffList.length})</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Existing Staff ({staffList.length})</h3>
+                <button
+                  onClick={fetchStaff}
+                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  title="Refresh List"
+                >
+                  <Loader2 className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
               <div className="space-y-3">
+                {staffList.length === 0 && !loading && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+                    <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                    <p>No staff accounts found.</p>
+                    <p className="text-xs mt-1">Create a new account above to get started.</p>
+                  </div>
+                )}
                 {staffList.map(staff => (
                   <div key={staff.id} className="p-4 bg-gray-50 dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
                     {editingStaff?.id === staff.id ? (

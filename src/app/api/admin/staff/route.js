@@ -54,15 +54,26 @@ export async function GET(request) {
     // Base query for staff profiles - fetch both 'department' and 'staff' roles
     let query = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, email, department_name, role, avatar_url, school_ids, course_ids, branch_ids, is_active, created_at, last_active_at')
+      .select('id, full_name, email, department_name, role, school_ids, course_ids, branch_ids, is_active, created_at')
       .in('role', ['department', 'staff'])
       .order('created_at', { ascending: false });
 
     if (department) {
+      console.log(`🔍 Filtering by department: ${department}`);
       query = query.eq('department_name', department);
     }
 
+    // Log the query intent
+    console.log('🚀 Fetching staff profiles with roles: department, staff');
+
     const { data: staffList, error } = await query;
+
+    if (error) {
+      console.error('❌ Supabase Query Error:', error);
+      throw error;
+    }
+
+    console.log(`✅ Found ${staffList?.length || 0} staff profiles`);
 
     if (error) throw error;
 
