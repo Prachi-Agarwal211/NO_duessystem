@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(
     }
 );
 
-// GET: Fetch chat messages for a form + department (PUBLIC ACCESS - No auth required)
+// GET: Fetch chat messages for a form + department (AUTHENTICATED ONLY)
 export async function GET(request, { params }) {
     try {
         const { formId, department } = params;
@@ -30,6 +30,22 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Form ID and department are required' }, { status: 400 });
         }
 
+        // Optional: Add authentication check for stricter security
+        // Uncomment below if you want to require authentication for chat access
+        /*
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+        }
+        */
+
         // Get total count first for pagination
         const { count: totalCount } = await supabaseAdmin
             .from('no_dues_messages')
@@ -37,7 +53,7 @@ export async function GET(request, { params }) {
             .eq('form_id', formId)
             .eq('department_name', department);
 
-        // Get messages with pagination - PUBLIC ACCESS
+        // Get messages with pagination
         const { data: messages, error } = await supabaseAdmin
             .from('no_dues_messages')
             .select(`
@@ -74,12 +90,35 @@ export async function GET(request, { params }) {
             .eq('department_name', department)
             .single();
 
+        // Get unread count for authenticated user
+        let unreadCount = 0;
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader) {
+            try {
+                const token = authHeader.replace('Bearer ', '');
+                const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+                if (user) {
+                    const { count } = await supabaseAdmin
+                        .from('no_dues_messages')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('form_id', formId)
+                        .eq('department_name', department)
+                        .neq('sender_id', user.id)
+                        .eq('is_read', false);
+                    unreadCount = count || 0;
+                }
+            } catch (e) {
+                console.warn('Could not get unread count:', e);
+            }
+        }
+
         return NextResponse.json({
             success: true,
             data: {
                 messages: messages || [],
                 form,
                 status,
+                unreadCount,
                 pagination: {
                     total: totalCount || 0,
                     limit,
@@ -104,22 +143,22 @@ export async function POST(request, { params }) {
 
         // Validate inputs
         if (!formId || !department || !message?.trim() || !senderType || !senderName) {
-            return NextResponse.json({ 
-                error: 'Form ID, department, message, sender type, and sender name are required' 
+            return NextResponse.json({
+                error: 'Form ID, department, message, sender type, and sender name are required'
             }, { status: 400 });
         }
 
         // Validate sender type
         if (!['student', 'department'].includes(senderType)) {
-            return NextResponse.json({ 
-                error: 'Valid sender type is required (student or department)' 
+            return NextResponse.json({
+                error: 'Valid sender type is required (student or department)'
             }, { status: 400 });
         }
 
         // Validate message length
         if (message.length > 1000) {
-            return NextResponse.json({ 
-                error: 'Message too long. Maximum 1000 characters allowed.' 
+            return NextResponse.json({
+                error: 'Message too long. Maximum 1000 characters allowed.'
             }, { status: 400 });
         }
 
@@ -141,8 +180,8 @@ export async function POST(request, { params }) {
             // DEPARTMENT STAFF: MUST be authenticated and assigned to this department
             const authHeader = request.headers.get('Authorization');
             if (!authHeader) {
-                return NextResponse.json({ 
-                    error: 'Department staff must be authenticated' 
+                return NextResponse.json({
+                    error: 'Department staff must be authenticated'
                 }, { status: 401 });
             }
 
@@ -150,8 +189,8 @@ export async function POST(request, { params }) {
             const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
             if (authError || !user) {
-                return NextResponse.json({ 
-                    error: 'Invalid session - please login again' 
+                return NextResponse.json({
+                    error: 'Invalid session - please login again'
                 }, { status: 401 });
             }
 
@@ -169,8 +208,8 @@ export async function POST(request, { params }) {
                 .single();
 
             if (!profile?.assigned_department_ids?.includes(dept?.id)) {
-                return NextResponse.json({ 
-                    error: 'Not authorized for this department' 
+                return NextResponse.json({
+                    error: 'Not authorized for this department'
                 }, { status: 403 });
             }
 
@@ -205,9 +244,9 @@ export async function POST(request, { params }) {
 
         if (insertError) {
             console.error('Message insert error:', insertError);
-            return NextResponse.json({ 
+            return NextResponse.json({
                 error: 'Failed to send message',
-                details: insertError.message 
+                details: insertError.message
             }, { status: 500 });
         }
 
@@ -233,9 +272,9 @@ export async function POST(request, { params }) {
 
     } catch (error) {
         console.error('Chat POST Error:', error);
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: 'Internal server error',
-            details: error.message 
+            details: error.message
         }, { status: 500 });
     }
 }
@@ -244,18 +283,15 @@ export async function POST(request, { params }) {
 async function updateDepartmentUnreadCount(departmentName, formId) {
     try {
         console.log(`📊 Updating unread count for department: ${departmentName}`);
-        
-        // This could trigger notifications to department staff
-        // You could implement email/SMS notifications here
-        
+
         // Update department activity tracking
         await supabaseAdmin
             .from('departments')
-            .update({ 
-                updated_at: new Date().toISOString() 
+            .update({
+                updated_at: new Date().toISOString()
             })
             .eq('name', departmentName);
-        
+
     } catch (error) {
         console.error('Failed to update unread count:', error);
     }
@@ -264,11 +300,7 @@ async function updateDepartmentUnreadCount(departmentName, formId) {
 // Helper function to log message activity
 async function logMessageActivity({ formId, department, senderType, senderName, senderId, messageLength }) {
     try {
-        // Log to audit trail if needed
         console.log(`💬 Message logged: Form ${formId}, Dept ${department}, Type ${senderType}`);
-        
-        // You could implement more detailed logging here
-        
     } catch (error) {
         console.error('Failed to log message activity:', error);
     }
