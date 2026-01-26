@@ -9,6 +9,8 @@ DROP TABLE IF EXISTS no_dues_status CASCADE;
 DROP TABLE IF EXISTS no_dues_forms CASCADE;
 DROP TABLE IF EXISTS student_data CASCADE;
 DROP TABLE IF EXISTS no_dues_reapplication_history CASCADE;
+DROP TABLE IF EXISTS no_dues_messages CASCADE;
+DROP TABLE IF EXISTS support_tickets CASCADE;
 
 -- ============================================================================
 -- 1. STUDENT_DATA TABLE - Master student database for auto-fill
@@ -173,18 +175,41 @@ CREATE TABLE IF NOT EXISTS no_dues_reapplication_history (
 );
 
 -- ============================================================================
--- 5. Enable Row Level Security (RLS)
+-- 5. NO_DUES_MESSAGES TABLE - Chat messages between students and departments
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS no_dues_messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    form_id UUID NOT NULL REFERENCES no_dues_forms(id) ON DELETE CASCADE,
+    department_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    sender_type TEXT NOT NULL CHECK (sender_type IN ('student', 'department')),
+    sender_name TEXT NOT NULL,
+    sender_id TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for chat queries
+CREATE INDEX IF NOT EXISTS idx_no_dues_messages_form_id ON no_dues_messages(form_id);
+CREATE INDEX IF NOT EXISTS idx_no_dues_messages_department ON no_dues_messages(department_name);
+CREATE INDEX IF NOT EXISTS idx_no_dues_messages_created_at ON no_dues_messages(created_at);
+
+-- ============================================================================
+-- 6. Enable Row Level Security (RLS)
 -- ============================================================================
 ALTER TABLE student_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_reapplication_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE no_dues_messages ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for service role access (full access for admin operations)
 CREATE POLICY "Service role full access to student_data" ON student_data FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role full access to no_dues_forms" ON no_dues_forms FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role full access to no_dues_status" ON no_dues_status FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role full access to reapplication_history" ON no_dues_reapplication_history FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role full access to no_dues_messages" ON no_dues_messages FOR ALL TO service_role USING (true);
 
 -- Allow authenticated read for students (their own data)
 CREATE POLICY "Students can read their own form" ON no_dues_forms FOR SELECT TO authenticated 

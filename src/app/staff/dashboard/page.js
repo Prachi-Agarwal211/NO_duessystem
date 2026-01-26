@@ -7,7 +7,7 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, User, HelpCircle, MessageCircle } from 'lucide-react';
+import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, HelpCircle, MessageCircle } from 'lucide-react';
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
@@ -434,17 +434,10 @@ export default function StaffDashboard() {
               <Download className="w-4 h-4" /> Export
             </button>
             <button
-              onClick={() => router.push('/staff/profile')}
-              className={`p-2.5 rounded-xl border transition-all
-                ${isDark ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-              title="My Profile"
-            >
-              <User className="w-5 h-5" />
-            </button>
-            <button
               onClick={refreshData}
               className={`p-2.5 rounded-xl border transition-all
                 ${isDark ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              title="Refresh"
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>

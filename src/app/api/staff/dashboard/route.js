@@ -71,13 +71,23 @@ export async function GET(request) {
       departments = deptData;
     }
 
-    console.log('📊 Dashboard Debug - Departments:', departments);
+    console.log('📊 Dashboard Debug - Departments (from IDs):', departments);
+
+    // 🛡️ FALLBACK: If ID lookup failed but profile has department_name, use that
+    // This fixes issues where assigned_department_ids are stale or mismatched
+    if ((!departments || departments.length === 0) && profile.department_name) {
+      console.warn('⚠️ Dashboard Debug - ID lookup failed, falling back to profile.department_name:', profile.department_name);
+      departments = [{
+        name: profile.department_name,
+        display_name: profile.department_name.charAt(0).toUpperCase() + profile.department_name.slice(1).replace(/_/g, ' ')
+      }];
+    }
 
     // Extract department info
     const myDeptNames = departments?.map(d => d.name) || [];
     const deptInfo = departments?.map(d => ({ name: d.name, displayName: d.display_name })) || [];
 
-    console.log('📊 Dashboard Debug - My Dept Names:', myDeptNames);
+    console.log('📊 Dashboard Debug - Final My Dept Names:', myDeptNames);
 
     if (myDeptNames.length === 0 && profile.role !== 'admin') {
       console.log('⚠️ Dashboard Debug - No departments found, returning empty');

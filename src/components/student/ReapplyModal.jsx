@@ -37,6 +37,17 @@ export default function ReapplyModal({
   const isPerDeptMode = selectedDepartment !== null;
   const displayDepartments = isPerDeptMode ? [selectedDepartment] : rejectedDepartments;
 
+  const {
+    schools,
+    courses,
+    branches,
+    collegeDomain,
+    countryCodes,
+    loading: configLoading,
+    getCoursesForSchool,
+    getBranchesForCourse
+  } = useFormConfig();
+
   // State declarations MUST come before any usage
   const [editedData, setEditedData] = useState({
     student_name: formData.student_name || '',
@@ -56,19 +67,6 @@ export default function ReapplyModal({
   const [availableBranches, setAvailableBranches] = useState([]);
   const [replyMessage, setReplyMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
-  const {
-    schools,
-    courses,
-    branches,
-    collegeDomain,
-    countryCodes,
-    loading: configLoading,
-    getCoursesForSchool,
-    getBranchesForCourse
-  } = useFormConfig();
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -141,8 +139,8 @@ export default function ReapplyModal({
     setError('');
 
     // Validation
-    if (!replyMessage.trim() || replyMessage.trim().length < 10) {
-      setError('Please provide a reply message (minimum 10 characters)');
+    if (!replyMessage.trim() || replyMessage.trim().length < 2) {
+      setError('Please provide a reply message (minimum 2 characters)');
       return;
     }
 
@@ -419,7 +417,7 @@ export default function ReapplyModal({
                   : 'bg-white border-black/20 text-ink-black placeholder-gray-400'
                   }`}
                 rows="4"
-                placeholder="Explain the corrections you've made and why you should be reconsidered (minimum 20 characters)..."
+                placeholder="Explain the corrections you've made and why you should be reconsidered..."
                 disabled={loading}
                 required
               />

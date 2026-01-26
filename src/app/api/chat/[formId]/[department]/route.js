@@ -194,26 +194,57 @@ export async function POST(request, { params }) {
                 }, { status: 401 });
             }
 
-            // Verify staff is assigned to this department
+            // Verify staff is assigned to this department (or has department_name matching)
             const { data: profile } = await supabaseAdmin
                 .from('profiles')
-                .select('assigned_department_ids, full_name, email')
+                .select('id, assigned_department_ids, department_name, full_name, email')
                 .eq('id', user.id)
                 .single();
 
+            // Check if user's department_name matches OR assigned_department_ids includes the department
             const { data: dept } = await supabaseAdmin
                 .from('departments')
-                .select('id')
+                .select('id, name')
                 .eq('name', department)
                 .single();
 
-            if (!profile?.assigned_department_ids?.includes(dept?.id)) {
+            const isAuthorized =
+                profile?.department_name === department ||
+                (dept && profile?.assigned_department_ids?.includes(dept.id));
+
+            if (!isAuthorized) {
                 return NextResponse.json({
                     error: 'Not authorized for this department'
                 }, { status: 403 });
             }
 
             finalSenderId = user.id;
+        } else if (senderType === 'student') {
+            // STUDENTS: Verify they own this form
+            const authHeader = request.headers.get('Authorization');
+            if (authHeader) {
+                // If authenticated, verify ownership
+                const token = authHeader.replace('Bearer ', '');
+                const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+                if (!authError && user) {
+                    // Verify the student owns this form
+                    const { data: studentForm } = await supabaseAdmin
+                        .from('no_dues_forms')
+                        .select('id')
+                        .eq('id', formId)
+                        .eq('student_email', user.email)
+                        .single();
+
+                    if (!studentForm) {
+                        return NextResponse.json({
+                            error: 'Not authorized to message on this form'
+                        }, { status: 403 });
+                    }
+                    finalSenderId = user.id;
+                }
+            }
+            // If not authenticated, allow anonymous student messages (legacy support)
         }
 
         // Create message

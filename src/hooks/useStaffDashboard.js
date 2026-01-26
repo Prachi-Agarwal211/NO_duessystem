@@ -25,15 +25,15 @@ export function useStaffDashboard() {
   const fetchDashboardDataRef = useRef(null);
   const fetchStatsRef = useRef(null);
 
-  // ✅ REQUEST DEDUPLICATION: Prevent multiple simultaneous fetches
+  // REQUEST DEDUPLICATION: Prevent multiple simultaneous fetches
   const pendingDashboardRequest = useRef(null);
   const pendingStatsRequest = useRef(null);
 
-  // ✅ TIMEOUT PROTECTION: Prevent infinite loading states
+  // TIMEOUT PROTECTION: Prevent infinite loading states
   const loadingTimeoutRef = useRef(null);
   const statsTimeoutRef = useRef(null);
 
-  // ⚡ PERFORMANCE: Fetch user data with minimal queries
+  // PERFORMANCE: Fetch user data with minimal queries
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -53,7 +53,8 @@ export function useStaffDashboard() {
         .eq('id', session.user.id)
         .single();
 
-      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin')) {
+      // Allow admin, department, and staff roles to access dashboard
+      if (userError || !userData || (userData.role !== 'department' && userData.role !== 'admin' && userData.role !== 'staff')) {
         router.push('/unauthorized');
         return;
       }
@@ -68,12 +69,12 @@ export function useStaffDashboard() {
     }
   };
 
-  // ⚡ PERFORMANCE: Parallel fetch of dashboard + stats for instant load
+  // PERFORMANCE: Parallel fetch of dashboard + stats for instant load
   const fetchDashboardData = useCallback(async (searchTerm = '', isRefresh = false) => {
     // Store search term for real-time refresh
     currentSearchRef.current = searchTerm;
 
-    // ✅ DEDUPLICATION: If already fetching, return existing promise
+    // DEDUPLICATION: If already fetching, return existing promise
     if (pendingDashboardRequest.current) {
       console.log('⏭️ Dashboard fetch already in progress, reusing...');
       return pendingDashboardRequest.current;
@@ -86,7 +87,7 @@ export function useStaffDashboard() {
     }
     setError('');
 
-    // ✅ TIMEOUT PROTECTION: Clear loading after 30 seconds max (reduced from 45s)
+    // TIMEOUT PROTECTION: Clear loading after 30 seconds max
     if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
     loadingTimeoutRef.current = setTimeout(() => {
       console.warn('⚠️ Dashboard fetch timeout - clearing loading state');
@@ -109,9 +110,7 @@ export function useStaffDashboard() {
           userId: session.user.id,
           page: 1,
           limit: 50,
-          // ⚡ PERFORMANCE: Include stats in dashboard request to reduce round trips
           includeStats: 'true',
-          // ✅ REAL-TIME: Use actual timestamp for immediate updates
           _t: Date.now()
         });
 
@@ -120,10 +119,10 @@ export function useStaffDashboard() {
           params.append('search', searchTerm.trim());
         }
 
-        // ⚡ CRITICAL: Single combined request for dashboard + stats (NO CACHE for real-time updates)
+        // CRITICAL: Single combined request for dashboard + stats
         const response = await fetch(`/api/staff/dashboard?${params}`, {
           method: 'GET',
-          cache: 'no-store', // ✅ Disable cache for real-time stats
+          cache: 'no-store',
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -147,23 +146,12 @@ export function useStaffDashboard() {
             return true;
           });
 
-          // Preserve full application object (contains status, department_name, etc.)
-          // AND the nested no_dues_forms
+          // Preserve full application object
           setRequests(validApplications);
 
-          // ⚡ PERFORMANCE: Set stats from same response (if included)
+          // PERFORMANCE: Set stats from same response
           if (result.data.stats) {
-            console.log('📊 Staff dashboard stats received:', {
-              hasStats: !!result.data.stats,
-              pending: result.data.stats.pending,
-              approved: result.data.stats.approved,
-              rejected: result.data.stats.rejected,
-              total: result.data.stats.total,
-              department: result.data.stats.department
-            });
             setStats(result.data.stats);
-          } else {
-            console.warn('⚠️ No stats included in dashboard response');
           }
 
           setLastUpdate(new Date());
@@ -186,23 +174,19 @@ export function useStaffDashboard() {
   // Store latest function in ref
   fetchDashboardDataRef.current = fetchDashboardData;
 
-  // ⚡ PERFORMANCE: Lazy load stats only if not included in dashboard response
+  // PERFORMANCE: Lazy load stats only if not included in dashboard response
   const fetchStats = useCallback(async () => {
     if (!userId) return;
-    if (stats) return; // Skip if already loaded from dashboard
+    if (stats) return;
 
-    // ✅ DEDUPLICATION: If already fetching, return existing promise
     if (pendingStatsRequest.current) {
-      console.log('⏭️ Stats fetch already in progress, reusing...');
       return pendingStatsRequest.current;
     }
 
     setStatsLoading(true);
 
-    // ✅ TIMEOUT PROTECTION: Clear loading after 20 seconds max (reduced from 30s)
     if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
     statsTimeoutRef.current = setTimeout(() => {
-      console.warn('⚠️ Stats fetch timeout - clearing loading state');
       setStatsLoading(false);
       pendingStatsRequest.current = null;
     }, 20000);
@@ -215,7 +199,6 @@ export function useStaffDashboard() {
           throw new Error('Session expired. Please login again.');
         }
 
-        // ✅ REAL-TIME: No caching for immediate stats updates
         const response = await fetch(`/api/staff/stats?_t=${Date.now()}`, {
           cache: 'no-store',
           headers: {
@@ -248,33 +231,25 @@ export function useStaffDashboard() {
   // Store latest function in ref
   fetchStatsRef.current = fetchStats;
 
-  // ⚡ PERFORMANCE: Combined initial load - fetch everything at once
+  // PERFORMANCE: Combined initial load
   useEffect(() => {
     if (userId) {
-      // Dashboard fetch will include stats, no separate call needed
       fetchDashboardData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]); // Only depend on userId - fetchDashboardData is stable via useCallback
+  }, [userId]);
 
-  // Manual refresh function - stable reference using refs to avoid stale closures
-  // ✅ FIX: Returns Promise.all() so RealtimeManager can prevent race conditions
+  // Manual refresh function
   const refreshData = useCallback(() => {
     const promises = [];
 
-    // Use refs to get latest functions
     if (fetchDashboardDataRef.current) {
       promises.push(fetchDashboardDataRef.current(currentSearchRef.current, true));
     }
 
-    // ⚡ PERFORMANCE: No separate stats fetch - included in dashboard response
-
-    // ✅ CRITICAL: Return Promise.all() so manager knows when refresh completes
     return Promise.all(promises);
-  }, []); // Empty deps - stable function using refs
+  }, []);
 
-  // ==================== REAL-TIME SUBSCRIPTION ====================
-  // NEW ARCHITECTURE: Use centralized realtime service + event manager
+  // REAL-TIME SUBSCRIPTION
   useEffect(() => {
     if (!userId || !user?.department_name) return;
 
@@ -282,25 +257,22 @@ export function useStaffDashboard() {
     let unsubscribeDeptAction;
     let unsubscribeGlobal;
     let retryTimeout;
-    let debounceTimer = null; // ⚡ DEBOUNCE: Prevent rapid refreshes
+    let debounceTimer = null;
 
     const setupRealtime = async () => {
       console.log('🔌 Staff dashboard setting up PUBLIC realtime for', user.department_name);
-      console.log('📡 Subscribing to global event stream (no auth required)');
 
-      // ⚡ DEBOUNCED REFRESH: Wait 1 second before refreshing to batch updates
+      // DEBOUNCED REFRESH
       const debouncedRefresh = () => {
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-          console.log('⚡ Soft Refreshing after debounce...');
           if (fetchDashboardDataRef.current) {
             fetchDashboardDataRef.current(currentSearchRef.current, true);
           }
-        }, 1000); // Wait 1 second to batch rapid updates
+        }, 1000);
       };
 
-      // ✅ SIMPLIFIED: Use unified subscription method
-      // This handles chat, status updates, and new applications automatically
+      // SIMPLIFIED: Use unified subscription method
       const unsubscribeDepartment = import('@/lib/supabaseRealtime').then(({ realtimeService }) => {
         return realtimeService.subscribeToDepartment(user.department_name, {
           onStatusUpdate: (event) => {
@@ -314,7 +286,6 @@ export function useStaffDashboard() {
               const index = newRequests.findIndex(r => r.no_dues_forms.id === formId);
 
               if (index !== -1) {
-                // Update in-place
                 newRequests[index] = {
                   ...newRequests[index],
                   status: newStatus
@@ -327,22 +298,18 @@ export function useStaffDashboard() {
 
               return newRequests;
             });
-
-            // Silently update stats
             refreshData();
           },
           onNewApplication: (event) => {
             console.log('🚀 New application received');
-            debouncedRefresh(); // Refresh list to show new item
+            debouncedRefresh();
           }
         });
       });
 
-      // Also subscribe to global updates for completions that might affect us
+      // Also subscribe to global updates
       unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
-        // Only refresh for completions
         if (analysis.hasCompletion) {
-          console.log('🚀 Scheduling debounced refresh from global update');
           debouncedRefresh();
         }
       });
@@ -355,19 +322,16 @@ export function useStaffDashboard() {
       if (retryTimeout) clearTimeout(retryTimeout);
       if (debounceTimer) clearTimeout(debounceTimer);
 
-      // Cleanup async subscription
       if (unsubscribeDepartment) {
         unsubscribeDepartment.then(unsub => unsub && unsub());
       }
 
       if (unsubscribeGlobal) unsubscribeGlobal();
 
-      // ✅ CLEANUP: Clear all timeouts
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, user?.department_name]); // Removed refreshData - using refs instead
+  }, [userId, user?.department_name]);
 
   return {
     user,
@@ -382,7 +346,6 @@ export function useStaffDashboard() {
     fetchDashboardData,
     refreshData,
     fetchStats,
-    // Manual refresh function for UI buttons
     handleManualRefresh: refreshData
   };
 }
