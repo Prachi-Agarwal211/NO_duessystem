@@ -45,13 +45,13 @@ export const APP_URLS = {
   STUDENT_SUBMIT_FORM: '/student/submit-form',
   STUDENT_CHECK_STATUS: '/student/check-status',
 
-  // Staff pages
+  // Staff pages - Login required for all staff access
   STAFF_LOGIN: '/staff/login',
-  staffLogin: () => getFullUrl('/staff/login'), // Function version for email templates
+  staffLogin: () => getFullUrl('/staff/login'),
   STAFF_DASHBOARD: '/staff/dashboard',
   STAFF_FORGOT_PASSWORD: '/staff/forgot-password',
   STAFF_RESET_PASSWORD: (token) => `/staff/reset-password?token=${token}`,
-  staffStudentForm: (formId) => getFullUrl(`/staff/student/${formId}`), // Staff student detail page
+  staffStudentForm: (formId) => getFullUrl(`/staff/student/${formId}`),
 
   // Admin pages
   ADMIN_DASHBOARD: '/admin/dashboard',
@@ -102,8 +102,9 @@ export const EMAIL_URLS = {
   studentCheckStatus: (registrationNo) => getFullUrl(`${APP_URLS.STUDENT_CHECK_STATUS}?reg=${encodeURIComponent(registrationNo)}`),
   studentSubmitForm: () => getFullUrl(APP_URLS.STUDENT_SUBMIT_FORM),
 
-  // Staff email links
-  staffDashboard: () => getFullUrl(APP_URLS.STAFF_DASHBOARD),
+  // Staff email links - Use /staff/login since authentication required
+  staffDashboard: () => getFullUrl(APP_URLS.STAFF_LOGIN),
+  staffLogin: () => getFullUrl(APP_URLS.STAFF_LOGIN),
   staffResetPassword: (token) => getFullUrl(APP_URLS.STAFF_RESET_PASSWORD(token)),
 
   // Department email links

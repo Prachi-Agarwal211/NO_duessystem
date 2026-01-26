@@ -247,6 +247,112 @@ class ApplicationService {
     }
   }
 
+  /**
+   * Handle student reapplication with enhanced tracking
+   */
+  async handleReapplication(formId, data) {
+    try {
+      console.log(`♻️ Handling reapplication for ${formId}`);
+
+      // 1. Fetch current form and statuses for history backup
+      const [formResult, statusesResult] = await Promise.all([
+        supabase.from('no_dues_forms').select('*').eq('id', formId).single(),
+        supabase.from('no_dues_status').select('*').eq('form_id', formId)
+      ]);
+
+      if (formResult.error) throw formResult.error;
+      const form = formResult.data;
+      const statuses = statusesResult.data || [];
+
+      const newReapplicationCount = (form.reapplication_count || 0) + 1;
+
+      // 2. LOG HISTORY
+      const { error: historyError } = await supabase
+        .from('no_dues_reapplication_history')
+        .insert({
+          form_id: formId,
+          reapplication_number: newReapplicationCount,
+          department_name: data.department || null,
+          student_reply_message: data.reason,
+          edited_fields: data.editedFields || {},
+          previous_status: statuses.map(s => ({
+            department_name: s.department_name,
+            status: s.status,
+            rejection_reason: s.rejection_reason,
+            action_at: s.action_at
+          }))
+        });
+
+      if (historyError) {
+        console.error('History log error:', historyError);
+        // Continue anyway as this is secondary
+      }
+
+      // 3. UPDATE FORM STATUS
+      const { error: formUpdateError } = await supabase
+        .from('no_dues_forms')
+        .update({
+          status: 'pending',
+          reapplication_count: newReapplicationCount,
+          last_reapplied_at: new Date().toISOString(),
+          is_reapplication: true,
+          rejection_reason: null, // Clear global rejection reason
+          rejection_context: null // Clear global rejection context
+        })
+        .eq('id', formId);
+
+      if (formUpdateError) throw formUpdateError;
+
+      // 4. RESET DEPARTMENT STATUS
+      // Logic: If a specific department is provided, only reset THAT one.
+      // If it's a global reapply, reset ALL rejected departments.
+      let statusQuery = supabase.from('no_dues_status').update({
+        status: 'pending',
+        rejection_reason: null,
+        action_at: null,
+        action_by_user_id: null
+      }).eq('form_id', formId);
+
+      if (data.department) {
+        statusQuery = statusQuery.eq('department_name', data.department);
+      } else {
+        statusQuery = statusQuery.eq('status', 'rejected');
+      }
+
+      const { error: statusResetError } = await statusQuery;
+      if (statusResetError) throw statusResetError;
+
+      // 5. TRIGGER REALTIME
+      await this.triggerRealtimeUpdate('department_rejection', { formId, type: 'reapply' });
+
+      return { success: true, count: newReapplicationCount };
+
+    } catch (error) {
+      console.error('❌ Reapplication processing failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get reapplication history for a form
+   */
+  async getReapplicationHistory(formId) {
+    try {
+      const { data, error } = await supabase
+        .from('no_dues_reapplication_history')
+        .select('*')
+        .eq('form_id', formId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return { success: true, data: { history: data || [] } };
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // ================= PRIVATE HELPERS =================
 
   async checkForDuplicates(registrationNo) {

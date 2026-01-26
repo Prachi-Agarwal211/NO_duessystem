@@ -150,16 +150,17 @@ export async function POST(request) {
     // Additional validation for department-specific rules
     await validateDepartmentReapplication(validatedData.form_id, validatedData.department, validatedData.registration_no);
 
-    // Handle reapplication with enhanced tracking
+    // Handle reapplication with centralized service
     const result = await applicationService.handleReapplication(validatedData.form_id, {
       reason: validatedData.reapplication_reason.trim(),
       department: validatedData.department,
-      studentId: validatedData.registration_no
+      studentId: validatedData.registration_no,
+      editedFields: body.updated_form_data || {} // Optional fields if any
     });
 
     return NextResponse.json({
       success: true,
-      data: result.data,
+      data: result,
       rateLimit: {
         remaining: departmentLimitResult.remaining,
         resetTime: departmentLimitResult.resetTime

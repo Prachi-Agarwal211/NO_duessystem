@@ -346,6 +346,10 @@ export async function sendDepartmentReminder({
   dashboardUrl,
   isAdminTriggered = false
 }) {
+  // Use centralized URL helper
+  const { APP_URLS, getFullUrl } = require('./urlHelper');
+  const actionUrl = dashboardUrl || getFullUrl(APP_URLS.STAFF_LOGIN); // Always use login for staff
+
   const priority = isAdminTriggered ? '🔴 ADMIN ALERT' : '⏰ REMINDER';
   const priorityColor = isAdminTriggered ? '#dc2626' : '#f59e0b';
 
@@ -734,6 +738,10 @@ export async function sendReapplicationNotification({
   branch,
   dashboardUrl
 }) {
+  // Use centralized URL helper
+  const { APP_URLS, getFullUrl } = require('./urlHelper');
+  const actionUrl = dashboardUrl || getFullUrl(APP_URLS.STAFF_LOGIN); // Always use login for staff
+
   if (!allStaffEmails || allStaffEmails.length === 0) {
     console.warn('⚠️ No staff emails for reapplication notification');
     return { success: false, error: 'No recipients' };
@@ -812,6 +820,9 @@ export async function sendSupportTicketResponse({
   status,
   resolvedBy
 }) {
+  // Use centralized URL helper
+  const { APP_URLS, getFullUrl } = require('./urlHelper');
+
   const statusMessages = {
     'resolved': 'Your ticket has been resolved.',
     'closed': 'Your ticket has been closed.',
@@ -849,7 +860,7 @@ export async function sendSupportTicketResponse({
   const html = generateEmailTemplate({
     title: `Ticket Update: ${ticketNumber}`,
     content,
-    actionUrl: 'https://nodues.jecrcuniversity.edu.in/student/check-status',
+    actionUrl: getFullUrl(APP_URLS.STUDENT_CHECK_STATUS), // Direct to check status with param handled client-side
     actionText: 'Check Your Status',
     footerText: `Resolved by: ${resolvedBy || 'Support Team'}`
   });
@@ -876,6 +887,10 @@ export async function sendStudentReminder({
   customMessage,
   dashboardUrl
 }) {
+  // Use centralized URL helper
+  const { APP_URLS, getFullUrl } = require('./urlHelper');
+  const actionUrl = dashboardUrl || getFullUrl(APP_URLS.STAFF_LOGIN); // Always use login for staff
+
   const urgencyLevel = daysPending >= 7 ? 'high' : daysPending >= 3 ? 'medium' : 'low';
   const urgencyColors = {
     high: { bg: '#fef2f2', border: '#ef4444', text: '#dc2626' },
@@ -943,6 +958,10 @@ export async function sendDailyDepartmentDigest({
   allStaff,            // Array of staff profiles
   dashboardUrl
 }) {
+  // Use centralized URL helper
+  const { APP_URLS, getFullUrl } = require('./urlHelper');
+  const actionUrl = dashboardUrl || getFullUrl(APP_URLS.STAFF_LOGIN); // Always use login for staff
+
   if (!pendingApplications || pendingApplications.length === 0) {
     console.log('📝 No pending applications for today\'s digest.');
     return { success: true, skipped: true };

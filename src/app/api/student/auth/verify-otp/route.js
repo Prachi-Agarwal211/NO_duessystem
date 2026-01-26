@@ -90,7 +90,7 @@ export async function POST(request) {
         cookieStore.set('student_session', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax', // Changed from 'strict' to 'lax' for better session persistence
             maxAge: 60 * 60 * 24, // 24 hours
             path: '/',
         });

@@ -200,76 +200,17 @@ export async function POST(request) {
             }
         }
 
-        // ==================== LOG PER-DEPARTMENT REAPPLICATION HISTORY ====================
-        const { error: historyError } = await supabaseAdmin
-            .from('no_dues_reapplication_history')
-            .insert({
-                form_id: form.id,
-                reapplication_number: (form.reapplication_count || 0) + 1,
-                department_name: department_name,  // NEW: Per-department tracking
-                student_message: student_reply_message.trim(),
-                edited_fields: sanitizedData || {},
-                rejected_departments: [{
-                    department_name: department_name,
-                    rejection_reason: targetDeptStatus.rejection_reason,
-                    action_at: targetDeptStatus.action_at
-                }],
-                previous_status: form.no_dues_status.map(s => ({
-                    department_name: s.department_name,
-                    status: s.status,
-                    action_at: s.action_at,
-                    rejection_reason: s.rejection_reason
-                }))
-            });
+        // ==================== HANDLE REAPPLICATION VIA SERVICE ====================
+        // Centralized logic handles: history logging, form status update, dept status reset, and realtime triggers
+        const { handleReapplication } = (await import('@/lib/services/ApplicationService')).default;
 
-        if (historyError) {
-            console.error('Error logging reapplication history:', historyError);
-            throw new Error('Failed to log reapplication history');
-        }
+        await handleReapplication(form.id, {
+            reason: student_reply_message.trim(),
+            department: department_name,
+            editedFields: sanitizedData || {}
+        });
 
-        // ==================== UPDATE FORM DATA ====================
-        const formUpdateData = {
-            ...(sanitizedData || {}),
-            reapplication_count: (form.reapplication_count || 0) + 1,
-            last_reapplied_at: new Date().toISOString(),
-            is_reapplication: true,
-            // Update status to pending if it was rejected
-            status: 'pending',
-            // Clear rejection context since we're addressing specific department
-            rejection_context: null
-        };
-
-        const { error: formUpdateError } = await supabaseAdmin
-            .from('no_dues_forms')
-            .update(formUpdateData)
-            .eq('id', form.id);
-
-        if (formUpdateError) {
-            console.error('Error updating form:', formUpdateError);
-            throw new Error('Failed to update form');
-        }
-
-        // ==================== RESET ONLY THIS DEPARTMENT TO PENDING ====================
-        // CRITICAL: Only reset the TARGET department, NOT approved ones
-        const { error: statusResetError } = await supabaseAdmin
-            .from('no_dues_status')
-            .update({
-                status: 'pending',
-                rejection_reason: null,
-                action_at: null,
-                action_by_user_id: null,
-                rejection_count: currentRejectionCount + 1  // Increment per-dept counter
-            })
-            .eq('form_id', form.id)
-            .eq('department_name', department_name)
-            .eq('status', 'rejected');  // Extra safety: only if currently rejected
-
-        if (statusResetError) {
-            console.error('Error resetting department status:', statusResetError);
-            throw new Error('Failed to reset department status');
-        }
-
-        console.log(`♻️ Per-Dept Reapply: Reset ${department_name} to pending for form ${form.id} (attempt ${currentRejectionCount + 1})`);
+        console.log(`♻️ Per-Dept Reapply: Processed via Service for form ${form.id} and department ${department_name}`);
 
         // ==================== SEND EMAIL TO SPECIFIC DEPARTMENT STAFF ====================
         const { data: staffMembers, error: staffError } = await supabaseAdmin

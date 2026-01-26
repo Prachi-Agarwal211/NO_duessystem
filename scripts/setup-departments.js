@@ -61,7 +61,7 @@ async function setup() {
     // 3. Update Standard Staff Profiles
     console.log('\n2️⃣  Updating Standard Staff Profiles...');
     const staffMapping = {
-        'library@jecrc.edu.in': 'library',
+        'razorrag.official@gmail.com': 'library',
         'accounts@jecrc.edu.in': 'accounts',
         'hostel@jecrc.edu.in': 'hostel',
         'registrar@jecrc.edu.in': 'registrar',
