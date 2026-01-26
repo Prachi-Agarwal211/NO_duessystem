@@ -305,51 +305,43 @@ export function useStaffDashboard() {
       // Subscribe to specific events via RealtimeManager
       unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
         // Targeted Update Logic for Department Actions
-        const relevantUpdates = Object.values(analysis.latestEvents || {}).filter(event =>
+        const relevantEvents = analysis.events.filter(event =>
+          event.table === 'no_dues_status' &&
           event.data?.new?.department_name === user.department_name
         );
 
-        if (relevantUpdates.length > 0) {
-          console.log('⚡ Performing TARGETED update for', relevantUpdates.length, 'items');
+        if (relevantEvents.length > 0) {
+          console.log('⚡ Performing SILENT update for department actions');
 
           setRequests(prevRequests => {
             const newRequests = [...prevRequests];
-            let needsRefresh = false;
+            let needsSoftRefresh = false;
 
-            relevantUpdates.forEach(event => {
-              const formId = event.formId;
-              const newStatus = event.data.new?.status;
+            relevantEvents.forEach(event => {
+              const formId = event.data.new.form_id;
+              const newStatus = event.data.new.status;
               const index = newRequests.findIndex(r => r.no_dues_forms.id === formId);
 
               if (index !== -1) {
-                // Update existing item locally
+                // Update in-place
                 newRequests[index] = {
                   ...newRequests[index],
-                  status: newStatus,
+                  status: newStatus
                 };
-
-                // If status changed, trigger refresh to update tabs
-                if (newRequests[index].status !== newStatus) {
-                  needsRefresh = true;
-                }
               } else {
-                // New item for us?
-                needsRefresh = true;
+                // Item not in current list (maybe new or filtered out)
+                needsSoftRefresh = true;
               }
             });
 
-            if (needsRefresh) {
+            if (needsSoftRefresh) {
               debouncedRefresh();
-              return prevRequests;
             }
-
             return newRequests;
           });
-        }
 
-        // Fallback: If we didn't handle it precisely or unsure, refresh
-        if (relevantUpdates.length === 0 && analysis.formIds.length > 0) {
-          debouncedRefresh();
+          // Silently update stats
+          refreshData();
         }
       });
 

@@ -90,10 +90,10 @@ function LoginForm() {
                 <input
                   type="email"
                   required
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none font-medium transition-all
+                  className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
                     ${isDark
-                      ? 'bg-black/40 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red/50 focus:bg-black/60'
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white'
+                      ? 'bg-black/40 border-white/20 text-white placeholder-gray-500 focus:border-jecrc-red-bright focus:bg-black/60 focus:shadow-lg focus:shadow-jecrc-red/10'
+                      : 'bg-gray-100/50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white focus:shadow-lg focus:shadow-jecrc-red/10'
                     }
                   `}
                   placeholder="staff@college.edu"
@@ -113,10 +113,10 @@ function LoginForm() {
                 <input
                   type="password"
                   required
-                  className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none font-medium transition-all
+                  className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
                     ${isDark
-                      ? 'bg-black/40 border-white/10 text-white placeholder-gray-500 focus:border-jecrc-red/50 focus:bg-black/60'
-                      : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white'
+                      ? 'bg-black/40 border-white/20 text-white placeholder-gray-500 focus:border-jecrc-red-bright focus:bg-black/60 focus:shadow-lg focus:shadow-jecrc-red/10'
+                      : 'bg-gray-100/50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white focus:shadow-lg focus:shadow-jecrc-red/10'
                     }
                   `}
                   placeholder="••••••••"

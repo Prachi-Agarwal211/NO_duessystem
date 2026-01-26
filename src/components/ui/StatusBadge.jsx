@@ -4,28 +4,28 @@ import React from 'react';
 
 /**
  * StatusBadge - Consistent status indicator with proper theming
- * Uses Tailwind's dark: classes instead of theme context for better performance
+ * Uses high-contrast colors for both light and dark modes
  *
  * @param {string} status - Status type (pending, approved, rejected, etc.)
  * @param {string} className - Additional classes
  */
 function StatusBadge({ status, className = "" }) {
 
-  // Unified status color configurations using Tailwind dark: classes
+  // High-contrast status color configurations
   const statusClasses = {
-    pending: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-400 dark:border-yellow-500/30',
-    approved: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
-    rejected: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
-    in_progress: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
-    completed: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-500/20 dark:text-purple-400 dark:border-purple-500/30',
-    screenshot_uploaded: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:border-orange-500/30',
+    pending: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700',
+    approved: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700',
+    rejected: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700',
+    in_progress: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700',
+    completed: 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700',
+    screenshot_uploaded: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700',
   };
 
-  const classes = statusClasses[status] || 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-500/20 dark:text-gray-400 dark:border-gray-500/30';
+  const classes = statusClasses[status] || 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full px-3 py-1 border text-xs font-semibold transition-all duration-200 shadow-sm ${classes} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 border text-xs font-semibold transition-all duration-200 ${classes} ${className}`}
     >
       {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
     </span>

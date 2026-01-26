@@ -436,42 +436,49 @@ export default function StaffDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-4">
           <div>
             <h1 className={`
-              text-xl sm:text-2xl md:text-3xl font-bold font-serif
-              bg-gradient-to-r from-jecrc-red via-jecrc-red-dark to-transparent dark:from-jecrc-red-bright dark:via-jecrc-red dark:to-white
-              bg-clip-text text-transparent
+              text-2xl sm:text-3xl font-bold font-serif
+              ${isDark
+                ? 'bg-gradient-to-r from-jecrc-red-bright via-jecrc-red to-white bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(196,30,58,0.3)]'
+                : 'bg-gradient-to-r from-jecrc-red-dark via-jecrc-red to-gray-800 bg-clip-text text-transparent'
+              }
             `}>
               {user?.department_name || 'Department'} Dashboard
             </h1>
             <div className="flex items-center gap-2 mt-2">
-              <div className="px-2.5 py-1 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-full flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-400">Live</span>
+              <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full ${isDark ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-100'}`}>
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                <span className={`text-xs font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>Live Updates</span>
               </div>
+              <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Real-time synchronization enabled
+              </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowGuide(true)}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-all active:scale-95 flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2"
             >
               <HelpCircle className="w-4 h-4" /> Guidelines
             </button>
             <button
               onClick={handleExport}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all active:scale-95 flex items-center gap-2"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-600/20 transition-all active:scale-95"
             >
               <Download className="w-4 h-4" /> Export
             </button>
             <button
               onClick={() => router.push('/staff/profile')}
-              className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
+              className={`p-2.5 rounded-xl border-2 transition-all active:scale-95 shadow-sm
+                ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
               title="My Profile"
             >
               <User className="w-5 h-5" />
             </button>
             <button
               onClick={refreshData}
-              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
+              className={`p-2.5 rounded-xl border-2 transition-all active:scale-95 shadow-sm
+                ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -480,7 +487,7 @@ export default function StaffDashboard() {
                 await supabase.auth.signOut();
                 router.push('/staff/login');
               }}
-              className="p-2.5 bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20 text-gray-700 dark:text-white rounded-xl transition-all active:scale-95"
+              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
@@ -579,31 +586,43 @@ export default function StaffDashboard() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search student..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg text-sm outline-none focus:ring-2 focus:ring-jecrc-red/40"
+              placeholder="Search student by name or registration number..."
+              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all
+                ${isDark
+                  ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright focus:bg-black/60'
+                  : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red focus:bg-white'
+                }`}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
             <div className="relative">
               <select
-                className="appearance-none pl-3 pr-8 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg text-sm outline-none focus:ring-2 focus:ring-jecrc-red/40"
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all cursor-pointer
+                  ${isDark
+                    ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
+                    : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red'
+                  }`}
                 value={filters.course}
                 onChange={(e) => setFilters(prev => ({ ...prev, course: e.target.value }))}
               >
-                {uniqueCourses.map(c => <option key={c} value={c}>{c === 'All' ? 'All Courses' : c}</option>)}
+                {uniqueCourses.map(c => <option key={c} value={c} className="dark:bg-gray-900">{c === 'All' ? 'All Courses' : c}</option>)}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
             <div className="relative">
               <select
-                className="appearance-none pl-3 pr-8 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg text-sm outline-none focus:ring-2 focus:ring-jecrc-red/40"
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all cursor-pointer
+                  ${isDark
+                    ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
+                    : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red'
+                  }`}
                 value={filters.branch}
                 onChange={(e) => setFilters(prev => ({ ...prev, branch: e.target.value }))}
               >
-                {uniqueBranches.map(b => <option key={b} value={b}>{b === 'All' ? 'All Branches' : b}</option>)}
+                {uniqueBranches.map(b => <option key={b} value={b} className="dark:bg-gray-900">{b === 'All' ? 'All Branches' : b}</option>)}
               </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
         </GlassCard>

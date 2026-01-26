@@ -28,15 +28,14 @@ export default function Input({
     const isTextarea = type === 'textarea';
     const errorId = error ? `${name}-error` : undefined;
 
-    // "Filled" design: Bottom border, light background (gray-50/white-5)
-    // Shared container classes
+    // Updated design: Full border, high visibility contrast
     const containerClasses = cn(
-        "relative w-full rounded-t-lg overflow-hidden transition-all duration-300",
-        "bg-[#F1F3F5] dark:bg-white/5 border-b-2",
-        isTextarea ? "min-h-[120px]" : "min-h-[56px]",
+        "relative w-full rounded-xl transition-all duration-300",
+        "border-2",
+        isTextarea ? "min-h-[140px]" : "min-h-[60px]",
         error
-            ? "border-red-500 bg-red-50/50 dark:bg-red-900/10"
-            : "border-gray-300 dark:border-white/10 group-hover:bg-gray-200/80 dark:group-hover:bg-white/10 focus-within:border-jecrc-red dark:focus-within:border-jecrc-red shadow-sm",
+            ? "border-red-500 bg-red-50/30 dark:bg-red-900/10"
+            : "bg-gray-50 dark:bg-black/20 border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/20 focus-within:border-jecrc-red dark:focus-within:border-jecrc-red-bright focus-within:shadow-lg focus-within:shadow-jecrc-red/10 focus-within:bg-white dark:focus-within:bg-black/40",
         disabled && "opacity-60 cursor-not-allowed"
     );
 
@@ -51,11 +50,11 @@ export default function Input({
     );
 
     const labelClasses = cn(
-        "absolute top-4 text-gray-500 dark:text-gray-400 text-base transition-all duration-200 pointer-events-none origin-[0]",
+        "absolute top-4 text-gray-400 dark:text-gray-500 text-base transition-all duration-200 pointer-events-none origin-[0]",
         startIcon ? "left-11" : "left-4",
         "peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0",
-        "peer-focus:scale-75 peer-focus:-translate-y-3 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red",
-        (value || value === 0) ? "scale-75 -translate-y-3" : "",
+        "peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red-bright",
+        (value || value === 0) ? "scale-75 -translate-y-4" : "",
         error && "text-red-500 peer-focus:text-red-500"
     );
 

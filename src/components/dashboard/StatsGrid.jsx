@@ -1,6 +1,4 @@
-'use client';
-import { useTheme } from '@/contexts/ThemeContext';
-import { Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import GlassCard from '@/components/ui/GlassCard';
 
 export default function StatsGrid({ stats, loading = false, onFilterChange }) {
   const { theme } = useTheme();
@@ -19,82 +17,65 @@ export default function StatsGrid({ stats, loading = false, onFilterChange }) {
       title: "Pending Review",
       value: safeStats.pending,
       icon: <Clock className="w-5 h-5" />,
-      gradient: "from-yellow-400 to-amber-500",
-      lightIconBg: "bg-yellow-100",
-      darkIconBg: "dark:bg-yellow-500/20",
-      iconColor: "text-yellow-600 dark:text-yellow-400",
-      borderLeft: "border-l-yellow-500"
+      color: "text-amber-500",
+      accentBg: "bg-amber-500/10",
+      filter: "pending"
     },
     {
       title: "Approved",
       value: safeStats.approved,
       icon: <CheckCircle className="w-5 h-5" />,
-      gradient: "from-green-400 to-emerald-500",
-      lightIconBg: "bg-green-100",
-      darkIconBg: "dark:bg-green-500/20",
-      iconColor: "text-green-600 dark:text-green-400",
-      borderLeft: "border-l-green-500"
+      color: "text-green-500",
+      accentBg: "bg-green-500/10",
+      filter: "approved"
     },
     {
       title: "Rejected",
       value: safeStats.rejected,
       icon: <XCircle className="w-5 h-5" />,
-      gradient: "from-red-400 to-pink-500",
-      lightIconBg: "bg-red-100",
-      darkIconBg: "dark:bg-red-500/20",
-      iconColor: "text-red-600 dark:text-red-400",
-      borderLeft: "border-l-red-500"
+      color: "text-red-500",
+      accentBg: "bg-red-500/10",
+      filter: "rejected"
     },
     {
       title: "Total Requests",
       value: safeStats.total,
       icon: <Users className="w-5 h-5" />,
-      gradient: "from-jecrc-red to-jecrc-red-dark",
-      lightIconBg: "bg-red-100",
-      darkIconBg: "dark:bg-jecrc-red/20",
-      iconColor: "text-jecrc-red dark:text-red-400",
-      borderLeft: "border-l-jecrc-red"
+      color: "text-blue-500",
+      accentBg: "bg-blue-500/10",
+      filter: "all"
     }
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {cards.map((card, idx) => (
         <button
           key={idx}
-          onClick={() => onFilterChange && onFilterChange(card.title.toLowerCase().replace(' ', '_'))}
-          className={`
-            p-4 sm:p-5 md:p-6 rounded-xl border text-left w-full min-h-[44px] active:scale-[0.98] transition-all
-            ${isDark 
-                ? 'bg-gradient-to-br from-white/5 to-white/10 border-white/10 hover:border-white/20' 
-                : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-lg'
-            }
-            ${onFilterChange ? 'hover:scale-[1.02] cursor-pointer' : ''}
-            ${card.borderLeft}
-          `}
+          onClick={() => onFilterChange && onFilterChange(card.filter)}
+          className="w-full text-left active:scale-[0.98] transition-all"
         >
-          <div className="flex justify-between items-start mb-2 sm:mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{card.title}</p>
-            <div className={`
-                p-2.5 rounded-xl 
-                bg-gradient-to-br ${card.gradient}
-                shadow-lg shadow-opacity-20
-            `}>
-              <div className="text-white drop-shadow-md">
+          <GlassCard variant="elegant" className="p-5 h-full relative overflow-hidden group">
+            <div className="flex items-center justify-between relative z-10">
+              <div>
+                <p className={`text-xs font-bold uppercase tracking-widest mb-1 transition-colors ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {card.title}
+                </p>
+                {loading ? (
+                  <div className="h-9 w-16 bg-gray-200 dark:bg-white/10 rounded-lg animate-pulse mt-1" />
+                ) : (
+                  <p className={`text-3xl font-bold transition-colors ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    {card.value}
+                  </p>
+                )}
+              </div>
+              <div className={`p-3 rounded-xl transition-all group-hover:scale-110 ${card.accentBg} ${card.color}`}>
                 {card.icon}
               </div>
             </div>
-          </div>
-          {loading ? (
-            <div className="h-9 w-20 bg-gray-100 dark:bg-white/10 rounded animate-pulse" />
-          ) : (
-            <h3 className={`
-                text-2xl sm:text-3xl font-bold
-                ${isDark ? 'text-white' : 'text-gray-900'}
-            `}>
-              {card.value}
-            </h3>
-          )}
+            {/* Subtle bottom accent line */}
+            <div className={`absolute bottom-0 left-0 h-1 w-0 group-hover:w-full transition-all duration-500 bg-current ${card.color}`} />
+          </GlassCard>
         </button>
       ))}
     </div>

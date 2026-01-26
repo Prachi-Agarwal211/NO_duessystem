@@ -26,43 +26,67 @@ export default function GlassCard({
 }) {
   const { theme: currentTheme } = useTheme();
   const isDark = currentTheme === 'dark';
-  // Theme-based styling
+  // Theme-based styling - Better contrast in both modes
   const getThemeClasses = () => {
-    switch (theme) {
-      case 'corporate':
-        return 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-200/50';
-      case 'executive':
-        return 'bg-gradient-to-br from-purple-50/50 to-pink-50/50 border border-purple-200/50';
-      case 'professional':
-        return 'bg-gradient-to-br from-cyan-50/50 to-emerald-50/50 border border-cyan-200/50';
-      case 'jecrc':
-      default:
-        return 'bg-gradient-to-br from-red-50/50 to-pink-50/50 border border-red-200/50';
+    if (isDark) {
+      switch (theme) {
+        case 'corporate':
+          return 'bg-gray-800/80 border-gray-600';
+        case 'executive':
+          return 'bg-gray-800/80 border-gray-600';
+        case 'professional':
+          return 'bg-gray-800/80 border-gray-600';
+        case 'jecrc':
+        default:
+          return 'bg-gray-800/80 border-gray-600';
+      }
+    } else {
+      // Light mode - clean and readable
+      switch (theme) {
+        case 'corporate':
+          return 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200';
+        case 'executive':
+          return 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200';
+        case 'professional':
+          return 'bg-gradient-to-br from-cyan-50 to-emerald-50 border-cyan-200';
+        case 'jecrc':
+        default:
+          return 'bg-gradient-to-br from-gray-50 to-white border-gray-200';
+      }
     }
   };
 
-  // Variant-based styling with improved dark mode support
+  // Variant-based styling with improved dark mode contrast
   const getVariantClasses = () => {
-    switch (variant) {
-      case 'glass':
-        return isDark
-          ? 'backdrop-blur-xl bg-gray-900/60 border border-white/10 shadow-xl shadow-black/20'
-          : 'backdrop-blur-xl bg-white/60 border border-white/20 shadow-xl shadow-gray-200/50';
-      case 'elegant':
-        return isDark
-          ? 'bg-gray-800/80 border border-white/10 shadow-lg shadow-black/20'
-          : 'bg-white/80 border border-gray-200/50 shadow-lg shadow-gray-200/40';
-      case 'premium':
-        return isDark
-          ? 'bg-gradient-to-br from-gray-800 to-gray-900 border border-white/10 shadow-2xl shadow-purple-900/10'
-          : 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl shadow-gray-200/50';
-      case 'dark':
-        return 'bg-gradient-to-br from-gray-900/90 to-black/90 border border-gray-700/50 shadow-2xl shadow-black/40';
-      case 'default':
-      default:
-        return isDark
-          ? 'bg-gray-900/80 border border-white/10 shadow-lg shadow-black/20 backdrop-blur-md'
-          : 'bg-white/90 border border-gray-200 shadow-xl shadow-gray-100/50 backdrop-blur-md';
+    if (isDark) {
+      switch (variant) {
+        case 'glass':
+          return 'backdrop-blur-xl bg-gray-900/80 border border-gray-700 shadow-xl';
+        case 'elegant':
+          return 'bg-gray-800/80 border border-gray-700 shadow-xl';
+        case 'premium':
+          return 'bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-600 shadow-xl';
+        case 'dark':
+          return 'bg-gray-900 border border-gray-700 shadow-xl';
+        case 'default':
+        default:
+          return 'bg-gray-800/80 border border-gray-700 shadow-xl backdrop-blur-md';
+      }
+    } else {
+      // Light mode - clean and readable
+      switch (variant) {
+        case 'glass':
+          return 'backdrop-blur-xl bg-white/80 border border-gray-200 shadow-lg';
+        case 'elegant':
+          return 'bg-white/80 border border-gray-200 shadow-lg';
+        case 'premium':
+          return 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-lg';
+        case 'dark':
+          return 'bg-gray-800 text-white';
+        case 'default':
+        default:
+          return 'bg-white border border-gray-200 shadow-lg backdrop-blur-md';
+      }
     }
   };
 
@@ -72,10 +96,10 @@ export default function GlassCard({
   } : {};
 
   const cardClasses = `
-    relative overflow-hidden rounded-2xl p-6
+    relative overflow-hidden rounded-xl p-5
     ${getVariantClasses()}
     ${getThemeClasses()}
-    ${hoverable ? 'hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 cursor-pointer' : ''}
+    ${hoverable ? 'hover:shadow-xl hover:scale-[1.01] transition-all duration-300 cursor-pointer' : ''}
     ${className}
   `;
 
@@ -89,8 +113,8 @@ export default function GlassCard({
       {/* Premium gradient overlay */}
       <div className={`
         absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent 
-        opacity-0 hover:opacity-100 transition-opacity duration-500
-        ${isDark ? 'via-white/5' : 'via-white/10'}
+        opacity-0 hover:opacity-100 transition-opacity duration-300
+        ${isDark ? 'via-white/5' : 'via-gray-100'}
       `} />
 
       {/* Content */}
@@ -100,9 +124,9 @@ export default function GlassCard({
 
       {/* Corner accent */}
       <div className={`
-        absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-transparent to-white/10 rounded-full 
-        -translate-y-12 translate-x-12 blur-xl
-        ${isDark ? 'to-white/5' : 'to-white/10'}
+        absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-transparent to-jecrc-red/20 rounded-full 
+        -translate-y-10 translate-x-10 blur-xl
+        ${isDark ? 'to-jecrc-red/10' : 'to-jecrc-red/20'}
       `} />
     </div>
   );
