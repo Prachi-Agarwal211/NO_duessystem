@@ -154,13 +154,24 @@ export default function StaffDirectoryPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => router.push('/admin/staff/leaderboard')}
-                        className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-medium flex items-center gap-2 hover:shadow-lg transition-shadow"
-                    >
-                        <Award className="w-4 h-4" />
-                        Leaderboard
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => router.push('/admin/settings?tab=staff')}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all border ${isDark
+                                ? 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            Manage Accounts
+                        </button>
+                        <button
+                            onClick={() => router.push('/admin/staff/leaderboard')}
+                            className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg font-medium flex items-center gap-2 hover:shadow-lg transition-shadow"
+                        >
+                            <Award className="w-4 h-4" />
+                            Leaderboard
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats Summary Cards */}
@@ -214,8 +225,8 @@ export default function StaffDirectoryPage() {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className={`w-full pl-10 pr-4 py-2 rounded-lg border transition-colors ${isDark
-                                        ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
-                                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
+                                    ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
+                                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
                                     }`}
                             />
                         </div>
@@ -226,8 +237,8 @@ export default function StaffDirectoryPage() {
                                 value={departmentFilter}
                                 onChange={(e) => setDepartmentFilter(e.target.value)}
                                 className={`px-4 py-2 rounded-lg border transition-colors ${isDark
-                                        ? 'bg-white/5 border-white/10 text-white [&>option]:bg-gray-900'
-                                        : 'bg-white border-gray-200 text-gray-900'
+                                    ? 'bg-white/5 border-white/10 text-white [&>option]:bg-gray-900'
+                                    : 'bg-white border-gray-200 text-gray-900'
                                     }`}
                             >
                                 <option value="all">All Departments</option>
@@ -290,8 +301,8 @@ export default function StaffDirectoryPage() {
                                             <td className="px-4 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${index % 4 === 0 ? 'bg-blue-500' :
-                                                            index % 4 === 1 ? 'bg-green-500' :
-                                                                index % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
+                                                        index % 4 === 1 ? 'bg-green-500' :
+                                                            index % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
                                                         }`}>
                                                         {member.full_name?.charAt(0) || '?'}
                                                     </div>
@@ -323,10 +334,10 @@ export default function StaffDirectoryPage() {
                                             </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className={`px-2 py-1 rounded text-sm font-medium ${(member.stats?.approval_rate || 0) >= 90
-                                                        ? 'bg-green-500/20 text-green-500'
-                                                        : (member.stats?.approval_rate || 0) >= 70
-                                                            ? 'bg-yellow-500/20 text-yellow-500'
-                                                            : 'bg-red-500/20 text-red-500'
+                                                    ? 'bg-green-500/20 text-green-500'
+                                                    : (member.stats?.approval_rate || 0) >= 70
+                                                        ? 'bg-yellow-500/20 text-yellow-500'
+                                                        : 'bg-red-500/20 text-red-500'
                                                     }`}>
                                                     {member.stats?.approval_rate || 0}%
                                                 </span>
@@ -340,8 +351,8 @@ export default function StaffDirectoryPage() {
                                                 <button
                                                     onClick={() => router.push(`/admin/staff/${member.id}`)}
                                                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isDark
-                                                            ? 'bg-jecrc-red/20 text-jecrc-red hover:bg-jecrc-red/30'
-                                                            : 'bg-jecrc-red/10 text-jecrc-red hover:bg-jecrc-red/20'
+                                                        ? 'bg-jecrc-red/20 text-jecrc-red hover:bg-jecrc-red/30'
+                                                        : 'bg-jecrc-red/10 text-jecrc-red hover:bg-jecrc-red/20'
                                                         }`}
                                                 >
                                                     View Profile

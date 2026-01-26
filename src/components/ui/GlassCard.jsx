@@ -4,14 +4,8 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 /**
- * Premium GlassCard Component
- * 
- * Enhanced with:
- * - Premium gradients and theme support
- * - Advanced glassmorphism effects
- * - Performance-optimized animations
- * - Theme-aware styling
- * - Floating effects and hover states
+ * Clean GlassCard Component
+ * Premium styling with proper light/dark mode support
  */
 
 export default function GlassCard({
@@ -19,87 +13,45 @@ export default function GlassCard({
   className = "",
   onClick,
   variant = 'default',
-  theme = 'jecrc',
-  floating = false,
   hoverable = true,
   ...props
 }) {
   const { theme: currentTheme } = useTheme();
   const isDark = currentTheme === 'dark';
-  // Theme-based styling - JECRC red theme for better contrast
-  const getThemeClasses = () => {
-    if (isDark) {
-      switch (theme) {
-        case 'corporate':
-          return 'bg-gray-800/80 border-jecrc-red/40';
-        case 'executive':
-          return 'bg-gray-800/80 border-jecrc-red/40';
-        case 'professional':
-          return 'bg-gray-800/80 border-jecrc-red/40';
-        case 'jecrc':
-        default:
-          return 'bg-gray-800/90 border-jecrc-red/50';
-      }
-    } else {
-      // Light mode - clean with red accents
-      switch (theme) {
-        case 'corporate':
-          return 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200';
-        case 'executive':
-          return 'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200';
-        case 'professional':
-          return 'bg-gradient-to-br from-cyan-50 to-emerald-50 border-cyan-200';
-        case 'jecrc':
-        default:
-          return 'bg-gradient-to-br from-gray-50 to-white border-jecrc-red/30';
-      }
-    }
-  };
 
-  // Variant-based styling with JECRC red borders
+  // Clean styling - white cards in light mode, dark cards in dark mode
   const getVariantClasses = () => {
     if (isDark) {
       switch (variant) {
         case 'glass':
-          return 'backdrop-blur-xl bg-gray-900/80 border border-jecrc-red/40 shadow-xl';
+          return 'bg-gray-900/80 backdrop-blur-xl border-gray-700 shadow-xl';
         case 'elegant':
-          return 'bg-gray-800/90 border border-jecrc-red/50 shadow-xl';
+          return 'bg-gray-800/80 border-gray-600 shadow-lg';
         case 'premium':
-          return 'bg-gradient-to-br from-gray-800 to-gray-900 border border-jecrc-red/40 shadow-xl';
-        case 'dark':
-          return 'bg-gray-900 border border-jecrc-red/50 shadow-xl';
+          return 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-600 shadow-xl';
         case 'default':
         default:
-          return 'bg-gray-800/90 border border-jecrc-red/50 shadow-xl backdrop-blur-md';
+          return 'bg-gray-800 border-gray-700 shadow-lg backdrop-blur-md';
       }
     } else {
-      // Light mode - clean with red borders
       switch (variant) {
         case 'glass':
-          return 'backdrop-blur-xl bg-white/80 border border-jecrc-red/30 shadow-lg';
+          return 'bg-white/80 backdrop-blur-xl border-gray-200 shadow-lg';
         case 'elegant':
-          return 'bg-white/90 border border-jecrc-red/40 shadow-lg';
+          return 'bg-white border-gray-200 shadow-md';
         case 'premium':
-          return 'bg-gradient-to-br from-white to-gray-50 border border-jecrc-red/30 shadow-lg';
-        case 'dark':
-          return 'bg-gray-800 text-white border border-jecrc-red/50';
+          return 'bg-gradient-to-br from-white to-gray-50 border-gray-200 shadow-lg';
         case 'default':
         default:
-          return 'bg-white border border-jecrc-red/40 shadow-lg backdrop-blur-md';
+          return 'bg-white border-gray-200 shadow-md backdrop-blur-md';
       }
     }
   };
 
-  // Floating animation
-  const floatingStyle = floating ? {
-    animation: 'float 6s ease-in-out infinite'
-  } : {};
-
   const cardClasses = `
     relative overflow-hidden rounded-xl p-5
     ${getVariantClasses()}
-    ${getThemeClasses()}
-    ${hoverable ? 'hover:shadow-xl hover:scale-[1.01] transition-all duration-300 cursor-pointer' : ''}
+    ${hoverable ? 'hover:shadow-lg hover:scale-[1.005] transition-all duration-300 cursor-pointer' : ''}
     ${className}
   `;
 
@@ -107,14 +59,13 @@ export default function GlassCard({
     <div
       onClick={onClick}
       className={cardClasses}
-      style={floatingStyle}
       {...props}
     >
-      {/* Premium gradient overlay */}
+      {/* Subtle gradient accent on hover */}
       <div className={`
-        absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-transparent 
+        absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent 
         opacity-0 hover:opacity-100 transition-opacity duration-300
-        ${isDark ? 'via-white/5' : 'via-gray-100'}
+        ${isDark ? 'to-jecrc-red/5' : 'to-jecrc-red/5'}
       `} />
 
       {/* Content */}
@@ -122,11 +73,10 @@ export default function GlassCard({
         {children}
       </div>
 
-      {/* Corner accent */}
+      {/* Subtle corner accent */}
       <div className={`
-        absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-transparent to-jecrc-red/20 rounded-full 
-        -translate-y-10 translate-x-10 blur-xl
-        ${isDark ? 'to-jecrc-red/10' : 'to-jecrc-red/20'}
+        absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-transparent to-jecrc-red/10 rounded-full 
+        -translate-y-8 translate-x-8 blur-lg
       `} />
     </div>
   );

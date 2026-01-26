@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
@@ -14,7 +14,9 @@ import toast from 'react-hot-toast';
 
 export default function AdminSettings() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('departments');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'departments';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [loading, setLoading] = useState(false);
 
   // Data States

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
+import Input from '@/components/ui/Input';
 import Link from 'next/link';
 import { ArrowLeft, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -84,46 +85,32 @@ function LoginForm() {
             )}
 
             <div>
-              <label className={`block text-sm font-bold mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  required
-                  className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
-                    ${isDark
-                      ? 'bg-gray-800/80 border-jecrc-red/50 text-white placeholder-gray-500 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/20'
-                      : 'bg-white border-jecrc-red/50 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/10'
-                    }
-                  `}
-                  placeholder="staff@college.edu"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                required
+                startIcon={<Mail className="w-5 h-5" />}
+                placeholder="staff@college.edu"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
             </div>
 
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className={`text-sm font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Password</label>
-                <Link href="/staff/forgot-password" className="text-sm text-jecrc-red hover:text-jecrc-red-dark font-medium transition-colors">Forgot?</Link>
+              <div className="flex justify-end mb-1">
+                <Link href="/staff/forgot-password" className="text-sm text-jecrc-red hover:text-jecrc-red-dark font-medium transition-colors">Forgot Password?</Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  required
-                  className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
-                    ${isDark
-                      ? 'bg-gray-800/80 border-jecrc-red/50 text-white placeholder-gray-500 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/20'
-                      : 'bg-white border-jecrc-red/50 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/10'
-                    }
-                  `}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
+              <Input
+                label="Password"
+                name="password"
+                type="password"
+                required
+                startIcon={<Lock className="w-5 h-5" />}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
             </div>
 
             <button

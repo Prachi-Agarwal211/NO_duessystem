@@ -51,11 +51,11 @@ export async function GET(request) {
     const department = searchParams.get('department');
     const withStats = searchParams.get('withStats') === 'true';
 
-    // Base query for staff profiles
+    // Base query for staff profiles - fetch both 'department' and 'staff' roles
     let query = supabaseAdmin
       .from('profiles')
       .select('id, full_name, email, department_name, role, avatar_url, school_ids, course_ids, branch_ids, is_active, created_at, last_active_at')
-      .eq('role', 'department')
+      .in('role', ['department', 'staff'])
       .order('created_at', { ascending: false });
 
     if (department) {
@@ -322,7 +322,7 @@ export async function PUT(request) {
       .from('profiles')
       .update(updates)
       .eq('id', body.id)
-      .eq('role', 'department') // FIXED: Changed from 'staff' to 'department'
+      .in('role', ['department', 'staff']) // Allow updating both roles
       .select()
       .single();
 
@@ -373,9 +373,9 @@ export async function DELETE(request) {
       .eq('id', staffId)
       .single();
 
-    if (!profile || profile.role !== 'department') {  // FIXED: Changed from 'staff' to 'department'
+    if (!profile || !['department', 'staff'].includes(profile.role)) {
       return NextResponse.json(
-        { success: false, error: 'Staff member not found or not a department user' },
+        { success: false, error: 'Staff member not found or invalid role' },
         { status: 404 }
       );
     }

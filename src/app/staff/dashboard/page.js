@@ -21,27 +21,22 @@ export default function StaffDashboard() {
   const [search, setSearch] = useState('');
   const [showGuide, setShowGuide] = useState(false);
 
-  // Filters State
   const [filters, setFilters] = useState({
     course: 'All',
     branch: 'All'
   });
 
-  // Bulk Selection State
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  // Rejection Modal State
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectFormId, setRejectFormId] = useState(null);
   const [rejectDeptName, setRejectDeptName] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  // Local requests state for optimistic updates
   const [localRequests, setLocalRequests] = useState([]);
 
-  // Hook Data
   const {
     user,
     loading,
@@ -51,7 +46,6 @@ export default function StaffDashboard() {
     lastUpdate
   } = useStaffDashboard();
 
-  // Local state for other tabs
   const [rejectedForms, setRejectedForms] = useState([]);
   const [historyData, setHistoryData] = useState([]);
   const [rejectedLoading, setRejectedLoading] = useState(false);
@@ -59,12 +53,9 @@ export default function StaffDashboard() {
   const [historyFetched, setHistoryFetched] = useState(false);
   const [rejectedFetched, setRejectedFetched] = useState(false);
 
-  // Unread messages for chat notification badges
   const [unreadMessages, setUnreadMessages] = useState({});
 
-  // Effects
   useEffect(() => {
-    // 🔔 REAL-TIME NOTIFICATIONS: Show toast alerts even if user is on another tab
     const handleNewSubmission = (e) => {
       const { studentName, registrationNo } = e.detail;
       toast.success(
@@ -72,11 +63,7 @@ export default function StaffDashboard() {
           <p className="font-bold">New Application Received!</p>
           <p className="text-xs opacity-90">{studentName} ({registrationNo})</p>
         </div>,
-        {
-          duration: 5000,
-          icon: '📝',
-          id: `new-sub-${registrationNo}` // Prevent duplicate toasts
-        }
+        { duration: 5000, icon: '📝', id: `new-sub-${registrationNo}` }
       );
     };
 
@@ -85,7 +72,7 @@ export default function StaffDashboard() {
       toast.success(
         <div className="flex flex-col gap-1">
           <p className="font-bold">New Support Ticket!</p>
-          <p className="text-xs opacity-90">Ticket #{ticketNumber} (${requesterType})</p>
+          <p className="text-xs opacity-90">Ticket #{ticketNumber} ({requesterType})</p>
         </div>,
         { duration: 5000, icon: '🎫' }
       );
@@ -108,20 +95,17 @@ export default function StaffDashboard() {
   useEffect(() => {
     setHistoryFetched(false);
     setRejectedFetched(false);
-    setSelectedItems(new Set()); // Clear selection on refresh
+    setSelectedItems(new Set());
   }, [lastUpdate]);
 
-  // Clear selection when tab changes
   useEffect(() => {
     setSelectedItems(new Set());
   }, [activeTab]);
 
-  // Sync localRequests with requests from hook for optimistic updates
   useEffect(() => {
     setLocalRequests(requests);
   }, [requests]);
 
-  // Fetch unread message counts for chat badges
   const fetchUnreadMessages = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -134,7 +118,6 @@ export default function StaffDashboard() {
       if (res.ok) {
         const result = await res.json();
         if (result.success) {
-          // Create a map of form_id -> unread_count
           const unreadMap = {};
           (result.data.counts || []).forEach(item => {
             unreadMap[item.form_id] = item.unread_count;
@@ -151,11 +134,8 @@ export default function StaffDashboard() {
     fetchUnreadMessages();
   }, [fetchUnreadMessages, lastUpdate]);
 
-  // 🔔 REALTIME: Subscribe to new chat messages for instant badge updates
   useEffect(() => {
     if (!user?.department_name) return;
-
-    console.log('🔌 Staff Dashboard: Setting up chat message realtime listener');
 
     const channelName = `staff-chat-notifications-${user.department_name.replace(/\s+/g, '_')}-${Date.now()}`;
 
@@ -166,17 +146,14 @@ export default function StaffDashboard() {
         schema: 'public',
         table: 'no_dues_messages'
       }, (payload) => {
-        // Only care about student messages to our department
         if (payload.new.sender_type === 'student' &&
           payload.new.department_name === user.department_name) {
 
-          // Update unread count for this form
           setUnreadMessages(prev => ({
             ...prev,
             [payload.new.form_id]: (prev[payload.new.form_id] || 0) + 1
           }));
 
-          // Show toast notification
           toast.success(
             <div className="flex flex-col gap-1">
               <p className="font-bold">💬 New Chat Message!</p>
@@ -197,7 +174,6 @@ export default function StaffDashboard() {
     };
   }, [user?.department_name]);
 
-  // Data Fetching
   const fetchRejectedForms = async () => {
     setRejectedLoading(true);
     try {
@@ -228,7 +204,6 @@ export default function StaffDashboard() {
     } catch (e) { console.error(e); } finally { setHistoryLoading(false); }
   };
 
-  // derived data for filters
   const uniqueCourses = useMemo(() => {
     const allData = [...requests, ...rejectedForms, ...historyData];
     const courses = new Set(allData.map(d => d.no_dues_forms?.course).filter(Boolean));
@@ -241,7 +216,6 @@ export default function StaffDashboard() {
     return ['All', ...Array.from(branches)];
   }, [requests, rejectedForms, historyData]);
 
-  // Filtering Logic
   const filterData = useCallback((data) => {
     return data.filter(item => {
       const form = item.no_dues_forms;
@@ -263,7 +237,6 @@ export default function StaffDashboard() {
     return [];
   }, [activeTab, localRequests, rejectedForms, historyData, filterData]);
 
-  // Bulk Selection Logic
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedItems(new Set(currentData.map(item => item.no_dues_forms.id)));
@@ -279,7 +252,6 @@ export default function StaffDashboard() {
     setSelectedItems(newSelected);
   };
 
-  // Actions
   const handleBulkAction = async (action) => {
     if (selectedItems.size === 0) {
       toast.error('No items selected');
@@ -435,18 +407,12 @@ export default function StaffDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-4">
           <div>
-            <h1 className={`
-              text-2xl sm:text-3xl font-bold font-serif
-              ${isDark
-                ? 'bg-gradient-to-r from-jecrc-red-bright via-jecrc-red to-white bg-clip-text text-transparent [text-shadow:0_0_30px_rgba(196,30,58,0.3)]'
-                : 'bg-gradient-to-r from-jecrc-red-dark via-jecrc-red to-gray-800 bg-clip-text text-transparent'
-              }
-            `}>
+            <h1 className={`text-2xl sm:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {user?.department_name || 'Department'} Dashboard
             </h1>
             <div className="flex items-center gap-2 mt-2">
               <div className={`flex items-center gap-2 px-2.5 py-1 rounded-full ${isDark ? 'bg-green-500/10 border border-green-500/20' : 'bg-green-50 border border-green-100'}`}>
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                 <span className={`text-xs font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>Live Updates</span>
               </div>
               <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -457,28 +423,28 @@ export default function StaffDashboard() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowGuide(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-blue-600/25 transition-all"
             >
               <HelpCircle className="w-4 h-4" /> Guidelines
             </button>
             <button
               onClick={handleExport}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-green-600/20 transition-all active:scale-95"
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-green-600/25 transition-all"
             >
               <Download className="w-4 h-4" /> Export
             </button>
             <button
               onClick={() => router.push('/staff/profile')}
-              className={`p-2.5 rounded-xl border-2 transition-all active:scale-95 shadow-sm
-                ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              className={`p-2.5 rounded-xl border transition-all
+                ${isDark ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
               title="My Profile"
             >
               <User className="w-5 h-5" />
             </button>
             <button
               onClick={refreshData}
-              className={`p-2.5 rounded-xl border-2 transition-all active:scale-95 shadow-sm
-                ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              className={`p-2.5 rounded-xl border transition-all
+                ${isDark ? 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -487,7 +453,7 @@ export default function StaffDashboard() {
                 await supabase.auth.signOut();
                 router.push('/staff/login');
               }}
-              className="p-2.5 bg-jecrc-red hover:bg-jecrc-red-dark text-white rounded-xl shadow-lg shadow-jecrc-red/20 transition-all active:scale-95"
+              className="p-2.5 bg-gradient-to-r from-jecrc-red to-jecrc-red-dark text-white rounded-xl shadow-lg hover:shadow-jecrc-red/25 transition-all"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
@@ -498,21 +464,21 @@ export default function StaffDashboard() {
         {/* Guidelines Modal */}
         {showGuide && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
-              <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50 dark:bg-white/5">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+              <div className={`p-6 border-b flex justify-between items-center ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
+                <h2 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                   <Info className="w-5 h-5 text-blue-500" />
                   {user?.department_name} Guidelines
                 </h2>
                 <button
                   onClick={() => setShowGuide(false)}
-                  className="p-1 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors"
+                  className={`p-1 rounded-full transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-200 text-gray-500'}`}
                 >
-                  <XCircle className="w-6 h-6 text-gray-500" />
+                  <XCircle className="w-6 h-6" />
                 </button>
               </div>
               <div className="p-6 max-h-[60vh] overflow-y-auto">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Checklist for Approval</h3>
+                <h3 className={`text-sm font-semibold uppercase tracking-wider mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Checklist for Approval</h3>
                 <ul className="space-y-3">
                   {(DEPARTMENT_GUIDELINES[user?.department_name] || DEPARTMENT_GUIDELINES['default']).map((rule, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
@@ -522,10 +488,10 @@ export default function StaffDashboard() {
                   ))}
                 </ul>
               </div>
-              <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 text-right">
+              <div className={`p-4 border-t flex justify-end ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
                 <button
                   onClick={() => setShowGuide(false)}
-                  className="px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-black font-medium rounded-lg hover:opacity-90 transition-opacity"
+                  className={`px-6 py-2 font-medium rounded-lg transition-opacity ${isDark ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-gray-200 text-gray-900 hover:bg-gray-300'}`}
                 >
                   Understood
                 </button>
@@ -535,37 +501,37 @@ export default function StaffDashboard() {
         )}
 
         {/* Quick Guidelines Card */}
-        <GlassCard className="mb-6 from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-purple-900/10 border-blue-200 dark:border-blue-500/20">
+        <GlassCard className="mb-6">
           <div className="flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 shadow-inner">
-              <Info className="w-6 h-6" />
+            <div className={`p-3 rounded-xl ${isDark ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+              <Info className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Quick Actions Guide</h3>
+              <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>Quick Actions Guide</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
-                  <div className="p-1.5 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className={`p-1.5 rounded-full ${isDark ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-600'}`}>
                     <CheckCircle className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Approve: No pending dues</span>
+                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Approve: No pending dues</span>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
-                  <div className="p-1.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className={`p-1.5 rounded-full ${isDark ? 'bg-red-500/20 text-red-400' : 'bg-red-100 text-red-600'}`}>
                     <XCircle className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Reject: Valid reason required</span>
+                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Reject: Valid reason required</span>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
-                  <div className="p-1.5 rounded-full bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className={`p-1.5 rounded-full ${isDark ? 'bg-yellow-500/20 text-yellow-400' : 'bg-yellow-100 text-yellow-600'}`}>
                     <Clock className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">SLA: 24-48 hours target</span>
+                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>SLA: 24-48 hours target</span>
                 </div>
-                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
-                  <div className="p-1.5 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400">
+                <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className={`p-1.5 rounded-full ${isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>
                     <AlertTriangle className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">Check: Verify all details first</span>
+                  <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>Check: Verify all details first</span>
                 </div>
               </div>
             </div>
@@ -577,20 +543,20 @@ export default function StaffDashboard() {
           <StatusCard label="Pending" value={stats?.pending || 0} sub="Awaiting action" icon={Clock} color="yellow" onClick={() => setActiveTab('pending')} />
           <StatusCard label="My Approved" value={stats?.approved || 0} sub="By you" icon={CheckCircle} color="green" onClick={() => setActiveTab('history')} />
           <StatusCard label="My Rejected" value={stats?.rejected || 0} sub="By you" icon={XCircle} color="red" onClick={() => setActiveTab('rejected')} />
-          <StatusCard label="Total Processed" value={stats?.total || 0} sub={`${stats?.approvalRate || 0}% approval rate`} icon={TrendingUp} color="rose" onClick={() => setActiveTab('history')} />
+          <StatusCard label="Total Processed" value={stats?.total || 0} sub={`${stats?.approvalRate || 0}% approval rate`} icon={TrendingUp} color="gray" onClick={() => setActiveTab('history')} />
         </div>
 
-        {/* Filters & Search Toolbar - Use GlassCard ✅ */}
+        {/* Filters & Search Toolbar */}
         <GlassCard className="flex flex-col sm:flex-row gap-4 mb-6 p-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search student by name or registration number..."
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all
+              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all
                 ${isDark
-                  ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright focus:bg-black/60'
-                  : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red focus:bg-white'
+                  ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
                 }`}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -598,29 +564,29 @@ export default function StaffDashboard() {
           <div className="flex gap-2">
             <div className="relative">
               <select
-                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all cursor-pointer
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all cursor-pointer
                   ${isDark
-                    ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
-                    : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red'
+                    ? 'bg-gray-800 border-gray-600 text-white focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
                   }`}
                 value={filters.course}
                 onChange={(e) => setFilters(prev => ({ ...prev, course: e.target.value }))}
               >
-                {uniqueCourses.map(c => <option key={c} value={c} className="dark:bg-gray-900">{c === 'All' ? 'All Courses' : c}</option>)}
+                {uniqueCourses.map(c => <option key={c} value={c} className={isDark ? 'bg-gray-800' : 'bg-white'}>{c === 'All' ? 'All Courses' : c}</option>)}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
             <div className="relative">
               <select
-                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border-2 outline-none font-semibold transition-all cursor-pointer
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all cursor-pointer
                   ${isDark
-                    ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
-                    : 'bg-gray-100/50 border-gray-300 text-gray-900 focus:border-jecrc-red'
+                    ? 'bg-gray-800 border-gray-600 text-white focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                    : 'bg-white border-gray-300 text-gray-900 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
                   }`}
                 value={filters.branch}
                 onChange={(e) => setFilters(prev => ({ ...prev, branch: e.target.value }))}
               >
-                {uniqueBranches.map(b => <option key={b} value={b} className="dark:bg-gray-900">{b === 'All' ? 'All Branches' : b}</option>)}
+                {uniqueBranches.map(b => <option key={b} value={b} className={isDark ? 'bg-gray-800' : 'bg-white'}>{b === 'All' ? 'All Branches' : b}</option>)}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
@@ -628,7 +594,7 @@ export default function StaffDashboard() {
         </GlassCard>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-white/10">
+        <div className={`flex gap-2 mb-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
           {['pending', 'rejected', 'history'].map(tab => (
             <button
               key={tab}
@@ -651,7 +617,7 @@ export default function StaffDashboard() {
             </div>
           ) : (
             <>
-              {/* MOBILE VIEW cards (< 768px) */}
+              {/* MOBILE VIEW */}
               <div className="block md:hidden bg-gray-50 dark:bg-black/20 p-4">
                 {currentData.length === 0 ? (
                   <div className="text-center py-10 text-gray-400">No records found</div>
@@ -666,17 +632,17 @@ export default function StaffDashboard() {
                       onAction={handleAction}
                       onNavigate={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
                       formatDate={formatDate}
+                      isDark={isDark}
                     />
                   ))
                 )}
               </div>
 
-              {/* DESKTOP VIEW Table (>= 768px) */}
+              {/* DESKTOP VIEW */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left min-w-[700px]">
-                  <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+                  <thead className={`border-b ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                     <tr>
-                      {/* Checkbox Column */}
                       {activeTab === 'pending' && (
                         <th className="w-12 px-4 py-3">
                           <div className="flex items-center">
@@ -689,22 +655,22 @@ export default function StaffDashboard() {
                           </div>
                         </th>
                       )}
-                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Student</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Course / Branch</th>
-                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Date</th>
-                      {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">SLA</th>}
-                      <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500">Status</th>
-                      {(activeTab === 'pending' || activeTab === 'rejected') && <th className="px-4 py-3 text-xs font-semibold uppercase text-gray-500 text-right">Actions</th>}
+                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Student</th>
+                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Course / Branch</th>
+                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Date</th>
+                      {activeTab === 'pending' && <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">SLA</th>}
+                      <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
+                      {(activeTab === 'pending' || activeTab === 'rejected') && <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-right">Actions</th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5 text-sm text-gray-600 dark:text-gray-300">
+                  <tbody className={`divide-y ${isDark ? 'divide-gray-700' : 'divide-gray-100'} text-sm`}>
                     {currentData.length === 0 ? (
                       <tr><td colSpan="6" className="p-12 text-center text-gray-400">No records found</td></tr>
                     ) : (
                       currentData.map(item => (
                         <tr
                           key={item.id}
-                          className={`hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer ${selectedItems.has(item.no_dues_forms.id) ? 'bg-red-50 dark:bg-red-900/10' : ''}`}
+                          className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${selectedItems.has(item.no_dues_forms.id) ? 'bg-jecrc-red/5' : ''}`}
                           onClick={() => router.push(`/staff/student/${item.no_dues_forms.id}`)}
                         >
                           {activeTab === 'pending' && (
@@ -720,14 +686,11 @@ export default function StaffDashboard() {
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <div>
-                                <div className="font-medium text-gray-900 dark:text-white">{item.no_dues_forms.student_name}</div>
-                                <div className="text-xs text-gray-500 font-mono">{item.no_dues_forms.registration_no}</div>
+                                <div className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.no_dues_forms.student_name}</div>
+                                <div className={`text-xs font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{item.no_dues_forms.registration_no}</div>
                               </div>
                               {unreadMessages[item.no_dues_forms.id] > 0 && (
-                                <span
-                                  className="flex items-center gap-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full animate-pulse"
-                                  title={`${unreadMessages[item.no_dues_forms.id]} unread message(s)`}
-                                >
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full animate-pulse">
                                   <MessageCircle className="w-3 h-3" />
                                   {unreadMessages[item.no_dues_forms.id]}
                                 </span>
@@ -735,10 +698,10 @@ export default function StaffDashboard() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-gray-900 dark:text-white">{item.no_dues_forms.course}</div>
-                            <div className="text-xs text-gray-500">{item.no_dues_forms.branch}</div>
+                            <div className={isDark ? 'text-white' : 'text-gray-900'}>{item.no_dues_forms.course}</div>
+                            <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{item.no_dues_forms.branch}</div>
                           </td>
-                          <td className="px-4 py-3 text-gray-500">{formatDate(item.no_dues_forms.created_at)}</td>
+                          <td className={`px-4 py-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(item.no_dues_forms.created_at)}</td>
                           {activeTab === 'pending' && (
                             <td className="px-4 py-3">
                               {(() => {
@@ -757,20 +720,19 @@ export default function StaffDashboard() {
                           )}
                           <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
 
-                          {/* Individual Actions */}
                           {activeTab === 'pending' && (
                             <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                               <div className="flex justify-end gap-2">
                                 <button
                                   onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
-                                  className="p-2 text-green-600 bg-green-100 dark:bg-green-500/20 rounded-lg hover:bg-green-200"
+                                  className={`p-2 rounded-lg transition-all ${isDark ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                                   title="Approve"
                                 >
                                   <CheckCircle className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'reject')}
-                                  className="p-2 text-red-600 bg-red-100 dark:bg-red-500/20 rounded-lg hover:bg-red-200"
+                                  className={`p-2 rounded-lg transition-all ${isDark ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}
                                   title="Reject"
                                 >
                                   <XCircle className="w-4 h-4" />
@@ -784,7 +746,8 @@ export default function StaffDashboard() {
                               <div className="flex justify-end gap-2">
                                 <button
                                   onClick={(e) => handleAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
-                                  className="px-3 py-1.5 text-green-600 bg-green-100 dark:bg-green-500/20 rounded-lg hover:bg-green-200 text-xs font-medium flex items-center gap-1"
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all
+                                    ${isDark ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
                                   title="Approve (Resolved)"
                                 >
                                   <CheckCircle className="w-3 h-3" />
@@ -792,7 +755,8 @@ export default function StaffDashboard() {
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); router.push(`/staff/student/${item.no_dues_forms.id}`) }}
-                                  className="px-3 py-1.5 text-blue-600 bg-blue-100 dark:bg-blue-500/20 rounded-lg hover:bg-blue-200 text-xs font-medium flex items-center gap-1"
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-all
+                                    ${isDark ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
                                   title="View & Chat"
                                 >
                                   <MessageCircle className="w-3 h-3" />
@@ -811,27 +775,27 @@ export default function StaffDashboard() {
           )}
         </GlassCard>
 
-        {/* Bulk Action Bar (Floating) */}
+        {/* Bulk Action Bar */}
         {selectedItems.size > 0 && activeTab === 'pending' && (
           <div className="fixed bottom-6 left-0 right-0 max-w-2xl mx-auto px-4 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-4 flex items-center justify-between ring-1 ring-black/5">
+            <div className={`rounded-2xl shadow-2xl p-4 flex items-center justify-between border ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
               <div className="flex items-center gap-3">
                 <div className="bg-jecrc-red text-white text-xs font-bold px-2 py-1 rounded-md">
                   {selectedItems.size}
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Selected</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Selected</span>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedItems(new Set())}
-                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg font-medium"
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isDark ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleBulkAction('approve')}
                   disabled={bulkActionLoading}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-lg shadow-green-600/20 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-bold rounded-lg shadow-lg flex items-center gap-2"
                 >
                   {bulkActionLoading ? <span className="animate-spin text-xl">⟳</span> : <CheckCircle className="w-4 h-4" />}
                   Approve Selected
@@ -846,15 +810,15 @@ export default function StaffDashboard() {
       {/* Rejection Modal */}
       {showRejectModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
-            <div className="p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl overflow-hidden ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+            <div className={`p-6 border-b ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
+              <h2 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 <XCircle className="w-5 h-5 text-red-500" />
                 Reject Application
               </h2>
             </div>
             <div className="p-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className={`text-sm mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                 Please provide a reason for rejection. This will be sent to the student.
               </p>
               <textarea
@@ -862,31 +826,31 @@ export default function StaffDashboard() {
                 onChange={(e) => setRejectionReason(e.target.value)}
                 placeholder="Enter rejection reason..."
                 rows={4}
-                className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all"
+                className={`w-full px-4 py-3 rounded-lg border outline-none transition-all
+                  ${isDark
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500/50'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-red-500/20'
+                  }`}
                 autoFocus
               />
             </div>
-            <div className="p-4 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 flex justify-end gap-3">
+            <div className={`p-4 border-t flex justify-end gap-3 ${isDark ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'}`}>
               <button
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectionReason('');
                   setRejectFormId(null);
                 }}
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg font-medium transition-colors"
+                className={`px-4 py-2 font-medium rounded-lg transition-colors ${isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200'}`}
               >
                 Cancel
               </button>
               <button
                 onClick={confirmRejection}
                 disabled={!rejectionReason.trim() || rejecting}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {rejecting ? (
-                  <span className="animate-spin">⟳</span>
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
+                {rejecting ? <span className="animate-spin">⟳</span> : <XCircle className="w-4 h-4" />}
                 Confirm Rejection
               </button>
             </div>
@@ -900,23 +864,24 @@ export default function StaffDashboard() {
 // Status Card Component
 function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   const colors = {
-    yellow: "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-500/20",
-    green: "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-500/20",
-    red: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-500/20",
-    rose: "text-jecrc-red bg-jecrc-red/10 dark:text-jecrc-red-bright dark:bg-jecrc-red/20"
+    yellow: { bg: 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400', icon: 'text-amber-500 dark:text-amber-400' },
+    green: { bg: 'bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400', icon: 'text-green-500 dark:text-green-400' },
+    red: { bg: 'bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400', icon: 'text-red-500 dark:text-red-400' },
+    gray: { bg: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400', icon: 'text-gray-500 dark:text-gray-400' }
   };
+  const colorScheme = colors[color] || colors.gray;
 
   return (
     <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full">
       <GlassCard className="p-4 sm:p-5 h-full">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{label}</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{value || 0}</p>
-            <p className="text-xs text-gray-400 mt-1">{sub}</p>
+            <p className={`text-xs sm:text-sm ${colorScheme.icon}`}>{label}</p>
+            <p className={`text-2xl sm:text-3xl font-bold mt-1 ${colorScheme.icon.replace('text-', 'text-').replace('dark:', 'dark:text-')}`}>{value || 0}</p>
+            <p className={`text-xs mt-1 ${colors[color]?.bg.includes('dark') ? 'text-gray-400' : 'text-gray-500'}`}>{sub}</p>
           </div>
-          <div className={`p-3 rounded-xl ${colors[color]}`}>
-            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+          <div className={`p-3 rounded-xl ${colorScheme.bg}`}>
+            <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${colorScheme.icon}`} />
           </div>
         </div>
       </GlassCard>
@@ -924,14 +889,18 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   );
 }
 
-// Mobile Card Component for Data Items - Upgraded to GlassCard
-function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate, formatDate }) {
+// Mobile Card Component
+function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate, formatDate, isDark }) {
   const sla = activeTab === 'pending' ? getSLAStatus(item.no_dues_forms.created_at) : null;
 
   return (
     <div
       onClick={onNavigate}
-      className={`bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl p-4 mb-3 shadow-sm hover:shadow-md transition-all ${selected ? 'ring-2 ring-jecrc-red bg-red-50 dark:bg-red-900/10' : ''}`}
+      className={`rounded-xl p-4 mb-3 shadow-sm transition-all border
+        ${selected
+          ? 'ring-2 ring-jecrc-red bg-jecrc-red/5'
+          : isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        }`}
     >
       <div className="flex justify-between items-start mb-3">
         <div className="flex gap-3">
@@ -946,10 +915,10 @@ function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate,
             </div>
           )}
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-base">
+            <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>
               {item.no_dues_forms.student_name}
             </h3>
-            <span className="inline-block bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded mt-1 font-mono">
+            <span className={`inline-block px-2 py-0.5 rounded text-xs font-mono mt-1 ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>
               {item.no_dues_forms.registration_no}
             </span>
           </div>
@@ -957,37 +926,37 @@ function MobileCard({ item, activeTab, selected, onSelect, onAction, onNavigate,
         <StatusBadge status={item.status} className="scale-90 origin-top-right" />
       </div>
 
-      <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <div className="grid grid-cols-2 gap-y-2 text-sm mb-4">
         <div>
-          <span className="text-gray-400 text-xs block">Course</span>
-          {item.no_dues_forms.course}
+          <span className={`text-xs block ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Course</span>
+          <span className={isDark ? 'text-gray-200' : 'text-gray-700'}>{item.no_dues_forms.course}</span>
         </div>
         <div className="text-right">
-          <span className="text-gray-400 text-xs block">Date</span>
-          {formatDate(item.no_dues_forms.created_at)}
+          <span className={`text-xs block ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Date</span>
+          <span className={isDark ? 'text-gray-200' : 'text-gray-700'}>{formatDate(item.no_dues_forms.created_at)}</span>
         </div>
       </div>
 
       {activeTab === 'pending' && sla && (
-        <div className="flex items-center gap-2 mb-4 bg-gray-50 dark:bg-black/20 p-2 rounded-lg">
-          <span className="text-xs text-gray-500 font-medium">SLA:</span>
-          <span className={`text-xs ${getSLABadgeClasses(sla).split(' ').filter(c => c.startsWith('text-')).join(' ')} font-bold`}>
+        <div className={`flex items-center gap-2 mb-4 p-2 rounded-lg ${isDark ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+          <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>SLA:</span>
+          <span className={`text-xs font-bold ${getSLABadgeClasses(sla).split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
             {sla.text}
           </span>
         </div>
       )}
 
       {activeTab === 'pending' && (
-        <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-white/5" onClick={e => e.stopPropagation()}>
+        <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
           <button
             onClick={(e) => onAction(e, item.no_dues_forms.id, item.department_name, 'approve')}
-            className="flex-1 py-2 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all"
           >
             <CheckCircle className="w-4 h-4" /> Approve
           </button>
           <button
             onClick={(e) => onAction(e, item.no_dues_forms.id, item.department_name, 'reject')}
-            className="flex-1 py-2 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all"
           >
             <XCircle className="w-4 h-4" /> Reject
           </button>

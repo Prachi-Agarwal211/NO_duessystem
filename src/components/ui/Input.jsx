@@ -40,7 +40,7 @@ export default function Input({
     );
 
     const inputBaseClasses = cn(
-        "peer w-full pt-6 pb-2 bg-transparent outline-none border-none",
+        "peer w-full pt-6 pb-2 bg-transparent outline-none border-none shadow-none ring-0",
         "text-gray-900 dark:text-white placeholder:text-transparent focus:placeholder:text-gray-400 dark:focus:placeholder:text-gray-500",
         "text-base font-medium",
         startIcon ? "pl-11" : "pl-4",
@@ -53,8 +53,8 @@ export default function Input({
         "absolute top-4 text-gray-400 dark:text-gray-500 text-base transition-all duration-200 pointer-events-none origin-[0]",
         startIcon ? "left-11" : "left-4",
         "peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0",
-        "peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red-bright",
-        (value || value === 0) ? "scale-75 -translate-y-4" : "",
+        "peer-focus:scale-75 peer-focus:-translate-y-5 peer-focus:text-jecrc-red dark:peer-focus:text-jecrc-red-bright",
+        (value || value === 0) ? "scale-75 -translate-y-5" : "",
         error && "text-red-500 peer-focus:text-red-500"
     );
 
