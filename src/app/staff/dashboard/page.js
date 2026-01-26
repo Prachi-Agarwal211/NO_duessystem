@@ -553,7 +553,7 @@ export default function StaffDashboard() {
             <input
               type="text"
               placeholder="Search student by name or registration number..."
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all
+              className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium transition-all border border-1
                 ${isDark
                   ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
@@ -564,7 +564,7 @@ export default function StaffDashboard() {
           <div className="flex gap-2">
             <div className="relative">
               <select
-                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all cursor-pointer
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer border border-1
                   ${isDark
                     ? 'bg-gray-800 border-gray-600 text-white focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
                     : 'bg-white border-gray-300 text-gray-900 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
@@ -578,7 +578,7 @@ export default function StaffDashboard() {
             </div>
             <div className="relative">
               <select
-                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all cursor-pointer
+                className={`appearance-none pl-3 pr-9 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer border border-1
                   ${isDark
                     ? 'bg-gray-800 border-gray-600 text-white focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
                     : 'bg-white border-gray-300 text-gray-900 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'

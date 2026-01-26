@@ -328,7 +328,7 @@ export default function DepartmentDashboard() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -408,7 +408,7 @@ export default function DepartmentDashboard() {
                       <select
                         value={filters.status}
                         onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                        className={`w-full p-3 rounded-xl border outline-none text-sm font-medium transition-all
+                        className={`w-full p-3 rounded-xl text-sm font-medium transition-all border border-1
                           ${isDark
                             ? 'bg-gray-800 border-gray-600 text-white focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
                             : 'bg-white border-gray-300 text-gray-900 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'

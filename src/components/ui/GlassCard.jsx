@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 /**
  * Clean GlassCard Component
  * Premium styling with proper light/dark mode support
+ * Performance optimized - no expensive blur effects
  */
 
 export default function GlassCard({
@@ -24,26 +25,26 @@ export default function GlassCard({
     if (isDark) {
       switch (variant) {
         case 'glass':
-          return 'bg-gray-900/80 backdrop-blur-xl border-gray-700 shadow-xl';
+          return 'bg-gray-900/90 border-gray-700';
         case 'elegant':
-          return 'bg-gray-800/80 border-gray-600 shadow-lg';
+          return 'bg-gray-800/90 border-gray-600';
         case 'premium':
-          return 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-600 shadow-xl';
+          return 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-600';
         case 'default':
         default:
-          return 'bg-gray-800 border-gray-700 shadow-lg backdrop-blur-md';
+          return 'bg-gray-900 border-gray-700';
       }
     } else {
       switch (variant) {
         case 'glass':
-          return 'bg-white/80 backdrop-blur-xl border-gray-200 shadow-lg';
+          return 'bg-white/90 border-gray-200';
         case 'elegant':
-          return 'bg-white border-gray-200 shadow-md';
+          return 'bg-white border-gray-200';
         case 'premium':
-          return 'bg-gradient-to-br from-white to-gray-50 border-gray-200 shadow-lg';
+          return 'bg-gradient-to-br from-white to-gray-50 border-gray-200';
         case 'default':
         default:
-          return 'bg-white border-gray-200 shadow-md backdrop-blur-md';
+          return 'bg-white border-gray-200';
       }
     }
   };
@@ -51,7 +52,7 @@ export default function GlassCard({
   const cardClasses = `
     relative overflow-hidden rounded-xl p-5
     ${getVariantClasses()}
-    ${hoverable ? 'hover:shadow-lg hover:scale-[1.005] transition-all duration-300 cursor-pointer' : ''}
+    ${hoverable ? 'hover:shadow-lg hover:scale-[1.002] transition-all duration-300 cursor-pointer' : ''}
     ${className}
   `;
 
@@ -61,23 +62,18 @@ export default function GlassCard({
       className={cardClasses}
       {...props}
     >
-      {/* Subtle gradient accent on hover */}
+      {/* Subtle border accent on hover */}
       <div className={`
-        absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-transparent 
-        opacity-0 hover:opacity-100 transition-opacity duration-300
-        ${isDark ? 'to-jecrc-red/5' : 'to-jecrc-red/5'}
+        absolute inset-0 rounded-xl border-2 border-transparent
+        transition-all duration-300
+        ${isDark ? 'hover:border-jecrc-red/20' : 'hover:border-jecrc-red/10'}
+        pointer-events-none
       `} />
 
       {/* Content */}
       <div className="relative z-10">
         {children}
       </div>
-
-      {/* Subtle corner accent */}
-      <div className={`
-        absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-transparent to-jecrc-red/10 rounded-full 
-        -translate-y-8 translate-x-8 blur-lg
-      `} />
     </div>
   );
 }
