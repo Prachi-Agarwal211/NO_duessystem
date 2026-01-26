@@ -52,7 +52,7 @@ async function handleReapplication(request, body) {
       return ApiResponse.error('Form ID required for reapplication', 400);
     }
 
-    // Verify student owns this form
+    // Verify form exists
     const { data: form, error: formError } = await supabase
       .from('no_dues_forms')
       .select('id, registration_no, status')
@@ -63,8 +63,38 @@ async function handleReapplication(request, body) {
       return ApiResponse.error('Form not found', 404);
     }
 
-    if (form.status !== 'rejected') {
-      return ApiResponse.error('Only rejected forms can be reapplied', 400);
+    // Check if department is specified - for per-department reapplication
+    if (department) {
+      // Verify the specific department has rejected this form
+      const { data: deptStatus, error: deptError } = await supabase
+        .from('no_dues_status')
+        .select('status, rejection_reason')
+        .eq('form_id', formId)
+        .eq('department_name', department)
+        .single();
+
+      if (deptError || !deptStatus) {
+        return ApiResponse.error('Department status not found', 404);
+      }
+
+      if (deptStatus.status !== 'rejected') {
+        return ApiResponse.error(`This department has not rejected your form. Current status: ${deptStatus.status}`, 400);
+      }
+    } else {
+      // No department specified - check if ANY department has rejected
+      const { data: rejectedStatuses, error: statusesError } = await supabase
+        .from('no_dues_status')
+        .select('department_name')
+        .eq('form_id', formId)
+        .eq('status', 'rejected');
+
+      if (statusesError) {
+        return ApiResponse.error('Failed to check department statuses', 500);
+      }
+
+      if (!rejectedStatuses || rejectedStatuses.length === 0) {
+        return ApiResponse.error('No departments have rejected your form. You can only reapply to rejected departments.', 400);
+      }
     }
 
     // Process reapplication
@@ -73,7 +103,7 @@ async function handleReapplication(request, body) {
       department
     });
 
-    return ApiResponse.success(result, 'Reapplication submitted successfully. Departments will review your form again.');
+    return ApiResponse.success(result, 'Reapplication submitted successfully. The department will review your form again.');
 
   } catch (error) {
     console.error('Reapplication Error:', error);

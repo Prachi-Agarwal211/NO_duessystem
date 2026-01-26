@@ -141,6 +141,8 @@ export async function POST(request, { params }) {
         const body = await request.json();
         const { message, senderType, senderName, senderId } = body;
 
+        console.log('Chat POST:', { formId, department, senderType, senderName, messageLength: message?.length });
+
         // Validate inputs
         if (!formId || !department || !message?.trim() || !senderType || !senderName) {
             return NextResponse.json({
@@ -163,13 +165,17 @@ export async function POST(request, { params }) {
         }
 
         // Verify form exists
+        console.log('Looking up form:', formId);
         const { data: form, error: formError } = await supabaseAdmin
             .from('no_dues_forms')
             .select('id, student_name, registration_no, status')
             .eq('id', formId)
             .single();
 
+        console.log('Form lookup result:', { formFound: !!form, formError });
+
         if (formError || !form) {
+            console.error('Form not found or error:', formError);
             return NextResponse.json({ error: 'Form not found' }, { status: 404 });
         }
 
@@ -201,6 +207,9 @@ export async function POST(request, { params }) {
                 .eq('id', user.id)
                 .single();
 
+            // If profile doesn't exist, create one or use the user id directly
+            const effectiveProfile = profile || { id: user.id, department_name: null, assigned_department_ids: [] };
+
             // Check if user's department_name matches OR assigned_department_ids includes the department
             const { data: dept } = await supabaseAdmin
                 .from('departments')
@@ -209,8 +218,8 @@ export async function POST(request, { params }) {
                 .single();
 
             const isAuthorized =
-                profile?.department_name === department ||
-                (dept && profile?.assigned_department_ids?.includes(dept.id));
+                effectiveProfile?.department_name === department ||
+                (dept && effectiveProfile?.assigned_department_ids?.includes(dept.id));
 
             if (!isAuthorized) {
                 return NextResponse.json({
@@ -247,16 +256,18 @@ export async function POST(request, { params }) {
             // If not authenticated, allow anonymous student messages (legacy support)
         }
 
-        // Create message
+        // Create message - ensure sender_id is never null for the database
         const messageData = {
             form_id: formId,
             department_name: department,
             message: message.trim(),
             sender_type: senderType,
             sender_name: senderName.trim(),
-            sender_id: finalSenderId,
+            sender_id: finalSenderId || senderId || `student-${senderName}`,
             is_read: false
         };
+
+        console.log('Attempting to insert message:', { formId, department, message: message.substring(0, 50) + '...' });
 
         // Insert message
         const { data: newMessage, error: insertError } = await supabaseAdmin
@@ -274,12 +285,15 @@ export async function POST(request, { params }) {
             .single();
 
         if (insertError) {
-            console.error('Message insert error:', insertError);
+            console.error('Message insert error:', JSON.stringify(insertError, null, 2));
             return NextResponse.json({
                 error: 'Failed to send message',
-                details: insertError.message
+                details: insertError.message,
+                hint: insertError.hint
             }, { status: 500 });
         }
+
+        console.log('Message inserted successfully:', newMessage?.id);
 
         // Update unread counts and notifications
         if (senderType === 'student') {

@@ -248,7 +248,7 @@ class ApplicationService {
   }
 
   /**
-   * Handle student reapplication with enhanced tracking
+   * Handle student reapplication for per-department rejection
    */
   async handleReapplication(formId, data) {
     try {
@@ -288,24 +288,9 @@ class ApplicationService {
         // Continue anyway as this is secondary
       }
 
-      // 3. UPDATE FORM STATUS
-      const { error: formUpdateError } = await supabase
-        .from('no_dues_forms')
-        .update({
-          status: 'pending',
-          reapplication_count: newReapplicationCount,
-          last_reapplied_at: new Date().toISOString(),
-          is_reapplication: true,
-          rejection_reason: null, // Clear global rejection reason
-          rejection_context: null // Clear global rejection context
-        })
-        .eq('id', formId);
-
-      if (formUpdateError) throw formUpdateError;
-
-      // 4. RESET DEPARTMENT STATUS
+      // 3. RESET DEPARTMENT STATUS
       // Logic: If a specific department is provided, only reset THAT one.
-      // If it's a global reapply, reset ALL rejected departments.
+      // If it's a global reapply (no department), reset ALL rejected departments.
       let statusQuery = supabase.from('no_dues_status').update({
         status: 'pending',
         rejection_reason: null,
@@ -322,10 +307,43 @@ class ApplicationService {
       const { error: statusResetError } = await statusQuery;
       if (statusResetError) throw statusResetError;
 
-      // 5. TRIGGER REALTIME
-      await this.triggerRealtimeUpdate('department_rejection', { formId, type: 'reapply' });
+      // 4. CHECK OVERALL FORM STATUS
+      // After resetting, check if all departments are approved or still some rejected
+      const { data: updatedStatuses } = await supabase
+        .from('no_dues_status')
+        .select('status')
+        .eq('form_id', formId);
 
-      return { success: true, count: newReapplicationCount };
+      const allApproved = updatedStatuses?.every(s => s.status === 'approved');
+      const hasRejected = updatedStatuses?.some(s => s.status === 'rejected');
+
+      let newFormStatus = 'in_progress';
+      if (hasRejected) newFormStatus = 'rejected'; // Still has rejected departments
+      else if (allApproved) newFormStatus = 'completed';
+
+      // 5. UPDATE FORM (only update reapplication fields, not status based on global)
+      const { error: formUpdateError } = await supabase
+        .from('no_dues_forms')
+        .update({
+          status: newFormStatus, // Set based on actual department statuses
+          reapplication_count: newReapplicationCount,
+          last_reapplied_at: new Date().toISOString(),
+          is_reapplication: true,
+          rejection_reason: hasRejected ? form.rejection_reason : null, // Clear only if no rejected depts
+          rejection_context: hasRejected ? form.rejection_context : null
+        })
+        .eq('id', formId);
+
+      if (formUpdateError) throw formUpdateError;
+
+      // 6. TRIGGER REALTIME
+      await this.triggerRealtimeUpdate('department_rejection', { formId, type: 'reapply', department: data.department });
+
+      return {
+        success: true,
+        count: newReapplicationCount,
+        newStatus: newFormStatus
+      };
 
     } catch (error) {
       console.error('❌ Reapplication processing failed:', error);

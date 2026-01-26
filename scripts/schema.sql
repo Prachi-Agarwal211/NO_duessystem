@@ -120,6 +120,11 @@ CREATE TABLE IF NOT EXISTS no_dues_forms (
     reapplication_count INTEGER DEFAULT 0,
     last_reapplied_at TIMESTAMPTZ,
     student_reply_message TEXT,
+    rejection_context JSONB,
+    
+    -- Unread counts for notifications
+    unread_count INTEGER DEFAULT 0,
+    department_unread_counts JSONB DEFAULT '{}',
     
     -- Certificate
     final_certificate_generated BOOLEAN DEFAULT FALSE,
@@ -149,6 +154,7 @@ CREATE TABLE IF NOT EXISTS no_dues_status (
     remarks TEXT,
     rejection_reason TEXT,
     student_reply_message TEXT,
+    unread_count INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     
@@ -167,9 +173,11 @@ CREATE TABLE IF NOT EXISTS no_dues_reapplication_history (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     form_id UUID NOT NULL REFERENCES no_dues_forms(id) ON DELETE CASCADE,
     reapplication_number INTEGER NOT NULL,
+    department_name TEXT, -- Which department this reapply is for (null for all)
     reapplication_reason TEXT,
     student_reply_message TEXT,
-    department_responses JSONB DEFAULT '{}',
+    edited_fields JSONB DEFAULT '{}',
+    previous_status JSONB DEFAULT '[]',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -196,6 +204,32 @@ CREATE INDEX IF NOT EXISTS idx_no_dues_messages_department ON no_dues_messages(d
 CREATE INDEX IF NOT EXISTS idx_no_dues_messages_created_at ON no_dues_messages(created_at);
 
 -- ============================================================================
+-- 5b. SUPPORT TICKETS TABLE - For student support system
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    form_id UUID REFERENCES no_dues_forms(id) ON DELETE SET NULL,
+    student_name TEXT NOT NULL,
+    student_email TEXT NOT NULL,
+    registration_no TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    description TEXT NOT NULL,
+    priority TEXT DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high', 'urgent')),
+    status TEXT DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'resolved', 'closed')),
+    assigned_to TEXT,
+    resolution_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_form_id ON support_tickets(form_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_registration_no ON support_tickets(registration_no);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_created_at ON support_tickets(created_at);
+
+-- ============================================================================
 -- 6. Enable Row Level Security (RLS)
 -- ============================================================================
 ALTER TABLE student_data ENABLE ROW LEVEL SECURITY;
@@ -203,6 +237,7 @@ ALTER TABLE no_dues_forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_reapplication_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE no_dues_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for service role access (full access for admin operations)
 CREATE POLICY "Service role full access to student_data" ON student_data FOR ALL TO service_role USING (true);
@@ -210,6 +245,7 @@ CREATE POLICY "Service role full access to no_dues_forms" ON no_dues_forms FOR A
 CREATE POLICY "Service role full access to no_dues_status" ON no_dues_status FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role full access to reapplication_history" ON no_dues_reapplication_history FOR ALL TO service_role USING (true);
 CREATE POLICY "Service role full access to no_dues_messages" ON no_dues_messages FOR ALL TO service_role USING (true);
+CREATE POLICY "Service role full access to support_tickets" ON support_tickets FOR ALL TO service_role USING (true);
 
 -- Allow authenticated read for students (their own data)
 CREATE POLICY "Students can read their own form" ON no_dues_forms FOR SELECT TO authenticated 
