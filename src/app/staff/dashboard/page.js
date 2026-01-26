@@ -555,8 +555,8 @@ export default function StaffDashboard() {
               placeholder="Search student by name or registration number..."
               className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none text-sm font-medium transition-all
                 ${isDark
-                  ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
+                  ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/20'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-jecrc-red focus:ring-2 focus:ring-jecrc-red/10'
                 }`}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -599,7 +599,7 @@ export default function StaffDashboard() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-4 capitalize font-medium text-sm transition-all border-b-2 
+              className={`pb-3 px-4 capitalize font-medium text-sm transition-all border-b-2 bg-transparent
                 ${activeTab === tab
                   ? 'border-jecrc-red text-jecrc-red'
                   : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -872,7 +872,7 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   const colorScheme = colors[color] || colors.gray;
 
   return (
-    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full">
+    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full bg-transparent p-0 border-none outline-none shadow-none">
       <GlassCard className="p-4 sm:p-5 h-full">
         <div className="flex justify-between items-start">
           <div>
