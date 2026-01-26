@@ -8,10 +8,11 @@ import toast from 'react-hot-toast';
 export default function MasterStudentManager() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   // State management
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({});
@@ -23,17 +24,17 @@ export default function MasterStudentManager() {
     status: ''
   });
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Configuration data
   const [schools, setSchools] = useState([]);
   const [courses, setCourses] = useState([]);
   const [branches, setBranches] = useState([]);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  
+
   const fileInputRef = useRef(null);
 
   // Load configuration data
@@ -103,12 +104,12 @@ export default function MasterStudentManager() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       const url = editingStudent ? '/api/admin/students' : '/api/admin/students';
       const method = editingStudent ? 'PUT' : 'POST';
-      
-      const payload = editingStudent 
+
+      const payload = editingStudent
         ? { id: editingStudent.id, ...formData }
         : formData;
 
@@ -214,11 +215,52 @@ export default function MasterStudentManager() {
     }
   };
 
-  const filteredCourses = courses.filter(course => 
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      toast.error('Please upload a valid CSV file');
+      return;
+    }
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/admin/students/import', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(`Successfully imported ${result.count} students`);
+        loadStudents();
+        // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        toast.error(result.error || 'Import failed');
+        if (result.errors && result.errors.length > 0) {
+          console.error('Import errors:', result.errors);
+          toast.error(`Check console for ${result.errors.length} row errors`);
+        }
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to upload file');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const filteredCourses = courses.filter(course =>
     !filters.schoolId || course.school_id === filters.schoolId
   );
 
-  const filteredBranches = branches.filter(branch => 
+  const filteredBranches = branches.filter(branch =>
     !filters.courseId || branch.course_id === filters.courseId
   );
 
@@ -238,6 +280,23 @@ export default function MasterStudentManager() {
             <Download className="w-4 h-4" />
             Export
           </button>
+          <div className="relative">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImport}
+              accept=".csv"
+              className="hidden"
+              id="csv-upload"
+            />
+            <label
+              htmlFor="csv-upload"
+              className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer ${importing ? 'opacity-50 pointer-events-none' : ''}`}
+            >
+              {importing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
+              Import CSV
+            </label>
+          </div>
           <button
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-jecrc-red text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -303,7 +362,7 @@ export default function MasterStudentManager() {
               />
             </div>
           </div>
-          
+
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -422,12 +481,11 @@ export default function MasterStudentManager() {
                       <div className="text-xs text-gray-500">{student.college_email}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        student.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        student.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        student.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs rounded-full ${student.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          student.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                            student.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {student.status}
                       </span>
                     </td>

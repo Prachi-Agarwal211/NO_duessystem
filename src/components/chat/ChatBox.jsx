@@ -68,12 +68,12 @@ export default function ChatBox({
         setIsUploading(true);
         try {
             const result = await onFileUpload(selectedFile);
-            if (result.success) {
+            if (result?.success) {
                 setSelectedFile(null);
                 // Send message with file attachment
                 onSend(`📎 ${selectedFile.name}`, currentUserType, currentUserName, result.fileUrl);
             } else {
-                alert(result.error || 'Failed to upload file');
+                alert(result?.error || 'Failed to upload file');
             }
         } catch (error) {
             alert('Failed to upload file');

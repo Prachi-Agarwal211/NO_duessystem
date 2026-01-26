@@ -20,6 +20,7 @@
   --text-secondary: #333333;
   --text-muted: #666666;
   --text-on-primary: #FFFFFF;
+  --text-white: #FFFFFF;
 
   --border-default: rgba(0, 0, 0, 0.1);
   --border-strong: rgba(0, 0, 0, 0.2);
@@ -55,8 +56,13 @@
 }
 
 /* Helper typography utilities */
-.font-display { font-family: var(--font-display); }
-.uppercase { text-transform: uppercase; }
+.font-display {
+  font-family: var(--font-display);
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
 
 /* Dark Mode Variables (via data-theme) */
 [data-theme="dark"] {
@@ -70,6 +76,7 @@
   --text-secondary: #CCCCCC;
   --text-muted: #888888;
   --text-on-primary: #FFFFFF;
+  --text-white: #FFFFFF;
 
   --border-default: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.2);

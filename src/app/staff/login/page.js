@@ -92,8 +92,8 @@ function LoginForm() {
                   required
                   className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
                     ${isDark
-                      ? 'bg-black/40 border-white/20 text-white placeholder-gray-500 focus:border-jecrc-red-bright focus:bg-black/60 focus:shadow-lg focus:shadow-jecrc-red/10'
-                      : 'bg-gray-100/50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white focus:shadow-lg focus:shadow-jecrc-red/10'
+                      ? 'bg-gray-800/80 border-jecrc-red/50 text-white placeholder-gray-500 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/20'
+                      : 'bg-white border-jecrc-red/50 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/10'
                     }
                   `}
                   placeholder="staff@college.edu"
@@ -115,8 +115,8 @@ function LoginForm() {
                   required
                   className={`w-full pl-10 pr-4 py-3.5 rounded-xl border-2 outline-none font-semibold transition-all
                     ${isDark
-                      ? 'bg-black/40 border-white/20 text-white placeholder-gray-500 focus:border-jecrc-red-bright focus:bg-black/60 focus:shadow-lg focus:shadow-jecrc-red/10'
-                      : 'bg-gray-100/50 border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:bg-white focus:shadow-lg focus:shadow-jecrc-red/10'
+                      ? 'bg-gray-800/80 border-jecrc-red/50 text-white placeholder-gray-500 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/20'
+                      : 'bg-white border-jecrc-red/50 text-gray-900 placeholder-gray-400 focus:border-jecrc-red focus:shadow-lg focus:shadow-jecrc-red/10'
                     }
                   `}
                   placeholder="••••••••"

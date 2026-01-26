@@ -122,7 +122,18 @@ class ReapplicationService {
         throw new Error('Original form not found');
       }
 
-      // 2. Check reapplication limits and cooldown
+      // 2. Check global re-application toggle
+      const { data: setting } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', 'allow_reapplication')
+        .single();
+
+      if (setting && setting.value === false) {
+        throw new Error('Re-application is currently disabled by the administrator');
+      }
+
+      // 3. Check reapplication limits and cooldown
       await this.validateReapplicationEligibility(currentForm);
 
       // 3. Create reapplication history record
@@ -207,7 +218,7 @@ class ReapplicationService {
     if (form.last_reapplied_at) {
       const cooldownEnd = new Date(form.last_reapplied_at);
       cooldownEnd.setDate(cooldownEnd.getDate() + cooldownDays);
-      
+
       if (new Date() < cooldownEnd) {
         throw new Error(`Please wait ${cooldownDays} days between reapplications`);
       }
@@ -225,11 +236,23 @@ class ReapplicationService {
    * Create reapplication history record
    */
   async createReapplicationHistory(formId, reapplicationData) {
+    // Calculate reapplication number from existing history
+    const { data: existingHistory, error: historyError } = await supabaseAdmin
+      .from('no_dues_reapplication_history')
+      .select('reapplication_number')
+      .eq('form_id', formId)
+      .order('reapplication_number', { ascending: false })
+      .limit(1);
+
+    const nextReapplicationNumber = existingHistory && existingHistory.length > 0
+      ? existingHistory[0].reapplication_number + 1
+      : 1;
+
     const { data: history, error } = await supabaseAdmin
       .from('no_dues_reapplication_history')
       .insert([{
         form_id: formId,
-        reapplication_number: 1, // This should be calculated based on existing history
+        reapplication_number: nextReapplicationNumber,
         reapplication_reason: reapplicationData.reason,
         student_reply_message: reapplicationData.message,
         department_responses: {},
@@ -326,7 +349,7 @@ class ReapplicationService {
     try {
       // Send email to student
       console.log(`📧 Sending rejection notification to ${form.personal_email}`);
-      
+
       // Send notification to other departments about rejection
       console.log(`📧 Notifying other departments about rejection by ${department}`);
 
@@ -342,7 +365,7 @@ class ReapplicationService {
     try {
       // Send confirmation to student
       console.log(`📧 Sending reapplication confirmation to ${form.personal_email}`);
-      
+
       // Send high-priority notification to all departments
       console.log(`📧 Sending high-priority reapplication notification to departments`);
 
@@ -444,7 +467,7 @@ class ReapplicationService {
 
       // Find common reasons
       stats.common_reasons = Object.entries(stats.by_reason)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 5)
         .map(([reason, count]) => ({ reason, count }));
 

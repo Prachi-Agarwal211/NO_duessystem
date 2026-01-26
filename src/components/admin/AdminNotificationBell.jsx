@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
  * AdminNotificationBell - Bell icon with pending stats and reminder functionality
  * Integrates with admin header for one-click department reminders
  */
-export default function AdminNotificationBell({ departmentStats = [] }) {
+export default function AdminNotificationBell({ departmentStats = [], onRefresh }) {
     const [isOpen, setIsOpen] = useState(false);
     const [sending, setSending] = useState({});
     const [sendingAll, setSendingAll] = useState(false);
@@ -44,18 +44,18 @@ export default function AdminNotificationBell({ departmentStats = [] }) {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     departmentName,
                     customMessage: 'Please review pending applications at your earliest convenience.',
-                    includeStats: true 
+                    includeStats: true
                 })
             });
 
             const json = await res.json();
             if (json.success) {
                 toast.success(`Admin notification sent to ${departmentName.replace(/_/g, ' ')}!`);
-                // Refresh departments to update pending counts
-                fetchDepartments();
+                // Refresh data if prop provided
+                if (onRefresh) onRefresh();
             } else {
                 throw new Error(json.error || 'Failed to send notification');
             }
@@ -109,8 +109,8 @@ export default function AdminNotificationBell({ departmentStats = [] }) {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`relative p-3 min-h-[44px] min-w-[44px] rounded-xl transition-all active:scale-95 ${totalPending > 0
-                        ? 'bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-500/30'
-                        : 'bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20'
+                    ? 'bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/30 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-500/30'
+                    : 'bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20'
                     }`}
                 title={`${totalPending} pending applications`}
             >

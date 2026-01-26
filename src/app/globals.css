@@ -671,7 +671,6 @@ button {
   font-size: inherit;
   font-weight: 600;
   line-height: inherit;
-  color: var(--text-white);
   background-color: var(--color-primary);
   border: none;
   border-radius: var(--radius);

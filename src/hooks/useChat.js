@@ -102,6 +102,11 @@ export function useChat(formId, department, readerType = 'student') {
                     readerType: currentReaderType
                 })
             });
+
+            // Dispatch event for unread tracker to update
+            window.dispatchEvent(new CustomEvent('chat-marked-read', {
+                detail: { formId: currentFormId, departmentName: currentDepartment }
+            }));
         } catch (err) {
             console.error('Error marking messages as read:', err);
         }

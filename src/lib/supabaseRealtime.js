@@ -143,7 +143,7 @@ class SupabaseRealtimeService {
               // 🔥 AUTOMATIC CERTIFICATE GENERATION TRIGGER
               if (payload.new?.status === 'completed') {
                 console.log('🎯 Form completed - triggering automatic certificate generation');
-                
+
                 // Trigger certificate generation in background
                 import('./certificateTrigger.js').then(({ triggerCertificateGeneration }) => {
                   triggerCertificateGeneration(payload.new?.id, 'realtime-system')
@@ -265,6 +265,27 @@ class SupabaseRealtimeService {
           }
         )
 
+        // ==================== EVENT 7: CHAT MESSAGES ====================
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'no_dues_messages'
+          },
+          (payload) => {
+            console.log('💬 New chat message:', payload.new?.sender_name);
+
+            realtimeManager.queueEvent('chat_message', payload);
+
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('new-chat-message', {
+                detail: payload.new
+              }));
+            }
+          }
+        )
+
         // ==================== SUBSCRIPTION STATUS ====================
         .subscribe((status) => {
           this.handleSubscriptionStatus(status);
@@ -314,6 +335,75 @@ class SupabaseRealtimeService {
   }
 
   /**
+   * Subscribe to department-specific updates
+   */
+  subscribeToDepartment(departmentName, callbacks = {}) {
+    this.subscribe(); // Ensure global connection is active
+
+    const channelName = `dept_${departmentName}`;
+
+    // Register the callbacks with the manager
+    const unsubscribeCallbacks = [];
+
+    if (callbacks.onMessage) {
+      unsubscribeCallbacks.push(
+        realtimeManager.subscribe('chatMessage', (analysis) => {
+          const msgs = Object.values(analysis.latestEvents)
+            .filter(e => e.type === 'chat_message' && e.data.department_name === departmentName);
+          msgs.forEach(msg => callbacks.onMessage(msg));
+        })
+      );
+    }
+
+    if (callbacks.onStatusUpdate) {
+      unsubscribeCallbacks.push(
+        realtimeManager.subscribe('departmentAction', (analysis) => {
+          const updates = Object.values(analysis.latestEvents)
+            .filter(e => {
+              const dept = e.data.department_name || e.data.new?.department_name;
+              return dept === departmentName;
+            });
+          updates.forEach(update => callbacks.onStatusUpdate(update));
+        })
+      );
+    }
+
+    if (callbacks.onNewApplication) {
+      unsubscribeCallbacks.push(
+        realtimeManager.subscribe('formSubmission', (analysis) => {
+          const newForms = Object.values(analysis.latestEvents)
+            .filter(e => e.type === 'form_submission');
+
+          newForms.forEach(event => {
+            if (this.shouldDepartmentHandleApplication(event.data, departmentName)) {
+              callbacks.onNewApplication(event);
+            }
+          });
+        })
+      );
+    }
+
+    return () => {
+      unsubscribeCallbacks.forEach(unsub => unsub());
+    };
+  }
+
+  /**
+   * Check if department should handle application
+   */
+  shouldDepartmentHandleApplication(form, departmentName) {
+    if (!form || !departmentName) return false;
+    const formDepartment = form.department_name || form.school;
+
+    if (formDepartment && formDepartment === departmentName) return true;
+
+    const globalDepts = ['Library', 'Accounts', 'Registrar', 'Hostel', 'Proctor Office'];
+    if (globalDepts.includes(departmentName)) return true;
+
+    return false;
+  }
+
+  /**
    * Schedule reconnection with exponential backoff (infinite attempts)
    */
   scheduleReconnect() {
@@ -331,7 +421,6 @@ class SupabaseRealtimeService {
     this.reconnectAttempts++;
 
     // Exponential backoff with cap: 1s, 2s, 4s, 8s, 16s, 30s (max)
-    // Add jitter (random 0-1000ms) to prevent thundering herd
     const backoff = Math.min(
       1000 * Math.pow(2, Math.min(this.reconnectAttempts - 1, 5)),
       this.MAX_RECONNECT_DELAY
@@ -341,7 +430,7 @@ class SupabaseRealtimeService {
 
     console.log(`🔄 Scheduling reconnect attempt #${this.reconnectAttempts} in ${Math.round(delay)}ms`);
 
-    // Notify subscribers of reconnection attempt
+    // Notify subscribers
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('realtime-reconnecting', {
         detail: {

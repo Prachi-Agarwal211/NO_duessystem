@@ -68,7 +68,7 @@ export async function GET(request) {
 
     let query = supabaseAdmin
       .from('departments')
-      .select('name, display_name, email, display_order, is_school_specific, is_active')
+      .select('name, display_name, email, display_order, is_school_specific, is_active, allowed_school_ids, allowed_course_ids, allowed_branch_ids')
       .order('display_order', { ascending: true });
 
     if (!includeInactive) {
@@ -126,7 +126,7 @@ export async function PUT(request) {
 
     // Validate inputs
     const updates = {};
-    
+
     if (body.display_name !== undefined) {
       if (typeof body.display_name !== 'string' || body.display_name.trim().length === 0) {
         return NextResponse.json(
@@ -142,7 +142,7 @@ export async function PUT(request) {
       }
       updates.display_name = body.display_name.trim();
     }
-    
+
     if (body.email !== undefined) {
       if (body.email !== null && body.email !== '') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -155,7 +155,7 @@ export async function PUT(request) {
       }
       updates.email = body.email || null;
     }
-    
+
     if (body.display_order !== undefined) {
       const order = Number(body.display_order);
       if (!Number.isInteger(order) || order < 0) {
@@ -166,7 +166,7 @@ export async function PUT(request) {
       }
       updates.display_order = order;
     }
-    
+
     if (body.is_active !== undefined) {
       if (typeof body.is_active !== 'boolean') {
         return NextResponse.json(
@@ -176,6 +176,11 @@ export async function PUT(request) {
       }
       updates.is_active = body.is_active;
     }
+
+    // Scope Updates
+    if (body.allowed_school_ids !== undefined) updates.allowed_school_ids = body.allowed_school_ids;
+    if (body.allowed_course_ids !== undefined) updates.allowed_course_ids = body.allowed_course_ids;
+    if (body.allowed_branch_ids !== undefined) updates.allowed_branch_ids = body.allowed_branch_ids;
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(

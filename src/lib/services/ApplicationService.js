@@ -375,32 +375,76 @@ class ApplicationService {
   }
 
   async createDepartmentStatuses(formId) {
-    // Fetch active departments
-    const { data: departments, error } = await supabase
-      .from('departments')
-      .select('*')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
+    try {
+      // 1. Fetch form data to get student context
+      const { data: form, error: formError } = await supabase
+        .from('no_dues_forms')
+        .select('school_id, course_id, branch_id')
+        .eq('id', formId)
+        .single();
 
-    if (error || !departments || departments.length === 0) {
-      console.warn('⚠️ No active departments found in configuration. Forms may have empty status list.');
-      return;
-    }
+      if (formError) throw formError;
 
-    // Create status records
-    const statusRecords = departments.map(dept => ({
-      form_id: formId,
-      department_name: dept.name,
-      status: 'pending'
-    }));
+      // 2. Fetch all active departments
+      const { data: departments, error } = await supabase
+        .from('departments')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
 
-    const { error: insertError } = await supabase
-      .from('no_dues_status')
-      .insert(statusRecords);
+      if (error || !departments || departments.length === 0) {
+        console.warn('⚠️ No active departments found in configuration.');
+        return;
+      }
 
-    if (insertError) {
-      console.error('Error creating department statuses:', insertError);
-      throw new Error(insertError.message);
+      // 3. Filter departments based on scope
+      const relevantDepartments = departments.filter(dept => {
+        // If NO scope is defined, it applies to EVERYONE
+        const hasNoScope =
+          (!dept.allowed_school_ids || dept.allowed_school_ids.length === 0) &&
+          (!dept.allowed_course_ids || dept.allowed_course_ids.length === 0) &&
+          (!dept.allowed_branch_ids || dept.allowed_branch_ids.length === 0);
+
+        if (hasNoScope) return true;
+
+        // Check School Scope
+        const schoolMatch = !dept.allowed_school_ids || dept.allowed_school_ids.length === 0 ||
+          dept.allowed_school_ids.includes(form.school_id);
+
+        // Check Course Scope
+        const courseMatch = !dept.allowed_course_ids || dept.allowed_course_ids.length === 0 ||
+          dept.allowed_course_ids.includes(form.course_id);
+
+        // Check Branch Scope
+        const branchMatch = !dept.allowed_branch_ids || dept.allowed_branch_ids.length === 0 ||
+          dept.allowed_branch_ids.includes(form.branch_id);
+
+        return schoolMatch && courseMatch && branchMatch;
+      });
+
+      if (relevantDepartments.length === 0) {
+        console.warn('⚠️ No departments matched student scope. This form is stuck.');
+        return;
+      }
+
+      // 4. Create status records
+      const statusRecords = relevantDepartments.map(dept => ({
+        form_id: formId,
+        department_name: dept.name,
+        status: 'pending'
+      }));
+
+      const { error: insertError } = await supabase
+        .from('no_dues_status')
+        .insert(statusRecords);
+
+      if (insertError) {
+        console.error('Error creating department statuses:', insertError);
+        throw new Error(insertError.message);
+      }
+    } catch (err) {
+      console.error('❌ Failed to create department statuses:', err);
+      throw err;
     }
   }
 

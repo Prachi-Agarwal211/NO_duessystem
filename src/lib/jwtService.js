@@ -6,8 +6,15 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 
-// Get JWT secret from environment
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-change-in-production';
+// Get JWT secret from environment - MUST be set in production
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Ensure JWT_SECRET is always available
+if (!JWT_SECRET) {
+  throw new Error('CRITICAL: JWT_SECRET environment variable must be set in production!\n' +
+    'Please add JWT_SECRET to your .env file.\n' +
+    'Generate a secure secret using: openssl rand -base64 32');
+}
 
 // Convert string secret to Uint8Array for jose
 const getSecretKey = () => {
@@ -82,11 +89,11 @@ export async function generatePasswordResetToken(userId, email) {
  */
 export async function verifyPasswordResetToken(token) {
   const payload = await verifyToken(token);
-  
+
   if (payload.type !== 'password-reset') {
     throw new Error('Invalid token type');
   }
-  
+
   return {
     userId: payload.userId,
     email: payload.email
@@ -116,11 +123,11 @@ export async function generateCertificateToken(certificateId) {
  */
 export async function verifyCertificateToken(token) {
   const payload = await verifyToken(token);
-  
+
   if (payload.type !== 'certificate-verification') {
     throw new Error('Invalid token type');
   }
-  
+
   return {
     certificateId: payload.certificateId
   };
@@ -152,11 +159,11 @@ export async function generateAuthToken(user, expiresIn = '7d') {
  */
 export async function verifyAuthToken(token) {
   const payload = await verifyToken(token);
-  
+
   if (payload.type !== 'auth') {
     throw new Error('Invalid token type');
   }
-  
+
   return {
     userId: payload.userId,
     email: payload.email,
@@ -188,11 +195,11 @@ export function decodeTokenUnsafe(token) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
+
     const payload = JSON.parse(
       Buffer.from(parts[1], 'base64url').toString()
     );
-    
+
     return payload;
   } catch {
     return null;

@@ -26,6 +26,7 @@ class RealtimeManager {
       formSubmission: new Set(),      // New form submitted
       departmentAction: new Set(),     // Department approved/rejected
       formCompletion: new Set(),       // All departments approved
+      chatMessage: new Set(),          // New chat message
       globalUpdate: new Set()          // Any change (fallback)
     };
 
@@ -159,6 +160,7 @@ class RealtimeManager {
       hasDepartmentAction: eventTypes.has('department_status_update') ||
         eventTypes.has('department_status_created') ||
         eventTypes.has('departmentAction'),
+      hasChatMessage: eventTypes.has('chat_message'),
       eventCount: events.length
     };
   }
@@ -180,6 +182,10 @@ class RealtimeManager {
 
     if (analysis.hasCompletion) {
       this.notifySubscriberSet(this.subscribers.formCompletion, analysis, 'formCompletion', now);
+    }
+
+    if (analysis.hasChatMessage) {
+      this.notifySubscriberSet(this.subscribers.chatMessage, analysis, 'chatMessage', now);
     }
 
     // Always notify global subscribers

@@ -24,6 +24,7 @@ export default function AdminSettings() {
   const [branches, setBranches] = useState([]);
   const [emailConfig, setEmailConfig] = useState([]);
   const [staffList, setStaffList] = useState([]);
+  const [systemSettings, setSystemSettings] = useState({});
 
   // Edit States
   const [editingDept, setEditingDept] = useState(null);
@@ -116,6 +117,19 @@ export default function AdminSettings() {
       });
       const json = await res.json();
       if (json.success) setStaffList(json.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchSystemSettings = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/admin/config/settings', {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const json = await res.json();
+      if (json.success) setSystemSettings(json.settings || {});
     } catch (e) {
       console.error(e);
     }
@@ -370,10 +384,30 @@ export default function AdminSettings() {
     fetchDepartments();
     fetchSchools();
     fetchCourses();
+    fetchCourses();
     fetchBranches();
     fetchEmailConfig();
     fetchStaff();
+    fetchSystemSettings();
   }, []);
+
+  const updateSetting = async (key, value) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch('/api/admin/config/settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ key, value })
+      });
+      fetchSystemSettings();
+      toast.success('Setting updated');
+    } catch (e) {
+      toast.error('Failed to update setting');
+    }
+  };
 
   // ==================== CASCADING SCOPING FILTERS ====================
   // Filter courses based on selected schools for NEW STAFF
@@ -510,6 +544,7 @@ export default function AdminSettings() {
   };
 
   const tabs = [
+    { id: 'general', label: 'General', icon: Settings },
     { id: 'departments', label: 'Departments', icon: Building2 },
     { id: 'schools', label: 'Schools', icon: School },
     { id: 'courses', label: 'Courses', icon: BookOpen },
@@ -549,8 +584,8 @@ export default function AdminSettings() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap border ${activeTab === tab.id
-                  ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red border-jecrc-red'
-                  : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
+                ? 'bg-jecrc-red text-white shadow-lg shadow-jecrc-red/20 dark:shadow-neon-red border-jecrc-red'
+                : 'bg-white dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -558,6 +593,58 @@ export default function AdminSettings() {
             </button>
           ))}
         </div>
+
+        {/* GENERAL TAB */}
+        {activeTab === 'general' && (
+          <GlassCard className="p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">System Configuration</h3>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Allow Re-application</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">If enabled, rejected students can re-submit for approval.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={systemSettings.allow_reapplication === true}
+                    onChange={(e) => updateSetting('allow_reapplication', e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-jecrc-red"></div>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Internal Maintenance Mode</h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Disable student access temporarily during updates.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={systemSettings.maintenance_mode === true}
+                    onChange={(e) => updateSetting('maintenance_mode', e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-jecrc-red"></div>
+                </label>
+              </div>
+
+              <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Current Academic Year</h4>
+                <input
+                  type="text"
+                  className="w-full max-w-xs px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20"
+                  value={systemSettings.academic_year || ''}
+                  onChange={(e) => setSystemSettings(prev => ({ ...prev, academic_year: e.target.value }))}
+                  onBlur={(e) => updateSetting('academic_year', e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">Changes are saved automatically on blur.</p>
+              </div>
+            </div>
+          </GlassCard>
+        )}
 
         {/* DEPARTMENTS TAB */}
         {activeTab === 'departments' && (
@@ -581,6 +668,36 @@ export default function AdminSettings() {
                         onChange={(e) => setEditingDept({ ...editingDept, email: e.target.value })}
                         placeholder="Email (optional)"
                       />
+
+                      <div className="w-full space-y-2 mt-2 p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                        <p className="text-xs font-semibold text-gray-500 uppercase">Scope Restriction (Optional)</p>
+                        <MultiSelectCheckbox
+                          options={schools.map(s => ({ id: s.id, label: s.name }))}
+                          selected={editingDept.allowed_school_ids || []}
+                          onChange={(ids) => setEditingDept({ ...editingDept, allowed_school_ids: ids })}
+                          placeholder="All Schools"
+                          label="Restrict to Schools"
+                        />
+                        {(editingDept.allowed_school_ids?.length > 0) && (
+                          <MultiSelectCheckbox
+                            options={courses.filter(c => editingDept.allowed_school_ids.includes(c.school_id)).map(c => ({ id: c.id, label: c.name }))}
+                            selected={editingDept.allowed_course_ids || []}
+                            onChange={(ids) => setEditingDept({ ...editingDept, allowed_course_ids: ids })}
+                            placeholder="All Courses in Selected Schools"
+                            label="Restrict to Courses"
+                          />
+                        )}
+                        {(editingDept.allowed_course_ids?.length > 0) && (
+                          <MultiSelectCheckbox
+                            options={branches.filter(b => editingDept.allowed_course_ids.includes(b.course_id)).map(b => ({ id: b.id, label: b.name }))}
+                            selected={editingDept.allowed_branch_ids || []}
+                            onChange={(ids) => setEditingDept({ ...editingDept, allowed_branch_ids: ids })}
+                            placeholder="All Branches in Selected Courses"
+                            label="Restrict to Branches"
+                          />
+                        )}
+                      </div>
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => updateDepartment(editingDept)}
@@ -610,6 +727,11 @@ export default function AdminSettings() {
                         </div>
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           {dept.email || 'No email set'} • Order: {dept.display_order}
+                          {dept.allowed_school_ids?.length > 0 && (
+                            <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              Targeted Scope
+                            </span>
+                          )}
                         </span>
                       </div>
                       <button

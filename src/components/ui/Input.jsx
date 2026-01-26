@@ -28,14 +28,14 @@ export default function Input({
     const isTextarea = type === 'textarea';
     const errorId = error ? `${name}-error` : undefined;
 
-    // Updated design: Full border, high visibility contrast
+    // Updated design: Full border with JECRC red theme
     const containerClasses = cn(
         "relative w-full rounded-xl transition-all duration-300",
         "border-2",
-        isTextarea ? "min-h-[140px]" : "min-h-[60px]",
+        isTextarea ? "min-h-[140px]" : "min-h-[62px]",
         error
-            ? "border-red-500 bg-red-50/30 dark:bg-red-900/10"
-            : "bg-gray-50 dark:bg-black/20 border-gray-300 dark:border-white/10 group-hover:border-gray-400 dark:group-hover:border-white/20 focus-within:border-jecrc-red dark:focus-within:border-jecrc-red-bright focus-within:shadow-lg focus-within:shadow-jecrc-red/10 focus-within:bg-white dark:focus-within:bg-black/40",
+            ? "border-red-500 bg-red-50/50 dark:bg-red-900/20"
+            : "bg-white dark:bg-gray-800 border-jecrc-red/50 hover:border-jecrc-red/70 focus-within:border-jecrc-red focus-within:shadow-lg focus-within:shadow-jecrc-red/15",
         disabled && "opacity-60 cursor-not-allowed"
     );
 

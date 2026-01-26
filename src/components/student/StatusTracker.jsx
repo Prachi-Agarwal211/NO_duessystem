@@ -14,10 +14,13 @@ import ReapplicationHistory from './ReapplicationHistory';
 import SupportButton from '@/components/support/SupportButton';
 import { realtimeManager } from '@/lib/realtimeManager';
 import { subscribeToRealtime } from '@/lib/supabaseRealtime';
+import { useUnread } from '@/hooks/useUnread';
 
-export default function StatusTracker({ registrationNo }) {
+export default function StatusTracker({ registrationNo, formId }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const { unreadCounts } = useUnread('student', formId);
 
   const [formData, setFormData] = useState(null);
   const [statusData, setStatusData] = useState([]);
@@ -223,21 +226,21 @@ export default function StatusTracker({ registrationNo }) {
     ? formData.status === 'rejected'
     : rejectedCount > 0;
 
-   const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
-   const canReapply = hasRejection && formData.status !== 'completed';
+  const rejectedDepartments = statusData.filter(s => s.status === 'rejected');
+  const canReapply = hasRejection && formData.status !== 'completed';
 
-   // 🐛 DEBUG: Log reapply button visibility logic (dev only)
-   if (process.env.NODE_ENV === 'development') {
-     console.log('🔍 Reapply Button Debug:', {
-       hasRejection,
-       formStatus: formData.status,
-       canReapply,
-       rejectedCount,
-       rejectedDepartments: rejectedDepartments.map(d => d.display_name),
-       isManualEntry,
-       allApproved
-     });
-   }
+  // 🐛 DEBUG: Log reapply button visibility logic (dev only)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 Reapply Button Debug:', {
+      hasRejection,
+      formStatus: formData.status,
+      canReapply,
+      rejectedCount,
+      rejectedDepartments: rejectedDepartments.map(d => d.display_name),
+      isManualEntry,
+      allApproved
+    });
+  }
 
   return (
     <motion.div
@@ -414,10 +417,15 @@ export default function StatusTracker({ registrationNo }) {
                         {/* Chat with Department Button */}
                         <Link
                           href={`/student/chat/${formData.id}/${encodeURIComponent(dept.department_name)}`}
-                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
+                          className="relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
                         >
                           <MessageCircle className="w-4 h-4" />
                           Chat
+                          {unreadCounts[dept.department_name] > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-gray-800 animate-bounce">
+                              {unreadCounts[dept.department_name]}
+                            </span>
+                          )}
                         </Link>
 
                         <span className={`text-xs ml-auto ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>

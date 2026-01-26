@@ -288,9 +288,6 @@ export function useStaffDashboard() {
       console.log('🔌 Staff dashboard setting up PUBLIC realtime for', user.department_name);
       console.log('📡 Subscribing to global event stream (no auth required)');
 
-      // Subscribe to PUBLIC global realtime service
-      unsubscribeRealtime = await subscribeToRealtime();
-
       // ⚡ DEBOUNCED REFRESH: Wait 1 second before refreshing to batch updates
       const debouncedRefresh = () => {
         if (debounceTimer) clearTimeout(debounceTimer);
@@ -302,22 +299,16 @@ export function useStaffDashboard() {
         }, 1000); // Wait 1 second to batch rapid updates
       };
 
-      // Subscribe to specific events via RealtimeManager
-      unsubscribeDeptAction = realtimeManager.subscribe('departmentAction', (analysis) => {
-        // Targeted Update Logic for Department Actions
-        const relevantEvents = analysis.events.filter(event =>
-          event.table === 'no_dues_status' &&
-          event.data?.new?.department_name === user.department_name
-        );
+      // ✅ SIMPLIFIED: Use unified subscription method
+      // This handles chat, status updates, and new applications automatically
+      const unsubscribeDepartment = import('@/lib/supabaseRealtime').then(({ realtimeService }) => {
+        return realtimeService.subscribeToDepartment(user.department_name, {
+          onStatusUpdate: (event) => {
+            console.log('⚡ Performing SILENT update for department actions');
+            setRequests(prevRequests => {
+              const newRequests = [...prevRequests];
+              let needsSoftRefresh = false;
 
-        if (relevantEvents.length > 0) {
-          console.log('⚡ Performing SILENT update for department actions');
-
-          setRequests(prevRequests => {
-            const newRequests = [...prevRequests];
-            let needsSoftRefresh = false;
-
-            relevantEvents.forEach(event => {
               const formId = event.data.new.form_id;
               const newStatus = event.data.new.status;
               const index = newRequests.findIndex(r => r.no_dues_forms.id === formId);
@@ -329,26 +320,28 @@ export function useStaffDashboard() {
                   status: newStatus
                 };
               } else {
-                // Item not in current list (maybe new or filtered out)
                 needsSoftRefresh = true;
               }
+
+              if (needsSoftRefresh) debouncedRefresh();
+
+              return newRequests;
             });
 
-            if (needsSoftRefresh) {
-              debouncedRefresh();
-            }
-            return newRequests;
-          });
-
-          // Silently update stats
-          refreshData();
-        }
+            // Silently update stats
+            refreshData();
+          },
+          onNewApplication: (event) => {
+            console.log('🚀 New application received');
+            debouncedRefresh(); // Refresh list to show new item
+          }
+        });
       });
 
-      // Also subscribe to global updates for new submissions and completions
+      // Also subscribe to global updates for completions that might affect us
       unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
-        // Only refresh for new submissions or completions that might affect us
-        if (analysis.hasNewSubmission || analysis.hasCompletion) {
+        // Only refresh for completions
+        if (analysis.hasCompletion) {
           console.log('🚀 Scheduling debounced refresh from global update');
           debouncedRefresh();
         }
@@ -361,8 +354,12 @@ export function useStaffDashboard() {
       console.log('🧹 Staff dashboard unsubscribing from realtime');
       if (retryTimeout) clearTimeout(retryTimeout);
       if (debounceTimer) clearTimeout(debounceTimer);
-      if (unsubscribeRealtime) unsubscribeRealtime();
-      if (unsubscribeDeptAction) unsubscribeDeptAction();
+
+      // Cleanup async subscription
+      if (unsubscribeDepartment) {
+        unsubscribeDepartment.then(unsub => unsub && unsub());
+      }
+
       if (unsubscribeGlobal) unsubscribeGlobal();
 
       // ✅ CLEANUP: Clear all timeouts

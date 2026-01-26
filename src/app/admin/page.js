@@ -372,7 +372,13 @@ export default function EnhancedAdminDashboard() {
           </div>
         </div>
         <div className="flex gap-2 sm:gap-3">
-          <AdminNotificationBell departmentStats={data.departmentStats} />
+          <AdminNotificationBell
+            departmentStats={data.departmentStats}
+            onRefresh={() => {
+              fetchStats();
+              fetchApplications();
+            }}
+          />
           <button onClick={() => router.push('/admin/settings')} className={`p-3 rounded-xl transition-all active:scale-95 shadow-sm border ${isDark ? 'bg-white/5 border-white/10 text-white hover:bg-white/10' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
             <Settings className="w-5 h-5" />
           </button>

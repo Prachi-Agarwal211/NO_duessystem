@@ -29,17 +29,17 @@ class OptimizedRealtimeService {
    */
   subscribe(dashboardType, callbacks = {}) {
     const connectionId = `${dashboardType}_${Date.now()}`;
-    
+
     console.log(`🔌 Creating optimized realtime connection for ${dashboardType}`);
-    
+
     // Create dashboard-specific connection
     const connection = this.createConnection(dashboardType, callbacks, connectionId);
-    
+
     // Store connection and subscribers
     this.connections.set(connectionId, connection);
     this.subscribers.set(connectionId, new Set([callbacks]));
     this.connectionHealth.set(connectionId, { status: 'connecting', lastActivity: Date.now() });
-    
+
     // Return unsubscribe function
     return () => this.unsubscribe(connectionId);
   }
@@ -49,25 +49,25 @@ class OptimizedRealtimeService {
    */
   createConnection(dashboardType, callbacks, connectionId) {
     const channel = supabase.channel(`optimized_${dashboardType}_${connectionId}`);
-    
+
     // Add event listeners based on dashboard type
     this.addEventListeners(channel, dashboardType, callbacks, connectionId);
-    
+
     // Subscribe to channel
     channel.subscribe((status) => {
       console.log(`📡 ${dashboardType} connection status:`, status);
-      
+
       const health = this.connectionHealth.get(connectionId) || {};
       health.status = status;
       health.lastActivity = Date.now();
       this.connectionHealth.set(connectionId, health);
-      
+
       // Notify callbacks of connection status
       if (callbacks.onConnectionChange) {
         callbacks.onConnectionChange(status);
       }
     });
-    
+
     return channel;
   }
 
@@ -148,7 +148,7 @@ class OptimizedRealtimeService {
    */
   addDepartmentListeners(channel, callbacks, connectionId) {
     const departmentName = callbacks.departmentName;
-    
+
     // Listen to department-specific status updates
     channel.on('postgres_changes', {
       event: '*',
@@ -183,7 +183,7 @@ class OptimizedRealtimeService {
    */
   addStudentListeners(channel, callbacks, connectionId) {
     const studentId = callbacks.studentId;
-    
+
     // Listen to student's own form updates
     channel.on('postgres_changes', {
       event: '*',
@@ -242,7 +242,7 @@ class OptimizedRealtimeService {
    */
   debounceUpdate(eventType, updateFunction, connectionId) {
     const debounceKey = `${connectionId}_${eventType}`;
-    
+
     // Clear existing timer
     if (this.debounceTimers.has(debounceKey)) {
       clearTimeout(this.debounceTimers.get(debounceKey));
@@ -252,7 +252,7 @@ class OptimizedRealtimeService {
     const timer = setTimeout(() => {
       updateFunction();
       this.debounceTimers.delete(debounceKey);
-      
+
       // Update connection health
       const health = this.connectionHealth.get(connectionId) || {};
       health.lastActivity = Date.now();
@@ -264,11 +264,21 @@ class OptimizedRealtimeService {
 
   /**
    * Check if department should handle application
+   * Filters based on department assignment logic
    */
   shouldDepartmentHandleApplication(form, departmentName) {
-    // Add logic to determine if department should be notified
-    // This could be based on school, course, etc.
-    return true; // For now, notify all departments
+    if (!form || !departmentName) return false;
+
+    // Get the department name from form if available
+    const formDepartment = form.department_name || form.school;
+
+    // If form has a specific department assigned, only notify that department
+    if (formDepartment && formDepartment !== departmentName) {
+      return false;
+    }
+
+    // For new applications, notify all departments (they can decide to take action)
+    return true;
   }
 
   /**
@@ -276,7 +286,7 @@ class OptimizedRealtimeService {
    */
   unsubscribe(connectionId) {
     console.log(`🔌 Unsubscribing from connection: ${connectionId}`);
-    
+
     // Clear debounce timers
     this.debounceTimers.forEach((timer, key) => {
       if (key.startsWith(connectionId)) {
@@ -316,7 +326,7 @@ class OptimizedRealtimeService {
    */
   refreshAll() {
     console.log('🔄 Refreshing all realtime connections');
-    
+
     this.connections.forEach((connection, connectionId) => {
       const health = this.connectionHealth.get(connectionId);
       if (health && health.status === 'SUBSCRIBED') {
@@ -336,7 +346,7 @@ class OptimizedRealtimeService {
    */
   cleanup() {
     console.log('🧹 Cleaning up all realtime connections');
-    
+
     // Clear all debounce timers
     this.debounceTimers.forEach(timer => clearTimeout(timer));
     this.debounceTimers.clear();
@@ -345,7 +355,7 @@ class OptimizedRealtimeService {
     this.connections.forEach((connection, connectionId) => {
       supabase.removeChannel(connection);
     });
-    
+
     // Clear all data
     this.connections.clear();
     this.subscribers.clear();

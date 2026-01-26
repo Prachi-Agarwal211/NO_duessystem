@@ -14,7 +14,8 @@ import {
   ChevronUp,
   Eye,
   MessageSquare,
-  AlertTriangle
+  AlertTriangle,
+  Scan
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -22,7 +23,9 @@ import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ChatBox from '@/components/chat/ChatBox';
-import optimizedRealtime from '@/lib/optimizedRealtime';
+import { realtimeService } from '@/lib/supabaseRealtime';
+import { useUnread } from '@/hooks/useUnread';
+import { MessageSquare } from 'lucide-react';
 
 /**
  * Department Dashboard Component
@@ -67,6 +70,9 @@ export default function DepartmentDashboard() {
   // Get current user info
   const [currentUser, setCurrentUser] = useState(null);
   const [departmentName, setDepartmentName] = useState('');
+
+  // Unread messages
+  const { unreadCounts, totalUnread } = useUnread('staff');
 
   // Load applications
   const loadApplications = async () => {
@@ -120,11 +126,12 @@ export default function DepartmentDashboard() {
 
   // Optimized Real-time updates
   useEffect(() => {
-    console.log(`🔌 Setting up optimized department real-time connection for ${departmentName}`);
+    console.log(`🔌 Setting up unified department real-time connection for ${departmentName}`);
 
-    const unsubscribe = optimizedRealtime.subscribe('department', {
-      departmentName: departmentName,
-      onDepartmentUpdate: (payload) => {
+    // Subscribe using the unified service
+    const unsubscribe = realtimeService.subscribeToDepartment(departmentName, {
+      // Map 'onDepartmentUpdate' to 'onStatusUpdate'
+      onStatusUpdate: (payload) => {
         console.log(`🏢 Department ${departmentName}: Status update`, payload);
         // Update specific item in state instead of full reload
         if (payload.new && payload.new.form_id) {
@@ -139,31 +146,47 @@ export default function DepartmentDashboard() {
       },
       onNewApplication: (payload) => {
         console.log(`📝 Department ${departmentName}: New application`, payload);
-        // Prepend new application to state
         if (payload.new) {
-          // We fetch full data for the new application to ensure nested status is correct
-          // but we do it silently for just ONE item
           fetch(`/api/student/application?id=${payload.new.id}`)
             .then(res => res.json())
             .then(json => {
               if (json.success && json.data) {
                 setApplications(prev => [json.data, ...prev]);
-                toast.success(`New application: ${json.data.student_name}`);
+                // toast.success(`New application: ${json.data.student_name}`); // toast not imported/used here?
               }
             }).catch(() => loadApplications());
         } else {
           loadApplications();
         }
-      },
-      onConnectionChange: (status) => {
-        setIsConnected(status === 'SUBSCRIBED');
       }
     });
+
+    // Set initial connected state
+    setIsConnected(true);
 
     return () => {
       unsubscribe();
     };
   }, [departmentName]);
+
+  // Load chat messages when chat opens
+  useEffect(() => {
+    if (showChat && selectedApplication && departmentName) {
+      loadChatMessages();
+    }
+  }, [showChat, selectedApplication, departmentName]);
+
+  const loadChatMessages = async () => {
+    try {
+      const response = await fetch(`/api/chat/${selectedApplication.id}/${departmentName}`);
+      const result = await response.json();
+      if (result.success && result.data?.messages) {
+        setChatMessages(result.data.messages);
+      }
+    } catch (error) {
+      console.error("Failed to load messages", error);
+    }
+  };
 
   // Handle select all
   const handleSelectAll = () => {
@@ -305,15 +328,15 @@ export default function DepartmentDashboard() {
     return 0;
   });
 
-  // Status badge component
+  // Status badge component with dark mode support
   const StatusBadge = ({ status }) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      approved: 'bg-green-100 text-green-800',
-      rejected: 'bg-red-100 text-red-800',
-      in_progress: 'bg-blue-100 text-blue-800',
-      completed: 'bg-purple-100 text-purple-800',
-      reapplied: 'bg-orange-100 text-orange-800'
+      pending: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+      approved: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+      rejected: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+      in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+      completed: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
+      reapplied: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300'
     };
 
     return (
@@ -376,9 +399,22 @@ export default function DepartmentDashboard() {
                 <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   Real-time synchronization enabled
                 </span>
+                {totalUnread > 0 && (
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full animate-pulse ${isDark ? 'bg-blue-500/10 border border-blue-500/20 text-blue-400' : 'bg-blue-50 border border-blue-100 text-blue-700'}`}>
+                    <MessageSquare className="w-3 h-3" />
+                    <span className="text-xs font-bold">{totalUnread} New Messages</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.open('/staff/verify', '_blank')}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+              >
+                <Scan className="w-4 h-4" />
+                <span className="hidden sm:inline">Verify QR</span>
+              </button>
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all active:scale-95 shadow-sm font-semibold
@@ -428,8 +464,8 @@ export default function DepartmentDashboard() {
                       onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
                       className={`w-full p-3 rounded-xl border-2 outline-none font-semibold transition-all
                           ${isDark
-                          ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
-                          : 'bg-white border-gray-200 text-gray-900 focus:border-jecrc-red'
+                          ? 'bg-gray-800 border-jecrc-red/50 text-white focus:border-jecrc-red'
+                          : 'bg-white border-jecrc-red/50 text-gray-900 focus:border-jecrc-red'
                         }`}
                     >
                       <option value="all">All Status</option>
@@ -452,8 +488,8 @@ export default function DepartmentDashboard() {
                         placeholder="Search by student name or registration number..."
                         className={`w-full pl-10 pr-4 py-3 rounded-xl border-2 outline-none font-semibold transition-all
                             ${isDark
-                            ? 'bg-black/40 border-white/10 text-white focus:border-jecrc-red-bright'
-                            : 'bg-white border-gray-200 text-gray-900 focus:border-jecrc-red'
+                            ? 'bg-gray-800 border-jecrc-red/50 text-white focus:border-jecrc-red'
+                            : 'bg-white border-jecrc-red/50 text-gray-900 focus:border-jecrc-red'
                           }`}
                       />
                     </div>
@@ -577,6 +613,7 @@ export default function DepartmentDashboard() {
                       setSelectedApplication(application);
                       setShowChat(true);
                     }}
+                    unreadCount={unreadCounts[application.id] || 0}
                     onViewDetails={() => alert(`View details for ${application.registration_no}`)}
                     isDark={isDark}
                   />
@@ -687,9 +724,14 @@ export default function DepartmentDashboard() {
                                 setSelectedApplication(application);
                                 setShowChat(true);
                               }}
-                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                              className="relative px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
                             >
                               <MessageSquare className="w-4 h-4" />
+                              {unreadCounts[application.id] > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-gray-800 animate-bounce">
+                                  {unreadCounts[application.id]}
+                                </span>
+                              )}
                             </button>
                             <button
                               onClick={() => {
@@ -732,23 +774,57 @@ export default function DepartmentDashboard() {
                   messages={chatMessages}
                   loading={false}
                   sending={sendingMessage}
-                  onSend={async (message, senderType, senderName) => {
+                  onSend={async (message) => {
                     setSendingMessage(true);
                     try {
-                      // Send message logic here
-                      console.log('Sending message:', message);
+                      const { data: { session } } = await supabase.auth.getSession();
+                      const response = await fetch(`/api/chat/${selectedApplication.id}/${departmentName}`, {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${session?.access_token}`
+                        },
+                        body: JSON.stringify({
+                          message,
+                          senderType: 'department',
+                          senderName: currentUser?.name || 'Department Staff',
+                          senderId: currentUser?.id
+                        })
+                      });
+
+                      const result = await response.json();
+                      if (result.success) {
+                        // Message will come back via realtime, but can optimistically append
+                        // setChatMessages(prev => [...prev, result.data]);
+                      } else {
+                        alert(result.error);
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert('Failed to send message');
                     } finally {
                       setSendingMessage(false);
                     }
                   }}
-                  currentUserType={currentUser?.type}
+                  currentUserType="department"
                   currentUserName={currentUser?.name}
                   departmentName={departmentName}
                   rejectionReason={selectedApplication.no_dues_status[0]?.rejection_reason}
                   onFileUpload={async (file) => {
-                    // File upload logic here
-                    console.log('Uploading file:', file);
-                    return { success: true, fileUrl: 'https://example.com/file' };
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('bucket', 'no-dues-files');
+
+                    try {
+                      const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                      });
+                      const result = await response.json();
+                      return result.success ? { success: true, fileUrl: result.url } : { success: false, error: result.error };
+                    } catch (e) {
+                      return { success: false, error: e.message };
+                    }
                   }}
                   isConnected={isConnected}
                   typingUsers={typingUsers}
@@ -763,7 +839,7 @@ export default function DepartmentDashboard() {
 }
 
 // Mobile Card Component for Applications
-function MobileApplicationCard({ application, selected, onSelect, onApprove, onReject, onChat, onViewDetails, isDark }) {
+function MobileApplicationCard({ application, selected, onSelect, onApprove, onReject, onChat, unreadCount, onViewDetails, isDark }) {
   const status = application.no_dues_status?.[0]?.status || 'pending';
   const isReapplied = application.status === 'reapplied';
 
@@ -876,10 +952,15 @@ function MobileApplicationCard({ application, selected, onSelect, onApprove, onR
         </button>
         <button
           onClick={onChat}
-          className="p-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg hover:shadow-md transition-all"
+          className="relative p-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg hover:shadow-md transition-all"
           title="Chat"
         >
           <MessageSquare className="w-4 h-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white dark:border-gray-800 animate-bounce">
+              {unreadCount}
+            </span>
+          )}
         </button>
         <button
           onClick={onViewDetails}

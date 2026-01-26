@@ -51,38 +51,11 @@ export async function GET(request) {
 
         const deptNames = depts?.map(d => d.name) || [];
 
-        // CRITICAL: Find all rejections made BY THIS USER
-        // Chat should only go to the person who rejected
-        const { data: myRejections, error: rejectionsError } = await supabaseAdmin
-            .from('no_dues_status')
-            .select('form_id, department_name')
-            .eq('action_by_user_id', profile.id)
-            .eq('status', 'rejected')
-            .in('department_name', deptNames);
-
-        if (rejectionsError) {
-            console.error('Error fetching rejections:', rejectionsError);
-            return NextResponse.json({ error: rejectionsError.message }, { status: 500 });
-        }
-
-        if (!myRejections || myRejections.length === 0) {
-            // This user hasn't rejected anything - no chats to show
-            return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });
-        }
-
-        // Build formId filters for messages
-        const formIds = myRejections.map(r => r.form_id);
-
-        // Create a map to quickly check form_id + department combinations
-        const myRejectionMap = new Set(
-            myRejections.map(r => `${r.form_id}|${r.department_name}`)
-        );
-
-        // Get unread messages only for form_ids that this user rejected
+        // Get ALL unread messages for these departments from students
         const { data: messages, error: messagesError } = await supabaseAdmin
             .from('no_dues_messages')
             .select('form_id, department_name, is_read, no_dues_forms!inner(student_name, registration_no)')
-            .in('form_id', formIds)
+            .in('department_name', deptNames)
             .eq('sender_type', 'student')
             .eq('is_read', false);
 
@@ -91,18 +64,12 @@ export async function GET(request) {
             return NextResponse.json({ error: messagesError.message }, { status: 500 });
         }
 
-        // Filter messages: only include if THIS USER rejected this form+department
         const unreadByForm = {};
         (messages || []).forEach(msg => {
-            const key = `${msg.form_id}|${msg.department_name}`;
+            const key = msg.form_id;
 
-            // Only count if this user rejected this specific form+department combo
-            if (!myRejectionMap.has(key)) {
-                return; // Skip - this was rejected by someone else
-            }
-
-            if (!unreadByForm[msg.form_id]) {
-                unreadByForm[msg.form_id] = {
+            if (!unreadByForm[key]) {
+                unreadByForm[key] = {
                     form_id: msg.form_id,
                     student_name: msg.no_dues_forms?.student_name,
                     registration_no: msg.no_dues_forms?.registration_no,
@@ -110,7 +77,7 @@ export async function GET(request) {
                     unread_count: 0
                 };
             }
-            unreadByForm[msg.form_id].unread_count++;
+            unreadByForm[key].unread_count++;
         });
 
         return NextResponse.json({

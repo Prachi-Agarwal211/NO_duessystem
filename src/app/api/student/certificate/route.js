@@ -3,6 +3,11 @@ import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
 
+// Force dynamic rendering - this route uses request.url
+export const dynamic = 'force-dynamic';
+
+export const runtime = 'nodejs';
+
 const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 /**

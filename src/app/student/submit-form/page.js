@@ -41,8 +41,8 @@ function SubmitFormPageContent() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className={`p-4 sm:p-6 md:p-8 lg:p-12 rounded-xl backdrop-blur-md transition-all duration-700 ease-smooth
               ${isDark
-                ? 'bg-white/[0.02] border border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.4)]'
-                : 'bg-white border border-black/5 shadow-[0_15px_40px_rgba(0,0,0,0.04)]'
+                ? 'bg-gray-900/90 border border-jecrc-red/30 shadow-[0_8px_24px_rgba(0,0,0,0.5)]'
+                : 'bg-white border border-jecrc-red/20 shadow-[0_15px_40px_rgba(0,0,0,0.08)]'
               }`}
           >
             {/* Header */}

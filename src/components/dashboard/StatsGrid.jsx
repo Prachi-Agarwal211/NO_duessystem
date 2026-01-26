@@ -1,3 +1,6 @@
+'use client';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Users, Clock, CheckCircle, XCircle } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
 
 export default function StatsGrid({ stats, loading = false, onFilterChange }) {

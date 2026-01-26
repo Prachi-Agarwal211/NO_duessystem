@@ -54,7 +54,7 @@ export async function GET(request) {
     // Base query for staff profiles
     let query = supabaseAdmin
       .from('profiles')
-      .select('id, full_name, email, department_name, role, designation, avatar_url, school_ids, course_ids, branch_ids, is_active, created_at, last_active_at')
+      .select('id, full_name, email, department_name, role, avatar_url, school_ids, course_ids, branch_ids, is_active, created_at, last_active_at')
       .eq('role', 'department')
       .order('created_at', { ascending: false });
 

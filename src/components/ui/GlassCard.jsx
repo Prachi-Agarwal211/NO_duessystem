@@ -26,22 +26,22 @@ export default function GlassCard({
 }) {
   const { theme: currentTheme } = useTheme();
   const isDark = currentTheme === 'dark';
-  // Theme-based styling - Better contrast in both modes
+  // Theme-based styling - JECRC red theme for better contrast
   const getThemeClasses = () => {
     if (isDark) {
       switch (theme) {
         case 'corporate':
-          return 'bg-gray-800/80 border-gray-600';
+          return 'bg-gray-800/80 border-jecrc-red/40';
         case 'executive':
-          return 'bg-gray-800/80 border-gray-600';
+          return 'bg-gray-800/80 border-jecrc-red/40';
         case 'professional':
-          return 'bg-gray-800/80 border-gray-600';
+          return 'bg-gray-800/80 border-jecrc-red/40';
         case 'jecrc':
         default:
-          return 'bg-gray-800/80 border-gray-600';
+          return 'bg-gray-800/90 border-jecrc-red/50';
       }
     } else {
-      // Light mode - clean and readable
+      // Light mode - clean with red accents
       switch (theme) {
         case 'corporate':
           return 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200';
@@ -51,41 +51,41 @@ export default function GlassCard({
           return 'bg-gradient-to-br from-cyan-50 to-emerald-50 border-cyan-200';
         case 'jecrc':
         default:
-          return 'bg-gradient-to-br from-gray-50 to-white border-gray-200';
+          return 'bg-gradient-to-br from-gray-50 to-white border-jecrc-red/30';
       }
     }
   };
 
-  // Variant-based styling with improved dark mode contrast
+  // Variant-based styling with JECRC red borders
   const getVariantClasses = () => {
     if (isDark) {
       switch (variant) {
         case 'glass':
-          return 'backdrop-blur-xl bg-gray-900/80 border border-gray-700 shadow-xl';
+          return 'backdrop-blur-xl bg-gray-900/80 border border-jecrc-red/40 shadow-xl';
         case 'elegant':
-          return 'bg-gray-800/80 border border-gray-700 shadow-xl';
+          return 'bg-gray-800/90 border border-jecrc-red/50 shadow-xl';
         case 'premium':
-          return 'bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-600 shadow-xl';
+          return 'bg-gradient-to-br from-gray-800 to-gray-900 border border-jecrc-red/40 shadow-xl';
         case 'dark':
-          return 'bg-gray-900 border border-gray-700 shadow-xl';
+          return 'bg-gray-900 border border-jecrc-red/50 shadow-xl';
         case 'default':
         default:
-          return 'bg-gray-800/80 border border-gray-700 shadow-xl backdrop-blur-md';
+          return 'bg-gray-800/90 border border-jecrc-red/50 shadow-xl backdrop-blur-md';
       }
     } else {
-      // Light mode - clean and readable
+      // Light mode - clean with red borders
       switch (variant) {
         case 'glass':
-          return 'backdrop-blur-xl bg-white/80 border border-gray-200 shadow-lg';
+          return 'backdrop-blur-xl bg-white/80 border border-jecrc-red/30 shadow-lg';
         case 'elegant':
-          return 'bg-white/80 border border-gray-200 shadow-lg';
+          return 'bg-white/90 border border-jecrc-red/40 shadow-lg';
         case 'premium':
-          return 'bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-lg';
+          return 'bg-gradient-to-br from-white to-gray-50 border border-jecrc-red/30 shadow-lg';
         case 'dark':
-          return 'bg-gray-800 text-white';
+          return 'bg-gray-800 text-white border border-jecrc-red/50';
         case 'default':
         default:
-          return 'bg-white border border-gray-200 shadow-lg backdrop-blur-md';
+          return 'bg-white border border-jecrc-red/40 shadow-lg backdrop-blur-md';
       }
     }
   };
