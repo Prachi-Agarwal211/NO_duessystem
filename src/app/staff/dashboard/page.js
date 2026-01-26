@@ -599,7 +599,7 @@ export default function StaffDashboard() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-4 capitalize font-medium text-sm transition-all border-b-2 bg-transparent
+              className={`pb-3 px-4 capitalize font-medium text-sm transition-all border-b-2 
                 ${activeTab === tab
                   ? 'border-jecrc-red text-jecrc-red'
                   : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -872,7 +872,7 @@ function StatusCard({ label, value, sub, icon: Icon, color, onClick }) {
   const colorScheme = colors[color] || colors.gray;
 
   return (
-    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full bg-transparent p-0 border-none outline-none shadow-none">
+    <button onClick={onClick} className="text-left transform transition-all hover:scale-[1.02] active:scale-95 w-full">
       <GlassCard className="p-4 sm:p-5 h-full">
         <div className="flex justify-between items-start">
           <div>

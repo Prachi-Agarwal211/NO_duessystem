@@ -56,7 +56,7 @@ export default function StatsGrid({ stats, loading = false, onFilterChange }) {
         <button
           key={idx}
           onClick={() => onFilterChange && onFilterChange(card.filter)}
-          className="w-full text-left active:scale-[0.98] transition-all"
+          className="w-full text-left active:scale-[0.98] transition-all bg-transparent p-0 border-none outline-none shadow-none"
         >
           <GlassCard
             variant="elegant"

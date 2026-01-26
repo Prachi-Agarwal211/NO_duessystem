@@ -446,26 +446,24 @@ export default function EnhancedAdminDashboard() {
             </div>
           </GlassCard>
 
-          {/* UTILITY WIDGETS */}
-          {hasSupportData && (
-            <GlassCard
-              className="p-5 cursor-pointer group hover:shadow-lg transition-all"
-              onClick={() => router.push('/admin/support')}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className={`p-2.5 rounded-lg ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
-                  <MessageSquare className="w-5 h-5" />
-                </div>
-                <ChevronRight className={`w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+          {/* FORCE SHOW SUPPORT WIDGET */}
+          <GlassCard
+            className="p-5 cursor-pointer group hover:shadow-lg transition-all"
+            onClick={() => router.push('/admin/support')}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-2.5 rounded-lg ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                <MessageSquare className="w-5 h-5" />
               </div>
-              <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Support Center</h3>
-              <div className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                <span className="text-yellow-600 dark:text-yellow-400 font-medium">{supportStats.open} Open</span>
-                <span className="mx-2 opacity-30">•</span>
-                <span className="opacity-60">{supportStats.total} Total</span>
-              </div>
-            </GlassCard>
-          )}
+              <ChevronRight className={`w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all ${isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+            </div>
+            <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Support Center</h3>
+            <div className={`text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              <span className="text-yellow-600 dark:text-yellow-400 font-medium">{supportStats.open} Open</span>
+              <span className="mx-2 opacity-30">•</span>
+              <span className="opacity-60">{supportStats.total} Total</span>
+            </div>
+          </GlassCard>
 
           {hasEmailData && (
             <GlassCard
