@@ -4,6 +4,11 @@ import { studentFormSchema, validateWithZod } from '@/lib/zodSchemas';
 import { ApiResponse } from '@/lib/apiResponse';
 import applicationService from '@/lib/services/ApplicationService';
 
+// Force dynamic rendering - this route uses request.url
+export const dynamic = 'force-dynamic';
+
+export const runtime = 'nodejs';
+
 export async function POST(request) {
   try {
     // 1. Rate Limiting

@@ -333,7 +333,7 @@ function CheckStatusContent() {
               </div>
 
               {/* Search Form Card - Use GlassCard ✅ */}
-              <div className={`p-8 rounded-2xl backdrop-blur-md transition-all duration-700 ${isDark ? 'bg-gray-900/90 border border-jecrc-red/30' : 'bg-white border border-jecrc-red/20 shadow-lg'}`}>
+              <GlassCard className={`p-8 rounded-2xl backdrop-blur-md transition-all duration-700 ${isDark ? 'bg-gray-900/90 border border-jecrc-red/30' : 'bg-white border border-jecrc-red/20 shadow-lg'}`}>
                 <form onSubmit={handleSearch} className="space-y-6">
                   <Input
                     label="Registration Number"

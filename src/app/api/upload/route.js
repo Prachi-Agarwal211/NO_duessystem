@@ -11,6 +11,11 @@ const supabaseAdmin = createClient(
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { ApiResponse } from '@/lib/apiResponse';
 
+// Force dynamic rendering - this route uses request.url
+export const dynamic = 'force-dynamic';
+
+export const runtime = 'nodejs';
+
 // ✅ STRICT STORAGE LIMITS (enforced at API level)
 const LIMITS = {
   'alumni-screenshots': 100 * 1024, // 100 KB for Alumni

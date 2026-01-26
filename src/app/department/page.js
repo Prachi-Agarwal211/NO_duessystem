@@ -25,7 +25,6 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ChatBox from '@/components/chat/ChatBox';
 import { realtimeService } from '@/lib/supabaseRealtime';
 import { useUnread } from '@/hooks/useUnread';
-import { MessageSquare } from 'lucide-react';
 
 /**
  * Department Dashboard Component
