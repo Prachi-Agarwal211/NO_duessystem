@@ -35,17 +35,21 @@ export default function Input({
         isTextarea ? "min-h-[140px]" : "min-h-[62px]",
         error
             ? "border-red-500 bg-red-50/50 dark:bg-red-900/20"
-            : "bg-white dark:bg-gray-800 border-jecrc-red/50 hover:border-jecrc-red/70 focus-within:border-jecrc-red focus-within:shadow-lg focus-within:shadow-jecrc-red/15",
-        disabled && "opacity-60 cursor-not-allowed"
+            : disabled
+                ? "bg-gray-100 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 cursor-not-allowed"
+                : "bg-white dark:bg-gray-800 border-jecrc-red/50 hover:border-jecrc-red/70 focus-within:border-jecrc-red focus-within:shadow-lg focus-within:shadow-jecrc-red/15",
+        disabled && "opacity-70"
     );
 
     const inputBaseClasses = cn(
         "peer w-full pt-6 pb-2 bg-transparent outline-none border-none shadow-none ring-0",
-        "text-gray-900 dark:text-white placeholder:text-transparent focus:placeholder:text-gray-400 dark:focus:placeholder:text-gray-500",
+        "placeholder:text-transparent focus:placeholder:text-gray-400 dark:focus:placeholder:text-gray-500",
         "text-base font-medium",
+        disabled
+            ? "text-gray-600 dark:text-gray-300 cursor-not-allowed"
+            : "text-gray-900 dark:text-white",
         startIcon ? "pl-11" : "pl-4",
         (endIcon || type === 'password' || isSelect) ? "pr-11" : "pr-4",
-        disabled && "cursor-not-allowed",
         isSelect && "appearance-none cursor-pointer" // Hide default arrow for select
     );
 

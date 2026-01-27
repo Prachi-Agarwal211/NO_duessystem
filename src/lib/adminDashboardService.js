@@ -27,7 +27,7 @@ class AdminDashboardService {
 
       const cacheKey = `dashboard_stats_${JSON.stringify(filters)}`;
       const cached = this.cache.get(cacheKey);
-      
+
       if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
         console.log('📋 Using cached dashboard stats');
         return cached.data;
@@ -80,7 +80,7 @@ class AdminDashboardService {
 
     let query = supabaseAdmin
       .from('no_dues_forms')
-      .select('status, created_at');
+      .select('status, created_at, is_reapplication');
 
     if (startDate) {
       query = query.gte('created_at', startDate);
@@ -102,12 +102,12 @@ class AdminDashboardService {
       in_progress: data?.filter(f => f.status === 'in_progress').length || 0,
       completed: data?.filter(f => f.status === 'completed').length || 0,
       rejected: data?.filter(f => f.status === 'rejected').length || 0,
-      reapplied: data?.filter(f => f.status === 'reapplied').length || 0
+      reapplied: data?.filter(f => f.is_reapplication === true).length || 0  // Use is_reapplication flag
     };
 
     // Calculate completion rate
-    stats.completion_rate = stats.total > 0 
-      ? ((stats.completed / stats.total) * 100).toFixed(1) 
+    stats.completion_rate = stats.total > 0
+      ? ((stats.completed / stats.total) * 100).toFixed(1)
       : 0;
 
     return stats;
@@ -141,7 +141,7 @@ class AdminDashboardService {
 
     // Group by department and status
     const deptStats = {};
-    
+
     data?.forEach(status => {
       if (!deptStats[status.department_name]) {
         deptStats[status.department_name] = {
@@ -157,7 +157,7 @@ class AdminDashboardService {
 
       const dept = deptStats[status.department_name];
       dept.total++;
-      
+
       if (status.status === 'pending') dept.pending++;
       else if (status.status === 'approved') dept.approved++;
       else if (status.status === 'rejected') dept.rejected++;
@@ -220,10 +220,10 @@ class AdminDashboardService {
 
     // Group by date
     const dailyStats = {};
-    
+
     data?.forEach(form => {
       const date = new Date(form.created_at).toISOString().split('T')[0];
-      
+
       if (!dailyStats[date]) {
         dailyStats[date] = {
           date,
@@ -260,7 +260,7 @@ class AdminDashboardService {
     const stats = {
       total_generated: data?.length || 0,
       blockchain_verified: data?.filter(f => f.blockchain_verified).length || 0,
-      verification_rate: data?.length > 0 
+      verification_rate: data?.length > 0
         ? ((data.filter(f => f.blockchain_verified).length / data.length) * 100).toFixed(1)
         : 0,
       recent_generations: data?.filter(f => {
@@ -324,7 +324,7 @@ class AdminDashboardService {
       // Filter by department if specified
       let filteredData = data || [];
       if (department) {
-        filteredData = data?.filter(form => 
+        filteredData = data?.filter(form =>
           form.no_dues_status?.some(status => status.department_name === department)
         ) || [];
       }

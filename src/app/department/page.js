@@ -665,8 +665,11 @@ export default function DepartmentDashboard() {
                           <StatusBadge status={application.no_dues_status[0]?.status || 'pending'} />
                         </td>
                         <td className="px-6 py-4">
-                          {application.status === 'reapplied' ? (
-                            <span className="text-orange-500 text-sm font-medium">Reapplied</span>
+                          {application.is_reapplication ? (
+                            <span className="text-orange-500 text-sm font-medium flex items-center gap-1">
+                              <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                              Reapplied
+                            </span>
                           ) : (
                             <span className="text-gray-500 text-sm">Normal</span>
                           )}
@@ -799,7 +802,7 @@ export default function DepartmentDashboard() {
 // Mobile Card Component
 function MobileApplicationCard({ application, selected, onSelect, onApprove, onReject, onChat, unreadCount, onViewDetails, isDark }) {
   const status = application.no_dues_status?.[0]?.status || 'pending';
-  const isReapplied = application.status === 'reapplied';
+  const isReapplied = application.is_reapplication === true;
 
   return (
     <div
