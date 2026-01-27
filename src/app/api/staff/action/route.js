@@ -249,17 +249,37 @@ export async function PUT(request) {
 
     if (updateError) throw updateError;
 
-    // ==================== IMPORTANT ====================
-    // Form status update is handled by database trigger: trigger_update_form_status
-    // The trigger automatically sets form status to 'completed' when all departments approve
-    // We don't need to manually check or update it here - this prevents race conditions
+    // ==================== UPDATE FORM STATUS ====================
+    // ✅ CRITICAL FIX: The database trigger doesn't exist!
+    // We must update the form status directly here.
+    // Check all department statuses and compute new form status.
     // ===================================================
 
-    // Get updated form status (may have been changed by trigger)
+    const { data: allStatuses, error: statusCheckError } = await supabase
+      .from('no_dues_status')
+      .select('status')
+      .eq('form_id', formId);
+
+    if (statusCheckError) throw statusCheckError;
+
+    const allApproved = allStatuses.every(s => s.status === 'approved');
+    const hasRejection = allStatuses.some(s => s.status === 'rejected');
+
+    let newFormStatus = 'in_progress';
+    if (hasRejection) newFormStatus = 'rejected';
+    else if (allApproved) newFormStatus = 'completed';
+
+    console.log(`📋 Form ${formId}: ${allStatuses.filter(s => s.status === 'approved').length}/${allStatuses.length} approved → ${newFormStatus}`);
+
+    // Update form status
     const { data: currentForm, error: formError } = await supabase
       .from('no_dues_forms')
-      .select('id, status, student_name, registration_no')
+      .update({
+        status: newFormStatus,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', formId)
+      .select('id, status, student_name, registration_no')
       .single();
 
     if (formError && formError.code !== 'PGRST116') throw formError;

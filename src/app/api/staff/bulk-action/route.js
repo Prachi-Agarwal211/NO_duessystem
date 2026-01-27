@@ -140,36 +140,55 @@ export async function PUT(request) {
 
         if (updateError) throw updateError;
 
-        // 6. Post-Process (Certificates & Notifications)
-        // We do this asynchronously/background to not timeout the bulk request
-        (async () => {
-            // For each form, check if completed
-            // Since triggers handle 'completed' status update on no_dues_forms, wait a moment or just check
-            // For bulk, simpler to trigger certificate generation check for ALL approved forms
-            if (action === 'approve') {
-                // Identify which forms might be completed now
-                const { data: updatedForms } = await supabaseAdmin
+        // 6. Post-Process: Update form statuses and trigger certificates
+        // ✅ CRITICAL FIX: Database trigger doesn't exist - update status directly!
+        if (action === 'approve') {
+            // Get unique form IDs we just updated
+            const affectedFormIds = [...new Set(rowsToUpdate.map(r => r.form_id))];
+
+            for (const affectedFormId of affectedFormIds) {
+                // Check all statuses for this form
+                const { data: allStatuses } = await supabaseAdmin
+                    .from('no_dues_status')
+                    .select('status')
+                    .eq('form_id', affectedFormId);
+
+                const allApproved = allStatuses?.every(s => s.status === 'approved');
+                const hasRejection = allStatuses?.some(s => s.status === 'rejected');
+
+                let newFormStatus = 'in_progress';
+                if (hasRejection) newFormStatus = 'rejected';
+                else if (allApproved) newFormStatus = 'completed';
+
+                // Update form status
+                await supabaseAdmin
                     .from('no_dues_forms')
-                    .select('id, status')
-                    .in('id', formIds);
+                    .update({
+                        status: newFormStatus,
+                        updated_at: now
+                    })
+                    .eq('id', affectedFormId);
 
-                const completedFromThisBatch = updatedForms?.filter(f => f.status === 'completed') || [];
+                console.log(`📋 Bulk: Form ${affectedFormId} → ${newFormStatus}`);
 
-                // Trigger certificate generation for completed ones
-                for (const form of completedFromThisBatch) {
-                    fetch(APP_URLS.certificateGenerateApi(), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ formId: form.id })
-                    }).catch(console.error);
+                // Trigger certificate generation if completed
+                if (newFormStatus === 'completed') {
+                    try {
+                        const { triggerCertificateGeneration } = await import('@/lib/certificateTrigger');
+                        triggerCertificateGeneration(affectedFormId, actionUserId)
+                            .then(r => console.log(r.success ? `✅ Cert generated: ${affectedFormId}` : `❌ Cert failed: ${r.error}`))
+                            .catch(e => console.error('Cert error:', e.message));
+                    } catch (importErr) {
+                        // Fallback to API
+                        fetch(APP_URLS.certificateGenerateApi(), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ formId: affectedFormId })
+                        }).catch(console.error);
+                    }
                 }
             }
-
-            // Notifications (Optimized: Fire individual emails properly but don't await sequentially)
-            // Only for REJECTIONS or CERTIFICATE READY
-            // Fetch details needed for email
-            // Not implemented fully here to save execution time, user can rely on individual rejections
-        })();
+        }
 
         return NextResponse.json({
             success: true,
