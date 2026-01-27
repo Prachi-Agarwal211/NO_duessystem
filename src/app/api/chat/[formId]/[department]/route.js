@@ -54,17 +54,11 @@ export async function GET(request, { params }) {
             .eq('department_name', department);
 
         // Get messages with pagination
+        // NOTE: Removed the sender join since sender_id is polymorphic
+        // (can be auth.users UUID, student string, or null)
         const { data: messages, error } = await supabaseAdmin
             .from('no_dues_messages')
-            .select(`
-                *,
-                sender:sender_id(
-                    id,
-                    full_name,
-                    email,
-                    role
-                )
-            `)
+            .select('*')
             .eq('form_id', formId)
             .eq('department_name', department)
             .order('created_at', { ascending: true })
@@ -270,18 +264,11 @@ export async function POST(request, { params }) {
         console.log('Attempting to insert message:', { formId, department, message: message.substring(0, 50) + '...' });
 
         // Insert message
+        // NOTE: Removed the sender join since sender_id is polymorphic
         const { data: newMessage, error: insertError } = await supabaseAdmin
             .from('no_dues_messages')
             .insert([messageData])
-            .select(`
-                *,
-                sender:sender_id(
-                    id,
-                    full_name,
-                    email,
-                    role
-                )
-            `)
+            .select('*')
             .single();
 
         if (insertError) {
