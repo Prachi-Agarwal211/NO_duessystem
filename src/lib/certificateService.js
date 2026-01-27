@@ -388,8 +388,21 @@ export const finalizeCertificate = async (formId) => {
       console.error('❌ Database update failed:', updateError);
       throw new Error(`Database update error: ${updateError.message}`);
     }
+
+    console.log('✅ Certificate finalization complete for form:', formId);
+
+    // Return success result
+    return {
+      success: true,
+      certificateUrl: certificateResult.certificateUrl,
+      blockchainRecord: blockchainRecord,
+      formId: formId
+    };
+
   } catch (error) {
-    console.error('Failed to update certificate record:', error);
+    console.error('❌ Failed to finalize certificate:', error);
+    // Re-throw to allow caller to handle the error
+    throw error;
   }
 }
 
@@ -457,7 +470,7 @@ export async function getCertificateByFormId(formId) {
 export async function verifyCertificate(certificateId) {
   try {
     const certificate = await getCertificateByFormId(certificateId);
-    
+
     if (!certificate) {
       return {
         valid: false,
@@ -508,7 +521,7 @@ export async function sendCertificateNotification(formData, certificateUrl) {
   try {
     // Import email service dynamically to avoid circular dependencies
     const emailService = await import('./emailService.js');
-    
+
     const certificateData = {
       student_name: formData.student_name,
       registrationNo: formData.registration_no,

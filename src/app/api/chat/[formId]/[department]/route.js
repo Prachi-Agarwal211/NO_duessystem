@@ -223,31 +223,40 @@ export async function POST(request, { params }) {
 
             finalSenderId = user.id;
         } else if (senderType === 'student') {
-            // STUDENTS: Verify they own this form
-            const authHeader = request.headers.get('Authorization');
-            if (authHeader) {
-                // If authenticated, verify ownership
-                const token = authHeader.replace('Bearer ', '');
-                const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+            // STUDENTS: Use JWT cookie for authentication (student_session)
+            const { cookies } = await import('next/headers');
+            const cookieStore = cookies();
+            const studentToken = cookieStore.get('student_session')?.value;
 
-                if (!authError && user) {
-                    // Verify the student owns this form
+            if (studentToken) {
+                try {
+                    // Verify the student JWT token
+                    const { verify } = await import('jsonwebtoken');
+                    const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+                    const decoded = verify(studentToken, JWT_SECRET);
+
+                    // Verify student owns this form by registration number
                     const { data: studentForm } = await supabaseAdmin
                         .from('no_dues_forms')
-                        .select('id')
+                        .select('id, registration_no')
                         .eq('id', formId)
-                        .eq('student_email', user.email)
                         .single();
 
-                    if (!studentForm) {
-                        return NextResponse.json({
-                            error: 'Not authorized to message on this form'
-                        }, { status: 403 });
+                    if (studentForm && studentForm.registration_no === decoded.regNo) {
+                        finalSenderId = `student-${decoded.regNo}`;
+                    } else {
+                        console.warn('Student does not own this form:', { decoded: decoded.regNo, form: studentForm?.registration_no });
+                        // Allow message but mark as unverified
+                        finalSenderId = `student-unverified-${senderName}`;
                     }
-                    finalSenderId = user.id;
+                } catch (jwtError) {
+                    console.warn('Student JWT verification failed:', jwtError.message);
+                    finalSenderId = `student-${senderName}`;
                 }
+            } else {
+                // No JWT cookie - use sender name as ID (legacy/anonymous)
+                finalSenderId = `student-${senderName}`;
             }
-            // If not authenticated, allow anonymous student messages (legacy support)
         }
 
         // Create message - ensure sender_id is never null for the database

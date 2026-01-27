@@ -138,6 +138,13 @@ class ApplicationService {
 
       // Post-transaction actions
       if (result.allApproved) {
+        // 🎉 AUTO-GENERATE CERTIFICATE (Server-Side Trigger)
+        // This is critical - the realtime trigger only works client-side
+        this.generateCertificateAutomatically(formId).catch(err =>
+          console.error('Auto certificate generation error:', err)
+        );
+
+        // Also send notification
         this.sendCertificateReadyNotification(result.updatedForm);
       }
 
@@ -509,6 +516,32 @@ class ApplicationService {
   async sendInitialNotifications(form) { /* Implementation */ }
   async sendCertificateReadyNotification(form) { /* Implementation */ }
   async sendRejectionNotifications(form, dept, reason) { /* Implementation */ }
+
+  /**
+   * Server-side automatic certificate generation
+   * Called when all departments approve a form
+   */
+  async generateCertificateAutomatically(formId) {
+    try {
+      console.log(`🎯 Server-side certificate generation for form: ${formId}`);
+
+      // Dynamic import to avoid circular dependencies
+      const { triggerCertificateGeneration } = await import('@/lib/certificateTrigger');
+
+      const result = await triggerCertificateGeneration(formId, 'server-auto');
+
+      if (result.success) {
+        console.log(`✅ Auto-certificate generated: ${result.certificateUrl}`);
+      } else {
+        console.error(`❌ Auto-certificate failed: ${result.error}`);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ Certificate generation error:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 export default new ApplicationService();
