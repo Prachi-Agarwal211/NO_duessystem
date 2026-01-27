@@ -87,10 +87,10 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        if (!student_reply_message?.trim() || student_reply_message.trim().length < 10) {
+        if (!student_reply_message?.trim() || student_reply_message.trim().length < 5) {
             return NextResponse.json({
                 success: false,
-                error: 'Reply message is required (minimum 10 characters)'
+                error: 'Reply message is required (minimum 5 characters)'
             }, { status: 400 });
         }
 

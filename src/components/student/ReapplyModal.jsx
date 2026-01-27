@@ -141,8 +141,8 @@ export default function ReapplyModal({
     setError('');
 
     // Validation - only check reply message since form fields are read-only
-    if (!replyMessage.trim() || replyMessage.trim().length < 10) {
-      setError('Please provide a reply message (minimum 10 characters)');
+    if (!replyMessage.trim() || replyMessage.trim().length < 5) {
+      setError('Please provide a reply message (minimum 5 characters)');
       return;
     }
 
@@ -173,12 +173,17 @@ export default function ReapplyModal({
         });
       } else {
         // All-departments reapplication (original behavior)
+        // Build a list of rejected department names
+        const rejectedDeptNames = rejectedDepartments.map(d => d.department_name).join(', ');
+
         response = await fetch('/api/student/reapply', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            form_id: formData.id,
             registration_no: formData.registration_no,
-            student_reply_message: replyMessage.trim(),
+            reapplication_reason: replyMessage.trim(),
+            department: rejectedDeptNames, // All rejected departments
             updated_form_data: updatedFields
           }),
           signal: controller.signal
