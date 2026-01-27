@@ -20,7 +20,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
   const isStaff = pathname.startsWith('/staff');
   const isAdmin = pathname.startsWith('/admin');
 
@@ -75,16 +75,29 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   ] : [];
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    toast.success('Logged out successfully');
-    router.push('/staff/login');
+    try {
+      await supabase.auth.signOut();
+      toast.success('Logged out successfully');
+
+      // Redirect based on user type
+      if (isAdmin) {
+        router.push('/admin/login');
+      } else if (isStaff) {
+        router.push('/staff/login');
+      } else {
+        router.push('/');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Logout failed. Please try again.');
+    }
   };
 
   return (
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setIsOpen(false)}
         />
@@ -100,7 +113,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
         flex flex-col shadow-xl
       `}>
-        
+
         {/* Header */}
         <div className={`
           h-16 flex items-center justify-between px-6
@@ -113,8 +126,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           `}>
             NoDues
           </span>
-          <button 
-            onClick={() => setIsOpen(false)} 
+          <button
+            onClick={() => setIsOpen(false)}
             className={`
               md:hidden transition-colors duration-200
               ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}
@@ -167,12 +180,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           p-4 border-t
           ${isDark ? 'border-white/5' : 'border-gray-100'}
         `}>
-          <button 
+          <button
             onClick={handleLogout}
             className={`
               flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-all duration-200 font-medium
-              ${isDark 
-                ? 'text-red-400 hover:bg-red-500/10' 
+              ${isDark
+                ? 'text-red-400 hover:bg-red-500/10'
                 : 'text-red-600 hover:bg-red-50'
               }
             `}
