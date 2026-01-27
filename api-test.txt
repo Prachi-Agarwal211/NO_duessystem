@@ -1,0 +1,14 @@
+API ROUTE FLOW TEST
+============================================================
+
+Step 1: Finding rejected form...
+⚠️ No rejected forms. Using pending form...
+
+Step 3: Testing email import...
+✅ emailService.js imported successfully
+   Exports: EMAIL_TYPES, default, sendCertificateReadyNotification, sendCombinedDepartmentNotification, sendDailyDepartmentDigest, sendDepartmentReminder, sendEmail, sendOtpEmail, sendReapplicationConfirmation, sendReapplicationNotification, sendRejectionNotification, sendStudentReminder, sendStudentStatusUpdate, sendSupportTicketResponse
+   ✅ sendReapplicationNotification exists
+
+============================================================
+TEST COMPLETE
+============================================================
