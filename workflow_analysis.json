@@ -1,0 +1,25 @@
+{
+  "rejectionWorkflow": {
+    "rejectedCount": 1,
+    "rejectedForms": 0
+  },
+  "reapplicationWorkflow": {
+    "historyCount": 0
+  },
+  "emailSystem": {
+    "totalLogs": 0
+  },
+  "chatSystem": {
+    "messageCount": 0
+  },
+  "hodScoping": {
+    "hodCount": 4
+  },
+  "priorityHandling": {},
+  "issues": [
+    {
+      "workflow": "chat",
+      "warning": "No messages in database - chat functionality not verified"
+    }
+  ]
+}

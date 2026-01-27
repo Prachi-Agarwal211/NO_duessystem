@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 // Validation schema
 const reapplySchema = z.object({
   form_id: z.string().uuid(),
-  reapplication_reason: z.string().min(10, 'Reapplication reason must be at least 10 characters'),
+  reapplication_reason: z.string().min(5, 'Reapplication reason must be at least 5 characters'),
   department: z.string().min(1, 'Department is required'),
   registration_no: z.string().min(1, 'Registration number is required')
 });
@@ -133,9 +133,9 @@ export async function POST(request) {
       );
     }
 
-    if (!validatedData.reapplication_reason || validatedData.reapplication_reason.trim().length < 10) {
+    if (!validatedData.reapplication_reason || validatedData.reapplication_reason.trim().length < 5) {
       return NextResponse.json(
-        { success: false, error: 'Reapplication reason must be at least 10 characters' },
+        { success: false, error: 'Reapplication reason must be at least 5 characters' },
         { status: 400 }
       );
     }
@@ -181,6 +181,14 @@ export async function POST(request) {
 }
 
 /**
+ * PUT /api/student/reapply
+ * Alias for POST - supports frontend that uses PUT method
+ */
+export async function PUT(request) {
+  return POST(request);
+}
+
+/**
  * Validate department-specific reapplication rules
  */
 async function validateDepartmentReapplication(formId, department, studentId) {
@@ -196,8 +204,8 @@ async function validateDepartmentReapplication(formId, department, studentId) {
       throw new Error('Original form not found');
     }
 
-    if (!['rejected', 'completed'].includes(form.status)) {
-      throw new Error('Reapplication is only allowed for rejected or completed applications');
+    if (!['rejected', 'completed', 'in_progress'].includes(form.status)) {
+      throw new Error('Reapplication is only allowed for rejected, in-progress, or completed applications');
     }
 
     // Check cooldown period

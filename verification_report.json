@@ -1,0 +1,159 @@
+{
+  "timestamp": "2026-01-27T17:02:07.021Z",
+  "criticalIssues": [
+    {
+      "component": "profiles.last_active_at",
+      "error": "column profiles.last_active_at does not exist",
+      "impact": "Staff profile APIs will fail",
+      "fix": "Run: ALTER TABLE profiles ADD COLUMN last_active_at TIMESTAMPTZ;"
+    }
+  ],
+  "warnings": [
+    {
+      "component": "support_tickets.student_email",
+      "error": "column support_tickets.student_email does not exist",
+      "impact": "Support ticket APIs may fail",
+      "fix": "Run: ALTER TABLE support_tickets ADD COLUMN student_email TEXT;"
+    },
+    {
+      "component": "Chat System",
+      "message": "No messages in database - chat is empty"
+    }
+  ],
+  "working": [
+    "no_dues_forms table schema",
+    "no_dues_status table schema",
+    "no_dues_messages table schema",
+    "departments table schema",
+    "student_data table (29044 records)",
+    "Staff Dashboard API query pattern",
+    "Staff Action API query pattern",
+    "Student Submission API query pattern",
+    "Reapplication API query pattern"
+  ],
+  "database": {
+    "formsCount": 2,
+    "statusCount": 14,
+    "messagesCount": 0,
+    "departments": [
+      {
+        "name": "hostel",
+        "display_name": "Hostel / Warden",
+        "is_active": true,
+        "is_school_specific": false
+      },
+      {
+        "name": "accounts_department",
+        "display_name": "Accounts Department",
+        "is_active": true,
+        "is_school_specific": false
+      },
+      {
+        "name": "it_department",
+        "display_name": "IT Department",
+        "is_active": true,
+        "is_school_specific": false
+      },
+      {
+        "name": "alumni_association",
+        "display_name": "Alumni Association",
+        "is_active": true,
+        "is_school_specific": false
+      },
+      {
+        "name": "registrar",
+        "display_name": "Registrar Office",
+        "is_active": true,
+        "is_school_specific": false
+      },
+      {
+        "name": "school_hod",
+        "display_name": "School HOD / Dean",
+        "is_active": true,
+        "is_school_specific": true
+      },
+      {
+        "name": "library",
+        "display_name": "Library",
+        "is_active": true,
+        "is_school_specific": false
+      }
+    ],
+    "staffProfiles": [
+      {
+        "email": "hod.civil@jecrc.edu.in",
+        "role": "department",
+        "department_name": "school_hod",
+        "assigned_department_ids": [
+          "f9fa5127-87e6-4bcc-8598-55fb53f021dd"
+        ]
+      },
+      {
+        "email": "registrar@jecrc.edu.in",
+        "role": "department",
+        "department_name": "registrar",
+        "assigned_department_ids": [
+          "f352252f-4c86-47b5-a86c-3e0d84c9cc55"
+        ]
+      },
+      {
+        "email": "alumni@jecrc.edu.in",
+        "role": "department",
+        "department_name": "alumni_association",
+        "assigned_department_ids": [
+          "73ec86af-1e4c-4300-816d-553ca4dabc74"
+        ]
+      },
+      {
+        "email": "accounts@jecrc.edu.in",
+        "role": "department",
+        "department_name": "accounts_department",
+        "assigned_department_ids": [
+          "298fc653-f445-455d-a7e8-faa6ff1f093c"
+        ]
+      },
+      {
+        "email": "it.dept@jecrc.edu.in",
+        "role": "department",
+        "department_name": "it_department",
+        "assigned_department_ids": [
+          "6bc9f0a2-2b7d-403c-a203-dd5f9580a5ca"
+        ]
+      },
+      {
+        "email": "hod.cse@jecrc.edu.in",
+        "role": "department",
+        "department_name": "school_hod",
+        "assigned_department_ids": [
+          "f9fa5127-87e6-4bcc-8598-55fb53f021dd"
+        ]
+      },
+      {
+        "email": "hod.jecrc@jecrc.edu.in",
+        "role": "department",
+        "department_name": "school_hod",
+        "assigned_department_ids": [
+          "f9fa5127-87e6-4bcc-8598-55fb53f021dd"
+        ]
+      },
+      {
+        "email": "razorrag.official@gmail.com",
+        "role": "department",
+        "department_name": "library",
+        "assigned_department_ids": [
+          "bcf3fdf3-20bb-40a8-aefb-b77bb119ed0f"
+        ]
+      },
+      {
+        "email": "hostel@jecrc.edu.in",
+        "role": "department",
+        "department_name": "hostel",
+        "assigned_department_ids": [
+          "0ca357bb-7052-481d-b3ac-667f359fb602"
+        ]
+      }
+    ]
+  },
+  "api": {},
+  "frontend": {}
+}
