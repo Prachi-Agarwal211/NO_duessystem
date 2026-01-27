@@ -67,6 +67,8 @@ export default function ReapplyModal({
   const [availableBranches, setAvailableBranches] = useState([]);
   const [replyMessage, setReplyMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -138,62 +140,18 @@ export default function ReapplyModal({
   const handleSubmit = async () => {
     setError('');
 
-    // Validation
-    if (!replyMessage.trim() || replyMessage.trim().length < 2) {
-      setError('Please provide a reply message (minimum 2 characters)');
-      return;
-    }
-
-    // Validate required fields
-    if (!editedData.student_name?.trim()) {
-      setError('Student name is required');
-      return;
-    }
-
-    if (!editedData.school || !editedData.course || !editedData.branch) {
-      setError('School, Course, and Branch are required');
-      return;
-    }
-
-    if (!editedData.personal_email?.trim() || !editedData.college_email?.trim()) {
-      setError('Both email addresses are required');
-      return;
-    }
-
-    if (!editedData.contact_no?.trim()) {
-      setError('Contact number is required');
-      return;
-    }
-
-    // Email format validation
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(editedData.personal_email)) {
-      setError('Invalid personal email format');
-      return;
-    }
-
-    if (!emailPattern.test(editedData.college_email)) {
-      setError('Invalid college email format');
-      return;
-    }
-
-    // College email domain check
-    if (!editedData.college_email.toLowerCase().endsWith(collegeDomain.toLowerCase())) {
-      setError(`College email must end with ${collegeDomain}`);
+    // Validation - only check reply message since form fields are read-only
+    if (!replyMessage.trim() || replyMessage.trim().length < 10) {
+      setError('Please provide a reply message (minimum 10 characters)');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Prepare updated data (only send changed fields)
+      // No form data changes allowed during reapplication
       const updatedFields = {};
-      Object.keys(editedData).forEach(key => {
-        const originalValue = formData[`${key}_id`] || formData[key];
-        if (editedData[key] !== originalValue && editedData[key] !== '') {
-          updatedFields[key] = editedData[key];
-        }
-      });
+
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -341,6 +299,7 @@ export default function ReapplyModal({
               </p>
             </div>
             <button
+              type="button"
               onClick={onClose}
               disabled={loading}
               className={`
@@ -380,7 +339,7 @@ export default function ReapplyModal({
               </h3>
               <div className="space-y-2">
                 {displayDepartments.map((dept, index) => (
-                  <div key={index} className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
+                  <div key={dept.department_name || index} className="bg-red-500/10 border border-red-500/30 p-3 rounded-lg">
                     <p className="font-medium text-red-400">{dept.display_name || dept.department_name}</p>
                     <p className="text-sm text-red-300 mt-1">{dept.rejection_reason}</p>
                     {dept.action_at && (
@@ -427,134 +386,107 @@ export default function ReapplyModal({
               </p>
             </div>
 
-            {/* Editable Form Fields */}
+            {/* Read-Only Form Information */}
             <div className="mb-6">
-              <h3 className={`font-bold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              <h3 className={`font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
                 }`}>
-                Review and Edit Your Information:
+                Your Submitted Information:
               </h3>
+              <p className={`text-xs mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Form data cannot be edited during reapplication. If you need to change any information, please contact administration.
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Student Name"
                   name="student_name"
                   value={editedData.student_name}
-                  onChange={handleInputChange}
-                  required
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Parent Name"
                   name="parent_name"
                   value={editedData.parent_name}
-                  onChange={handleInputChange}
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Admission Year"
                   name="admission_year"
                   value={editedData.admission_year}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2020"
-                  maxLength={4}
-                  pattern="\d{4}"
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Passing Year"
                   name="passing_year"
                   value={editedData.passing_year}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2024"
-                  maxLength={4}
-                  pattern="\d{4}"
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="School"
                   name="school"
-                  type="select"
-                  value={editedData.school}
-                  onChange={handleInputChange}
-                  required
-                  disabled={loading || configLoading}
-                  options={schools.map(s => ({ value: s.id, label: s.name }))}
+                  value={schools.find(s => s.id === editedData.school)?.name || editedData.school || 'N/A'}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Course"
                   name="course"
-                  type="select"
-                  value={editedData.course}
-                  onChange={handleInputChange}
-                  required
-                  disabled={loading || configLoading || !editedData.school}
-                  options={availableCourses.map(c => ({ value: c.id, label: c.name }))}
+                  value={availableCourses.find(c => c.id === editedData.course)?.name || editedData.course || 'N/A'}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Branch"
                   name="branch"
-                  type="select"
-                  value={editedData.branch}
-                  onChange={handleInputChange}
-                  required
-                  disabled={loading || configLoading || !editedData.course}
-                  options={availableBranches.map(b => ({ value: b.id, label: b.name }))}
+                  value={availableBranches.find(b => b.id === editedData.branch)?.name || editedData.branch || 'N/A'}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Country Code"
                   name="country_code"
-                  type="select"
                   value={editedData.country_code}
-                  onChange={handleInputChange}
-                  required
-                  disabled={loading || configLoading}
-                  options={countryCodes.map(c => ({
-                    value: c.dial_code,
-                    label: `${c.country_name} (${c.dial_code})`
-                  }))}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Contact Number"
                   name="contact_no"
-                  type="tel"
                   value={editedData.contact_no}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="6-15 digits (without country code)"
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label="Personal Email"
                   name="personal_email"
-                  type="email"
                   value={editedData.personal_email}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="your.email@example.com"
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
 
                 <Input
                   label={`College Email (${collegeDomain})`}
                   name="college_email"
-                  type="email"
                   value={editedData.college_email}
-                  onChange={handleInputChange}
-                  required
-                  placeholder={`yourname${collegeDomain}`}
-                  disabled={loading || configLoading}
+                  disabled={true}
+                  readOnly
                 />
               </div>
             </div>
+
           </div>
 
           {/* Sticky Footer */}
@@ -562,6 +494,7 @@ export default function ReapplyModal({
             }`}>
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
+                type="button"
                 onClick={onClose}
                 disabled={loading}
                 className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${isDark
@@ -572,6 +505,7 @@ export default function ReapplyModal({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={loading || !replyMessage.trim()}
                 className="px-6 py-3 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

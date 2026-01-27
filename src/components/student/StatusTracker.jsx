@@ -280,6 +280,7 @@ export default function StatusTracker({ registrationNo, formId }) {
           </div>
 
           <button
+            type="button"
             onClick={() => fetchData(true)}
             disabled={refreshing}
             className={`interactive flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300
@@ -373,7 +374,7 @@ export default function StatusTracker({ registrationNo, formId }) {
 
                   return (
                     <div
-                      key={index}
+                      key={dept.department_name || index}
                       className={`p-4 rounded-lg transition-all duration-700 ease-smooth ${isDark ? 'bg-red-500/5 border border-red-500/20' : 'bg-red-50 border border-red-200'
                         }`}
                     >
@@ -400,6 +401,7 @@ export default function StatusTracker({ registrationNo, formId }) {
                       {/* Per-Department Reapply and Chat Buttons */}
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedDeptForReapply(dept);
                             setShowReapplyModal(true);
@@ -461,6 +463,7 @@ export default function StatusTracker({ registrationNo, formId }) {
               {canReapply && rejectedDepartments.length > 1 && (
                 <div className={`mt-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
                   <button
+                    type="button"
                     onClick={() => {
                       setSelectedDeptForReapply(null); // null = reapply to all
                       setShowReapplyModal(true);
