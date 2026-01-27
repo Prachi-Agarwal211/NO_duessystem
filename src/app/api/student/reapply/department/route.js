@@ -3,6 +3,8 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { verify } from 'jsonwebtoken';
 import { rateLimit, RATE_LIMITS } from '@/lib/rateLimiter';
 import { APP_URLS } from '@/lib/urlHelper';
 
@@ -10,6 +12,8 @@ const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+const JWT_SECRET = process.env.SUPABASE_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret-change-me';
 
 /**
  * POST /api/student/reapply/department
@@ -25,6 +29,27 @@ const supabaseAdmin = createClient(
  */
 export async function POST(request) {
     try {
+        // 🔐 SESSION VERIFICATION - Added to match main reapply route
+        const cookieStore = cookies();
+        const token = cookieStore.get('student_session')?.value;
+
+        if (!token) {
+            return NextResponse.json({
+                success: false,
+                error: 'Session expired or required. Please login again.'
+            }, { status: 401 });
+        }
+
+        let decoded;
+        try {
+            decoded = verify(token, JWT_SECRET);
+        } catch (err) {
+            return NextResponse.json({
+                success: false,
+                error: 'Invalid session. Please login again.'
+            }, { status: 401 });
+        }
+
         // Rate limiting: Prevent spam reapplications
         const rateLimitCheck = await rateLimit(request, RATE_LIMITS.SUBMIT);
         if (!rateLimitCheck.success) {
@@ -37,6 +62,15 @@ export async function POST(request) {
 
         const body = await request.json();
         const { registration_no, department_name, student_reply_message, updated_form_data } = body;
+
+        // 🛡️ AUTHORIZATION CHECK - Ensure student can only reapply for their own form
+        if (decoded.regNo !== registration_no?.trim().toUpperCase()) {
+            console.warn(`🛑 [Unauthorized Reapplication Attempt] Session RegNo (${decoded.regNo}) tried to reapply for (${registration_no})`);
+            return NextResponse.json({
+                success: false,
+                error: 'Unauthorized access'
+            }, { status: 403 });
+        }
 
         // ==================== VALIDATION ====================
         if (!registration_no?.trim()) {
@@ -294,6 +328,27 @@ export async function POST(request) {
  */
 export async function GET(request) {
     try {
+        // 🔐 SESSION VERIFICATION - Added for consistency
+        const cookieStore = cookies();
+        const token = cookieStore.get('student_session')?.value;
+
+        if (!token) {
+            return NextResponse.json({
+                success: false,
+                error: 'Session expired or required'
+            }, { status: 401 });
+        }
+
+        let decoded;
+        try {
+            decoded = verify(token, JWT_SECRET);
+        } catch (err) {
+            return NextResponse.json({
+                success: false,
+                error: 'Invalid session'
+            }, { status: 401 });
+        }
+
         const rateLimitCheck = await rateLimit(request, RATE_LIMITS.READ);
         if (!rateLimitCheck.success) {
             return NextResponse.json({
@@ -311,6 +366,15 @@ export async function GET(request) {
                 success: false,
                 error: 'Registration number is required'
             }, { status: 400 });
+        }
+
+        // 🛡️ AUTHORIZATION CHECK
+        if (decoded.regNo !== registrationNo.trim().toUpperCase()) {
+            console.warn(`🛑 [Unauthorized GET Attempt] Session RegNo (${decoded.regNo}) tried to access (${registrationNo})`);
+            return NextResponse.json({
+                success: false,
+                error: 'Unauthorized access'
+            }, { status: 403 });
         }
 
         // Get form with department statuses

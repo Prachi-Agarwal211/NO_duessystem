@@ -52,9 +52,10 @@ export async function GET(request) {
         const deptNames = depts?.map(d => d.name) || [];
 
         // Get ALL unread messages for these departments from students
+        // NOTE: Removed the no_dues_forms join to avoid relationship issues
         const { data: messages, error: messagesError } = await supabaseAdmin
             .from('no_dues_messages')
-            .select('form_id, department_name, is_read, no_dues_forms!inner(student_name, registration_no)')
+            .select('form_id, department_name, is_read, sender_name')
             .in('department_name', deptNames)
             .eq('sender_type', 'student')
             .eq('is_read', false);
@@ -64,15 +65,32 @@ export async function GET(request) {
             return NextResponse.json({ error: messagesError.message }, { status: 500 });
         }
 
+        // Get form details separately to avoid join issues
+        const formIds = [...new Set(messages?.map(m => m.form_id) || [])];
+        let formDetails = {};
+
+        if (formIds.length > 0) {
+            const { data: forms } = await supabaseAdmin
+                .from('no_dues_forms')
+                .select('id, student_name, registration_no')
+                .in('id', formIds);
+
+            formDetails = (forms || []).reduce((acc, form) => {
+                acc[form.id] = form;
+                return acc;
+            }, {});
+        }
+
         const unreadByForm = {};
         (messages || []).forEach(msg => {
             const key = msg.form_id;
+            const formDetail = formDetails[msg.form_id] || {};
 
             if (!unreadByForm[key]) {
                 unreadByForm[key] = {
                     form_id: msg.form_id,
-                    student_name: msg.no_dues_forms?.student_name,
-                    registration_no: msg.no_dues_forms?.registration_no,
+                    student_name: formDetail.student_name || msg.sender_name || 'Unknown',
+                    registration_no: formDetail.registration_no || 'N/A',
                     department_name: msg.department_name,
                     unread_count: 0
                 };
