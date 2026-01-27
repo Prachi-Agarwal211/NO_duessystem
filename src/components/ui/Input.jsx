@@ -144,9 +144,15 @@ export default function Input({
                 {type === 'password' ? (
                     <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 translate-y-1 p-1 bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        tabIndex={-1}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowPassword(!showPassword);
+                        }}
+                        className="absolute right-3 top-6 -translate-y-[2px] p-1 bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors z-10"
                         disabled={disabled}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>

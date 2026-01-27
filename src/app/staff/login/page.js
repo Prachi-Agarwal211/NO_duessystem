@@ -1,12 +1,11 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
-import Input from '@/components/ui/Input';
 import Link from 'next/link';
-import { ArrowLeft, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Lock, Mail, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -18,6 +17,29 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Check if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Already logged in, redirect to dashboard
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/staff/dashboard');
+        }
+      }
+    };
+    checkSession();
+  }, [router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,10 +61,13 @@ function LoginForm() {
         .eq('id', data.user.id)
         .single();
 
-      if (profile?.role === 'admin') router.push('/admin');
-      else router.push('/staff/dashboard');
-
       toast.success('Welcome back!');
+
+      if (profile?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/staff/dashboard');
+      }
     } catch (err) {
       setError(err.message);
       toast.error('Login Failed');
@@ -84,33 +109,75 @@ function LoginForm() {
               </div>
             )}
 
+            {/* Email Field */}
             <div>
-              <Input
-                label="Email Address"
-                name="email"
-                type="email"
-                required
-                startIcon={<Mail className="w-5 h-5" />}
-                placeholder="staff@college.edu"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                Email Address
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="staff@college.edu"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className={`w-full pl-11 pr-4 py-3 rounded-xl border-2 outline-none transition-all
+                    ${isDark
+                      ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-jecrc-red'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red'
+                    }
+                    focus:ring-2 focus:ring-jecrc-red/20
+                  `}
+                />
+              </div>
             </div>
 
+            {/* Password Field */}
             <div>
-              <div className="flex justify-end mb-1">
-                <Link href="/staff/forgot-password" className="text-sm text-jecrc-red hover:text-jecrc-red-dark font-medium transition-colors">Forgot Password?</Link>
+              <div className="flex justify-between mb-2">
+                <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Password
+                </label>
+                <Link href="/staff/forgot-password" className="text-sm text-jecrc-red hover:text-jecrc-red-dark font-medium transition-colors">
+                  Forgot Password?
+                </Link>
               </div>
-              <Input
-                label="Password"
-                name="password"
-                type="password"
-                required
-                startIcon={<Lock className="w-5 h-5" />}
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  required
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className={`w-full pl-11 pr-12 py-3 rounded-xl border-2 outline-none transition-all
+                    ${isDark
+                      ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500 focus:border-jecrc-red'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-jecrc-red'
+                    }
+                    focus:ring-2 focus:ring-jecrc-red/20
+                  `}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <button

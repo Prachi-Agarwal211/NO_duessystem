@@ -76,20 +76,40 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Close sidebar first to prevent UI issues
+      setIsOpen(false);
+
+      // Show loading toast
+      const logoutToast = toast.loading('Logging out...');
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('Supabase logout error:', error);
+        toast.dismiss(logoutToast);
+        toast.error('Logout failed. Please try again.');
+        return;
+      }
+
+      toast.dismiss(logoutToast);
       toast.success('Logged out successfully');
 
-      // Redirect based on user type
-      if (isAdmin) {
-        router.push('/admin/login');
-      } else if (isStaff) {
-        router.push('/staff/login');
-      } else {
-        router.push('/');
+      // Clear any local storage/cache
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('dashboard_filters');
+        localStorage.removeItem('dashboard_search');
+        sessionStorage.clear();
       }
+
+      // Force hard navigation to login page (prevents "Oops" errors)
+      const loginUrl = isAdmin ? '/admin/login' : '/staff/login';
+      window.location.href = loginUrl;
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed. Please try again.');
+      // Force redirect anyway
+      window.location.href = '/staff/login';
     }
   };
 
