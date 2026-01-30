@@ -38,7 +38,7 @@ export async function GET(request) {
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      
+
       if (authError || !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -67,7 +67,7 @@ export async function GET(request) {
       .from('departments')
       .select('name, display_name')
       .in('id', profile.assigned_department_ids || []);
-    
+
     const myDeptNames = depts?.map(d => d.name) || [];
 
     // Build query for action history (Online forms only)
@@ -114,8 +114,9 @@ export async function GET(request) {
         query = query.in('no_dues_forms.branch_id', profile.branch_ids);
       }
 
-      // Filter by action taken by this user
-      query = query.eq('action_by_user_id', userId);
+      // Show full department history, not just personal actions
+      // This fixes "not able to see rejected forms" if someone else rejected them
+      // query = query.eq('action_by_user_id', userId);
     }
 
     // Filter by status if provided
@@ -145,8 +146,7 @@ export async function GET(request) {
 
     if (profile.role === 'department') {
       countQuery = countQuery
-        .in('department_name', myDeptNames) // ✅ FIXED: Use UUID-resolved names
-        .eq('action_by_user_id', userId);
+        .in('department_name', myDeptNames); // ✅ FIXED: Use UUID-resolved names
     }
 
     if (statusFilter && statusFilter !== 'all') {

@@ -55,6 +55,7 @@ export default function StaffDashboard() {
 
   const [unreadMessages, setUnreadMessages] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
+  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
 
   useEffect(() => {
     const handleNewSubmission = (e) => {
@@ -218,19 +219,26 @@ export default function StaffDashboard() {
     return ['All', ...Array.from(branches)];
   }, [requests, rejectedForms, historyData]);
 
+  // Filter function accessible to all tabs
   const filterData = useCallback((data) => {
     return data.filter(item => {
       const form = item.no_dues_forms;
+
+      // 1. Search Filter
       const matchesSearch =
         form?.student_name.toLowerCase().includes(search.toLowerCase()) ||
         form?.registration_no.toLowerCase().includes(search.toLowerCase());
 
+      // 2. Dropdown Filters
       const matchesCourse = filters.course === 'All' || form?.course === filters.course;
       const matchesBranch = filters.branch === 'All' || form?.branch === filters.branch;
 
-      return matchesSearch && matchesCourse && matchesBranch;
+      // 3. Unread Filter
+      const matchesUnread = !showOnlyUnread || (unreadMessages[form.id] || 0) > 0;
+
+      return matchesSearch && matchesCourse && matchesBranch && matchesUnread;
     });
-  }, [search, filters]);
+  }, [search, filters, showOnlyUnread, unreadMessages]);
 
   const currentData = useMemo(() => {
     if (activeTab === 'pending') return filterData(localRequests);
@@ -429,18 +437,42 @@ export default function StaffDashboard() {
             >
               <HelpCircle className="w-4 h-4" /> Guidelines
             </button>
-            {/* New Messages Indicator */}
+            {/* New Messages Indicator (Clickable Filter) */}
             {totalUnread > 0 && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-bold shadow-lg animate-pulse">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  // Toggle filter or set it
+                  const newFilterState = !showOnlyUnread;
+                  setShowOnlyUnread(newFilterState);
+                  if (newFilterState) {
+                    // Unread messages are usually in 'rejected' or 'pending'
+                    // We'll keep current tab but filter the list
+                    toast.success(`Showing ${totalUnread} applications with unread messages`);
+                  } else {
+                    toast.success('Showing all applications');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-lg transition-all ${showOnlyUnread
+                  ? 'bg-red-600 ring-2 ring-red-300 transform scale-105'
+                  : 'bg-red-500 animate-pulse hover:bg-red-600'
+                  } text-white`}
+              >
                 <MessageCircle className="w-4 h-4" />
                 {totalUnread} Unread Messages
-              </div>
+                {showOnlyUnread && <div className="ml-1 text-xs bg-white text-red-600 px-1.5 rounded-full">x</div>}
+              </button>
             )}
             <button
-              onClick={handleExport}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-green-600/25 transition-all"
+              onClick={() => {
+                toast.loading('Refreshing data...');
+                handleManualRefresh().then(() => toast.dismiss());
+              }}
+              disabled={refreshing}
+              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-green-600/25 transition-all disabled:opacity-50"
             >
-              <Download className="w-4 h-4" /> Export
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </button>
             <button
               onClick={refreshData}
