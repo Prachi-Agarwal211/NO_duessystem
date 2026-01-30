@@ -154,6 +154,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     action TEXT NOT NULL,
     target_id TEXT,
     target_type TEXT,
+    details JSONB,
+    resource_id TEXT,
     old_values JSONB,
     new_values JSONB,
     ip_address TEXT,

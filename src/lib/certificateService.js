@@ -11,6 +11,7 @@ import {
   createBlockchainRecord,
   generateQRData
 } from './blockchainService';
+import { AuditLogger } from './auditLogger';
 
 // Initialize Supabase Admin Client for file storage and database operations
 const supabaseAdmin = createClient(
@@ -21,6 +22,24 @@ const supabaseAdmin = createClient(
 // JECRC Red color in RGB
 const JECRC_RED = [196, 30, 58]; // #C41E3A
 const GOLD_ACCENT = [218, 165, 32]; // #DAA520
+
+/**
+ * Log certificate generation attempt
+ */
+async function logCertificateGeneration({ formId, registrationNo, status }) {
+  try {
+    await AuditLogger.log(
+      AuditLogger.ACTIONS.GENERATE_CERTIFICATE,
+      null, // actorId - system initiated
+      { formId, registrationNo, status },
+      formId
+    );
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to log certificate generation:', error);
+    return { success: false, error: error.message };
+  }
+}
 
 /**
  * Enhanced Certificate Generation with Tracking
