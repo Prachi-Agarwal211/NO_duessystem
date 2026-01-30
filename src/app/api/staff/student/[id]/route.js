@@ -169,7 +169,7 @@ export async function GET(request, { params }) {
       }
     }
 
-    // Get all department statuses for this form (✅ all forms are online-only now)
+    // Get all department statuses for this form
     const { data: departmentStatuses, error: statusError } = await supabaseAdmin
       .from('no_dues_status')
       .select(`
@@ -178,16 +178,32 @@ export async function GET(request, { params }) {
         status,
         rejection_reason,
         action_at,
-        action_by_user_id,
-        profiles (
-          full_name
-        )
+        action_by_user_id
       `)
       .eq('form_id', id)
       .order('department_name');
 
     if (statusError) {
       return NextResponse.json({ error: statusError.message }, { status: 500 });
+    }
+
+    // Fetch profile names for action_by_user_id
+    const userIds = departmentStatuses
+      .map(s => s.action_by_user_id)
+      .filter(id => id); // Filter out nulls
+
+    let userMap = {};
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', userIds);
+
+      if (profiles) {
+        profiles.forEach(p => {
+          userMap[p.id] = p.full_name;
+        });
+      }
     }
 
     // Get department information for all departments
@@ -209,7 +225,7 @@ export async function GET(request, { params }) {
         status: status ? status.status : 'pending',
         rejection_reason: status ? status.rejection_reason : null,
         action_at: status ? status.action_at : null,
-        action_by: status ? status.profiles?.full_name : null
+        action_by: status ? userMap[status.action_by_user_id] : null
       };
     });
 
