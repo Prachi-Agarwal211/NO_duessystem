@@ -7,7 +7,7 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, HelpCircle, MessageCircle } from 'lucide-react';
+import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, HelpCircle, MessageCircle, RefreshCw } from 'lucide-react';
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
