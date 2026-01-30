@@ -40,9 +40,11 @@ export default function StaffDashboard() {
   const {
     user,
     loading,
+    refreshing,
     requests,
     stats,
     refreshData,
+    handleManualRefresh,
     lastUpdate
   } = useStaffDashboard();
 
