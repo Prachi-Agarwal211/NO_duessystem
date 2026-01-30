@@ -11,7 +11,7 @@ import DepartmentStatus from './DepartmentStatus';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ReapplyModal from './ReapplyModal';
 import ReapplicationHistory from './ReapplicationHistory';
-import SupportButton from '@/components/support/SupportButton';
+
 import { realtimeManager } from '@/lib/realtimeManager';
 import { subscribeToRealtime } from '@/lib/supabaseRealtime';
 import { useUnread } from '@/hooks/useUnread';
@@ -612,8 +612,7 @@ export default function StatusTracker({ registrationNo, formId }) {
         />
       )}
 
-      {/* ✅ FEAT: Floating Support Button for Easy Help Access */}
-      <SupportButton className="!fixed !bottom-6 !right-6 opacity-80 hover:opacity-100 shadow-xl" />
+
     </motion.div>
   );
 }

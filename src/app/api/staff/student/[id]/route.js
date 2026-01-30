@@ -60,6 +60,7 @@ export async function GET(request, { params }) {
     }
 
     // Get the student's no dues form (✅ removed manual entry fields)
+    // Get the student's no dues form (FK relationship missing, so we'll fetch profile separately)
     let formQuery = supabaseAdmin
       .from('no_dues_forms')
       .select(`
@@ -81,11 +82,7 @@ export async function GET(request, { params }) {
         updated_at,
         reapplication_count,
         student_reply_message,
-        last_reapplied_at,
-        profiles!no_dues_forms_user_id_fkey (
-          full_name,
-          email
-        )
+        last_reapplied_at
       `)
       .eq('id', id);
 
@@ -155,6 +152,23 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Student form not found' }, { status: 404 });
     }
 
+    // Fetch profile separately since FK join failed
+    let userEmail = null;
+    let userFullName = null;
+
+    if (formData.user_id) {
+      const { data: profileData } = await supabaseAdmin
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', formData.user_id)
+        .single();
+
+      if (profileData) {
+        userEmail = profileData.email;
+        userFullName = profileData.full_name;
+      }
+    }
+
     // Get all department statuses for this form (✅ all forms are online-only now)
     const { data: departmentStatuses, error: statusError } = await supabaseAdmin
       .from('no_dues_status')
@@ -217,7 +231,7 @@ export async function GET(request, { params }) {
         status: formData.status,
         created_at: formData.created_at,
         updated_at: formData.updated_at,
-        user_email: formData.profiles?.email,
+        user_email: userEmail,
         reapplication_count: formData.reapplication_count || 0,
         student_reply_message: formData.student_reply_message || null,
         last_reapplied_at: formData.last_reapplied_at || null

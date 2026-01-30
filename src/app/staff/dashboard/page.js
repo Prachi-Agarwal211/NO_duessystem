@@ -54,6 +54,7 @@ export default function StaffDashboard() {
   const [rejectedFetched, setRejectedFetched] = useState(false);
 
   const [unreadMessages, setUnreadMessages] = useState({});
+  const [totalUnread, setTotalUnread] = useState(0);
 
   useEffect(() => {
     const handleNewSubmission = (e) => {
@@ -123,6 +124,7 @@ export default function StaffDashboard() {
             unreadMap[item.form_id] = item.unread_count;
           });
           setUnreadMessages(unreadMap);
+          setTotalUnread(result.data.total_unread || 0);
         }
       }
     } catch (err) {
@@ -427,6 +429,13 @@ export default function StaffDashboard() {
             >
               <HelpCircle className="w-4 h-4" /> Guidelines
             </button>
+            {/* New Messages Indicator */}
+            {totalUnread > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-bold shadow-lg animate-pulse">
+                <MessageCircle className="w-4 h-4" />
+                {totalUnread} Unread Messages
+              </div>
+            )}
             <button
               onClick={handleExport}
               className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-green-600/25 transition-all"
@@ -451,6 +460,30 @@ export default function StaffDashboard() {
             >
               <LogOut className="w-5 h-5" />
             </button>
+          </div>
+        </div>
+
+        {/* ⚠️ Monitoring Disclaimer Banner */}
+        <div className={`mb-6 p-4 rounded-xl border-l-4 shadow-sm transition-all animate-in slide-in-from-top-5
+          ${isDark
+            ? 'bg-amber-900/10 border-amber-500 text-amber-200'
+            : 'bg-amber-50 border-amber-500 text-amber-900'
+          }`}>
+          <div className="flex items-start gap-4">
+            <div className={`p-2 rounded-full ${isDark ? 'bg-amber-500/20' : 'bg-amber-100'}`}>
+              <Clock className={`w-5 h-5 ${isDark ? 'text-amber-400' : 'text-amber-700'}`} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm uppercase tracking-wide mb-1 flex items-center gap-2">
+                System Monitoring Active
+                <span className="inline-flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              </h3>
+              <p className="text-sm opacity-90 leading-relaxed">
+                Please be advised that all administrative actions are monitored 24/7 by higher authorities.
+                Your response times are being recorded for quality assurance.
+                Kindly verify and complete individual student requests within <strong className="font-mono">12 hours</strong> to maintain SLA compliance.
+              </p>
+            </div>
           </div>
         </div>
 
