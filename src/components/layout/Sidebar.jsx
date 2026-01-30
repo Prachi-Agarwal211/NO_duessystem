@@ -102,14 +102,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         sessionStorage.clear();
       }
 
-      // Force hard navigation to login page (prevents "Oops" errors)
+      // Navigate to login page
       const loginUrl = isAdmin ? '/admin/login' : '/staff/login';
-      window.location.href = loginUrl;
+      router.push(loginUrl);
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Logout failed. Please try again.');
       // Force redirect anyway
-      window.location.href = '/staff/login';
+      router.push('/staff/login');
     }
   };
 
