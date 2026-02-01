@@ -54,9 +54,6 @@ export default function AdminRequestDetail() {
             profiles (
               full_name
             )
-          ),
-          profiles!no_dues_forms_user_id_fkey (
-            email
           )
         `)
         .eq('id', id)
@@ -64,9 +61,21 @@ export default function AdminRequestDetail() {
 
       if (error) throw error;
 
+      // Fetch profile separately using registration_no
+      let profileData = null;
+      if (data.registration_no) {
+        const { data: pData } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('registration_no', data.registration_no)
+          .maybeSingle();
+        profileData = pData;
+      }
+
       // Calculate response times
       const requestWithMetrics = {
         ...data,
+        profiles: profileData, // Attach profile data manually
         no_dues_status: data.no_dues_status.map(status => ({
           ...status,
           response_time: calculateResponseTime(data.created_at, status.created_at, status.action_at)
@@ -84,13 +93,13 @@ export default function AdminRequestDetail() {
 
   const calculateResponseTime = (formCreated, statusCreated, actionAt) => {
     if (!actionAt) return 'Pending';
-    
+
     const created = new Date(statusCreated);
     const action = new Date(actionAt);
     const diff = action - created;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
   };
@@ -137,32 +146,28 @@ export default function AdminRequestDetail() {
   }
 
   return (
-    <div className={`min-h-screen p-4 sm:p-6 md:p-8 transition-colors duration-700 ${
-      isDark ? 'text-white' : 'text-ink-black'
-    }`}>
+    <div className={`min-h-screen p-4 sm:p-6 md:p-8 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+      }`}>
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className={`px-4 py-2 rounded-lg mb-6 transition-colors duration-300 ${
-              isDark
+            className={`px-4 py-2 rounded-lg mb-6 transition-colors duration-300 ${isDark
                 ? 'bg-gray-700 hover:bg-gray-600 text-white'
                 : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
-            }`}
+              }`}
           >
             ← Back to Dashboard
           </button>
-          
+
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
-              <h1 className={`text-2xl font-bold transition-colors duration-700 ${
-                isDark ? 'text-white' : 'text-ink-black'
-              }`}>
+              <h1 className={`text-2xl font-bold transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                }`}>
                 Request Details
               </h1>
-              <p className={`transition-colors duration-700 ${
-                isDark ? 'text-gray-400' : 'text-gray-600'
-              }`}>
+              <p className={`transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>
                 ID: {request.id}
               </p>
             </div>
@@ -174,140 +179,111 @@ export default function AdminRequestDetail() {
 
         {/* Student Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div className={`backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${
-            isDark
+          <div className={`backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${isDark
               ? 'bg-gray-800/50 border-gray-700'
               : 'bg-white/60 border-black/10'
-          }`}>
-            <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${
-              isDark ? 'text-white' : 'text-ink-black'
             }`}>
+            <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              }`}>
               Student Information
             </h2>
             <div className="space-y-3">
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Name:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.student_name}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Name:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.student_name}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Registration No:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.registration_no}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Registration No:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.registration_no}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Email:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.profiles?.email || 'N/A'}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Email:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.profiles?.email || 'N/A'}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Course:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.course || 'N/A'}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Course:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.course || 'N/A'}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Branch:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.branch || 'N/A'}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Branch:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.branch || 'N/A'}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>School:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.school}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>School:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.school}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Academic Period:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.admission_year} (Admission) - {request.passing_year} (Passing)</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Academic Period:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.admission_year} (Admission) - {request.passing_year} (Passing)</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Parent Name:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.parent_name || 'N/A'}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Parent Name:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.parent_name || 'N/A'}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Contact:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{request.contact_no || 'N/A'}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Contact:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{request.contact_no || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Request Details */}
-          <div className={`backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${
-            isDark
+          <div className={`backdrop-blur-sm rounded-xl border p-6 transition-colors duration-700 ${isDark
               ? 'bg-gray-800/50 border-gray-700'
               : 'bg-white/60 border-black/10'
-          }`}>
-            <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${
-              isDark ? 'text-white' : 'text-ink-black'
             }`}>
+            <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+              }`}>
               Request Details
             </h2>
             <div className="space-y-3">
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Status:</span>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Status:</span>
                 <div className="mt-1">
                   <StatusBadge status={request.status} />
                 </div>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Submitted:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{new Date(request.created_at).toLocaleString()}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Submitted:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{new Date(request.created_at).toLocaleString()}</p>
               </div>
               <div>
-                <span className={`text-sm transition-colors duration-700 ${
-                  isDark ? 'text-gray-400' : 'text-gray-600'
-                }`}>Last Updated:</span>
-                <p className={`font-medium transition-colors duration-700 ${
-                  isDark ? 'text-white' : 'text-ink-black'
-                }`}>{new Date(request.updated_at).toLocaleString()}</p>
+                <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Last Updated:</span>
+                <p className={`font-medium transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>{new Date(request.updated_at).toLocaleString()}</p>
               </div>
               {request.alumniProfileLink && (
                 <div>
-                  <span className={`text-sm transition-colors duration-700 ${
-                    isDark ? 'text-gray-400' : 'text-gray-600'
-                  }`}>Alumni Screenshot:</span>
+                  <span className={`text-sm transition-colors duration-700 ${isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>Alumni Screenshot:</span>
                   <div className="mt-2">
                     <img
                       src={request.alumniProfileLink}
                       alt="Alumni verification"
-                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${
-                        isDark ? 'border-gray-600' : 'border-gray-300'
-                      }`}
+                      className={`max-w-xs h-auto rounded-lg border transition-colors duration-700 ${isDark ? 'border-gray-600' : 'border-gray-300'
+                        }`}
                     />
                   </div>
                 </div>
@@ -317,67 +293,52 @@ export default function AdminRequestDetail() {
         </div>
 
         {/* Department Status */}
-        <div className={`backdrop-blur-sm rounded-xl border p-6 mb-8 transition-colors duration-700 ${
-          isDark
+        <div className={`backdrop-blur-sm rounded-xl border p-6 mb-8 transition-colors duration-700 ${isDark
             ? 'bg-gray-800/50 border-gray-700'
             : 'bg-white/60 border-black/10'
-        }`}>
-          <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${
-            isDark ? 'text-white' : 'text-ink-black'
           }`}>
+          <h2 className={`text-xl font-semibold mb-4 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+            }`}>
             Department Status
           </h2>
           <div className="overflow-x-auto">
-            <table className={`min-w-full divide-y transition-colors duration-700 ${
-              isDark ? 'divide-gray-700' : 'divide-gray-300'
-            }`}>
+            <table className={`min-w-full divide-y transition-colors duration-700 ${isDark ? 'divide-gray-700' : 'divide-gray-300'
+              }`}>
               <thead>
                 <tr>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Department</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Status</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Response Time</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Action By</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Reason for Rejection</th>
-                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${
-                    isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
-                  }`}>Updated</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Department</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Status</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Response Time</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Action By</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Reason for Rejection</th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider transition-colors duration-700 ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'
+                    }`}>Updated</th>
                 </tr>
               </thead>
-              <tbody className={`divide-y transition-colors duration-700 ${
-                isDark ? 'divide-gray-700' : 'divide-gray-300'
-              }`}>
+              <tbody className={`divide-y transition-colors duration-700 ${isDark ? 'divide-gray-700' : 'divide-gray-300'
+                }`}>
                 {request.no_dues_status.map((status, index) => (
                   <tr key={index}>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>{status.department_name}</td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>{status.department_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={status.status} />
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>{status.response_time}</td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>{status.profiles?.full_name || 'N/A'}</td>
-                    <td className={`px-6 py-4 text-sm transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>{status.response_time}</td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>{status.profiles?.full_name || 'N/A'}</td>
+                    <td className={`px-6 py-4 text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       {status.status === 'rejected' && status.rejection_reason ? status.rejection_reason : 'N/A'}
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm transition-colors duration-700 ${isDark ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
                       {status.action_at ? new Date(status.action_at).toLocaleString() : 'N/A'}
                     </td>
                   </tr>
@@ -391,11 +352,10 @@ export default function AdminRequestDetail() {
         <div className="flex justify-end gap-4">
           <button
             onClick={() => window.print()}
-            className={`px-6 py-2 rounded-lg transition-colors duration-300 ${
-              isDark
+            className={`px-6 py-2 rounded-lg transition-colors duration-300 ${isDark
                 ? 'bg-gray-700 hover:bg-gray-600 text-white'
                 : 'bg-gray-200 hover:bg-gray-300 text-ink-black'
-            }`}
+              }`}
           >
             Print Report
           </button>
