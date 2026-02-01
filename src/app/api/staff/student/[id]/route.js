@@ -66,7 +66,6 @@ export async function GET(request, { params }) {
       .from('no_dues_forms')
       .select(`
         id,
-        user_id,
         student_name,
         registration_no,
         admission_year,
@@ -192,12 +191,12 @@ export async function GET(request, { params }) {
     let userEmail = null;
     let userFullName = null;
 
-    if (formData.user_id) {
+    if (formData.registration_no) {
       const { data: profileData } = await supabaseAdmin
         .from('profiles')
         .select('email, full_name')
-        .eq('id', formData.user_id)
-        .single();
+        .eq('registration_no', formData.registration_no)
+        .maybeSingle();
 
       if (profileData) {
         userEmail = profileData.email;
