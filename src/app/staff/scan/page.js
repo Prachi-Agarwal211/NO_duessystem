@@ -14,11 +14,11 @@ import {
     Scan
 } from 'lucide-react';
 import GlassCard from '@/components/ui/GlassCard';
-import { useTheme } from '@/hooks/useTheme';
+import { useSafeTheme } from '@/hooks/useSafeTheme';
 
 export default function ScanPage() {
     const router = useRouter();
-    const { theme } = useTheme();
+    const { theme } = useSafeTheme();
     const [scanResult, setScanResult] = useState(null);
     const [error, setError] = useState(null);
     const [isScannerReady, setIsScannerReady] = useState(false);
