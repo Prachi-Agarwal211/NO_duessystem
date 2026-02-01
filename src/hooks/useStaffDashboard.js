@@ -253,10 +253,9 @@ export function useStaffDashboard() {
   useEffect(() => {
     if (!userId || !user?.department_name) return;
 
-    let unsubscribeRealtime;
-    let unsubscribeDeptAction;
-    let unsubscribeGlobal;
-    let retryTimeout;
+    // Store unsubscribe functions in refs for cleanup access
+    const unsubscribeDeptRef = { current: null };
+    const unsubscribeGlobalRef = { current: null };
     let debounceTimer = null;
 
     const setupRealtime = async () => {
@@ -273,8 +272,11 @@ export function useStaffDashboard() {
       };
 
       // SIMPLIFIED: Use unified subscription method
-      const unsubscribeDepartment = import('@/lib/supabaseRealtime').then(({ realtimeService }) => {
-        return realtimeService.subscribeToDepartment(user.department_name, {
+      try {
+        const realtimeModule = await import('@/lib/supabaseRealtime');
+        const { realtimeService } = realtimeModule;
+
+        unsubscribeDeptRef.current = realtimeService.subscribeToDepartment(user.department_name, {
           onStatusUpdate: (event) => {
             console.log('⚡ Performing SILENT update for department actions');
             setRequests(prevRequests => {
@@ -305,10 +307,12 @@ export function useStaffDashboard() {
             debouncedRefresh();
           }
         });
-      });
+      } catch (error) {
+        console.error('❌ Error setting up realtime subscription:', error);
+      }
 
       // Also subscribe to global updates
-      unsubscribeGlobal = realtimeManager.subscribe('globalUpdate', (analysis) => {
+      unsubscribeGlobalRef.current = realtimeManager.subscribe('globalUpdate', (analysis) => {
         if (analysis.hasCompletion) {
           debouncedRefresh();
         }
@@ -319,14 +323,14 @@ export function useStaffDashboard() {
 
     return () => {
       console.log('🧹 Staff dashboard unsubscribing from realtime');
-      if (retryTimeout) clearTimeout(retryTimeout);
       if (debounceTimer) clearTimeout(debounceTimer);
 
-      if (unsubscribeDepartment) {
-        unsubscribeDepartment.then(unsub => unsub && unsub());
+      // Use ref-stored unsubscribe function
+      if (unsubscribeDeptRef.current) {
+        unsubscribeDeptRef.current();
       }
 
-      if (unsubscribeGlobal) unsubscribeGlobal();
+      if (unsubscribeGlobalRef.current) unsubscribeGlobalRef.current();
 
       if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
       if (statsTimeoutRef.current) clearTimeout(statsTimeoutRef.current);

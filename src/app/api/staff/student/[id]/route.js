@@ -161,6 +161,22 @@ export async function GET(request, { params }) {
     const { data: formData, error: formError } = await formQuery.single();
 
     if (formError) {
+      console.error('❌ Student form fetch error (Orphaned Record?):', formError);
+
+      // If the form doesn't exist but we passed the status check, it's an orphaned record
+      if (formError.code === 'PGRST116') { // PostgREST code for no rows found
+        console.warn('🚨 ORPHANED RECORD DETECTED: Form', id, 'exists in no_dues_status but NOT in no_dues_forms');
+
+        // Potential self-healing: we could delete the orphaned status records here, 
+        // but it's safer to just report it for now to avoid accidental data loss.
+        return NextResponse.json({
+          error: 'Student application form no longer exists (Orphaned Record)',
+          details: 'The status record exists but the main form data is missing. This usually happens if a form was deleted but status records remained.',
+          formId: id,
+          isOrphaned: true
+        }, { status: 404 });
+      }
+
       return NextResponse.json({
         error: 'Student form not found',
         details: formError.message,
