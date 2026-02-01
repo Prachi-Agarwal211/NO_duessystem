@@ -255,6 +255,47 @@ class ApplicationService {
   }
 
   /**
+   * SELF-HEALING: Ensure a status record exists for a department
+   * If it's missing, create it.
+   */
+  async ensureStatusRecord(formId, departmentName) {
+    try {
+      console.log(`🛠️ Self-healing: Checking status record for Form ${formId}, Dept: ${departmentName}`);
+
+      // 1. Check if it exists
+      const { data: existing, error: checkError } = await supabase
+        .from('no_dues_status')
+        .select('id')
+        .eq('form_id', formId)
+        .eq('department_name', departmentName)
+        .maybeSingle();
+
+      if (existing) {
+        console.log('✅ Status record already exists.');
+        return { success: true, created: false };
+      }
+
+      // 2. It's missing. Create it.
+      console.log('⚠️ Status record missing. Creating it...');
+      const { error: insertError } = await supabase
+        .from('no_dues_status')
+        .insert({
+          form_id: formId,
+          department_name: departmentName,
+          status: 'pending'
+        });
+
+      if (insertError) throw insertError;
+
+      console.log(`✅ Successfully created missing status record for ${departmentName}`);
+      return { success: true, created: true };
+    } catch (err) {
+      console.error('❌ Failed to ensure status record:', err);
+      return { success: false, error: err.message };
+    }
+  }
+
+  /**
    * Handle student reapplication for per-department rejection
    */
   async handleReapplication(formId, data) {

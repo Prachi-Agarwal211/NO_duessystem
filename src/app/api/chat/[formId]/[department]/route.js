@@ -97,7 +97,7 @@ export async function GET(request, { params }) {
                         .select('*', { count: 'exact', head: true })
                         .eq('form_id', formId)
                         .eq('department_name', department)
-                        .neq('sender_id', user.id)
+                        .neq('sender_id', String(user.id)) // 🛡️ Fix Type Mismatch: UUID vs TEXT
                         .eq('is_read', false);
                     unreadCount = count || 0;
                 }

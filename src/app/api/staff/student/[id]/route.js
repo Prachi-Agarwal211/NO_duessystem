@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import applicationService from '@/lib/services/ApplicationService';
 
 // ✅ CRITICAL FIX: Force Supabase to bypass all caching layers (same as Admin Dashboard)
 const supabaseAdmin = createClient(
@@ -105,11 +106,38 @@ export async function GET(request, { params }) {
       console.log('🔒 Auth Check - My Dept Names:', myDeptNames);
 
       // Check if this form has a status entry for ANY of the user's departments
-      const { data: departmentStatus, error: statusError } = await supabaseAdmin
+      let { data: departmentStatus, error: statusError } = await supabaseAdmin
         .from('no_dues_status')
         .select('form_id, department_name')
         .eq('form_id', id)
         .in('department_name', myDeptNames);
+
+      // ⚡ SELF-HEALING & FALLBACK: If status not found, try to repair it
+      if (!statusError && (!departmentStatus || departmentStatus.length === 0)) {
+        console.log('🔧 Self-healing triggered for form:', id);
+
+        // 1. If staff has no UUIDs but has a department_name, use it
+        const fallbackDeptName = profile.department_name;
+        if (fallbackDeptName && !myDeptNames.includes(fallbackDeptName)) {
+          console.log('📋 Using fallback department_name:', fallbackDeptName);
+          await applicationService.ensureStatusRecord(id, fallbackDeptName);
+        } else {
+          // 2. Try to repair all relevant departments
+          for (const deptName of myDeptNames) {
+            await applicationService.ensureStatusRecord(id, deptName);
+          }
+        }
+
+        // 3. Retry the status check
+        const retryResult = await supabaseAdmin
+          .from('no_dues_status')
+          .select('form_id, department_name')
+          .eq('form_id', id)
+          .in('department_name', fallbackDeptName ? [...myDeptNames, fallbackDeptName] : myDeptNames);
+
+        departmentStatus = retryResult.data;
+        statusError = retryResult.error;
+      }
 
       console.log('🔒 Auth Check - Status Query Error:', statusError);
       console.log('🔒 Auth Check - Department Status Found:', departmentStatus);
@@ -117,14 +145,6 @@ export async function GET(request, { params }) {
 
       if (statusError || !departmentStatus || departmentStatus.length === 0) {
         console.log('❌ Auth FAILED - Returning 403');
-        console.log('❌ Reason:', {
-          hasError: !!statusError,
-          isNull: !departmentStatus,
-          isEmpty: departmentStatus?.length === 0,
-          formId: id,
-          myDeptNames,
-          assignedIds: profile.assigned_department_ids
-        });
         return NextResponse.json({
           error: 'Unauthorized to access this student',
           debug: {

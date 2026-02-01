@@ -7,7 +7,30 @@ import { exportAllStaffDataToCSV } from '@/lib/csvExport';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { RefreshCcw, Search, CheckCircle, XCircle, Clock, TrendingUp, Download, ChevronDown, LogOut, Info, AlertTriangle, HelpCircle, MessageCircle, RefreshCw } from 'lucide-react';
+import {
+  RefreshCcw,
+  Search,
+  CheckCircle,
+  XCircle,
+  Clock,
+  TrendingUp,
+  Download,
+  ChevronDown,
+  LogOut,
+  Info,
+  AlertTriangle,
+  HelpCircle,
+  MessageCircle,
+  RefreshCw,
+  CheckCircle2,
+  FileText,
+  Scan,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  AlertCircle
+} from 'lucide-react';
 import { getSLAStatus, getSLABadgeClasses } from '@/lib/slaHelper';
 import { DEPARTMENT_GUIDELINES } from '@/lib/departmentGuidelines';
 import toast from 'react-hot-toast';
@@ -443,7 +466,7 @@ export default function StaffDashboard() {
             {totalUnread > 0 && (
               <button
                 onClick={() => {
-                  setSearchTerm('');
+                  setSearch('');
                   // Toggle filter or set it
                   const newFilterState = !showOnlyUnread;
                   setShowOnlyUnread(newFilterState);
@@ -465,17 +488,25 @@ export default function StaffDashboard() {
                 {showOnlyUnread && <div className="ml-1 text-xs bg-white text-red-600 px-1.5 rounded-full">x</div>}
               </button>
             )}
-            <button
-              onClick={() => {
-                toast.loading('Refreshing data...');
-                handleManualRefresh().then(() => toast.dismiss());
-              }}
-              disabled={refreshing}
-              className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl text-sm font-medium shadow-lg hover:shadow-green-600/25 transition-all disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push('/staff/scan')}
+                className="flex items-center gap-2 px-4 py-2 bg-jecrc-red/10 text-jecrc-red rounded-lg hover:bg-jecrc-red/20 transition-all font-medium border border-jecrc-red/20"
+                title="Scan QR Code"
+              >
+                <Scan className="w-5 h-5 font-bold" />
+                <span className="hidden sm:inline">Scan & Verify</span>
+              </button>
+
+              <button
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                className={`flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all text-sm font-medium ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <RefreshCw className={`w-4 h-4 text-jecrc-red ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh Data</span>
+              </button>
+            </div>
             <button
               onClick={refreshData}
               className={`p-2.5 rounded-xl border transition-all

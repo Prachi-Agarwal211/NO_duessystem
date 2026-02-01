@@ -39,7 +39,7 @@ export async function GET(request) {
             .eq('id', user.id)
             .single();
 
-        if (!profile?.assigned_department_ids?.length) {
+        if (!profile?.assigned_department_ids?.length && !profile?.department_name) {
             return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });
         }
 
@@ -47,18 +47,30 @@ export async function GET(request) {
         const { data: depts } = await supabaseAdmin
             .from('departments')
             .select('name')
-            .in('id', profile.assigned_department_ids);
+            .in('id', profile.assigned_department_ids || []);
 
         const deptNames = depts?.map(d => d.name) || [];
+
+        // 🛡️ FALLBACK: Add profile.department_name if not already included
+        if (profile.department_name && !deptNames.includes(profile.department_name)) {
+            deptNames.push(profile.department_name);
+        }
 
         // Get ALL unread messages for these departments from students
         // NOTE: Removed the no_dues_forms join to avoid relationship issues
         const { data: messages, error: messagesError } = await supabaseAdmin
             .from('no_dues_messages')
-            .select('form_id, department_name, is_read, sender_name')
+            .select(`
+                id,
+                form_id,
+                department_name,
+                is_read,
+                sender_type
+            `)
             .in('department_name', deptNames)
             .eq('sender_type', 'student')
-            .eq('is_read', false);
+            .eq('is_read', false)
+            .neq('sender_id', String(user.id)); // 🛡️ Fix Type Mismatch: UUID vs TEXT
 
         if (messagesError) {
             console.error('Error fetching messages:', messagesError);
