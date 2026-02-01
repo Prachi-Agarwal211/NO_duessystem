@@ -391,106 +391,108 @@ export default function ReapplyModal({
               </p>
             </div>
 
-            {/* Read-Only Form Information */}
-            <div className="mb-6">
-              <h3 className={`font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
-                }`}>
-                Your Submitted Information:
-              </h3>
-              <p className={`text-xs mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Form data cannot be edited during reapplication. If you need to change any information, please contact administration.
-              </p>
+            {/* Read-Only Form Information - ONLY show in all-departments mode to keep per-dept UI simple */}
+            {!isPerDeptMode && (
+              <div className="mb-6">
+                <h3 className={`font-bold mb-2 transition-colors duration-700 ${isDark ? 'text-white' : 'text-ink-black'
+                  }`}>
+                  Your Submitted Information:
+                </h3>
+                <p className={`text-xs mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Form data cannot be edited during reapplication. If you need to change any information, please contact administration.
+                </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Student Name"
-                  name="student_name"
-                  value={editedData.student_name}
-                  disabled={true}
-                  readOnly
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Student Name"
+                    name="student_name"
+                    value={editedData.student_name}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Parent Name"
-                  name="parent_name"
-                  value={editedData.parent_name}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Parent Name"
+                    name="parent_name"
+                    value={editedData.parent_name}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Admission Year"
-                  name="admission_year"
-                  value={editedData.admission_year}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Admission Year"
+                    name="admission_year"
+                    value={editedData.admission_year}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Passing Year"
-                  name="passing_year"
-                  value={editedData.passing_year}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Passing Year"
+                    name="passing_year"
+                    value={editedData.passing_year}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="School"
-                  name="school"
-                  value={schools.find(s => s.id === editedData.school)?.name || editedData.school || 'N/A'}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="School"
+                    name="school"
+                    value={schools.find(s => s.id === editedData.school)?.name || editedData.school || 'N/A'}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Course"
-                  name="course"
-                  value={availableCourses.find(c => c.id === editedData.course)?.name || editedData.course || 'N/A'}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Course"
+                    name="course"
+                    value={availableCourses.find(c => c.id === editedData.course)?.name || editedData.course || 'N/A'}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Branch"
-                  name="branch"
-                  value={availableBranches.find(b => b.id === editedData.branch)?.name || editedData.branch || 'N/A'}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Branch"
+                    name="branch"
+                    value={availableBranches.find(b => b.id === editedData.branch)?.name || editedData.branch || 'N/A'}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Country Code"
-                  name="country_code"
-                  value={editedData.country_code}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Country Code"
+                    name="country_code"
+                    value={editedData.country_code}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Contact Number"
-                  name="contact_no"
-                  value={editedData.contact_no}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Contact Number"
+                    name="contact_no"
+                    value={editedData.contact_no}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label="Personal Email"
-                  name="personal_email"
-                  value={editedData.personal_email}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label="Personal Email"
+                    name="personal_email"
+                    value={editedData.personal_email}
+                    disabled={true}
+                    readOnly
+                  />
 
-                <Input
-                  label={`College Email (${collegeDomain})`}
-                  name="college_email"
-                  value={editedData.college_email}
-                  disabled={true}
-                  readOnly
-                />
+                  <Input
+                    label={`College Email (${collegeDomain})`}
+                    name="college_email"
+                    value={editedData.college_email}
+                    disabled={true}
+                    readOnly
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
 

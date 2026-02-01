@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function Sidebar({ isOpen, setIsOpen }) {
+export default function Sidebar({ isOpen, setIsOpen, onClose = () => { } }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme } = useTheme();
@@ -77,7 +77,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const handleLogout = async () => {
     try {
       // Close sidebar first to prevent UI issues
-      setIsOpen(false);
+      if (typeof onClose === 'function') {
+        onClose();
+      } else if (typeof setIsOpen === 'function') {
+        setIsOpen(false);
+      }
 
       // Show loading toast
       const logoutToast = toast.loading('Logging out...');

@@ -46,10 +46,11 @@ export async function POST(request) {
       );
     }
 
-    // Generate ticket number
+    // Generate unique ticket number and ID
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const ticketNumber = `TKT-${timestamp}${random}`;
+    const newId = crypto.randomUUID();
 
     // Format Subject (Prefix with Department if provided)
     let finalSubject = subject || 'Support Request';
@@ -62,16 +63,19 @@ export async function POST(request) {
       .from('support_tickets')
       .insert([
         {
+          id: newId,
+          ticket_id: ticketNumber,
+          ticket_number: ticketNumber,
           user_email: email.toLowerCase().trim(),
-          user_name: email.split('@')[0].replace(/[._-]/g, ' ').trim(),
-          user_type: requesterType,
+          student_email: email.toLowerCase().trim(),
+          student_name: email.split('@')[0].replace(/[._-]/g, ' ').trim(),
+          registration_no: email.split('@')[0].toUpperCase(),
           requester_type: requesterType,
           subject: finalSubject,
           message: message.trim(),
-          category: category || 'general',
           status: 'open',
           priority: priority || 'normal',
-          ticket_number: ticketNumber
+          updated_at: new Date().toISOString()
         }
       ])
       .select()
