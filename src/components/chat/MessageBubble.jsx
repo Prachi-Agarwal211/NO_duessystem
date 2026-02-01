@@ -47,7 +47,7 @@ export default function MessageBubble({ message, isOwn, isSending, isFailed, onR
                             : 'bg-blue-600 text-white rounded-br-md'
                     : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-md shadow-sm border border-gray-100 dark:border-gray-600'
                     }`}>
-                    
+
                     {/* File Attachment */}
                     {hasFileAttachment && fileUrl && (
                         <div className="mb-2 p-2 bg-white/10 dark:bg-black/10 rounded-lg">
@@ -66,7 +66,7 @@ export default function MessageBubble({ message, isOwn, isSending, isFailed, onR
                         </div>
                     )}
 
-                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                    <p className={`text-sm whitespace-pre-wrap break-words leading-relaxed ${isOwn ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                         {message.message}
                     </p>
 
