@@ -332,6 +332,7 @@ export default function SubmitForm() {
       const selectedCourse = availableCourses.find(c => c.id === formData.course);
       const selectedBranch = availableBranches.find(b => b.id === formData.branch);
 
+      // Create data object that matches the schema exactly
       const sanitizedData = {
         registration_no: formData.registration_no.trim().toUpperCase(),
         student_name: formData.student_name.trim(),
@@ -339,11 +340,8 @@ export default function SubmitForm() {
         passing_year: formData.passing_year?.trim() || null,
         parent_name: formData.parent_name?.trim() || null,
         school: formData.school,
-        school_name: selectedSchool?.name || '',
         course: formData.course,
-        course_name: selectedCourse?.name || '',
         branch: formData.branch,
-        branch_name: selectedBranch?.name || '',
         country_code: formData.country_code,
         contact_no: formData.contact_no.trim(),
         personal_email: formData.personal_email.trim().toLowerCase(),
@@ -351,13 +349,24 @@ export default function SubmitForm() {
         alumni_profile_link: (formData.alumni_profile_link || '').trim()
       };
 
+      // Store the names separately for the service to use
+      const enrichedData = {
+        ...sanitizedData,
+        school_name: selectedSchool?.name || '',
+        course_name: selectedCourse?.name || '',
+        branch_name: selectedBranch?.name || ''
+      };
+
+      console.log('🔍 Form submission data:', enrichedData);
+      console.log('🔍 Selected options:', { selectedSchool, selectedCourse, selectedBranch });
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch('/api/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sanitizedData),
+        body: JSON.stringify(enrichedData),
         signal: controller.signal
       });
 

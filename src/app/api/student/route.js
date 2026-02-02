@@ -18,8 +18,18 @@ export async function POST(request) {
       return ApiResponse.error('Too many requests', 429);
     }
 
-    // 2. Parse & Validate
-    const body = await request.json();
+    // 2. Parse & Validate with better error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('JSON Parse Error:', parseError);
+      return ApiResponse.error('Invalid JSON in request body', 400);
+    }
+
+    if (!body || typeof body !== 'object') {
+      return ApiResponse.error('Request body must be a valid JSON object', 400);
+    }
 
     // Check if this is a reapplication request
     if (body.action === 'reapply') {
@@ -30,6 +40,7 @@ export async function POST(request) {
     const validation = validateWithZod(body, studentFormSchema);
 
     if (!validation.success) {
+      console.error('Validation Errors:', validation.errors);
       return ApiResponse.validationError('Validation failed', validation.errors);
     }
 

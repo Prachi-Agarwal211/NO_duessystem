@@ -157,11 +157,13 @@ export const studentFormSchema = z.object({
   admission_year: yearSchema.optional().or(z.literal('')).transform(val => val?.trim()),
   passing_year: yearSchema.optional().or(z.literal('')).transform(val => val?.trim()),
   school: z.string().min(1, 'School is required'), // UUID or Name
+  school_name: z.string().optional(),
   course: z.string().min(1, 'Course is required'), // UUID or Name
+  course_name: z.string().optional(),
   branch: z.string().min(1, 'Branch is required'), // UUID or Name
-  alumni_profile_link: z.string().min(1, 'Alumni profile link is mandatory')
+  branch_name: z.string().optional(),
+  alumni_profile_link: urlSchema.min(1, 'Alumni profile link is mandatory')
 });
-
 
 /**
  * Student Reapplication Schema
