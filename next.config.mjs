@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Balanced configuration for both performance and reliability
   output: 'standalone',
-  swcMinify: false,
-  compress: false,
+  swcMinify: true,
+  compress: true,
 
   eslint: {
     ignoreDuringBuilds: true,
@@ -10,7 +11,7 @@ const nextConfig = {
 
   // Simplified webpack configuration
   webpack: (config, { isServer }) => {
-    // Disable all optimizations for debugging
+    // Add externals for client-side to exclude Node.js modules
     if (!isServer) {
       config.externals = {
         ...config.externals,
@@ -31,7 +32,10 @@ const nextConfig = {
         'os': 'os',
         'path': 'path',
       };
+    }
 
+    // Add fallbacks for Node.js modules in client-side builds
+    if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -52,18 +56,18 @@ const nextConfig = {
       };
     }
 
-    // Disable optimization
-    config.optimization = {
-      ...config.optimization,
-      minimize: false,
-      splitChunks: false,
-    };
-
     return config;
   },
 
+  // Simplified experimental features - removed options causing deployment issues
   experimental: {
-    optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      'chart.js',
+      'react-chartjs-2',
+      '@supabase/supabase-js'
+    ],
   },
 
   images: {
