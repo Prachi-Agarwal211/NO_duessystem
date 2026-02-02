@@ -116,13 +116,13 @@ export async function POST(request) {
 
     // Verify blockchain hash by recalculating
     const certificateData = {
+      formId: formData.id,
       studentName: formData.student_name,
       registrationNo: formData.registration_no,
       course: formData.course,
       branch: formData.branch,
       admissionYear: formData.admission_year,
-      passingYear: formData.passing_year,
-      formId: formData.id
+      passingYear: formData.passing_year
     };
 
     const verification = await verifyCertificate(certificateData, formData.blockchain_hash);

@@ -34,18 +34,33 @@ export default function AdminVerifyPage() {
   }, [scanning]);
 
   const onScanSuccess = async (decodedText) => {
+    console.log('QR Code scanned:', decodedText);
     setLoading(true);
     setError(null);
 
     try {
+      // Parse the QR data if it's a JSON string
+      let qrData;
+      try {
+        qrData = typeof decodedText === 'string' ? JSON.parse(decodedText) : decodedText;
+      } catch (parseError) {
+        console.error('Failed to parse QR data:', parseError);
+        setError('Invalid QR code format');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Parsed QR data:', qrData);
+
       // Call verification API
       const response = await fetch('/api/certificate/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrData: decodedText })
+        body: JSON.stringify({ qrData: qrData })
       });
 
       const data = await response.json();
+      console.log('Verification response:', data);
 
       if (response.ok && data.valid) {
         setVerificationResult({
@@ -214,7 +229,7 @@ export default function AdminVerifyPage() {
                           <div>
                             <p className="text-slate-600 dark:text-slate-400">Session</p>
                             <p className="font-semibold text-slate-900 dark:text-white">
-                              {verificationResult.data.certificate.sessionFrom} - {verificationResult.data.certificate.sessionTo}
+                              {verificationResult.data.certificate.admissionYear} - {verificationResult.data.certificate.passingYear}
                             </p>
                           </div>
                           <div>

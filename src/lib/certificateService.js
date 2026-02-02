@@ -134,132 +134,146 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     drawCorner(pageWidth - 18, pageHeight - 18, 180);
     drawCorner(18, pageHeight - 18, 270);
 
-    // --- 2. Logo & Header ---
-    // Using text-based header for smaller file size (works better with Supabase storage limits)
+    // ===== MASTER LAYOUT GRID =====
+    const centerX = pageWidth / 2;
+    let y = 38;   // starting vertical anchor
+
+    // --- Header ---
     pdf.setFontSize(28);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('JECRC UNIVERSITY', pageWidth / 2, 32, { align: 'center' });
+    pdf.text('JECRC UNIVERSITY', centerX, y, { align: 'center' });
+
+    y += 8;
 
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100, 100, 100);
-    pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 40, { align: 'center' });
+    pdf.text('Jaipur Engineering College & Research Centre', centerX, y, { align: 'center' });
 
-    // --- 3. Certificate Title ---
-    const titleY = 58; // Adjusted for text-based header
 
-    // Decorative lines around title
-    pdf.setDrawColor(...GOLD_ACCENT);
-    pdf.setLineWidth(0.5);
-    pdf.line(pageWidth / 2 - 65, titleY - 8, pageWidth / 2 + 65, titleY - 8);
+    // --- Title ---
+    y += 18;
 
     pdf.setFontSize(32);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CERTIFICATE', pageWidth / 2, titleY + 2, { align: 'center' });
+    pdf.text('NO DUES CERTIFICATE', centerX, y, { align: 'center' });
 
-    pdf.line(pageWidth / 2 - 65, titleY + 6, pageWidth / 2 + 65, titleY + 6);
 
-    // --- 4. Main Content ---
-    // Intro
+    // --- Student Info ---
+    y += 16;
+
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(80, 80, 80);
-    pdf.text('This is to certify that', pageWidth / 2, 68, { align: 'center' });
+    pdf.text('This is to certify that', centerX, y, { align: 'center' });
 
-    // Student Name
+    y += 14;
+
     pdf.setFontSize(32);
     pdf.setFont('times', 'bolditalic');
     pdf.setTextColor(0, 0, 0);
-    pdf.text(certificateData.studentName, pageWidth / 2, 82, { align: 'center' });
+    pdf.text(certificateData.studentName, centerX, y, { align: 'center' });
 
-    // Underline for name
-    pdf.setLineWidth(0.5);
-    pdf.setDrawColor(0, 0, 0);
-    pdf.line(pageWidth / 2 - 55, 84, pageWidth / 2 + 55, 84);
+    pdf.line(centerX - 55, y + 2, centerX + 55, y + 2);
 
-    // Registration No
+
+    // --- Registration ---
+    y += 12;
+
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(60, 60, 60);
-    pdf.text(`Registration No.: ${certificateData.registrationNo}`, pageWidth / 2, 94, { align: 'center' });
+    pdf.text(`Registration No.: ${certificateData.registrationNo}`, centerX, y, { align: 'center' });
 
-    // Body Text
+
+    // --- Body ---
+    y += 14;
+
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(60, 60, 60);
-    pdf.text('has successfully cleared all dues from all departments', pageWidth / 2, 106, { align: 'center' });
-    pdf.text('of JECRC University and is hereby granted', pageWidth / 2, 112, { align: 'center' });
+    pdf.text('has successfully cleared all dues from all departments', centerX, y, { align: 'center' });
 
-    // Clearance Status (Stamp style)
+    y += 6;
+    pdf.text('of JECRC University and is hereby granted', centerX, y, { align: 'center' });
+
+
+    // --- Clearance Stamp ---
+    y += 12;
+
     pdf.setFontSize(18);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(...JECRC_RED);
-    pdf.text('NO DUES CLEARANCE', pageWidth / 2, 122, { align: 'center' });
+    pdf.text('NO DUES CLEARANCE', centerX, y, { align: 'center' });
 
-    // --- 5. Academic Details (No Box) ---
-    const detailsY = 135;
 
-    pdf.setFont('helvetica', 'normal');
+    // --- Academic Details ---
+    y += 14;
+
     pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(0, 0, 0);
 
-    // Details Text
-    const courseText = `Course: ${certificateData.course || 'N/A'}`;
-    const branchText = `Branch: ${certificateData.branch || 'N/A'}`;
-    const sessionText = `Session: ${certificateData.admissionYear || 'N/A'} - ${certificateData.passingYear || 'N/A'}`;
+    pdf.text(
+      `Course: ${certificateData.course || 'N/A'}   •   Branch: ${certificateData.branch || 'N/A'}`,
+      centerX,
+      y,
+      { align: 'center' }
+    );
 
-    pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, detailsY, { align: 'center' });
-    pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
+    y += 7;
 
-    // --- 6. Footer Layout Zones ---
-    const footerY = 170;  // push footer slightly down
+    pdf.text(
+      `Session: ${certificateData.admissionYear || 'N/A'} - ${certificateData.passingYear || 'N/A'}`,
+      centerX,
+      y,
+      { align: 'center' }
+    );
 
-    // --- Date (Left text moved slightly right) ---
+
+    // ===== FOOTER GRID (3-column baseline) =====
+    const footerY = 165;
+    const leftX = 25;
+    const rightX = pageWidth - 60;
+    const centerFooterX = centerX;
+
+
+    // --- QR Left ---
+    const qrSize = 32;
+    const qrY = footerY - qrSize;
+
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(leftX - 2, qrY - 2, qrSize + 4, qrSize + 4, 'F');
+    pdf.addImage(qrCodeImage, 'PNG', leftX, qrY, qrSize, qrSize);
+
+    pdf.setFontSize(8);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Scan to Verify', leftX + qrSize / 2, qrY + qrSize + 6, { align: 'center' });
+
+
+    // --- Date Center ---
     const issueDate = new Date().toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
 
-    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(0, 0, 0);
-
-    // Move date to a more centered position
-    pdf.text(`Date of Issue: ${issueDate}`, 105, footerY, { align: 'left' });
+    pdf.text(`Date of Issue: ${issueDate}`, centerFooterX, footerY, { align: 'center' });
 
 
-    // --- Registration Office (Right) ---
+    // --- Signature Right ---
     pdf.setDrawColor(...JECRC_RED);
-    pdf.setLineWidth(0.5);
-    pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6);
+    pdf.line(rightX - 25, footerY - 6, rightX + 25, footerY - 6);
 
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Registration Office', pageWidth - 60, footerY, { align: 'center' });
+    pdf.text('Registration Office', rightX, footerY, { align: 'center' });
 
-    pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(100, 100, 100);
-    pdf.text('JECRC University', pageWidth - 60, footerY + 5, { align: 'center' });
-
-
-    // --- 7. QR Code (Bottom Left, isolated zone) ---
-    const qrX = 25;
-    const qrY = 150;  // lock QR higher than footer text
-    const qrSize = 35;
-
-    pdf.setFillColor(255, 255, 255);
-    pdf.rect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 'F');
-
-    pdf.addImage(qrCodeImage, 'PNG', qrX, qrY, qrSize, qrSize);
-
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('Scan to Verify', qrX + qrSize / 2, qrY + qrSize + 6, { align: 'center' });
+    pdf.text('JECRC University', rightX, footerY + 5, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
