@@ -49,7 +49,7 @@ export default function AdminRequestDetail() {
             department_name,
             status,
             action_at,
-            action_by_user_id,
+            action_by,
             rejection_reason,
             profiles (
               full_name

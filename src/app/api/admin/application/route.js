@@ -1,19 +1,25 @@
-import { createServerClient } from "@supabase/ssr"; // <-- USING THE FUNCTION SUGGESTED BY THE ERROR
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-
-// This is the server-side admin client for bypassing RLS
 import { createClient } from '@supabase/supabase-js';
 
+// This is server-side admin client for bypassing RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function GET() {
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing form ID" }, { status: 400 });
+  }
+
   const cookieStore = cookies();
 
-  // This is the correct, verbose way to create a server client with your library version
+  // Create server client with your library version
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -39,7 +45,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Check if the logged-in user is an admin
+  // 2. Check if logged-in user is an admin
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
@@ -50,29 +56,44 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden: Not an admin" }, { status: 403 });
   }
 
-  // 3. If user is an admin, fetch all data using the admin client
+  // 3. Fetch individual application details using admin client
   try {
-    const { data: applications, error: applicationsError } = await supabaseAdmin
+    const { data: application, error: applicationError } = await supabaseAdmin
       .from('no_dues_forms')
       .select(`
         *,
         no_dues_status (
+          id,
           department_name,
           status,
+          action_at,
+          action_by,
+          remarks,
           rejection_reason,
-          updated_at
+          student_reply_message,
+          unread_count,
+          created_at,
+          updated_at,
+          profiles (
+            full_name
+          )
         )
       `)
-      .order('created_at', { ascending: false });
+      .eq('id', id)
+      .single();
 
-    if (applicationsError) {
-      throw applicationsError;
+    if (applicationError) {
+      throw applicationError;
     }
 
-    return NextResponse.json({ applications });
+    if (!application) {
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: application });
 
   } catch (err) {
-    console.error('Error fetching admin data:', err);
-    return NextResponse.json({ error: err.message || "Failed to fetch dashboard data." }, { status: 500 });
+    console.error('Error fetching application details:', err);
+    return NextResponse.json({ error: err.message || "Failed to fetch application details." }, { status: 500 });
   }
 }

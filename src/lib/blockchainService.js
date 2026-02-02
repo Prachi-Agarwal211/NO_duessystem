@@ -19,9 +19,11 @@ const PRODUCTION_URL = 'https://nodues.jecrcuniversity.edu.in';
 export function generateQRData(blockchainRecord, certificateData) {
   const { formId, registrationNo, studentName } = certificateData;
 
-  // Create verification URL with form ID
-  const verificationUrl = `${PRODUCTION_URL}/verify/${formId}`;
+  // Create verification URL with form ID - using query parameter format for shorter URL
+  const verificationUrl = `${PRODUCTION_URL}/verify?id=${formId}`;
 
+  // Create QR data - keep full field names for backwards compatibility
+  // but use shorter values where possible
   return {
     url: verificationUrl,
     id: formId,
@@ -129,7 +131,12 @@ export function verifyQRData(parsedData) {
 
     // Extract formId from the id field or url
     let formId = id;
-    if (url && url.includes('/verify/')) {
+    if (url && url.includes('?id=')) {
+      const urlParts = url.split('?id=');
+      if (urlParts[1]) {
+        formId = urlParts[1].split('&')[0];
+      }
+    } else if (url && url.includes('/verify/')) {
       const urlParts = url.split('/verify/');
       if (urlParts[1]) {
         formId = urlParts[1].split('?')[0];

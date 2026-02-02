@@ -1,0 +1,20 @@
+CERTIFICATE REGENERATION LOG
+============================================================
+Started at: 2026-02-02T09:46:20.718Z
+
+Found 1 completed forms with certificates
+
+──────────────────────────────────────────────────
+Processing: 22BCOM1367 (ANURAG SINGH)
+Form ID: 4c08418d-fd58-43f0-9a90-706b8a8b0eaf
+Old Certificate: https://yjjcndurtjprbtvaikzs.supabase.co/storage/v1/object/public/certificates/no-dues-certificate-4c08418d-fd58-43f0-9a90-706b8a8b0eaf-1770025261470.pdf
+Status: SUCCESS
+New Certificate: https://yjjcndurtjprbtvaikzs.supabase.co/storage/v1/object/public/certificates/no-dues-certificate-4c08418d-fd58-43f0-9a90-706b8a8b0eaf-1770025584146.pdf
+
+============================================================
+REGENERATION COMPLETE
+============================================================
+Total Forms: 1
+Success: 1
+Failed: 0
+Completed at: 2026-02-02T09:46:25.981Z

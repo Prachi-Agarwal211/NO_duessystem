@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Download, RefreshCw, XCircle, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Download, RefreshCw, XCircle, AlertTriangle, MessageCircle, IdCard, Building2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -510,15 +510,38 @@ export default function StatusTracker({ registrationNo, formId }) {
           </p>
           {/* For manual entries, use manual_certificate_url; for online forms, use certificate_url */}
           {(isManualEntry ? formData.manual_certificate_url : formData.certificate_url) && (
-            <a
-              href={isManualEntry ? formData.manual_certificate_url : formData.certificate_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="interactive inline-flex items-center gap-2 px-6 py-2.5 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40"
-            >
-              <Download size={20} />
-              Download Certificate
-            </a>
+            <>
+              <a
+                href={isManualEntry ? formData.manual_certificate_url : formData.certificate_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="interactive inline-flex items-center gap-2 px-6 py-2.5 bg-jecrc-red hover:bg-red-700 text-white rounded-lg font-bold transition-all duration-300 shadow-lg shadow-jecrc-red/20 hover:shadow-jecrc-red/40"
+              >
+                <Download size={20} />
+                Download Certificate
+              </a>
+              {/* Instructions after certificate download */}
+              <div className={`mt-6 p-4 rounded-lg text-left ${isDark ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
+                <div className="flex items-start gap-3">
+                  <Building2 className={`w-5 h-5 flex-shrink-0 mt-0.5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                  <div>
+                    <h4 className={`font-bold text-sm mb-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+                      Next Steps - Complete Your No Dues Process
+                    </h4>
+                    <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      1. Download and <strong>print this certificate</strong> in color
+                    </p>
+                    <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      2. Submit the printed certificate along with your original ID card to the <strong>Registrar Office</strong>
+                    </p>
+                    <div className={`mt-2 flex items-center gap-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <IdCard className="w-4 h-4" />
+                      <span>Don't forget to carry your original ID card</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </motion.div>
       )}

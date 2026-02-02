@@ -10,8 +10,8 @@ import {
   generateTransactionId,
   createBlockchainRecord,
   generateQRData
-} from './blockchainService';
-import { AuditLogger } from './auditLogger';
+} from './blockchainService.js';
+import { AuditLogger } from './auditLogger.js';
 
 // Initialize Supabase Admin Client for file storage and database operations
 const supabaseAdmin = createClient(
@@ -62,10 +62,11 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
       studentName: certificateData.studentName
     });
 
-    // Generate QR code image as base64
+    // Generate QR code image as base64 with improved settings for better scannability
     const qrCodeImage = await QRCode.toDataURL(JSON.stringify(qrData), {
-      width: 120,
-      margin: 1,
+      width: 200,
+      margin: 2,
+      errorCorrectionLevel: 'H', // High error correction for better scanning
       color: {
         dark: '#000000',
         light: '#FFFFFF'
@@ -144,7 +145,6 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(100, 100, 100);
     pdf.text('Jaipur Engineering College & Research Centre', pageWidth / 2, 40, { align: 'center' });
-    pdf.text('An Autonomous University | NAAC A+ Accredited', pageWidth / 2, 46, { align: 'center' });
 
     // --- 3. Certificate Title ---
     const titleY = 58; // Adjusted for text-based header
@@ -213,24 +213,28 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.text(`${courseText}   •   ${branchText}`, pageWidth / 2, detailsY, { align: 'center' });
     pdf.text(sessionText, pageWidth / 2, detailsY + 7, { align: 'center' });
 
-    // --- 6. Date & Signature ---
-    const footerY = 160;
+    // --- 6. Footer Layout Zones ---
+    const footerY = 170;  // push footer slightly down
 
-    // Date (Left)
+    // --- Date (Left text moved slightly right) ---
     const issueDate = new Date().toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
-    pdf.text(`Date of Issue: ${issueDate}`, 45, footerY, { align: 'left' });
 
-    // Registration Office Signature (Right)
+    // Move date to the right so it doesn't collide with QR
+    pdf.text(`Date of Issue: ${issueDate}`, 80, footerY, { align: 'left' });
+
+
+    // --- Registration Office (Right) ---
     pdf.setDrawColor(...JECRC_RED);
     pdf.setLineWidth(0.5);
-    pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6); // Line above text
+    pdf.line(pageWidth - 85, footerY - 6, pageWidth - 35, footerY - 6);
 
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
@@ -241,13 +245,21 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setTextColor(100, 100, 100);
     pdf.text('JECRC University', pageWidth - 60, footerY + 5, { align: 'center' });
 
-    // --- 7. QR Code (Bottom Left) ---
-    const qrX = 25;
-    const qrY = footerY - 35;
-    const qrSize = 28;
 
-    // Add QR Code (no labels - clean design)
+    // --- 7. QR Code (Bottom Left, isolated zone) ---
+    const qrX = 25;
+    const qrY = 150;  // lock QR higher than footer text
+    const qrSize = 35;
+
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 'F');
+
     pdf.addImage(qrCodeImage, 'PNG', qrX, qrY, qrSize, qrSize);
+
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('Scan to Verify', qrX + qrSize / 2, qrY + qrSize + 6, { align: 'center' });
 
     // Generate PDF buffer
     const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
@@ -345,6 +357,49 @@ export const finalizeCertificate = async (formId) => {
 
     console.log('✅ Form data fetched successfully');
 
+    // Fetch course and branch names from config tables if they are empty
+    let courseName = formData.course;
+    let branchName = formData.branch;
+
+    // If course is empty but course_id exists, fetch from config_courses
+    if (!courseName && formData.course_id) {
+      const { data: courseData } = await supabaseAdmin
+        .from('config_courses')
+        .select('name')
+        .eq('id', formData.course_id)
+        .single();
+      if (courseData) {
+        courseName = courseData.name;
+      }
+    }
+
+    // If branch is empty but branch_id exists, fetch from config_branches
+    if (!branchName && formData.branch_id) {
+      const { data: branchData } = await supabaseAdmin
+        .from('config_branches')
+        .select('name')
+        .eq('id', formData.branch_id)
+        .single();
+      if (branchData) {
+        branchName = branchData.name;
+      }
+    }
+
+    // If still empty, try fetching from student_data table
+    if (!courseName || !branchName) {
+      const { data: studentData } = await supabaseAdmin
+        .from('student_data')
+        .select('course, branch')
+        .eq('registration_no', formData.registration_no)
+        .single();
+      if (studentData) {
+        if (!courseName && studentData.course) courseName = studentData.course;
+        if (!branchName && studentData.branch) branchName = studentData.branch;
+      }
+    }
+
+    console.log('🔍 Course/Branch resolved:', { courseName, branchName });
+
     console.log('🔵 Step 2: Creating blockchain record');
 
     // STEP 2: Create blockchain record FIRST (with correct data structure and department statuses)
@@ -352,8 +407,8 @@ export const finalizeCertificate = async (formId) => {
       student_id: formId,  // Use formId as student_id
       registration_no: formData.registration_no,
       full_name: formData.student_name,  // Map student_name to full_name
-      course: formData.course,
-      branch: formData.branch,
+      course: courseName,
+      branch: branchName,
       status: 'completed',
       completed_at: new Date().toISOString(),
       department_statuses: formData.no_dues_status || []  // Include actual department statuses
@@ -368,12 +423,22 @@ export const finalizeCertificate = async (formId) => {
 
     console.log('🔵 Step 3: Generating certificate PDF');
 
+    // Debug log the form data
+    console.log('🔍 Certificate Generation Debug - Form Data:', {
+      student_name: formData.student_name,
+      registration_no: formData.registration_no,
+      course: courseName,
+      branch: branchName,
+      admission_year: formData.admission_year,
+      passing_year: formData.passing_year
+    });
+
     // STEP 3: Generate certificate WITH blockchain data
     const certificateResult = await generateCertificate({
       studentName: formData.student_name,
       registrationNo: formData.registration_no,
-      course: formData.course,
-      branch: formData.branch,
+      course: courseName,
+      branch: branchName,
       admissionYear: formData.admission_year,
       passingYear: formData.passing_year,
       formId

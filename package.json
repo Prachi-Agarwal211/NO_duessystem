@@ -2,6 +2,7 @@
   "name": "jecrc-no-dues-system",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -19,7 +20,8 @@
     "setup:storage": "node scripts/setup-storage.js",
     "setup:verify": "node scripts/setup-complete.js",
     "setup:cleanup-sql": "node scripts/create-cleanup-sql.js",
-    "check-env": "node scripts/check-env.js"
+    "check-env": "node scripts/check-env.js",
+    "regenerate-certs": "node scripts/regenerate-certificates.js"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.16",
