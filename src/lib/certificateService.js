@@ -227,8 +227,8 @@ export const generateCertificate = async (certificateData, blockchainRecord) => 
     pdf.setFontSize(11);
     pdf.setTextColor(0, 0, 0);
 
-    // Move date to the right so it doesn't collide with QR
-    pdf.text(`Date of Issue: ${issueDate}`, 80, footerY, { align: 'left' });
+    // Move date to a more centered position
+    pdf.text(`Date of Issue: ${issueDate}`, 105, footerY, { align: 'left' });
 
 
     // --- Registration Office (Right) ---
