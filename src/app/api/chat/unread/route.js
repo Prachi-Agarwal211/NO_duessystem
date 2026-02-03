@@ -87,7 +87,7 @@ export async function GET(request) {
         }
 
         // Get ALL unread messages for these departments from students
-        // NOTE: Removed the no_dues_forms join to avoid relationship issues
+        // Only count messages from students (not department responses)
         const { data: messages, error: messagesError } = await supabaseAdmin
             .from('no_dues_messages')
             .select(`
@@ -99,8 +99,7 @@ export async function GET(request) {
             `)
             .in('department_name', deptNames)
             .eq('sender_type', 'student')
-            .eq('is_read', false)
-            .neq('sender_id', String(user.id)); // 🛡️ Fix Type Mismatch: UUID vs TEXT
+            .eq('is_read', false);
 
         if (messagesError) {
             console.error('Error fetching messages:', messagesError);

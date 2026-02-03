@@ -89,7 +89,8 @@ export default function DepartmentDashboard() {
             action_at,
             action_by,
             remarks,
-            rejection_reason
+            rejection_reason,
+            department_name
           )
         `)
         .eq('no_dues_status.department_name', profile.department_name)
@@ -143,12 +144,43 @@ export default function DepartmentDashboard() {
   useEffect(() => {
     if (showChat && selectedApplication && departmentName) {
       loadChatMessages();
+      markMessagesAsRead();
     }
   }, [showChat, selectedApplication, departmentName]);
 
+  const markMessagesAsRead = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      await fetch('/api/chat/mark-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          formId: selectedApplication.id,
+          departmentName: departmentName,
+          readerType: 'department'
+        })
+      });
+
+      // Trigger event to update unread counts
+      window.dispatchEvent(new Event('chat-marked-read'));
+    } catch (err) {
+      console.error('Failed to mark messages as read:', err);
+    }
+  };
+
   const loadChatMessages = async () => {
     try {
-      const response = await fetch(`/api/chat/${selectedApplication.id}/${departmentName}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = session ? { 'Authorization': `Bearer ${session.access_token}` } : {};
+      
+      const response = await fetch(`/api/chat/${selectedApplication.id}/${departmentName}`, {
+        headers
+      });
       const result = await response.json();
       if (result.success && result.data?.messages) {
         setChatMessages(result.data.messages);
@@ -183,6 +215,16 @@ export default function DepartmentDashboard() {
       return;
     }
 
+    // For bulk rejection, get reason once
+    let reason = null;
+    if (action === 'rejected' || action === 'reject') {
+      reason = prompt('Please enter the rejection reason for all selected applications:');
+      if (!reason) {
+        alert('Rejection reason is required');
+        return;
+      }
+    }
+
     try {
       const results = await Promise.all(
         selectedRows.map(rowId =>
@@ -193,7 +235,8 @@ export default function DepartmentDashboard() {
               form_id: rowId,
               status: action,
               department: departmentName,
-              remarks: action === 'reject' ? 'Bulk rejection' : 'Bulk approval'
+              reason: reason,
+              remarks: action === 'rejected' || action === 'reject' ? 'Bulk rejection' : 'Bulk approval'
             })
           })
         )
@@ -216,6 +259,16 @@ export default function DepartmentDashboard() {
 
   const handleAction = async (application, action) => {
     try {
+      // For rejection, get reason first
+      let reason = null;
+      if (action === 'rejected' || action === 'reject') {
+        reason = prompt('Please enter the rejection reason:');
+        if (!reason) {
+          alert('Rejection reason is required');
+          return;
+        }
+      }
+
       const response = await fetch('/api/department-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -223,7 +276,8 @@ export default function DepartmentDashboard() {
           form_id: application.id,
           status: action,
           department: departmentName,
-          remarks: action === 'reject' ? prompt('Rejection reason:') : null
+          reason: reason,
+          remarks: action === 'rejected' || action === 'reject' ? null : null
         })
       });
 
@@ -282,7 +336,11 @@ export default function DepartmentDashboard() {
 
   const filteredApplications = applications.filter(app => {
     if (filters.status !== 'all') {
-      const status = app.no_dues_status[0]?.status;
+      // Find the status for this specific department
+      const deptStatus = app.no_dues_status?.find(status => 
+        status.department_name === departmentName
+      );
+      const status = deptStatus?.status || 'pending';
       if (status !== filters.status) return false;
     }
     if (filters.search && !app.student_name.toLowerCase().includes(filters.search.toLowerCase()) &&
@@ -471,13 +529,23 @@ export default function DepartmentDashboard() {
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Pending</p>
                   <p className={`text-3xl font-bold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                    {applications.filter(app => (app.no_dues_status?.[0]?.status || app.status) === 'pending').length}
+                    {applications.filter(app => {
+                      const deptStatus = app.no_dues_status?.find(status => 
+                        status.department_name === departmentName
+                      );
+                      return (deptStatus?.status || 'pending') === 'pending';
+                    }).length}
                   </p>
                 </div>
                 <div className={`relative p-3 rounded-xl shadow-sm ${isDark ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
                   <Clock className={`w-6 h-6 ${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
                   {/* Notification Badge Fix */}
-                  {applications.some(app => unreadCounts[app.id] > 0 && (app.no_dues_status?.[0]?.status === 'pending')) && (
+                  {applications.some(app => {
+                    const deptStatus = app.no_dues_status?.find(status => 
+                      status.department_name === departmentName
+                    );
+                    return unreadCounts[app.id] > 0 && (deptStatus?.status === 'pending');
+                  }) && (
                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
@@ -495,7 +563,12 @@ export default function DepartmentDashboard() {
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Approved</p>
                   <p className={`text-3xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {applications.filter(app => (app.no_dues_status?.[0]?.status || app.status) === 'approved').length}
+                    {applications.filter(app => {
+                      const deptStatus = app.no_dues_status?.find(status => 
+                        status.department_name === departmentName
+                      );
+                      return (deptStatus?.status || 'pending') === 'approved';
+                    }).length}
                   </p>
                 </div>
                 <div className={`p-3 rounded-xl shadow-sm ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
@@ -512,7 +585,12 @@ export default function DepartmentDashboard() {
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Rejected</p>
                   <p className={`text-3xl font-bold ${isDark ? 'text-red-400' : 'text-red-600'}`}>
-                    {applications.filter(app => (app.no_dues_status?.[0]?.status || app.status) === 'rejected').length}
+                    {applications.filter(app => {
+                      const deptStatus = app.no_dues_status?.find(status => 
+                        status.department_name === departmentName
+                      );
+                      return (deptStatus?.status || 'pending') === 'rejected';
+                    }).length}
                   </p>
                 </div>
                 <div className={`p-3 rounded-xl shadow-sm ${isDark ? 'bg-red-500/20' : 'bg-red-50'}`}>
@@ -662,7 +740,14 @@ export default function DepartmentDashboard() {
                           {application.student_name}
                         </td>
                         <td className="px-6 py-4">
-                          <StatusBadge status={application.no_dues_status[0]?.status || 'pending'} />
+                          <StatusBadge status={
+                            (() => {
+                              const deptStatus = application.no_dues_status?.find(status => 
+                                status.department_name === departmentName
+                              );
+                              return deptStatus?.status || 'pending';
+                            })()
+                          } />
                         </td>
                         <td className="px-6 py-4">
                           {application.is_reapplication ? (
@@ -774,7 +859,14 @@ export default function DepartmentDashboard() {
                   currentUserType="department"
                   currentUserName={currentUser?.name}
                   departmentName={departmentName}
-                  rejectionReason={selectedApplication.no_dues_status[0]?.rejection_reason}
+                  rejectionReason={
+                    (() => {
+                      const deptStatus = selectedApplication.no_dues_status?.find(status => 
+                        status.department_name === departmentName
+                      );
+                      return deptStatus?.rejection_reason;
+                    })()
+                  }
                   onFileUpload={async (file) => {
                     const formData = new FormData();
                     formData.append('file', file);
@@ -801,7 +893,11 @@ export default function DepartmentDashboard() {
 
 // Mobile Card Component
 function MobileApplicationCard({ application, selected, onSelect, onApprove, onReject, onChat, unreadCount, onViewDetails, isDark }) {
-  const status = application.no_dues_status?.[0]?.status || 'pending';
+  // Find the status for this specific department
+  const deptStatus = application.no_dues_status?.find(status => 
+    status.department_name === departmentName
+  );
+  const status = deptStatus?.status || 'pending';
   const isReapplied = application.is_reapplication === true;
 
   return (

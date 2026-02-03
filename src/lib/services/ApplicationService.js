@@ -182,12 +182,30 @@ class ApplicationService {
 
       if (statusError) throw new Error(statusError.message);
 
-      // 2. Update Form Status
+      // 2. Check ALL department statuses to determine form status
+      const { data: allStatuses, error: statusesError } = await supabase
+        .from('no_dues_status')
+        .select('status')
+        .eq('form_id', formId);
+
+      if (statusesError) throw new Error(statusesError.message);
+
+      const allApproved = allStatuses.every(s => s.status === 'approved');
+      const allRejected = allStatuses.every(s => s.status === 'rejected');
+      const hasPending = allStatuses.some(s => s.status === 'pending' || s.status === 'in_progress');
+
+      // Form is only 'rejected' if ALL departments have rejected
+      // If some are still pending, form stays 'in_progress'
+      let newFormStatus = 'in_progress';
+      if (allRejected) newFormStatus = 'rejected';
+      else if (allApproved) newFormStatus = 'completed';
+
+      // 3. Update Form Status
       const { data: updatedForm, error: formError } = await supabase
         .from('no_dues_forms')
         .update({
-          status: 'rejected',
-          rejection_reason: reason,
+          status: newFormStatus,
+          rejection_reason: allRejected ? reason : null, // Only store if fully rejected
           updated_at: new Date().toISOString()
         })
         .eq('id', formId)
@@ -196,7 +214,7 @@ class ApplicationService {
 
       if (formError) throw new Error(formError.message);
 
-      const result = { updatedForm, updatedStatus };
+      const result = { updatedForm, updatedStatus, newFormStatus };
 
       // Notifications
       this.sendRejectionNotifications(result.updatedForm, departmentName, reason);

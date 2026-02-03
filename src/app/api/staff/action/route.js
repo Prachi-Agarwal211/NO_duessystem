@@ -263,10 +263,11 @@ export async function PUT(request) {
     if (statusCheckError) throw statusCheckError;
 
     const allApproved = allStatuses.every(s => s.status === 'approved');
-    const hasRejection = allStatuses.some(s => s.status === 'rejected');
+    const allRejected = allStatuses.every(s => s.status === 'rejected');
+    const hasPending = allStatuses.some(s => s.status === 'pending' || s.status === 'in_progress');
 
     let newFormStatus = 'in_progress';
-    if (hasRejection) newFormStatus = 'rejected';
+    if (allRejected) newFormStatus = 'rejected';
     else if (allApproved) newFormStatus = 'completed';
 
     console.log(`📋 Form ${formId}: ${allStatuses.filter(s => s.status === 'approved').length}/${allStatuses.length} approved → ${newFormStatus}`);

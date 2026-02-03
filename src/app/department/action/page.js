@@ -89,14 +89,27 @@ function DepartmentActionContent() {
       // For now, we'll assume the user can act if they're in the right department
 
       // Update the status
+      let statusValue = action === 'approve' ? 'approved' : 'rejected';
+      let rejectionReason = null;
+      
+      if (action === 'reject') {
+        rejectionReason = prompt('Please enter the rejection reason:');
+        if (!rejectionReason) {
+          setError('Rejection reason is required');
+          setLoading(false);
+          return;
+        }
+      }
+
       const { error: statusError } = await supabase
         .from('no_dues_status')
         .upsert({
           form_id: formId,
           department_name: profile.department_name,
-          status: action === 'approve' ? 'approved' : 'rejected',
+          status: statusValue,
           action_by_user_id: session.user.id,
-          action_at: new Date().toISOString()
+          action_at: new Date().toISOString(),
+          rejection_reason: rejectionReason
         });
 
       if (statusError) throw statusError;

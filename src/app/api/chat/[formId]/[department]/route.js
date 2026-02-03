@@ -92,12 +92,14 @@ export async function GET(request, { params }) {
                 const token = authHeader.replace('Bearer ', '');
                 const { data: { user } } = await supabaseAdmin.auth.getUser(token);
                 if (user) {
+                    // For department staff, exclude messages sent by department (not just by user ID)
+                    // Messages from students will have sender_type = 'student'
                     const { count } = await supabaseAdmin
                         .from('no_dues_messages')
                         .select('*', { count: 'exact', head: true })
                         .eq('form_id', formId)
                         .eq('department_name', department)
-                        .neq('sender_id', String(user.id)) // 🛡️ Fix Type Mismatch: UUID vs TEXT
+                        .eq('sender_type', 'student')
                         .eq('is_read', false);
                     unreadCount = count || 0;
                 }
