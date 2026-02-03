@@ -202,7 +202,16 @@ export async function POST(request, { params }) {
                 .eq('email', user.email.toLowerCase())
                 .single();
 
-            if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+            // Handle case where email lookup returns no results (not an error, just empty)
+            if (!profileByEmail && !profileByEmailError) {
+                const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, assigned_department_ids, department_name, full_name, email')
+                    .eq('id', user.id)
+                    .single();
+
+                profile = profileById || null;
+            } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
                 const { data: profileById, error: profileByIdError } = await supabaseAdmin
                     .from('profiles')
                     .select('id, assigned_department_ids, department_name, full_name, email')

@@ -53,8 +53,31 @@ export async function GET(request) {
             .eq('email', user.email.toLowerCase())
             .single();
 
-        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
-            // Fallback to ID lookup
+        // Handle case where email lookup returns no results (not an error, just empty)
+        if (!profileByEmail && !profileByEmailError) {
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select(`
+            id,
+            full_name,
+            email,
+            department_name,
+            designation,
+            avatar_url,
+            bio,
+            role,
+            is_active,
+            created_at,
+            last_active_at
+          `)
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
+            }
+            profile = profileById;
+        } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
             const { data: profileById, error: profileByIdError } = await supabaseAdmin
                 .from('profiles')
                 .select(`

@@ -57,7 +57,21 @@ export async function GET(request) {
       .eq('email', user.email.toLowerCase())
       .single();
 
-    if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+    // Handle case where email lookup returns no results (not an error, just empty)
+    if (!profileByEmail && !profileByEmailError) {
+      console.warn('⚠️ Profile not found by email, trying ID lookup');
+      const { data: profileById, error: profileByIdError } = await supabaseAdmin
+        .from('profiles')
+        .select('role, assigned_department_ids, school_ids, course_ids, branch_ids, department_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileByIdError || !profileById) {
+        console.error('Profile fetch error:', profileByIdError);
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      }
+      profile = profileById;
+    } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
       // Fallback to ID lookup
       const { data: profileById, error: profileByIdError } = await supabaseAdmin
         .from('profiles')
@@ -65,7 +79,7 @@ export async function GET(request) {
         .eq('id', user.id)
         .single();
 
-      if (profileByIdError) {
+      if (profileByIdError || !profileById) {
         console.error('Profile fetch error:', profileByIdError);
         return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
       }

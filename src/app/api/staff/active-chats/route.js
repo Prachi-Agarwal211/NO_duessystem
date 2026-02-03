@@ -40,7 +40,19 @@ export async function GET(request) {
             .eq('email', user.email.toLowerCase())
             .single();
 
-        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+        // Handle case where email lookup returns no results (not an error, just empty)
+        if (!profileByEmail && !profileByEmailError) {
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select('id, assigned_department_ids, department_name')
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });
+            }
+            profile = profileById;
+        } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
             const { data: profileById, error: profileByIdError } = await supabaseAdmin
                 .from('profiles')
                 .select('id, assigned_department_ids, department_name')
@@ -57,17 +69,25 @@ export async function GET(request) {
             profile = profileByEmail;
         }
 
-        if (!profile?.assigned_department_ids?.length) {
+        if (!profile?.assigned_department_ids?.length && !profile?.department_name) {
             return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });
         }
 
-        // Get department names
-        const { data: depts } = await supabaseAdmin
-            .from('departments')
-            .select('id, name')
-            .in('id', profile.assigned_department_ids);
-
-        const deptNames = depts?.map(d => d.name) || [];
+        // Get department names from assigned IDs OR use department_name fallback
+        let deptNames = [];
+        
+        if (profile.assigned_department_ids?.length > 0) {
+            const { data: depts } = await supabaseAdmin
+                .from('departments')
+                .select('id, name')
+                .in('id', profile.assigned_department_ids);
+            deptNames = depts?.map(d => d.name) || [];
+        }
+        
+        // Fallback: use department_name if no departments found from IDs
+        if (deptNames.length === 0 && profile.department_name) {
+            deptNames = [profile.department_name];
+        }
 
         if (deptNames.length === 0) {
             return NextResponse.json({ success: true, data: { chats: [], total: 0, total_unread: 0 } });

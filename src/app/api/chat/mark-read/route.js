@@ -49,7 +49,19 @@ export async function POST(request) {
                 .eq('email', user.email.toLowerCase())
                 .single();
 
-            if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+            // Handle case where email lookup returns no results (not an error, just empty)
+            if (!profileByEmail && !profileByEmailError) {
+                const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('assigned_department_ids, department_name')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileByIdError || !profileById) {
+                    return NextResponse.json({ error: 'Not authorized for this department' }, { status: 403 });
+                }
+                profile = profileById;
+            } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
                 const { data: profileById, error: profileByIdError } = await supabaseAdmin
                     .from('profiles')
                     .select('assigned_department_ids, department_name')

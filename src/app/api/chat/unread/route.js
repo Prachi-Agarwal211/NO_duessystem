@@ -40,7 +40,19 @@ export async function GET(request) {
             .eq('email', user.email.toLowerCase())
             .single();
 
-        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+        // Handle case where email lookup returns no results (not an error, just empty)
+        if (!profileByEmail && !profileByEmailError) {
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select('id, assigned_department_ids, role, department_name')
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });
+            }
+            profile = profileById;
+        } else if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
             const { data: profileById, error: profileByIdError } = await supabaseAdmin
                 .from('profiles')
                 .select('id, assigned_department_ids, role, department_name')
