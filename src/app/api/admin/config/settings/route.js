@@ -14,8 +14,20 @@ async function verifyAdmin(request) {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user } } = await supabaseAdmin.auth.getUser(token);
     if (!user) return false;
-    const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single();
-    return profile?.role === 'admin';
+    // Query by email first (handles ID mismatches)
+    const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('email', user.email.toLowerCase())
+        .single();
+    if (profile?.role === 'admin') return true;
+    // Fallback to ID lookup
+    const { data: profileById } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+    return profileById?.role === 'admin';
 }
 
 export async function GET(request) {

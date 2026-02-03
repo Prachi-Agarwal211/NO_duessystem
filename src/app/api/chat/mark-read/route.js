@@ -41,12 +41,30 @@ export async function POST(request) {
                 return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
             }
 
-            // Verify staff is assigned to this department
-            const { data: profile } = await supabaseAdmin
+            // Verify staff is assigned to this department - query by EMAIL first
+            let profile;
+            const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
                 .from('profiles')
-                .select('assigned_department_ids')
-                .eq('id', user.id)
+                .select('assigned_department_ids, department_name')
+                .eq('email', user.email.toLowerCase())
                 .single();
+
+            if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+                const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('assigned_department_ids, department_name')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileByIdError || !profileById) {
+                    return NextResponse.json({ error: 'Not authorized for this department' }, { status: 403 });
+                }
+                profile = profileById;
+            } else if (profileByEmailError) {
+                return NextResponse.json({ error: 'Not authorized for this department' }, { status: 403 });
+            } else {
+                profile = profileByEmail;
+            }
 
             const { data: dept } = await supabaseAdmin
                 .from('departments')

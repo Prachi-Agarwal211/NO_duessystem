@@ -32,12 +32,30 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
         }
 
-        // Get user's departments
-        const { data: profile } = await supabaseAdmin
+        // Get user's departments - query by EMAIL first (handles ID mismatches)
+        let profile;
+        const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
             .from('profiles')
-            .select('id, assigned_department_ids, role')
-            .eq('id', user.id)
+            .select('id, assigned_department_ids, role, department_name')
+            .eq('email', user.email.toLowerCase())
             .single();
+
+        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select('id, assigned_department_ids, role, department_name')
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });
+            }
+            profile = profileById;
+        } else if (profileByEmailError) {
+            return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });
+        } else {
+            profile = profileByEmail;
+        }
 
         if (!profile?.assigned_department_ids?.length && !profile?.department_name) {
             return NextResponse.json({ success: true, data: { counts: [], total_unread: 0 } });

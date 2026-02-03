@@ -194,12 +194,27 @@ export async function POST(request, { params }) {
                 }, { status: 401 });
             }
 
-            // Verify staff is assigned to this department (or has department_name matching)
-            const { data: profile } = await supabaseAdmin
+            // Verify staff is assigned to this department - query by EMAIL first (handles ID mismatches)
+            let profile;
+            const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
                 .from('profiles')
                 .select('id, assigned_department_ids, department_name, full_name, email')
-                .eq('id', user.id)
+                .eq('email', user.email.toLowerCase())
                 .single();
+
+            if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+                const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, assigned_department_ids, department_name, full_name, email')
+                    .eq('id', user.id)
+                    .single();
+
+                profile = profileById || null;
+            } else if (profileByEmailError) {
+                profile = null;
+            } else {
+                profile = profileByEmail;
+            }
 
             // If profile doesn't exist, create one or use the user id directly
             const effectiveProfile = profile || { id: user.id, department_name: null, assigned_department_ids: [] };

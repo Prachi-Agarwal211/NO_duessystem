@@ -15,10 +15,22 @@ export async function POST(request) {
         const token = authHeader.replace('Bearer ', '');
         const { data: { user } } = await supabaseAdmin.auth.getUser(token);
 
-        // Verify admin role
-        const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).single();
+        // Verify admin role - query by email first (handles ID mismatches)
+        const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('role')
+            .eq('email', user.email.toLowerCase())
+            .single();
         if (!profile || profile.role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            // Fallback to ID lookup
+            const { data: profileById } = await supabaseAdmin
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+            if (!profileById || profileById.role !== 'admin') {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
         }
 
         const formData = await request.formData();

@@ -46,14 +46,32 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, error: 'Invalid parameters. Only bulk approval is allowed.' }, { status: 400 });
         }
 
-        // 4. Get Staff Profile & Authorize
-        const { data: profile, error: profileError } = await supabaseAdmin
+        // 4. Get Staff Profile & Authorize - query by EMAIL first (handles ID mismatches)
+        let profile;
+        const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
             .from('profiles')
             .select('id, role, assigned_department_ids, department_name')
-            .eq('id', user.id)
+            .eq('email', user.email.toLowerCase())
             .single();
 
-        if (profileError || !profile || (profile.role !== 'department' && profile.role !== 'admin')) {
+        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select('id, role, assigned_department_ids, department_name')
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+            }
+            profile = profileById;
+        } else if (profileByEmailError) {
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
+        } else {
+            profile = profileByEmail;
+        }
+
+        if (profile.role !== 'department' && profile.role !== 'admin') {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
         }
 

@@ -41,14 +41,28 @@ export async function GET(request) {
       );
     }
 
-    // Check if user is admin
-    const { data: profile } = await supabaseAdmin
+    // Check if user is admin - query by EMAIL first (handles ID mismatches)
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('email', user.email.toLowerCase())
       .single();
 
-    if (profile?.role !== 'admin') {
+    // Fallback to ID lookup if email lookup fails
+    if (profileError && profileError.code === 'PGRST116') {
+      const { data: profileById } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileById?.role !== 'admin') {
+        return NextResponse.json(
+          { success: false, error: 'Admin access required' },
+          { status: 403 }
+        );
+      }
+    } else if (profile?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }

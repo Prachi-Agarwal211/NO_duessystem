@@ -33,8 +33,9 @@ export async function GET(request) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get profile
-        const { data: profile, error: profileError } = await supabaseAdmin
+        // Get profile - query by EMAIL first (handles ID mismatches)
+        let profile;
+        const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
             .from('profiles')
             .select(`
         id,
@@ -49,11 +50,37 @@ export async function GET(request) {
         created_at,
         last_active_at
       `)
-            .eq('id', user.id)
+            .eq('email', user.email.toLowerCase())
             .single();
 
-        if (profileError || !profile) {
+        if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+            // Fallback to ID lookup
+            const { data: profileById, error: profileByIdError } = await supabaseAdmin
+                .from('profiles')
+                .select(`
+            id,
+            full_name,
+            email,
+            department_name,
+            designation,
+            avatar_url,
+            bio,
+            role,
+            is_active,
+            created_at,
+            last_active_at
+          `)
+                .eq('id', user.id)
+                .single();
+
+            if (profileByIdError || !profileById) {
+                return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
+            }
+            profile = profileById;
+        } else if (profileByEmailError) {
             return NextResponse.json({ success: false, error: 'Profile not found' }, { status: 404 });
+        } else {
+            profile = profileByEmail;
         }
 
         if (profile.role !== 'department' && profile.role !== 'admin') {
@@ -67,11 +94,11 @@ export async function GET(request) {
             .eq('name', profile.department_name)
             .single();
 
-        // Get my actions
+        // Get my actions - use profile.id since that's what was stored in no_dues_status
         const { data: myActions } = await supabaseAdmin
             .from('no_dues_status')
             .select('id, status, action_at, created_at')
-            .eq('action_by_user_id', user.id)
+            .eq('action_by_user_id', profile.id)
             .not('action_at', 'is', null);
 
         // Calculate stats
@@ -129,7 +156,7 @@ export async function GET(request) {
             .sort((a, b) => b[1] - a[1])
             .map(([id]) => id);
 
-        const myRank = sortedStaff.indexOf(user.id) + 1;
+        const myRank = sortedStaff.indexOf(profile.id) + 1;
         const totalStaff = sortedStaff.length;
 
         // Get pending count
@@ -143,14 +170,14 @@ export async function GET(request) {
         const { data: achievements } = await supabaseAdmin
             .from('staff_achievements')
             .select('*')
-            .eq('staff_id', user.id)
+            .eq('staff_id', profile.id)
             .order('earned_at', { ascending: false });
 
         // Update last_active_at
         await supabaseAdmin
             .from('profiles')
             .update({ last_active_at: new Date().toISOString() })
-            .eq('id', user.id);
+            .eq('id', profile.id);
 
         return NextResponse.json({
             success: true,
@@ -219,10 +246,22 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, error: 'No fields to update' }, { status: 400 });
         }
 
+        // Get profile ID - query by EMAIL first (handles ID mismatches)
+        let profileId = user.id;
+        const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('email', user.email.toLowerCase())
+            .single();
+
+        if (!profileByEmailError && profileByEmail) {
+            profileId = profileByEmail.id;
+        }
+
         const { data, error } = await supabaseAdmin
             .from('profiles')
             .update(updates)
-            .eq('id', user.id)
+            .eq('id', profileId)
             .select()
             .single();
 

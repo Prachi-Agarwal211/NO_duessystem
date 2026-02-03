@@ -1,0 +1,41 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    MANUAL SQL FIX REQUIRED                                  ║
+║                    Run in Supabase Dashboard → SQL Editor                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+ISSUE: razorrag.official@gmail.com has mismatched IDs
+- Profile ID: 7ee6b21e-d72d-496a-bed5-8a1040e076c4
+- Auth User ID: 8c6f19b7-c8f8-4969-958c-38c0c373b816
+
+The REST API cannot modify foreign key constraints. Please run this SQL:
+
+═══════════════════════════════════════════════════════════════════════════════
+
+-- Step 1: Update foreign key references in no_dues_status
+UPDATE no_dues_status 
+SET action_by_user_id = '8c6f19b7-c8f8-4969-958c-38c0c373b816'
+WHERE action_by_user_id = '7ee6b21e-d72d-496a-bed5-8a1040e076c4';
+
+-- Step 2: Update the profile ID
+UPDATE profiles 
+SET id = '8c6f19b7-c8f8-4969-958c-38c0c373b816'
+WHERE id = '7ee6b21e-d72d-496a-bed5-8a1040e076c4';
+
+-- Step 3: Verify the fix
+SELECT id, email, role FROM profiles WHERE email = 'razorrag.official@gmail.com';
+
+═══════════════════════════════════════════════════════════════════════════════
+
+AFTER RUNNING THE ABOVE SQL, THIS ACCOUNT WILL WORK:
+   Email: razorrag.official@gmail.com
+   Password: Jecrc@2026
+   URL: /staff/login
+
+═══════════════════════════════════════════════════════════════════════════════
+
+38 OTHER ACCOUNTS ALREADY WORK:
+   • admin@jecrcu.edu.in (admin)
+   • All HOD accounts (38 total with matching IDs)
+   • Password: Jecrc@2026
+
+═══════════════════════════════════════════════════════════════════════════════

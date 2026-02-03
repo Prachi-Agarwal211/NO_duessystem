@@ -90,27 +90,44 @@ export function AuthProvider({ children }) {
 
   /**
    * Load user profile with caching
+   * Query by EMAIL instead of ID to handle ID mismatches
    */
-  const loadProfile = async (userId) => {
+  const loadProfile = async (userId, userEmail) => {
     try {
+      const cacheKey = userEmail || userId;
+      
       // ⚡ Check cache first
-      const cached = profileCache.get(userId);
+      const cached = profileCache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < PROFILE_CACHE_TTL) {
         setProfile(cached.data);
         return cached.data;
       }
 
-      // ⚡ OPTIMIZATION: Only fetch needed columns, not all (*)
+      // Query by EMAIL (more reliable than ID for handling mismatches)
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, role, full_name, department_name, school_ids, course_ids, branch_ids')
-        .eq('id', userId)
+        .select('id, role, full_name, department_name, school_ids, course_ids, branch_ids, email')
+        .eq('email', userEmail?.toLowerCase())
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If email lookup fails, try ID as fallback
+        if (error.code === 'PGRST116') {
+          const { data: dataById, error: errorById } = await supabase
+            .from('profiles')
+            .select('id, role, full_name, department_name, school_ids, course_ids, branch_ids, email')
+            .eq('id', userId)
+            .single();
+          
+          if (errorById) throw errorById;
+          setProfile(dataById);
+          return dataById;
+        }
+        throw error;
+      }
       
       // ⚡ Cache the result
-      profileCache.set(userId, {
+      profileCache.set(cacheKey, {
         data,
         timestamp: Date.now()
       });
@@ -143,8 +160,8 @@ export function AuthProvider({ children }) {
       // Wait for session to be established
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Load user profile
-      const userProfile = await loadProfile(authData.user.id);
+      // Load user profile (query by email for robustness)
+      const userProfile = await loadProfile(authData.user.id, authData.user.email);
 
       if (!userProfile || (userProfile.role !== 'department' && userProfile.role !== 'admin')) {
         await supabase.auth.signOut();
@@ -211,7 +228,7 @@ export function AuthProvider({ children }) {
 
       if (data.user) {
         setUser(data.user);
-        await loadProfile(data.user.id);
+        await loadProfile(data.user.id, data.user.email);
 
         // Extend session if Remember Me is enabled
         if (checkRememberMe()) {
@@ -299,7 +316,7 @@ export function AuthProvider({ children }) {
 
         if (session?.user) {
           setUser(session.user);
-          await loadProfile(session.user.id);
+          await loadProfile(session.user.id, session.user.email);
 
           // Extend session if Remember Me is enabled
           if (remembered) {
@@ -329,7 +346,7 @@ export function AuthProvider({ children }) {
 
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
-        await loadProfile(session.user.id);
+        await loadProfile(session.user.id, session.user.email);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);

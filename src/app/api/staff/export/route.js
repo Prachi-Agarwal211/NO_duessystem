@@ -37,14 +37,30 @@ export async function GET(request) {
     const branch = searchParams.get('branch');
     const search = searchParams.get('search');
 
-    // Get user profile
-    const { data: profile } = await supabaseAdmin
+    // Get user profile - query by EMAIL first (handles ID mismatches)
+    let profile;
+    const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
       .from('profiles')
-      .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
-      .eq('id', user.id)
+      .select('role, assigned_department_ids, school_ids, course_ids, branch_ids, department_name')
+      .eq('email', user.email.toLowerCase())
       .single();
 
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+      const { data: profileById, error: profileByIdError } = await supabaseAdmin
+        .from('profiles')
+        .select('role, assigned_department_ids, school_ids, course_ids, branch_ids, department_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileByIdError || !profileById) {
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      }
+      profile = profileById;
+    } else if (profileByEmailError) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    } else {
+      profile = profileByEmail;
+    }
 
     // Get department names
     let departments = null;

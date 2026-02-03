@@ -49,12 +49,33 @@ export async function GET(request) {
     // ⚡ PHASE 1 OPTIMIZATION: Parallel Query Execution
     // Changed from 6 sequential queries → 2 parallel queries = 60-70% faster
 
-    // 🚀 QUERY 1: Get Profile with all needed fields
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // 🚀 QUERY 1: Get Profile with all needed fields - query by EMAIL first (handles ID mismatches)
+    let profile;
+    const { data: profileByEmail, error: profileByEmailError } = await supabaseAdmin
       .from('profiles')
-      .select('role, assigned_department_ids, school_ids, course_ids, branch_ids')
-      .eq('id', user.id)
+      .select('role, assigned_department_ids, school_ids, course_ids, branch_ids, department_name')
+      .eq('email', user.email.toLowerCase())
       .single();
+
+    if (profileByEmailError && profileByEmailError.code === 'PGRST116') {
+      // Fallback to ID lookup
+      const { data: profileById, error: profileByIdError } = await supabaseAdmin
+        .from('profiles')
+        .select('role, assigned_department_ids, school_ids, course_ids, branch_ids, department_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileByIdError) {
+        console.error('Profile fetch error:', profileByIdError);
+        return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      }
+      profile = profileById;
+    } else if (profileByEmailError) {
+      console.error('Profile fetch error:', profileByEmailError);
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+    } else {
+      profile = profileByEmail;
+    }
 
     console.log('📊 Dashboard Debug - User ID:', user.id);
     console.log('📊 Dashboard Debug - Profile:', profile);
@@ -183,13 +204,14 @@ export async function GET(request) {
       })(),
 
       // Count MY approved (with HOD scoping)
+      // Use profile.id since action_by_user_id stores profile ID, not auth user ID
       (async () => {
         let query = supabaseAdmin
           .from('no_dues_status')
           .select('id, no_dues_forms!inner(school_id)', { count: 'exact', head: true })
           .in('department_name', myDeptNames)
           .eq('status', 'approved')
-          .eq('action_by_user_id', user.id);
+          .eq('action_by_user_id', profile.id);
 
         // Apply scope filtering (schools, courses, branches)
         if (profile.school_ids && profile.school_ids.length > 0) {
@@ -206,13 +228,14 @@ export async function GET(request) {
       })(),
 
       // Count MY rejected (with HOD scoping)
+      // Use profile.id since action_by_user_id stores profile ID, not auth user ID
       (async () => {
         let query = supabaseAdmin
           .from('no_dues_status')
           .select('id, no_dues_forms!inner(school_id)', { count: 'exact', head: true })
           .in('department_name', myDeptNames)
           .eq('status', 'rejected')
-          .eq('action_by_user_id', user.id);
+          .eq('action_by_user_id', profile.id);
 
         // Apply scope filtering (schools, courses, branches)
         if (profile.school_ids && profile.school_ids.length > 0) {

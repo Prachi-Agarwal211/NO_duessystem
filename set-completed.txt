@@ -1,9 +1,0 @@
-SETTING FORM STATUS TO COMPLETED
-==================================================
-
-Current Status: in_progress
-Updating to completed...
-✅ Status updated to completed!
-New Status: completed
-
-🎉 Ready for certificate generation!
