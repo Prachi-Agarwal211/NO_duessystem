@@ -33,6 +33,9 @@ export default function DepartmentDashboard() {
   const isDark = theme === 'dark';
 
   const [applications, setApplications] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedRows, setSelectedRows] = useState([]);
@@ -69,10 +72,10 @@ export default function DepartmentDashboard() {
 
   // Load applications when user is available
   useEffect(() => {
-    if (user) {
+    if (user && departmentName) {
       loadApplications();
     }
-  }, [user]);
+  }, [user, departmentName, currentPage]);
 
   const loadApplications = async () => {
     setLoading(true);
@@ -95,8 +98,20 @@ export default function DepartmentDashboard() {
       });
       setDepartmentName(profile.department_name);
 
-      // FIXED APPROACH: Direct query without .in() limitation
-      // Query forms directly with inner join on no_dues_status for this department
+      // Get total count first
+      const { data: statusForms, error: statusError } = await supabase
+        .from('no_dues_status')
+        .select('form_id')
+        .eq('department_name', profile.department_name);
+      
+      if (statusError) throw statusError;
+      const totalCount = statusForms?.length || 0;
+      setTotalCount(totalCount);
+
+      // Get paginated data
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+      
       const { data: forms, error: formsError } = await supabase
         .from('no_dues_forms')
         .select(`
@@ -111,7 +126,8 @@ export default function DepartmentDashboard() {
           )
         `)
         .eq('no_dues_status.department_name', profile.department_name)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
       if (formsError) throw formsError;
       setApplications(forms || []);
@@ -346,8 +362,9 @@ export default function DepartmentDashboard() {
   };
 
   // Filter helper for stats cards
-  const toggleFilter = (status) => {
-    setFilters(prev => ({ ...prev, status }));
+  const toggleFilter = (filterType) => {
+    setFilters(prev => ({ ...prev, status: filterType }));
+    setCurrentPage(1); // Reset to page 1 when filter changes
     scrollToTable();
   };
 
@@ -530,7 +547,7 @@ export default function DepartmentDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`text-xs font-bold uppercase tracking-wider mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Total Items</p>
-                  <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{applications.length}</p>
+                  <p className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{totalCount}</p>
                 </div>
                 <div className={`p-3 rounded-xl shadow-sm ${isDark ? 'bg-blue-500/20' : 'bg-blue-50'}`}>
                   <Filter className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
@@ -682,6 +699,71 @@ export default function DepartmentDashboard() {
                   />
                 ))
               )}
+              
+              {/* Mobile Pagination */}
+              {totalCount > pageSize && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        currentPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(3, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+                        const totalPages = Math.ceil(totalCount / pageSize);
+                        let pageNum;
+                        
+                        if (totalPages <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 2) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 1) {
+                          pageNum = totalPages - 2 + i;
+                        } else {
+                          pageNum = currentPage - 1 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalCount / pageSize)))}
+                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        currentPage >= Math.ceil(totalCount / pageSize)
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* DESKTOP VIEW Table (>= 768px) */}
@@ -820,6 +902,71 @@ export default function DepartmentDashboard() {
                   )}
                 </tbody>
               </table>
+              
+              {/* Pagination */}
+              {totalCount > pageSize && (
+                <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        currentPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => {
+                        const totalPages = Math.ceil(totalCount / pageSize);
+                        let pageNum;
+                        
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalCount / pageSize)))}
+                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                      className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                        currentPage >= Math.ceil(totalCount / pageSize)
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </GlassCard>
         </div>
