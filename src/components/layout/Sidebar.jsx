@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard,
   History,
@@ -18,6 +19,7 @@ export default function Sidebar({ isOpen, setIsOpen, onClose = () => { } }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme } = useTheme();
+  const { signOut } = useAuth();
   const isDark = theme === 'dark';
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -86,15 +88,8 @@ export default function Sidebar({ isOpen, setIsOpen, onClose = () => { } }) {
       // Show loading toast
       const logoutToast = toast.loading('Logging out...');
 
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error('Supabase logout error:', error);
-        toast.dismiss(logoutToast);
-        toast.error('Logout failed. Please try again.');
-        return;
-      }
+      // Use AuthContext's signOut function
+      await signOut();
 
       toast.dismiss(logoutToast);
       toast.success('Logged out successfully');
@@ -105,15 +100,10 @@ export default function Sidebar({ isOpen, setIsOpen, onClose = () => { } }) {
         localStorage.removeItem('dashboard_search');
         sessionStorage.clear();
       }
-
-      // Navigate to login page
-      const loginUrl = isAdmin ? '/admin/login' : '/staff/login';
-      router.push(loginUrl);
     } catch (error) {
       console.error('Logout error:', error);
+      toast.dismiss(logoutToast);
       toast.error('Logout failed. Please try again.');
-      // Force redirect anyway
-      router.push('/staff/login');
     }
   };
 

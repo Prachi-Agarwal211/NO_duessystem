@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import PageWrapper from '@/components/landing/PageWrapper';
 import GlassCard from '@/components/ui/GlassCard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -28,6 +29,7 @@ import { useUnread } from '@/hooks/useUnread';
 
 export default function DepartmentDashboard() {
   const { theme } = useTheme();
+  const { user, loading: authLoading, signOut } = useAuth();
   const isDark = theme === 'dark';
 
   const [applications, setApplications] = useState([]);
@@ -58,10 +60,23 @@ export default function DepartmentDashboard() {
 
   const { unreadCounts, totalUnread } = useUnread('staff');
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      window.location.href = '/staff/login';
+    }
+  }, [user, authLoading]);
+
+  // Load applications when user is available
+  useEffect(() => {
+    if (user) {
+      loadApplications();
+    }
+  }, [user]);
+
   const loadApplications = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const { data: profile } = await supabase
@@ -80,6 +95,8 @@ export default function DepartmentDashboard() {
       });
       setDepartmentName(profile.department_name);
 
+      // FIXED APPROACH: Direct query without .in() limitation
+      // Query forms directly with inner join on no_dues_status for this department
       const { data: forms, error: formsError } = await supabase
         .from('no_dues_forms')
         .select(`
@@ -374,7 +391,7 @@ export default function DepartmentDashboard() {
     );
   };
 
-  if (loading && applications.length === 0) {
+  if ((loading || authLoading) && applications.length === 0) {
     return (
       <PageWrapper>
         <div className="min-h-screen flex items-center justify-center">
